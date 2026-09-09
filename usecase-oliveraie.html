@@ -195,9 +195,12 @@ table.dt tr.stress{background:#fdf0ee}
     <div class="step" data-tab="irrig"><div class="n">5</div><div class="t">💧 Irrigation</div><div class="d">ET₀, besoins & planning</div><div class="arrow">›</div></div>
   </div>
 
-  <!-- selection courante -->
-  <div class="card" style="padding:10px 14px;margin-bottom:12px">
-    <span class="selbadge">Parcelle courante : <b id="selName">— (aucune sélection)</b> <span id="selMeta"></span></span>
+  <!-- selection courante (globale, sur tous les onglets) -->
+  <div class="card" style="padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span class="selbadge">Parcelle :</span>
+    <select id="selPick" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;font-weight:800;min-width:160px"></select>
+    <b id="selName" style="display:none"></b>
+    <span id="selMeta"></span>
   </div>
 
   <!-- ============ TAB 1 : PARCELLES ============ -->
@@ -552,6 +555,13 @@ function renderPlist(){
   ul.querySelectorAll('[data-p]').forEach(li=>li.onclick=()=>{
     const p=ps.find(x=>x.name===li.dataset.p); if(p) setSelected(p);
   });
+  updateParcelPicker();
+}
+function updateParcelPicker(){
+  const sel=document.getElementById('selPick'); if(!sel)return;
+  const ps=APP.carto?APP.carto.state.parcels:[];
+  if(!ps.length){ sel.innerHTML='<option value="">— aucune parcelle —</option>'; return; }
+  sel.innerHTML=ps.map(p=>'<option value="'+enc(p.name)+'"'+(APP.selected&&APP.selected.name===p.name?' selected':'')+'>'+esc(p.name)+' · '+(p.area_ha||0)+' ha</option>').join('');
 }
 
 function setSelected(p){
@@ -1595,6 +1605,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('nd_load').onclick=loadNdvi;
   document.getElementById('nd_op').oninput=e=>{ if(ndviRaster)ndviRaster.setOpacity(+e.target.value/100); };
   renderIdxPicker(); renderRamp();
+  document.getElementById('selPick').onchange=e=>{ const p=APP.carto.state.parcels.find(x=>x.name===e.target.value); if(p) setSelected(p); };
   const h=(location.hash||'').replace('#',''); if(['parc','ndvi','meteo','irrig','sol'].includes(h)) showTab(h);
 });
 </script>
