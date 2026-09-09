@@ -80,6 +80,16 @@ body{padding-top:30px!important}
 <div class="wrap">
   <p class="lead" data-i18n-html="lf_lead"></p>
 
+  <div class="card" style="padding:12px 14px">
+    <h2 style="font-size:15px">🗃️ <span data-i18n="lf_wells"></span></h2>
+    <div id="wellbar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn ghost" onclick="addWell()">＋ <span data-i18n="lf_add_well"></span></button>
+      <button class="btn ghost" onclick="dupWell()">⧉ <span data-i18n="lf_dup_well"></span></button>
+      <button class="btn ghost" onclick="delWell()">🗑 <span data-i18n="lf_del_well"></span></button>
+    </div>
+  </div>
+
   <div class="grid-main">
     <!-- ---- Éditeur ---- -->
     <div class="card">
@@ -101,6 +111,10 @@ body{padding-top:30px!important}
           <div class="fld"><label data-i18n="lf_td"></label><input type="number" step="1" id="h_td"></div>
           <div class="fld"><label data-i18n="lf_ns"></label><input type="number" step="0.1" id="h_ns"></div>
           <div class="fld"><label data-i18n="lf_nd"></label><input type="number" step="0.1" id="h_nd"></div>
+        </div>
+        <div class="row2">
+          <div class="fld"><label data-i18n="lf_zsol"></label><input type="number" step="0.1" id="h_zsol" placeholder="ex. 120"></div>
+          <div class="fld"></div>
         </div>
       </div>
 
@@ -150,6 +164,19 @@ body{padding-top:30px!important}
       <div class="legend" id="legCompl"></div>
       <div class="hoverbox" id="hover"></div>
     </div>
+  </div>
+
+  <!-- ---- Coupe / corrélation multi-puits ---- -->
+  <div class="card" id="xsecCard">
+    <h2>📐 <span data-i18n="lf_xsec"></span></h2>
+    <p class="note" data-i18n="lf_xsec_sub" style="margin-top:0"></p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0 10px">
+      <label style="font-size:13px;font-weight:700;display:flex;gap:6px;align-items:center"><input type="radio" name="xalign" value="alt" checked> <span data-i18n="lf_by_alt"></span></label>
+      <label style="font-size:13px;font-weight:700;display:flex;gap:6px;align-items:center"><input type="radio" name="xalign" value="depth"> <span data-i18n="lf_by_depth"></span></label>
+      <label style="font-size:13px;font-weight:700;display:flex;gap:6px;align-items:center"><input type="checkbox" id="xcorrel" checked> <span data-i18n="lf_correl"></span></label>
+    </div>
+    <div style="overflow-x:auto"><svg id="xsec" style="width:100%;min-width:640px;height:auto;display:block"></svg></div>
+    <div class="legend" id="xsecLeg"></div>
   </div>
 
   <!-- ---- Pédagogie ---- -->
@@ -226,7 +253,22 @@ Object.assign(I18N.DICT,{
   cl_ns:{fr:"Niveau statique",ar:"المنسوب الساكن",en:"Static level"},
   cl_nd:{fr:"Niveau dynamique",ar:"المنسوب الديناميكي",en:"Dynamic level"},
   cl_draw:{fr:"Rabattement",ar:"الهبوط",en:"Drawdown"},
-  hint:{fr:"Survole une couche de la colonne pour voir sa description.",ar:"مرّر فوق طبقة في العمود لعرض وصفها.",en:"Hover a layer in the column to see its description."}
+  hint:{fr:"Survole une couche de la colonne pour voir sa description.",ar:"مرّر فوق طبقة في العمود لعرض وصفها.",en:"Hover a layer in the column to see its description."},
+  // multi-puits / cote / coupe / couleurs
+  lf_wells:{fr:"Puits du projet",ar:"آبار المشروع",en:"Project wells"},
+  lf_add_well:{fr:"Nouveau puits",ar:"بئر جديد",en:"New well"},
+  lf_dup_well:{fr:"Dupliquer",ar:"نسخ",en:"Duplicate"},
+  lf_del_well:{fr:"Supprimer ce puits",ar:"حذف هذا البئر",en:"Delete this well"},
+  lf_zsol:{fr:"Cote sol (m NGT)",ar:"منسوب السطح (م)",en:"Ground elev. (m asl)"},
+  lf_color:{fr:"Couleur",ar:"اللون",en:"Colour"},
+  lf_depth_axis:{fr:"Profondeur (m/sol)",ar:"العمق (م/السطح)",en:"Depth (m/ground)"},
+  lf_alt_axis:{fr:"Altitude (m NGT)",ar:"الارتفاع (م)",en:"Elevation (m asl)"},
+  lf_xsec:{fr:"Coupe / corrélation multi-puits",ar:"مقطع / ربط متعدد الآبار",en:"Cross-section / multi-well correlation"},
+  lf_xsec_sub:{fr:"Plusieurs puits alignés pour visualiser l'étendue de l'aquifère.",ar:"عدة آبار متراصفة لإظهار امتداد الخزان الجوفي.",en:"Several wells aligned to visualise the aquifer extent."},
+  lf_by_alt:{fr:"Aligner par altitude (NGT)",ar:"محاذاة بالارتفاع",en:"Align by elevation (asl)"},
+  lf_by_depth:{fr:"Aligner par profondeur",ar:"محاذاة بالعمق",en:"Align by depth"},
+  lf_correl:{fr:"Relier les couches identiques",ar:"ربط الطبقات المتماثلة",en:"Connect matching layers"},
+  lf_need2:{fr:"Ajoutez au moins 2 puits pour tracer une coupe.",ar:"أضف بئرين على الأقل لرسم مقطع.",en:"Add at least 2 wells to draw a cross-section."}
 });
 
 /* ---- Lithologies : id, noms, couleur de fond, motif SVG ---- */
@@ -243,38 +285,63 @@ const LMAP={}; LITHS.forEach(l=>LMAP[l.id]=l);
 function lname(id){const l=LMAP[id]; return l?(l[I18N.lang]||l.fr):id;}
 
 /* ---- State ---- */
-let STATE=null;
-function blank(){return {header:{name:"",loc:"",lat:"",lng:"",date:"",diam:"",td:100,ns:"",nd:""},
+const LS2="logforage_multi_v1";
+let DOC={wells:[],cur:0}, STATE=null;
+function blank(){return {header:{name:"",loc:"",lat:"",lng:"",date:"",diam:"",td:100,ns:"",nd:"",zsol:""},
   layers:[], compl:{casing:0,holed:"",cemt:0,cemb:0,grvt:0,grvb:0,screens:[]}};}
+function migrate(w){ w=w||blank(); w.header=w.header||{}; if(w.header.zsol===undefined)w.header.zsol="";
+  w.layers=w.layers||[]; w.compl=w.compl||blank().compl; if(!w.compl.screens)w.compl.screens=[]; return w; }
 
-function demo(){return {
-  header:{name:"Sarir S1 — Nubien",loc:"Sarir Nord, SE Libye",lat:27.8634,lng:22.2351,
-    date:"2026-02-14",diam:'17½"',td:224,ns:30.2,nd:48},
-  layers:[
-    {lith:'sable', top:0,   bot:8,   desc:"Sable éolien de surface, dunes, sec"},
-    {lith:'gres',  top:8,   bot:30,  desc:"Grès nubien supérieur, non saturé (zone non saturée)"},
-    {lith:'gres',  top:30,  bot:172, desc:"Grès nubien aquifère — sables grossiers, très perméable (T≈410 m²/j)"},
-    {lith:'argile',top:172, bot:195, desc:"Argile silteuse — intercalation imperméable (aquitard)"},
-    {lith:'gres',  top:195, bot:218, desc:"Grès nubien inférieur, moins productif"},
-    {lith:'socle', top:218, bot:224, desc:"Socle cristallin — base de l'aquifère"}
-  ],
-  compl:{casing:40,holed:'12¼"',cemt:0,cemb:35,grvt:35,grvb:172,
-    screens:[{top:40,bot:100},{top:110,bot:165}]}
-};}
+/* démo : transect de 3 puits (grès nubien de Sarir) — cote sol décroissante vers l'est,
+   aquitard argileux qui plonge → montre l'étendue et la géométrie de l'aquifère. */
+function demoDoc(){return {cur:0,wells:[
+  {header:{name:"Sarir S1",loc:"Sarir — transect O",lat:27.870,lng:22.150,date:"2026-02-10",diam:'17½"',td:200,ns:26,nd:44,zsol:122},
+   layers:[{lith:'sable',top:0,bot:8,desc:"Sable éolien"},{lith:'gres',top:8,bot:26,desc:"Grès non saturé"},
+     {lith:'gres',top:26,bot:150,desc:"Grès nubien aquifère (T≈410 m²/j)"},{lith:'argile',top:150,bot:170,desc:"Argile — aquitard"},
+     {lith:'gres',top:170,bot:194,desc:"Grès inférieur"},{lith:'socle',top:194,bot:200,desc:"Socle"}],
+   compl:{casing:38,holed:'12¼"',cemt:0,cemb:34,grvt:34,grvb:150,screens:[{top:38,bot:95},{top:105,bot:148}]}},
+  {header:{name:"Sarir S2",loc:"Sarir — transect C",lat:27.863,lng:22.235,date:"2026-02-14",diam:'17½"',td:224,ns:30,nd:48,zsol:112},
+   layers:[{lith:'sable',top:0,bot:8,desc:"Sable éolien"},{lith:'gres',top:8,bot:30,desc:"Grès non saturé"},
+     {lith:'gres',top:30,bot:172,desc:"Grès nubien aquifère — sables grossiers"},{lith:'argile',top:172,bot:195,desc:"Argile silteuse — aquitard"},
+     {lith:'gres',top:195,bot:218,desc:"Grès inférieur"},{lith:'socle',top:218,bot:224,desc:"Socle cristallin"}],
+   compl:{casing:40,holed:'12¼"',cemt:0,cemb:35,grvt:35,grvb:172,screens:[{top:40,bot:100},{top:110,bot:165}]}},
+  {header:{name:"Sarir S3",loc:"Sarir — transect E",lat:27.858,lng:22.320,date:"2026-02-18",diam:'17½"',td:212,ns:34,nd:55,zsol:104},
+   layers:[{lith:'sable',top:0,bot:10,desc:"Sable éolien"},{lith:'gres',top:10,bot:34,desc:"Grès non saturé"},
+     {lith:'gres',top:34,bot:186,desc:"Grès nubien aquifère (plus épais à l'est)"},{lith:'argile',top:186,bot:206,desc:"Argile — aquitard (plonge à l'est)"},
+     {lith:'socle',top:206,bot:212,desc:"Socle"}],
+   compl:{casing:44,holed:'12¼"',cemt:0,cemb:38,grvt:38,grvb:186,screens:[{top:44,bot:120},{top:130,bot:182}]}}
+]};}
 
 function load(){
-  let s=null; try{s=JSON.parse(localStorage.getItem(LS));}catch(e){}
-  STATE = (s&&s.layers)? s : demo();
-  save();
+  let d=null; try{d=JSON.parse(localStorage.getItem(LS2));}catch(e){}
+  if(d&&d.wells&&d.wells.length){ DOC=d; }
+  else { let s=null; try{s=JSON.parse(localStorage.getItem(LS));}catch(e){}
+    DOC = (s&&s.layers)? {wells:[s],cur:0} : demoDoc(); }
+  DOC.wells=DOC.wells.map(migrate);
+  DOC.cur=Math.max(0,Math.min(DOC.cur||0,DOC.wells.length-1));
+  STATE=DOC.wells[DOC.cur]; save();
 }
-function save(){try{localStorage.setItem(LS,JSON.stringify(STATE));}catch(e){}}
-function loadDemo(force){ if(force||confirm){ STATE=demo(); save(); fillForm(); renderAll(); } }
+function save(){ if(STATE)DOC.wells[DOC.cur]=STATE; try{localStorage.setItem(LS2,JSON.stringify(DOC));}catch(e){} }
+function loadDemo(force){ DOC=demoDoc(); DOC.wells=DOC.wells.map(migrate); DOC.cur=0; STATE=DOC.wells[0]; save(); fillForm(); renderWellbar(); renderAll(); }
+
+/* ---- opérations multi-puits ---- */
+function setCur(i){ DOC.cur=Math.max(0,Math.min(i,DOC.wells.length-1)); STATE=DOC.wells[DOC.cur]; save(); fillForm(); renderWellbar(); renderAll(); }
+function addWell(){ const w=migrate(blank()); w.header.name='Puits '+(DOC.wells.length+1); DOC.wells.push(w); setCur(DOC.wells.length-1); }
+function dupWell(){ const w=migrate(JSON.parse(JSON.stringify(STATE))); w.header.name=(w.header.name||'Puits')+' (copie)'; DOC.wells.push(w); setCur(DOC.wells.length-1); }
+function delWell(){ if(DOC.wells.length<=1){ alert('Au moins un puits est requis.'); return; }
+  if(!confirm('Supprimer le puits « '+(STATE.header.name||'?')+' » ?'))return;
+  DOC.wells.splice(DOC.cur,1); setCur(Math.min(DOC.cur,DOC.wells.length-1)); }
+function renderWellbar(){
+  const bar=$('wellbar'); if(!bar)return;
+  bar.innerHTML=DOC.wells.map((w,i)=>`<button class="btn ${i===DOC.cur?'':'ghost'}" data-w="${i}" style="${i===DOC.cur?'background:var(--geo,#2f7a3f);color:#fff;border-color:var(--geo,#2f7a3f)':''}">${(i+1)+'. '+esc(w.header.name||'—')}</button>`).join('');
+  bar.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>setCur(+b.dataset.w));
+}
 
 /* ---- Form <-> State ---- */
 function fillForm(){
   const h=STATE.header,c=STATE.compl;
   $('h_name').value=h.name; $('h_loc').value=h.loc; $('h_lat').value=h.lat; $('h_lng').value=h.lng;
-  $('h_date').value=h.date; $('h_diam').value=h.diam; $('h_td').value=h.td; $('h_ns').value=h.ns; $('h_nd').value=h.nd;
+  $('h_date').value=h.date; $('h_diam').value=h.diam; $('h_td').value=h.td; $('h_ns').value=h.ns; $('h_nd').value=h.nd; $('h_zsol').value=h.zsol||"";
   $('c_casing').value=c.casing; $('c_holed').value=c.holed; $('c_cemt').value=c.cemt; $('c_cemb').value=c.cemb;
   $('c_grvt').value=c.grvt; $('c_grvb').value=c.grvb;
   renderLayers(); renderScreens();
@@ -282,10 +349,10 @@ function fillForm(){
 function readHead(){
   const h=STATE.header,c=STATE.compl;
   h.name=$('h_name').value; h.loc=$('h_loc').value; h.lat=$('h_lat').value; h.lng=$('h_lng').value;
-  h.date=$('h_date').value; h.diam=$('h_diam').value; h.td=+$('h_td').value||0; h.ns=$('h_ns').value; h.nd=$('h_nd').value;
+  h.date=$('h_date').value; h.diam=$('h_diam').value; h.td=+$('h_td').value||0; h.ns=$('h_ns').value; h.nd=$('h_nd').value; h.zsol=$('h_zsol').value;
   c.casing=+$('c_casing').value||0; c.holed=$('c_holed').value; c.cemt=+$('c_cemt').value||0; c.cemb=+$('c_cemb').value||0;
   c.grvt=+$('c_grvt').value||0; c.grvb=+$('c_grvb').value||0;
-  save(); renderAll();
+  save(); renderWellbar(); renderAll();
 }
 
 function renderLayers(){
@@ -294,7 +361,7 @@ function renderLayers(){
     const row=document.createElement('div'); row.className='lyr';
     const opts=LITHS.map(l=>`<option value="${l.id}" ${l.id===L.lith?'selected':''}>${lname(l.id)}</option>`).join('');
     row.innerHTML=
-      `<span class="sw" style="background:${LMAP[L.lith]?LMAP[L.lith].col:'#ccc'}"></span>`+
+      `<input type="color" class="sw" data-i="${i}" data-f="col" value="${L.col||(LMAP[L.lith]?LMAP[L.lith].col:'#cccccc')}" title="${I18N.t('lf_color')}" style="width:22px;height:22px;padding:0;border:1px solid var(--line);border-radius:5px;cursor:pointer">`+
       `<select data-i="${i}" data-f="lith">${opts}</select>`+
       `<input type="number" data-i="${i}" data-f="top" value="${L.top}" title="${I18N.t('lf_top')}">`+
       `<input type="number" data-i="${i}" data-f="bot" value="${L.bot}" title="${I18N.t('lf_bot')}">`+
@@ -307,18 +374,18 @@ function renderLayers(){
   box.querySelectorAll('select,input').forEach(el=>el.addEventListener('input',e=>{
     const i=+e.target.dataset.i,f=e.target.dataset.f;
     STATE.layers[i][f]= (f==='top'||f==='bot')? (+e.target.value||0) : e.target.value;
-    if(f==='lith') renderLayers();
-    save(); renderColumn(); renderHead();
+    if(f==='lith'){ delete STATE.layers[i].col; renderLayers(); }
+    save(); renderColumn(); renderHead(); renderXsec();
   }));
   box.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{
-    STATE.layers.splice(+b.dataset.del,1); save(); renderLayers(); renderColumn(); renderHead();
+    STATE.layers.splice(+b.dataset.del,1); save(); renderLayers(); renderColumn(); renderHead(); renderXsec();
   }));
 }
 function addLayer(){
   const last=STATE.layers[STATE.layers.length-1];
   const t=last?last.bot:0;
   STATE.layers.push({lith:'gres',top:t,bot:t+20,desc:""});
-  save(); renderLayers(); renderColumn();
+  save(); renderLayers(); renderColumn(); renderXsec();
 }
 function renderScreens(){
   const box=$('screens'); box.innerHTML='';
@@ -386,11 +453,13 @@ function renderColumn(){
     g+=`<text x="${axX-7}" y="${(sy(d)+3.5).toFixed(1)}" text-anchor="end" fill="#9aa890" font-size="9.5" font-family="JetBrains Mono,monospace">${Math.round(d)}</text>`;
   }
   g+=`<text x="${axX-7}" y="${(sy(TD)+16).toFixed(1)}" text-anchor="end" fill="#9aa890" font-size="9">m</text>`;
+  // titre d'échelle verticale [21]
+  g+=`<text x="11" y="${(PADT+PLOT/2).toFixed(1)}" transform="rotate(-90 11 ${(PADT+PLOT/2).toFixed(1)})" text-anchor="middle" fill="#6f7d64" font-size="10" font-weight="700">${esc(I18N.t('lf_depth_axis'))}</text>`;
 
   // lithology layers
   S.layers.forEach((L,i)=>{
     const y=sy(L.top), hh=(L.bot-L.top)*sc; if(hh<=0)return;
-    const col=LMAP[L.lith]?LMAP[L.lith].col:'#ccc';
+    const col=L.col||(LMAP[L.lith]?LMAP[L.lith].col:'#ccc');
     g+=`<g class="ly" data-i="${i}" style="cursor:pointer">`;
     g+=`<rect x="${LX}" y="${y.toFixed(1)}" width="${LW}" height="${hh.toFixed(1)}" fill="${col}" stroke="#fff" stroke-width="0.5"/>`;
     g+=`<rect x="${LX}" y="${y.toFixed(1)}" width="${LW}" height="${hh.toFixed(1)}" fill="url(#p_${L.lith})"/>`;
@@ -480,6 +549,8 @@ function renderHead(){
   if(h.date) parts.push(esc(h.date));
   if(h.td) parts.push(`${I18N.t('lf_td')}: <b>${h.td} m</b>`);
   if(h.diam) parts.push(`Ø ${esc(h.diam)}`);
+  if(h.zsol!==""&&!isNaN(+h.zsol)){ parts.push(`${I18N.t('lf_zsol')}: <b>${(+h.zsol).toFixed(0)}</b>`);
+    if(h.td) parts.push(`${I18N.t('lf_alt_axis')} base: <b>${(+h.zsol-(+h.td)).toFixed(0)}</b>`); }
   $('colhead').innerHTML=parts.join(' · ');
 }
 function renderLegends(){
@@ -493,7 +564,90 @@ function renderLegends(){
     `<span style="color:#1d6b9e"><i class="ln" style="color:#2a7fb8"></i>${I18N.t('cl_ns')} ▽</span>`+
     `<span style="color:#a85c14"><i class="ln" style="color:#c67320"></i>${I18N.t('cl_nd')} ▼</span>`;
 }
-function renderAll(){ renderColumn(); renderHead(); renderLegends(); }
+function renderAll(){ renderColumn(); renderHead(); renderLegends(); renderXsec(); }
+
+/* ---- Coupe / corrélation multi-puits [18] ---- */
+function haversine(a,b){ const R=6371000,toR=x=>x*Math.PI/180;
+  const dLat=toR(b.lat-a.lat),dLng=toR(b.lng-a.lng);
+  const s=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s)); }
+function layColor(L){ return L.col||(LMAP[L.lith]?LMAP[L.lith].col:'#ccc'); }
+function renderXsec(){
+  const svg=$('xsec'); if(!svg)return;
+  const wells=DOC.wells;
+  if(wells.length<2){ svg.removeAttribute('viewBox'); svg.innerHTML=`<text x="12" y="24" fill="#9aa890" font-size="13">${esc(I18N.t('lf_need2'))}</text>`; $('xsecLeg').innerHTML=''; return; }
+  const align=(document.querySelector('input[name=xalign]:checked')||{}).value||'alt';
+  const correl=$('xcorrel')?$('xcorrel').checked:true;
+  const W=900,mL=54,mR=16,mT=24,mB=52,H=430,pTop=mT,pBot=H-mB,plotW=W-mL-mR;
+  const haveCoord=wells.every(w=>w.header.lat!==""&&w.header.lng!==""&&!isNaN(+w.header.lat));
+  let xc=[];
+  if(haveCoord){ let cum=[0];
+    for(let i=1;i<wells.length;i++)cum.push(cum[i-1]+haversine({lat:+wells[i-1].header.lat,lng:+wells[i-1].header.lng},{lat:+wells[i].header.lat,lng:+wells[i].header.lng}));
+    const tot=cum[cum.length-1];
+    xc = tot>0 ? cum.map(d=>mL+d/tot*plotW) : wells.map((_,i)=>mL+plotW*i/(wells.length-1));
+    var totKm=tot/1000;
+  } else { xc=wells.map((_,i)=>mL+plotW*i/(wells.length-1)); }
+  const hw=Math.min(38,plotW/wells.length*0.30);
+  const allZ=wells.every(w=>w.header.zsol!==""&&!isNaN(+w.header.zsol));
+  const useAlt = align==='alt' && allZ;
+  let vTop,vBot;
+  if(useAlt){ vTop=Math.max(...wells.map(w=>+w.header.zsol)); vBot=Math.min(...wells.map(w=>+w.header.zsol-(+w.header.td||0))); }
+  else { vTop=0; vBot=Math.max(...wells.map(w=>+w.header.td||0),1); }
+  const span=(vTop-vBot)||1;
+  const yOf = v => useAlt ? pTop+(vTop-v)/span*(pBot-pTop) : pTop+(v-vTop)/((vBot-vTop)||1)*(pBot-pTop);
+  const dv = w=>useAlt?(+w.header.zsol):0;            // valeur au sol
+  const val=(w,depth)=> useAlt ? (+w.header.zsol-depth) : depth;
+  let g='';
+  // axe vertical
+  const range=useAlt?(vTop-vBot):(vBot-vTop);
+  const step= range>400?100:range>200?50:range>80?25:10;
+  const lo=useAlt?vBot:vTop, hi=useAlt?vTop:vBot;
+  for(let t=Math.ceil(lo/step)*step; t<=hi+0.01; t+=step){ const y=yOf(t);
+    g+=`<line x1="${mL}" y1="${y.toFixed(1)}" x2="${W-mR}" y2="${y.toFixed(1)}" stroke="#eef3e5"/>`;
+    g+=`<text x="${mL-6}" y="${(y+3).toFixed(1)}" text-anchor="end" fill="#9aa890" font-size="9.5" font-family="monospace">${Math.round(t)}</text>`; }
+  g+=`<text x="12" y="${((pTop+pBot)/2).toFixed(1)}" transform="rotate(-90 12 ${((pTop+pBot)/2).toFixed(1)})" text-anchor="middle" fill="#6f7d64" font-size="10.5" font-weight="700">${esc(useAlt?I18N.t('lf_alt_axis'):I18N.t('lf_depth_axis'))}</text>`;
+  // corrélation : relier le toit de chaque lithologie entre puits adjacents
+  if(correl){
+    for(let k=0;k<wells.length-1;k++){ const A=wells[k],B=wells[k+1];
+      const firstTop=(w,lith)=>{ const L=(w.layers||[]).find(x=>x.lith===lith); return L?val(w,L.top):null; };
+      const liths=[...new Set((A.layers||[]).map(l=>l.lith))];
+      liths.forEach(li=>{ const va=firstTop(A,li),vb=firstTop(B,li); if(va==null||vb==null)return;
+        g+=`<line x1="${(xc[k]+hw).toFixed(1)}" y1="${yOf(va).toFixed(1)}" x2="${(xc[k+1]-hw).toFixed(1)}" y2="${yOf(vb).toFixed(1)}" stroke="${layColor({lith:li})}" stroke-width="1" stroke-dasharray="4 3" opacity="0.55"/>`; });
+    }
+  }
+  // colonnes de puits
+  wells.forEach((w,k)=>{
+    const x=xc[k];
+    // fût (du sol au TD)
+    const yTopW=yOf(val(w,0)), yBotW=yOf(val(w,+w.header.td||0));
+    g+=`<rect x="${(x-hw).toFixed(1)}" y="${yTopW.toFixed(1)}" width="${(2*hw).toFixed(1)}" height="${(yBotW-yTopW).toFixed(1)}" fill="#faf7ef" stroke="#cdbfa0" stroke-width="0.8"/>`;
+    (w.layers||[]).forEach(L=>{ const y0=yOf(val(w,L.top)),y1=yOf(val(w,L.bot)); if(y1-y0<=0)return;
+      g+=`<rect x="${(x-hw).toFixed(1)}" y="${y0.toFixed(1)}" width="${(2*hw).toFixed(1)}" height="${(y1-y0).toFixed(1)}" fill="${layColor(L)}" stroke="#fff" stroke-width="0.4"/>`;
+      g+=`<rect x="${(x-hw).toFixed(1)}" y="${y0.toFixed(1)}" width="${(2*hw).toFixed(1)}" height="${(y1-y0).toFixed(1)}" fill="url(#px_${L.lith})"/>`; });
+    // niveau statique (piézo)
+    if(w.header.ns!==""&&!isNaN(+w.header.ns)){ const y=yOf(val(w,+w.header.ns));
+      g+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="#2a7fb8"/>`; w._nsY=y; w._nsX=x; }
+    else w._nsY=null;
+    // sol / TD ticks + label
+    g+=`<text x="${x.toFixed(1)}" y="${(yTopW-6).toFixed(1)}" text-anchor="middle" fill="#3a3020" font-size="10.5" font-weight="800">${esc(w.header.name||('P'+(k+1)))}</text>`;
+    g+=`<text x="${x.toFixed(1)}" y="${(H-mB+16).toFixed(1)}" text-anchor="middle" fill="#6f7d64" font-size="9">${useAlt?('sol '+Math.round(+w.header.zsol)+' m'):('TD '+Math.round(+w.header.td||0)+' m')}</text>`;
+  });
+  // ligne piézométrique (relie les NS)
+  const nsPts=wells.map((w,k)=>w._nsY!=null?[xc[k],w._nsY]:null).filter(Boolean);
+  if(nsPts.length>=2){ let p=''; nsPts.forEach((pt,i)=>p+=(i?'L':'M')+pt[0].toFixed(1)+' '+pt[1].toFixed(1)+' ');
+    g+=`<path d="${p}" fill="none" stroke="#2a7fb8" stroke-width="1.4" stroke-dasharray="6 3"/>`;
+    g+=`<text x="${(nsPts[nsPts.length-1][0]).toFixed(1)}" y="${(nsPts[nsPts.length-1][1]-6).toFixed(1)}" fill="#1d6b9e" font-size="9" font-weight="700">${useAlt?'piézo (NGT)':'NS'}</text>`; }
+  // distance transect
+  if(haveCoord && totKm>0.01) g+=`<text x="${W-mR}" y="${(H-6).toFixed(1)}" text-anchor="end" fill="#9aa890" font-size="9">transect ≈ ${totKm.toFixed(1)} km · aligné ${useAlt?'altitude':'profondeur'}</text>`;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML=patternsX()+g;
+  // légende lithos présentes
+  const used=[...new Set(DOC.wells.flatMap(w=>(w.layers||[]).map(l=>l.lith)))];
+  $('xsecLeg').innerHTML=used.map(id=>`<span><i style="background:${LMAP[id]?LMAP[id].col:'#ccc'}"></i>${esc(lname(id))}</span>`).join('')
+    + `<span style="color:#1d6b9e"><i class="ln" style="color:#2a7fb8"></i>${I18N.t('cl_ns')} ▽</span>`;
+}
+function patternsX(){ // patterns dédiés (préfixe px_) pour la coupe
+  return patterns().replace(/id="p_/g,'id="px_').replace(/url\(#p_/g,'url(#px_'); }
 
 /* ---- CSV (tabulaire) : parité règle 6 — une ligne par COUCHE ----
    En-tête + complétion sauvegardés en lignes de commentaires « # clé,valeur »
@@ -596,14 +750,16 @@ function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>e
 document.addEventListener('i18n:changed',()=>{ applyHTML(); fillForm(); renderAll(); });
 
 // header field listeners
-['h_name','h_loc','h_lat','h_lng','h_date','h_diam','h_td','h_ns','h_nd',
+['h_name','h_loc','h_lat','h_lng','h_date','h_diam','h_td','h_ns','h_nd','h_zsol',
  'c_casing','c_holed','c_cemt','c_cemb','c_grvt','c_grvb'].forEach(id=>$(id).addEventListener('input',readHead));
+document.querySelectorAll('input[name=xalign]').forEach(r=>r.addEventListener('change',renderXsec));
+$('xcorrel').addEventListener('change',renderXsec);
 
 /* ---- boot ---- */
 load();
 const urlLang=new URLSearchParams(location.search).get('lang');
 I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
-applyHTML(); fillForm(); renderAll();
+applyHTML(); renderWellbar(); fillForm(); renderAll();
 $('hover').innerHTML=I18N.t('hint');
 if(window.Store&&Store.detect) Store.detect();
 </script>

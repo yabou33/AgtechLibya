@@ -296,6 +296,7 @@ table.dt tr.stress{background:#fdf0ee}
         <div class="field" style="margin:0"><label>Agrégation</label>
           <select id="mtAgg"><option value="day">Jour</option><option value="month" selected>Mois</option><option value="year">Année</option></select></div>
         <button class="btn primary" id="mtLoad">↻ Charger la météo</button>
+        <button class="btn" id="mtImport">⬆ Importer JSON/CSV</button>
         <button class="btn" id="mtCsv">⬇ CSV</button>
         <button class="btn" id="mtJson">⬇ JSON</button>
       </div>
@@ -846,8 +847,11 @@ function setMeteoPreset(p){
   document.getElementById('mtTo').value=fmtDate(to);
 }
 async function loadMeteo(){
-  const from=document.getElementById('mtFrom').value, to=document.getElementById('mtTo').value;
+  const from=document.getElementById('mtFrom').value; let to=document.getElementById('mtTo').value;
   if(!from||!to){ setMeteoPreset('cur'); return loadMeteo(); }
+  // l'archive ERA5 a ~5 j de latence : on plafonne la date de fin
+  const maxOK=fmtDate(new Date(Date.now()-6*864e5));
+  let clamped=false; if(to>maxOK){ to=maxOK; clamped=true; }
   const st=document.getElementById('mtStatus'); st.textContent='Chargement Open-Meteo…';
   const url='https://archive-api.open-meteo.com/v1/archive?latitude='+APP.farm.lat+'&longitude='+APP.farm.lng+
     '&start_date='+from+'&end_date='+to+'&daily='+OM_VARS+'&timezone=Africa%2FTunis';
@@ -862,7 +866,7 @@ async function loadMeteo(){
       et0:D.et0_fao_evapotranspiration[i], rain:D.precipitation_sum[i] }))
       .filter(x=>x.tmax!=null);
     APP.weather={ from, to, daily, elev:APP.farm.elev };
-    st.innerHTML='✓ '+daily.length+' jours · altitude '+Math.round(APP.farm.elev)+' m · point ERA5 '+j.latitude.toFixed(3)+', '+j.longitude.toFixed(3);
+    st.innerHTML='✓ '+daily.length+' jours · altitude '+Math.round(APP.farm.elev)+' m · point ERA5 '+j.latitude.toFixed(3)+', '+j.longitude.toFixed(3)+(clamped?' · <span style="color:var(--warn)">fin plafonnée au '+to+' (archive ERA5 ~5 j de retard)</span>':'');
     renderMeteo();
     if(typeof onWeatherReady==='function') onWeatherReady();
   }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur : '+esc(e.message)+'</span>'; }
@@ -915,7 +919,38 @@ function meteoCSV(){
   const h=['date','tmax_C','tmin_C','tmean_C','rh_pct','wind_kmh','rad_MJ','et0_mm','rain_mm'];
   return h.join(',')+'\n'+APP.weather.daily.map(x=>[x.d,x.tmax,x.tmin,x.tmean,x.rh,x.wind,x.rad,x.et0,x.rain].join(',')).join('\n');
 }
+function parseMeteoCSV(txt){
+  const L=txt.split(/\r?\n/).filter(l=>l.trim()); const h=L[0].split(',').map(s=>s.trim().toLowerCase()); const ix=n=>h.indexOf(n);
+  const iD=ix('date'),iTx=ix('tmax_c'),iTn=ix('tmin_c'),iTm=ix('tmean_c'),iR=ix('rh_pct'),iW=ix('wind_kmh'),iRa=ix('rad_mj'),iE=ix('et0_mm'),iP=ix('rain_mm');
+  const num=v=>{const n=parseFloat(v);return isNaN(n)?null:n;}; const out=[];
+  for(let k=1;k<L.length;k++){ const c=L[k].split(','); if(!c[iD])continue;
+    out.push({d:c[iD].trim(),tmax:num(c[iTx]),tmin:num(c[iTn]),tmean:num(c[iTm]),rh:num(c[iR]),wind:num(c[iW]),rad:num(c[iRa]),et0:num(c[iE]),rain:num(c[iP])}); }
+  return out;
+}
+function importMeteo(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,.csv';
+  inp.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader();
+    rd.onload=()=>{ try{ let daily=[];
+      if(/\.csv$/i.test(f.name)){ daily=parseMeteoCSV(rd.result); }
+      else { const j=JSON.parse(rd.result);
+        if(Array.isArray(j)) daily=j;
+        else if(Array.isArray(j.daily)) daily=j.daily;
+        else if(j.daily&&j.daily.time){ const D=j.daily; daily=D.time.map((t,i)=>({d:t,
+          tmax:(D.temperature_2m_max||[])[i],tmin:(D.temperature_2m_min||[])[i],tmean:(D.temperature_2m_mean||[])[i],
+          rh:(D.relative_humidity_2m_mean||[])[i],wind:(D.wind_speed_10m_max||[])[i],rad:(D.shortwave_radiation_sum||[])[i],
+          et0:(D.et0_fao_evapotranspiration||[])[i],rain:(D.precipitation_sum||[])[i]})); }
+      }
+      daily=(daily||[]).filter(x=>x&&x.d);
+      if(!daily.length) throw new Error('aucune donnée reconnue (attendu : colonnes date,tmax_C,… ou {daily:[...]})');
+      APP.weather={from:daily[0].d,to:daily[daily.length-1].d,daily,elev:APP.farm.elev,source:'import '+f.name};
+      document.getElementById('mtStatus').innerHTML='✓ importé : '+daily.length+' jours ('+esc(f.name)+')';
+      renderMeteo(); if(typeof onWeatherReady==='function')onWeatherReady();
+    }catch(err){ document.getElementById('mtStatus').innerHTML='<span style="color:var(--bad)">Import : '+esc(err.message)+'</span>'; } };
+    rd.readAsText(f); };
+  inp.click();
+}
 document.getElementById('mtLoad').onclick=loadMeteo;
+document.getElementById('mtImport').onclick=importMeteo;
 document.getElementById('mtAgg').onchange=renderMeteo;
 document.getElementById('mtCsv').onclick=()=>download('meteo_zitouna.csv',meteoCSV(),'text/csv');
 document.getElementById('mtJson').onclick=()=>download('meteo_zitouna.json',JSON.stringify(APP.weather||{},null,1),'application/json');
