@@ -541,12 +541,16 @@ document.getElementById("opacity").oninput=function(){
 };
 
 /* ---------------- Statistical API ---------------- */
-function statPayload(from,to,interval){
+function statPayload(from,to,interval,maxCloud){
   const bb=parcelBBox(), dim=bboxDims(bb,256);
+  // maxCloud : par défaut le curseur (utile pour la série temporelle, qui écarte les jours nuageux).
+  // Pour l'image courante, loadStats passe 100 afin de mesurer EXACTEMENT ce que le raster affiche
+  // (le Process API charge la scène avec maxCloudCoverage:100 — sinon les stats reviennent vides).
+  const mcc = (maxCloud===undefined) ? +document.getElementById("cloud").value : maxCloud;
   return {
     input:{
       bounds:{ geometry:parcelGeoJSON(), properties:{crs:"http://www.opengis.net/def/crs/OGC/1.3/CRS84"} },
-      data:[{ type:"sentinel-2-l2a", dataFilter:{ maxCloudCoverage:+document.getElementById("cloud").value, mosaickingOrder:"leastCC" } }]
+      data:[{ type:"sentinel-2-l2a", dataFilter:{ maxCloudCoverage:mcc, mosaickingOrder:"leastCC" } }]
     },
     aggregation:{
       timeRange:{from,to}, aggregationInterval:{of:interval},
@@ -563,10 +567,17 @@ async function loadStats(){
   document.getElementById("statIdx").textContent=curIdx.id;
   document.getElementById("statMeta").textContent="S2 · "+curDate;
   try{
-    const j=await shFetch(SH.stats, statPayload(curDate+"T00:00:00Z", curDate+"T23:59:59Z", "P1D"));
-    const it=j.data && j.data[0];
-    if(!it){ setTiles(null); return; }
-    const st=it.outputs.data.bands.B0.stats, hg=it.outputs.data.bands.B0.histogram;
+    // maxCloud=100 : mesurer exactement la scène affichée par le raster (aligné sur loadRaster).
+    const j=await shFetch(SH.stats, statPayload(curDate+"T00:00:00Z", curDate+"T23:59:59Z", "P1D", 100));
+    const it=(j.data||[]).find(d=>d && d.outputs && d.outputs.data);   // ignore les intervalles NO_DATA (outputs vide)
+    const band=it && it.outputs.data.bands && it.outputs.data.bands.B0;
+    const st=band && band.stats, hg=band && band.histogram;
+    // sampleCount==0 (ou tout no-data) → mean/min/max reviennent en NaN : on traite comme « pas de donnée »
+    if(!st || st.sampleCount===0 || (st.sampleCount!==undefined && st.sampleCount===st.noDataCount)){
+      setTiles(null);
+      document.getElementById("histNote").textContent="Aucune donnée exploitable sur la parcelle pour cette date (couvert nuageux ou pixels masqués). Essayez une autre image.";
+      return;
+    }
     setTiles(st); drawHisto(hg, st);
   }catch(err){ setTiles(null); document.getElementById("histNote").textContent="Statistiques indisponibles : "+err.message; }
 }
