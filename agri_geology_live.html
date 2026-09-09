@@ -175,6 +175,8 @@ details summary,.modal h3,.hydro-val b,.map-hud b{color:var(--gold)!important}
 .agri-stdbar .tool:hover .tip{opacity:1}
 body[dir=rtl] .agri-stdbar .tool .tip{inset-inline-start:auto; inset-inline-end:46px}
 </style>
+<style id="mp-reorg">/* map-panels : évite le chevauchement HUD ↔ recherche (HUD en bas-gauche) */
+.map-hud{top:auto!important;bottom:14px!important;left:14px!important;right:auto!important}</style>
 </head>
 <body>
 <!-- Barre retour accueil AgriTech (injectee) -->
@@ -1310,5 +1312,6 @@ document.addEventListener("i18n:changed", () => {
   wfApply();
 })();
 </script>
+<script src="map-panels.js"></script>
 </body>
 </html>

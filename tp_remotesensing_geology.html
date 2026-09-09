@@ -242,6 +242,8 @@
     border-radius:6px; opacity:0; pointer-events:none; transition:.12s; border:1px solid #2b3a30; z-index:5}
   .agri-stdbar .tool:hover .tip{opacity:1}
 </style>
+<style id="mp-reorg">/* map-panels : évite le chevauchement HUD ↔ recherche (HUD en bas-gauche) */
+.map-hud{top:auto!important;bottom:14px!important;left:14px!important;right:auto!important}</style>
 </head>
 <body>
 <!-- Barre retour accueil AgriTech (injectee) -->
@@ -1287,5 +1289,6 @@ document.getElementById("btnExportPDF").onclick = () => {
   setHud("Outil : <b>Prêt</b> — barre standard : Parcelle, Pivot, Rectangle");
 })();
 </script>
+<script src="map-panels.js"></script>
 </body>
 </html>
