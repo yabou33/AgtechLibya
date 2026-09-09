@@ -258,7 +258,8 @@ table.dt tr.stress{background:#fdf0ee}
     <div class="grid2">
       <div>
         <div class="mapwrap"><div id="ndviMap" style="height:460px;border-radius:12px;border:1px solid var(--line)"></div></div>
-        <div class="card"><h2 style="font-size:.95rem">Série temporelle <span id="nd_serieName" class="chip"></span></h2><div id="nd_serie"></div></div>
+        <div id="nd_shown" class="notice" style="margin:8px 0"></div>
+        <div class="card"><h2 style="font-size:.95rem">Série temporelle <span id="nd_serieName" class="chip"></span> <span class="hint">— cliquez un point pour son image</span></h2><div id="nd_serie"></div></div>
       </div>
       <div>
         <div id="nd_kpis" class="kpirow" style="grid-template-columns:1fr 1fr"></div>
@@ -534,7 +535,7 @@ function renderPlist(){
     const meta = [a.variete||null, a.annee||null].filter(Boolean).join(' · ');
     return `<li data-p="${enc(p.name)}" class="${sel?'sel':''}">
       <div class="pn"><span>${esc(p.name)}</span><span class="chip">${(p.area_ha||0)} ha</span></div>
-      <div class="pm">${esc(p.crop||'olivier')}${meta?' — '+esc(meta):''}</div></li>`;
+      <div class="pm">${esc(cropName(p.crop))}${meta?' — '+esc(meta):''}</div></li>`;
   }).join('') || '<div class="hint">Aucune parcelle. Chargez Zitouna ou dessinez.</div>';
   ul.querySelectorAll('[data-p]').forEach(li=>li.onclick=()=>{
     const p=ps.find(x=>x.name===li.dataset.p); if(p) setSelected(p);
@@ -564,6 +565,10 @@ function setSelected(p){
   if(ndviMap){ drawNdviParcel(); }
 }
 
+function cropIdOf(v){ v=String(v||'').toLowerCase(); const DB=window.CROPS_DB||[];
+  let c=DB.find(x=>x.id===v)||DB.find(x=>(x.fr||'').toLowerCase()===v)||DB.find(x=>(x.fr||'').toLowerCase().startsWith(v));
+  return c?c.id:(v||'olive'); }
+function cropName(v){ const c=(window.CROPS&&CROPS.byId)?CROPS.byId(cropIdOf(v)):null; return (c&&c.fr)||v||'—'; }
 function couvertFromDensity(d){ if(d>=1500)return 45; if(d>=1000)return 40; if(d>=600)return 33; if(d>0)return 28; return 35; }
 function densOf(a){ if(a.nb_pieds>0 && a._area>0) return Math.round(a.nb_pieds/a._area);
   return (a.ecart_m>0&&a.interrang_m>0)?Math.round(10000/(a.ecart_m*a.interrang_m)):0; }
@@ -571,7 +576,7 @@ function renderParams(p){
   const a=APP.agro[p.name]; a._area=p.area_ha||0; const body=document.getElementById('paramBody');
   const age = a.annee? (new Date().getFullYear()-parseInt(a.annee,10)) : null;
   body.innerHTML = `
-    <div class="field"><label>Culture</label><input id="pa_crop" value="${esc(a.crop||'olivier')}"></div>
+    <div class="field"><label>Culture</label><select id="pa_crop">${cropSelectOptions(cropIdOf(a.crop))}</select></div>
     <div class="field"><label>Variété</label><input id="pa_var" value="${esc(a.variete||'')}" placeholder="Arbequina…"></div>
     <div class="field"><label>Date / année de plantation</label><input id="pa_year" value="${esc(a.date_plantation||a.annee||'')}" placeholder="2010-07-01"></div>
     <div class="field"><label>Nombre de pieds (réel)</label><input id="pa_pieds" type="number" value="${a.nb_pieds||''}"></div>
@@ -585,7 +590,8 @@ function renderParams(p){
       (a.nb_pieds?('<b>'+a.nb_pieds.toLocaleString('fr')+' pieds</b> · '):'')+
       'surface plantée <b>'+(p.area_ha||0)+' ha</b>. Source : BD_SDA_ZITOUNA.<br>Alimente le calcul des besoins (étape 4).'; };
   info();
-  document.getElementById('pa_crop').oninput=e=>{a.crop=e.target.value;p.crop=e.target.value;renderPlist();};
+  document.getElementById('pa_crop').onchange=e=>{a.crop=e.target.value;p.crop=e.target.value;
+    if(APP.selected)APP.selected.crop=e.target.value; renderPlist();};
   document.getElementById('pa_var').oninput =e=>{a.variete=e.target.value;renderPlist();};
   document.getElementById('pa_year').oninput=e=>{a.date_plantation=e.target.value;a.annee=(e.target.value.match(/(19|20)\d{2}/)||[''])[0];info();};
   document.getElementById('pa_pieds').oninput=e=>{a.nb_pieds=parseInt(e.target.value)||0;info();};
@@ -796,6 +802,11 @@ function tsChart(el, opts){
     hv.innerHTML='<b>'+ds+'</b> — '+parts.join(' · '); }
   hz.addEventListener('mousemove',move);
   hz.addEventListener('touchmove',e=>{ if(e.touches[0])move(e.touches[0]); },{passive:true});
+  if(opts.onClick){ hz.style.cursor='pointer';
+    hz.addEventListener('click',ev=>{ const r=svg.getBoundingClientRect(); const px=(ev.clientX-r.left)/r.width*W;
+      const t=Math.max(tmin,Math.min(tmax,tmin+(px-x0)/(x1-x0)*(tmax-tmin)));
+      let best=null,bd=Infinity; lines.forEach(l=>l.points.forEach(p=>{ if(p[1]==null)return; const dd=Math.abs(p[0]-t); if(dd<bd){bd=dd;best=p[0];} }));
+      if(best!=null) opts.onClick(best); }); }
 }
 
 /* ============================================================
@@ -1236,39 +1247,56 @@ function drawNdviParcel(){
   ndviParcelLayer=L.polygon(c,{color:'#f28c28',weight:3,fill:false}).addTo(ndviMap);
   ndviMap.fitBounds(ndviParcelLayer.getBounds().pad(0.4));
 }
+const NDCRS="http://www.opengis.net/def/crs/OGC/1.3/CRS84";
+let ndGeom=null, ndBB=null, ndDim=null, ndShownDate=null;
+async function loadNdviRaster(dateStr){
+  if(!ndGeom) return;
+  const ix=NDV_IDX[document.getElementById('nd_idx').value];
+  const cloud=+document.getElementById('nd_cloud').value||30;
+  const st=document.getElementById('nd_status');
+  const from=dateStr+"T00:00:00Z", to=dateStr+"T23:59:59Z";
+  st.textContent='Chargement image '+dateStr+'…';
+  try{
+    const blob=await shFetch(SH.process,{
+      input:{bounds:{geometry:ndGeom,properties:{crs:NDCRS}},
+        data:[{type:"sentinel-2-l2a",dataFilter:{timeRange:{from,to},maxCloudCoverage:100,mosaickingOrder:"leastCC"}}]},
+      output:{width:ndDim.w,height:ndDim.h,responses:[{identifier:"default",format:{type:"image/png"}}]},
+      evalscript:ndviVizEval(ix)},"blob");
+    if(ndviRaster)ndviMap.removeLayer(ndviRaster);
+    ndviRaster=L.imageOverlay(URL.createObjectURL(blob),[[ndBB[1],ndBB[0]],[ndBB[3],ndBB[2]]],{opacity:+document.getElementById('nd_op').value/100}).addTo(ndviMap);
+    ndShownDate=dateStr;
+    document.getElementById('nd_shown').innerHTML='🖼️ Image affichée : <b>'+dateStr+'</b> · '+document.getElementById('nd_idx').value+' <span class="hint">(cliquez une autre date dans « Scènes disponibles »)</span>';
+    st.innerHTML='✓ image '+dateStr+' chargée';
+    const tb=document.getElementById('nd_scenes'); if(tb) tb.querySelectorAll('tr[data-d]').forEach(tr=>tr.classList.toggle('irr',tr.dataset.d===dateStr));
+  }catch(e){ st.innerHTML='<span style="color:var(--bad)">Image '+dateStr+' : '+esc(e.message)+'</span>'; }
+}
 async function loadNdvi(){
   if(!APP.selected){ document.getElementById('ndNoSel').style.display='block'; return; }
   const ix=NDV_IDX[document.getElementById('nd_idx').value];
   const from=document.getElementById('nd_from').value, to=document.getElementById('nd_to').value;
   const cloud=+document.getElementById('nd_cloud').value||30;
-  const st=document.getElementById('nd_status'); st.textContent='Requête Sentinel Hub…';
-  const geom={type:"Polygon",coordinates:[selRingLonLat()]};
-  const bb=selBBox(), dim=bboxDims(bb,768);
+  const st=document.getElementById('nd_status'); st.textContent='Requête Sentinel Hub (série)…';
+  ndGeom={type:"Polygon",coordinates:[selRingLonLat()]};
+  ndBB=selBBox(); ndDim=bboxDims(ndBB,768);
   try{
-    // raster (composite moins nuageux sur la période)
-    const blob=await shFetch(SH.process,{
-      input:{bounds:{geometry:geom,properties:{crs:"http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},
-        data:[{type:"sentinel-2-l2a",dataFilter:{timeRange:{from:from+"T00:00:00Z",to:to+"T23:59:59Z"},maxCloudCoverage:cloud,mosaickingOrder:"leastCC"}}]},
-      output:{width:dim.w,height:dim.h,responses:[{identifier:"default",format:{type:"image/png"}}]},
-      evalscript:ndviVizEval(ix)},"blob");
-    if(ndviRaster)ndviMap.removeLayer(ndviRaster);
-    ndviRaster=L.imageOverlay(URL.createObjectURL(blob),[[bb[1],bb[0]],[bb[3],bb[2]]],{opacity:+document.getElementById('nd_op').value/100}).addTo(ndviMap);
-    // série temporelle (stats P1D)
+    // série temporelle + liste des scènes (stats P1D)
     const j=await shFetch(SH.stats,{
-      input:{bounds:{geometry:geom,properties:{crs:"http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},
+      input:{bounds:{geometry:ndGeom,properties:{crs:NDCRS}},
         data:[{type:"sentinel-2-l2a",dataFilter:{maxCloudCoverage:cloud,mosaickingOrder:"leastCC"}}]},
-      aggregation:{timeRange:{from:from+"T00:00:00Z",to:to+"T23:59:59Z"},aggregationInterval:{of:"P1D"},width:dim.w,height:dim.h,evalscript:ndviStatEval(ix)},
+      aggregation:{timeRange:{from:from+"T00:00:00Z",to:to+"T23:59:59Z"},aggregationInterval:{of:"P1D"},width:ndDim.w,height:ndDim.h,evalscript:ndviStatEval(ix)},
       calculations:{default:{statistics:{default:{}}}}},"json");
     const pts=(j.data||[]).map(it=>({d:it.interval.from.slice(0,10),v:it.outputs&&it.outputs.data&&it.outputs.data.bands.B0.stats.mean}))
       .filter(p=>p.v!=null&&!isNaN(p.v));
     renderNdvi(ix,pts);
-    st.innerHTML='✓ '+pts.length+' scène(s) exploitable(s) · '+from+' → '+to;
+    st.innerHTML='✓ '+pts.length+' scène(s) exploitable(s) · '+from+' → '+to+' — cliquez une date pour afficher son image';
+    if(pts.length) loadNdviRaster(pts[pts.length-1].d);   // image de la scène la plus récente par défaut
   }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur : '+esc(e.message)+' — vérifiez les clés Sentinel (⚙️).</span>'; }
 }
 function renderNdvi(ix,pts){
   const name=document.getElementById('nd_idx').value;
   document.getElementById('nd_serieName').textContent=name;
-  tsChart(document.getElementById('nd_serie'),{lines:[{label:name,color:'#3fa66a',width:2.4,points:pts.map(p=>[Date.parse(p.d),+p.v.toFixed(3)])}],height:230,yUnit:''});
+  tsChart(document.getElementById('nd_serie'),{lines:[{label:name,color:'#3fa66a',width:2.4,points:pts.map(p=>[Date.parse(p.d),+p.v.toFixed(3)])}],height:230,yUnit:'',
+    onClick:ts=>{ const d=new Date(ts); const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); loadNdviRaster(ds); }});
   const vals=pts.map(p=>p.v); const last=vals.length?vals[vals.length-1]:null;
   const mean=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
   const mn=vals.length?Math.min(...vals):null, mx=vals.length?Math.max(...vals):null;
@@ -1279,8 +1307,11 @@ function renderNdvi(ix,pts){
     ['Max', mx!=null?mx.toFixed(2):'—','','']
   ].map(k=>'<div class="kpi '+k[3]+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div></div>').join('');
   // scenes
-  document.getElementById('nd_scenes').innerHTML='<thead><tr><th>Date</th><th>'+name+'</th></tr></thead><tbody>'+
-    pts.slice().reverse().map(p=>'<tr><td>'+p.d+'</td><td>'+p.v.toFixed(3)+'</td></tr>').join('')+'</tbody>';
+  const tb=document.getElementById('nd_scenes');
+  tb.innerHTML='<thead><tr><th>Date</th><th>'+name+'</th><th></th></tr></thead><tbody>'+
+    pts.slice().reverse().map(p=>'<tr data-d="'+p.d+'" style="cursor:pointer" title="Afficher l\'image de cette date">'+
+      '<td>'+p.d+'</td><td>'+p.v.toFixed(3)+'</td><td>🖼️</td></tr>').join('')+'</tbody>';
+  tb.querySelectorAll('tr[data-d]').forEach(tr=>tr.onclick=()=>loadNdviRaster(tr.dataset.d));
   document.getElementById('nd_scnCount').textContent=pts.length;
   // diagnostic
   document.getElementById('nd_diag').innerHTML=ndviDiag(name,last,mean,vals);
