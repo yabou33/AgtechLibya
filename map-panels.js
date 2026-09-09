@@ -49,11 +49,19 @@
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
-  // Applique une position fixe (coordonnées écran) en restant dans la fenêtre.
+  // Rectangle de confinement : la carte Leaflet qui porte le panneau (à défaut, la fenêtre).
+  // getBoundingClientRect() et position:fixed partagent les mêmes coordonnées écran.
+  function frameRect(el) {
+    var m = el.closest && el.closest(".leaflet-container");
+    if (m) { var r = m.getBoundingClientRect(); if (r.width > 40 && r.height > 40) return r; }
+    return { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+  }
+
+  // Applique une position fixe (coordonnées écran) en restant DANS le cadre de la carte.
   function place(el, left, top) {
-    var w = el.offsetWidth || 120, h = el.offsetHeight || 40;
-    left = clamp(left, 4, Math.max(4, window.innerWidth - w - 4));
-    top = clamp(top, 4, Math.max(4, window.innerHeight - h - 4));
+    var w = el.offsetWidth || 120, h = el.offsetHeight || 40, f = frameRect(el);
+    left = clamp(left, f.left + 4, Math.max(f.left + 4, f.right - w - 4));
+    top = clamp(top, f.top + 4, Math.max(f.top + 4, f.bottom - h - 4));
     el.style.position = "fixed";
     el.style.left = left + "px";
     el.style.top = top + "px";
@@ -65,6 +73,7 @@
   }
 
   var idx = 0;
+  var PANELS = [];   // panneaux améliorés, pour re-confiner au resize / zoom navigateur
   function enhance(el) {
     if (!el || el.__mpDone || isSkipped(el)) return;
     // ignorer les éléments non visibles / trop grands (la carte elle-même)
@@ -72,6 +81,7 @@
     if (r.width < 24 || r.height < 20) { return; } // pas encore rendu
     if (r.width > window.innerWidth * 0.92 && r.height > window.innerHeight * 0.92) return;
     el.__mpDone = true;
+    PANELS.push(el);
     var i = idx++;
     var key = panelKey(el, i);
 
@@ -81,7 +91,11 @@
     grip.title = "Déplacer ce panneau / Move panel";
     grip.setAttribute("aria-label", "Déplacer");
     grip.innerHTML = "⠿";
-    if (getComputedStyle(el).position === "static") el.style.position = "absolute";
+    // « relative » (et non « absolute ») : garde les contrôles Leaflet (.gs-box,
+    // .leaflet-control-layers) DANS le flux de leur coin — sinon le conteneur de coin
+    // s'effondre et le panneau s'échappe de la carte au reflow (zoom navigateur).
+    // relative suffit à ancrer la poignée ⠿ ; le drag force « fixed » via place().
+    if (getComputedStyle(el).position === "static") el.style.position = "relative";
     el.appendChild(grip);
     el.classList.add("mp-draggable");
 
@@ -161,6 +175,23 @@
       "@media print{.mp-grip,#mpResetBtn{display:none!important}}";
     document.head.appendChild(s);
   }
+
+  // Au resize / zoom navigateur : re-confine les panneaux déjà déplacés (fixed)
+  // pour qu'ils ne débordent jamais du cadre de la carte.
+  var rTO = null;
+  function reclamp() {
+    for (var i = 0; i < PANELS.length; i++) {
+      var el = PANELS[i];
+      if (el && el.style && el.style.position === "fixed") {
+        var r = el.getBoundingClientRect();
+        place(el, r.left, r.top);
+      }
+    }
+  }
+  window.addEventListener("resize", function () {
+    if (rTO) clearTimeout(rTO);
+    rTO = setTimeout(reclamp, 120);
+  });
 
   function boot() {
     addCSS();
