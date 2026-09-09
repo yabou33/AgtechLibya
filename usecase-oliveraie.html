@@ -951,7 +951,7 @@ async function soilGridsFetch(){
     SOIL.source='Défaut / manuel'; renderSoilEditor();
   }
 }
-let IRR_SOURCES=[{name:'Forage principal', debit:40, hours:12}];
+let IRR_SOURCES=[{name:'Pompe 1', debit:220, hours:16},{name:'Pompe 2', debit:220, hours:16}];
 
 function cropSelectOptions(sel){
   const DB=window.CROPS_DB||[]; if(!DB.length) return '<option value="olive">Olivier</option>';
