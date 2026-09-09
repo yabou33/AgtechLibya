@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Guide · AgriTech Libya</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/theme.css">
+<style>
+:root{--green:#7cb342;--green-d:#5a8f2c;--green-l:#a5d16e;--green-bg:#f1f7e9;
+  --ink:#2c3a24;--muted:#6f7d64;--line:#d8e4c8;--card:#fff;--paper:#fbfcf8;--shadow:0 4px 18px rgba(60,80,40,.10)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font:15px/1.6 "Inter","Segoe UI",system-ui,sans-serif}
+body[dir=rtl]{font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 10px rgba(60,80,40,.05)}
+.es-logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--green-d));display:grid;place-items:center;color:#fff;font-weight:800;font-size:.6rem}
+.brand b{color:var(--green-d)} .brand span{color:var(--green)}
+.brand .sub{color:var(--muted);font-size:12.5px}
+.langsw{margin-inline-start:auto;display:flex;gap:6px}
+.langsw button{border:1px solid var(--line);background:#fff;color:var(--muted);font:inherit;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer}
+.langsw button.on{background:var(--green);color:#fff;border-color:var(--green)}
+.wrap{max-width:1080px;margin:24px auto;padding:0 20px}
+.hero h1{font-size:26px;font-weight:800}
+.hero p{color:var(--muted);margin-top:6px;max-width:760px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.toc a{font-size:13px;font-weight:700;color:var(--green-d);background:var(--green-bg);border:1px solid var(--green-l);padding:6px 12px;border-radius:20px;text-decoration:none}
+.toc a:hover{background:var(--green);color:#fff}
+.app{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px;margin:22px 0;scroll-margin-top:80px}
+.app h2{font-size:20px;font-weight:800;display:flex;align-items:center;gap:10px}
+.app .code{font-size:12px;font-weight:800;color:var(--green-d);background:var(--green-bg);border:1px solid var(--green-l);padding:2px 9px;border-radius:20px}
+.app .intro{color:var(--muted);margin:8px 0 14px}
+.app .shot{width:100%;border:1px solid var(--line);border-radius:12px;margin-bottom:16px}
+.app .open{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#fff;background:var(--green);border-radius:9px;padding:8px 15px;text-decoration:none;margin-bottom:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:start;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--green-d)}
+td.k{font-weight:700;white-space:nowrap;color:var(--ink)}
+td.k .chip{display:inline-block;background:var(--green-bg);border:1px solid var(--green-l);border-radius:7px;padding:2px 8px;font-size:12.5px}
+footer{text-align:center;color:var(--muted);font-size:13px;padding:26px;border-top:1px solid var(--line);margin-top:20px}
+[data-only]{display:none}
+[hidden]{display:none!important}
+</style>
+</head>
+<body dir="ltr">
+<header>
+  <div class="es-logo">ezzayra</div>
+  <div class="brand"><div style="font-weight:800;font-size:1.05rem"><b>Agri</b><span>Tech</span> — <span data-t="guide">User Guide</span></div>
+    <div class="sub">EU4Skills · Smart Agriculture &amp; Water Management</div></div>
+  <div class="langsw" id="langsw">
+    <button data-lang="fr">FR</button><button data-lang="en" class="on">EN</button><button data-lang="ar">ع</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1 data-t="title">Platform User Guide — button by button</h1>
+    <p data-t="lead">How each application and simulator works, control by control. Use the language switch (FR / EN / العربية) at the top right.</p>
+  </div>
+  <div class="toc" id="toc"></div>
+  <div id="apps"></div>
+</div>
+<footer>EU4Skills · Component 3 — Green &amp; Blue Economy · Expertise France — Libya · Tunis 2026</footer>
+
+<script>
+const T={ guide:{fr:"Guide utilisateur",en:"User Guide",ar:"دليل المستخدم"},
+  title:{fr:"Guide de la plateforme — bouton par bouton",en:"Platform User Guide — button by button",ar:"دليل المنصة — زرًّا بزر"},
+  lead:{fr:"Fonctionnement de chaque application et simulateur, contrôle par contrôle. Utilisez le sélecteur de langue (FR / EN / العربية) en haut à droite.",
+    en:"How each application and simulator works, control by control. Use the language switch (FR / EN / العربية) at the top right.",
+    ar:"طريقة عمل كل تطبيق ومحاكٍ، عنصرًا بعنصر. استخدم مبدّل اللغة (FR / EN / العربية) أعلى اليمين."},
+  open:{fr:"Ouvrir l'application →",en:"Open the app →",ar:"افتح التطبيق ←"},
+  colBtn:{fr:"Bouton / Contrôle",en:"Button / Control",ar:"الزر / العنصر"},
+  colDesc:{fr:"Rôle",en:"What it does",ar:"الوظيفة"} };
+
+const APPS=[
+ {id:"agrimap",code:"M2",url:"../../../agrimap.html",img:"img/agrimap.png",
+  name:{fr:"AgriMap — Indices satellites",en:"AgriMap — Satellite indices",ar:"AgriMap — مؤشرات الأقمار"},
+  intro:{fr:"Dessinez une parcelle, recherchez des images Sentinel-2 réelles, calculez 16 indices et exportez.",
+    en:"Draw a parcel, search real Sentinel-2 images, compute 16 indices and export.",
+    ar:"ارسم قطعة، ابحث عن صور Sentinel-2 حقيقية، احسب 16 مؤشرًا وصدّرها."},
+  rows:[
+   [{fr:"Du / Au",en:"From / To",ar:"من / إلى"},{fr:"Période de recherche des acquisitions satellites.",en:"Date range for searching satellite acquisitions.",ar:"المجال الزمني للبحث عن صور الأقمار."}],
+   [{fr:"Nuages ≤",en:"Clouds ≤",ar:"الغيوم ≤"},{fr:"Seuil de couverture nuageuse maximale des images.",en:"Maximum cloud-cover threshold for images.",ar:"الحد الأقصى لنسبة الغيوم في الصور."}],
+   [{fr:"🔍 Rechercher",en:"🔍 Search",ar:"🔍 بحث"},{fr:"Liste les dates d'images disponibles pour la parcelle.",en:"Lists available image dates for the parcel.",ar:"يعرض تواريخ الصور المتاحة للقطعة."}],
+   [{fr:"Barre d'outils (gauche)",en:"Toolbar (left)",ar:"شريط الأدوات (يسار)"},{fr:"Sélection · Parcelle (polygone) · Pivot (cercle) · Rectangle · Marqueur · Sonde · Station météo.",en:"Select · Parcel (polygon) · Pivot (circle) · Rectangle · Marker · Probe · Weather station.",ar:"تحديد · قطعة (مضلّع) · محور (دائرة) · مستطيل · علامة · مجس · محطة جوية."}],
+   [{fr:"Tuiles d'indices (NDVI…)",en:"Index tiles (NDVI…)",ar:"مربّعات المؤشرات (NDVI…)"},{fr:"Choisissent l'indice affiché : NDVI, NDRE, NDMI, EVI, SI…",en:"Pick the displayed index: NDVI, NDRE, NDMI, EVI, SI…",ar:"تختار المؤشر المعروض: NDVI، NDRE، NDMI…"}],
+   [{fr:"Opacité",en:"Opacity",ar:"الشفافية"},{fr:"Transparence de la couche d'indice sur la carte.",en:"Transparency of the index layer on the map.",ar:"شفافية طبقة المؤشر على الخريطة."}],
+   [{fr:"Exporter (GeoJSON · Shapefile · KML · GeoTIFF · PNG · CSV)",en:"Export (GeoJSON · Shapefile · KML · GeoTIFF · PNG · CSV)",ar:"تصدير (GeoJSON · Shapefile · KML · GeoTIFF · PNG · CSV)"},{fr:"Exporte la parcelle (vecteur), l'image d'indice (raster) ou les données (tableur).",en:"Exports the parcel (vector), the index image (raster) or data (spreadsheet).",ar:"يصدّر القطعة (متجه) أو صورة المؤشر (نقطية) أو البيانات (جدول)."}]
+  ]},
+ {id:"agrisim",code:"M2",url:"../../../agrisim_live.html",img:"img/agrisim.png",
+  name:{fr:"AgriSim Live — Atelier guidé",en:"AgriSim Live — Guided workshop",ar:"AgriSim Live — ورشة موجّهة"},
+  intro:{fr:"Parcours pédagogique en 10 étapes, inspecteur de pixel et statistiques zonales en direct.",
+    en:"10-step guided workflow, pixel inspector and live zonal statistics.",
+    ar:"مسار موجّه من 10 خطوات، فاحص بكسل وإحصاءات مناطق مباشرة."},
+  rows:[
+   [{fr:"S2 RGB / NDVI / NDWI / NDRE",en:"S2 RGB / NDVI / NDWI / NDRE",ar:"S2 RGB / NDVI / NDWI / NDRE"},{fr:"Basculent l'affichage entre couleurs réelles et indices.",en:"Switch the display between true colour and indices.",ar:"تبدّل العرض بين الألوان الحقيقية والمؤشرات."}],
+   [{fr:"Parcel / Pivot / Rect",en:"Parcel / Pivot / Rect",ar:"قطعة / محور / مستطيل"},{fr:"Outils de dessin de la zone à analyser.",en:"Drawing tools for the area to analyse.",ar:"أدوات رسم المنطقة المراد تحليلها."}],
+   [{fr:"Inspector",en:"Inspector",ar:"الفاحص"},{fr:"Affiche les réflectances brutes du pixel cliqué.",en:"Shows raw reflectances of the clicked pixel.",ar:"يعرض الانعكاسات الخام للبكسل المنقور."}],
+   [{fr:"Find dates / Render",en:"Find dates / Render",ar:"إيجاد التواريخ / عرض"},{fr:"Cherche les images puis affiche l'indice choisi.",en:"Searches images then renders the chosen index.",ar:"يبحث عن الصور ثم يعرض المؤشر المختار."}],
+   [{fr:"Back / Next step",en:"Back / Next step",ar:"السابق / الخطوة التالية"},{fr:"Naviguent dans le parcours guidé (10 étapes).",en:"Navigate the guided workflow (10 steps).",ar:"للتنقل في المسار الموجّه (10 خطوات)."}]
+  ]},
+ {id:"geology",code:"G0",url:"../../../agri_geology_live.html",img:"img/geology.png",
+  name:{fr:"Géologie × Télédétection",en:"Geology × Remote Sensing",ar:"الجيولوجيا × الاستشعار"},
+  intro:{fr:"Passerelle hydrogéologie : aquifère fossile, GRACE, pivots comme compteurs d'eau, parcours M1–M7.",
+    en:"Hydrogeology bridge: fossil aquifer, GRACE, pivots as water meters, M1–M7 pathway.",
+    ar:"جسر الهيدروجيولوجيا: الخزان الأحفوري، GRACE، المحاور كعدّادات مياه، مسار M1–M7."},
+  rows:[
+   [{fr:"Site (menu)",en:"Site (menu)",ar:"الموقع (قائمة)"},{fr:"Centre la carte sur un site réel (Kufra, Fezzan…).",en:"Centres the map on a real site (Kufra, Fezzan…).",ar:"يوسّط الخريطة على موقع حقيقي (الكفرة، فزّان…)."}],
+   [{fr:"S2 RGB · NDVI · NDWI · NDRE · SI (Sel)",en:"S2 RGB · NDVI · NDWI · NDRE · SI (Salinity)",ar:"S2 RGB · NDVI · NDWI · NDRE · SI (ملوحة)"},{fr:"Choisissent la couche satellite / indice affichée.",en:"Choose the satellite / index layer displayed.",ar:"تختار الطبقة الفضائية/المؤشر المعروض."}],
+   [{fr:"Pivot · Parcelle · Rect · Inspecteur",en:"Pivot · Parcel · Rect · Inspector",ar:"محور · قطعة · مستطيل · فاحص"},{fr:"Dessin et inspection sur la carte.",en:"Drawing and inspection on the map.",ar:"الرسم والفحص على الخريطة."}],
+   [{fr:"Parcours M1–M7 / Puits &amp; Hydrogéologie / Gravité GRACE",en:"M1–M7 pathway / Wells &amp; Hydrogeology / GRACE Gravity",ar:"مسار M1–M7 / الآبار والهيدروجيولوجيا / جاذبية GRACE"},{fr:"Onglets du panneau pédagogique de droite.",en:"Tabs of the right-hand teaching panel.",ar:"تبويبات لوحة التعليم على اليمين."}],
+   [{fr:"← Précédent / Étape suivante →",en:"← Back / Next step →",ar:"← السابق / الخطوة التالية ←"},{fr:"Avancent dans les 6 étapes du parcours.",en:"Move through the 6 steps of the pathway.",ar:"للتقدّم في خطوات المسار الستّ."}]
+  ]},
+ {id:"pilotage",code:"M5",url:"../../../J3/pilotage-irrigation.html",img:"img/pilotage.png",
+  name:{fr:"Pilotage d'irrigation",en:"Irrigation control",ar:"إدارة الريّ"},
+  intro:{fr:"Cœur AgriManager : bilan hydrique FAO-56, sondes, météo temps réel, planning et télécommande.",
+    en:"AgriManager core: FAO-56 water balance, probes, real-time weather, scheduling and remote control.",
+    ar:"نواة AgriManager: الميزان المائي FAO-56، المجسات، الطقس الفوري، الجدولة والتحكم عن بُعد."},
+  rows:[
+   [{fr:"Barre d'outils (gauche)",en:"Toolbar (left)",ar:"شريط الأدوات (يسار)"},{fr:"Sélection · Parcelle · Pivot · Rectangle · Puits · Pompe · Vanne · Compteur · Sonde · Nœud · Passerelle · Fertigation.",en:"Select · Parcel · Pivot · Rectangle · Well · Pump · Valve · Meter · Probe · Node · Gateway · Fertigation.",ar:"تحديد · قطعة · محور · مستطيل · بئر · مضخة · صمّام · عدّاد · مجس · عقدة · بوابة · تسميد."}],
+   [{fr:"Importer / Exporter",en:"Import / Export",ar:"استيراد / تصدير"},{fr:"Charge ou enregistre le projet (parcelles + équipements) au format JSON.",en:"Loads or saves the project (parcels + equipment) as JSON.",ar:"يحمّل أو يحفظ المشروع (قطع + معدات) بصيغة JSON."}],
+   [{fr:"Onglets : Carte · Station météo · Analyse climatique · Analyse du sol · Satellite &amp; indices · Calculs détaillés · Planning",en:"Tabs: Map · Weather station · Climate · Soil · Satellite &amp; indices · Detailed calc · Planning",ar:"تبويبات: خريطة · محطة جوية · مناخ · تربة · أقمار ومؤشرات · حسابات · جدولة"},{fr:"Vues d'analyse et de planification de la ferme.",en:"Farm analysis and planning views.",ar:"واجهات تحليل وتخطيط المزرعة."}],
+   [{fr:"Panneau droit : Bilan · Équip. · Sondes · Fiche",en:"Right panel: Summary · Equip. · Probes · Sheet",ar:"اللوحة اليمنى: حصيلة · معدات · مجسات · بطاقة"},{fr:"Détail de la parcelle sélectionnée + « Simuler &amp; graphiques ».",en:"Details of the selected parcel + “Simulate &amp; charts”.",ar:"تفاصيل القطعة المختارة + «محاكاة ورسوم»."}],
+   [{fr:"Live irrigation / Planning",en:"Live irrigation / Planning",ar:"ريّ مباشر / جدولة"},{fr:"Télécommande des vannes et calendrier d'irrigation.",en:"Valve remote control and irrigation calendar.",ar:"التحكم في الصمّامات وتقويم الريّ."}]
+  ]},
+ {id:"agrimanager",code:"M6",url:"../../../J4/agrimanager-v1.6.html",img:"img/agrimanager.png",img2:"img/agrimanager_ar.png",
+  name:{fr:"AgriManager — FMIS / Gestion",en:"AgriManager — FMIS",ar:"AgriManager — إدارة المزرعة"},
+  intro:{fr:"Tableau de bord d'exploitation : parcelles, ET0, coûts, traçabilité. Trilingue (bouton langue).",
+    en:"Farm cockpit: parcels, ET0, costs, traceability. Trilingual (language button).",
+    ar:"لوحة قيادة المزرعة: القطع، ET0، التكاليف، التتبّع. ثلاثية اللغة (زر اللغة)."},
+  rows:[
+   [{fr:"Onglets : Portefeuille · Exploitation · Station live",en:"Tabs: Portfolio · Farm · Live station",ar:"تبويبات: المحفظة · المزرعة · المحطة المباشرة"},{fr:"Vue des parcelles, de la ferme (carte de dessin) et de la station Ecowitt.",en:"Parcels view, farm (drawing map) and Ecowitt station.",ar:"عرض القطع، المزرعة (خريطة رسم)، ومحطة Ecowitt."}],
+   [{fr:"Importer les parcelles (Excel / CSV)",en:"Import plots (Excel / CSV)",ar:"استيراد القطع (Excel / CSV)"},{fr:"Charge un export AgriManager pour calculer bilans et actions.",en:"Loads an AgriManager export to compute balances and actions.",ar:"يحمّل تصدير AgriManager لحساب الموازين والإجراءات."}],
+   [{fr:"Calculer ET0 temps réel",en:"Compute real-time ET0",ar:"حساب ET0 الفوري"},{fr:"Récupère la météo Open-Meteo et calcule le besoin en eau.",en:"Fetches Open-Meteo weather and computes water demand.",ar:"يجلب طقس Open-Meteo ويحسب الحاجة المائية."}],
+   [{fr:"Onglet Exploitation → carte",en:"Farm tab → map",ar:"تبويب المزرعة ← خريطة"},{fr:"Surface de dessin (moteur partagé) : parcelles, pivots, équipements + import du contour GeoJSON.",en:"Drawing surface (shared engine): parcels, pivots, equipment + GeoJSON boundary import.",ar:"سطح رسم (المحرّك المشترك): قطع، محاور، معدات + استيراد الحدود GeoJSON."}],
+   [{fr:"Bouton langue (FR → EN → ع)",en:"Language button (FR → EN → ع)",ar:"زر اللغة (FR → EN → ع)"},{fr:"Bascule l'interface, y compris l'arabe en écriture droite-à-gauche.",en:"Switches the interface, including Arabic right-to-left.",ar:"يبدّل الواجهة، بما في ذلك العربية من اليمين إلى اليسار."}]
+  ]},
+ {id:"sim-sonde",code:"M3/M5",url:"../../../J5/sim-sonde.html",img:"img/sim-sonde.png",
+  name:{fr:"Lecture de courbes de sonde",en:"Reading soil-probe curves",ar:"قراءة منحنيات المجس"},
+  intro:{fr:"Apprenez la « grammaire » de la courbe d'humidité : pics d'irrigation, drainage, seuils.",
+    en:"Learn the “grammar” of the moisture curve: irrigation peaks, drainage, thresholds.",
+    ar:"تعلّم «نحو» منحنى الرطوبة: قمم الريّ، التصريف، العتبات."},
+  rows:[
+   [{fr:"Scénarios (Pilotage correct · Sur-/Sous-irrigation · Drainage)",en:"Scenarios (Correct · Over-/Under-irrigation · Drainage)",ar:"سيناريوهات (ريّ صحيح · إفراط/نقص · تصريف)"},{fr:"Chargent une courbe réelle correspondant à chaque cas.",en:"Load a real curve matching each case.",ar:"تحمّل منحنى حقيقيًا لكل حالة."}],
+   [{fr:"Afficher les seuils",en:"Show thresholds",ar:"إظهار العتبات"},{fr:"Affiche CC, seuil de recharge et point de flétrissement.",en:"Shows field capacity, refill threshold and wilting point.",ar:"يظهر السعة الحقلية، عتبة إعادة التعبئة ونقطة الذبول."}],
+   [{fr:"Survol de la courbe",en:"Hover the curve",ar:"مرّر فوق المنحنى"},{fr:"Lit les valeurs jour par jour et l'état hydrique.",en:"Reads day-by-day values and water status.",ar:"يقرأ القيم يومًا بيوم والحالة المائية."}],
+   [{fr:"Mission → Valider",en:"Mission → Submit",ar:"المهمة ← تحقّق"},{fr:"Quiz de diagnostic corrigé selon le scénario.",en:"Diagnostic quiz graded per scenario.",ar:"اختبار تشخيصي يُصحَّح حسب السيناريو."}]
+  ]},
+ {id:"sim-qualite-eau",code:"M5",url:"../../../J5/sim-qualite-eau.html",img:"img/sim-qualite-eau.png",
+  name:{fr:"Qualité de l'eau d'irrigation",en:"Irrigation water quality",ar:"جودة مياه الريّ"},
+  intro:{fr:"Analyse CE, SAR et fraction de lessivage selon les tables FAO 29 (Ayers &amp; Westcot).",
+    en:"CE, SAR and leaching-fraction analysis per FAO 29 tables (Ayers &amp; Westcot).",
+    ar:"تحليل CE وSAR ونسبة الغسل وفق جداول FAO 29."},
+  rows:[
+   [{fr:"Présets (Puits Cap Bon · Forage · Nappe saumâtre)",en:"Presets (well · borehole · brackish)",ar:"إعدادات جاهزة (بئر · حفر · مياه مسوّسة)"},{fr:"Remplissent l'analyse avec des valeurs types.",en:"Fill the analysis with typical values.",ar:"تملأ التحليل بقيم نموذجية."}],
+   [{fr:"Champs (CE, Na, Ca, Mg, Cl, B)",en:"Fields (EC, Na, Ca, Mg, Cl, B)",ar:"حقول (CE، Na، Ca، Mg، Cl، B)"},{fr:"Saisie du bulletin d'analyse de laboratoire.",en:"Enter the lab analysis report.",ar:"إدخال تقرير تحليل المختبر."}],
+   [{fr:"Culture (menu)",en:"Crop (menu)",ar:"المحصول (قائمة)"},{fr:"Fixe la tolérance à la salinité pour la fraction de lessivage.",en:"Sets salinity tolerance for the leaching fraction.",ar:"يحدّد تحمّل الملوحة لنسبة الغسل."}],
+   [{fr:"Mission → Valider",en:"Mission → Submit",ar:"المهمة ← تحقّق"},{fr:"Décision d'irrigation évaluée.",en:"Irrigation decision evaluated.",ar:"تقييم قرار الريّ."}]
+  ]},
+ {id:"sim-pompage",code:"M5",url:"../../../J5/sim-pompage.html",img:"img/sim-pompage.png",
+  name:{fr:"Énergie de pompage",en:"Pumping energy",ar:"طاقة الضخّ"},
+  intro:{fr:"Calcule l'énergie spécifique (kWh/m³) et compare réseau, solaire et diesel.",
+    en:"Computes specific energy (kWh/m³) and compares grid, solar and diesel.",
+    ar:"يحسب الطاقة النوعية (kWh/m³) ويقارن الشبكة والطاقة الشمسية والديزل."},
+  rows:[
+   [{fr:"Curseurs (profondeur · pression · rendement · volume)",en:"Sliders (depth · pressure · efficiency · volume)",ar:"مؤشّرات (عمق · ضغط · مردود · حجم)"},{fr:"Règlent les paramètres du forage et du réseau.",en:"Set the borehole and network parameters.",ar:"تضبط معطيات البئر والشبكة."}],
+   [{fr:"Source (menu) + prix",en:"Source (menu) + price",ar:"المصدر (قائمة) + السعر"},{fr:"Choisit l'énergie (réseau/solaire/diesel) et son coût.",en:"Picks the energy (grid/solar/diesel) and its cost.",ar:"يختار الطاقة (شبكة/شمسي/ديزل) وتكلفتها."}],
+   [{fr:"Où passe l'énergie",en:"Where the energy goes",ar:"أين تذهب الطاقة"},{fr:"Décompose la hauteur manométrique (HMT).",en:"Breaks down total dynamic head (TDH).",ar:"يفصّل الارتفاع المانومتري الكلي."}],
+   [{fr:"Mission → Valider",en:"Mission → Submit",ar:"المهمة ← تحقّق"},{fr:"Quiz sur le paradoxe solaire et la recharge.",en:"Quiz on the solar paradox and recharge.",ar:"اختبار حول مفارقة الطاقة الشمسية والتغذية."}]
+  ]},
+ {id:"sim-ia-tomcast",code:"M7",url:"../../../J5/sim-ia-tomcast.html",img:"img/sim-ia-tomcast.png",
+  name:{fr:"IA &amp; modèle TomCast",en:"AI &amp; TomCast model",ar:"الذكاء الاصطناعي ونموذج TomCast"},
+  intro:{fr:"Modèle agro-climatique TomCast (DSV) + classifieur de vision : déclencher selon le risque, pas le calendrier.",
+    en:"TomCast agro-climatic model (DSV) + vision classifier: trigger by risk, not the calendar.",
+    ar:"نموذج TomCast المناخي (DSV) + مصنّف رؤية: المعالجة حسب الخطر لا التقويم."},
+  rows:[
+   [{fr:"Seuil d'intervention (15 · 20 · 25)",en:"Action threshold (15 · 20 · 25)",ar:"عتبة التدخّل (15 · 20 · 25)"},{fr:"Agressif / standard / prudent pour déclencher un traitement.",en:"Aggressive / standard / cautious to trigger a treatment.",ar:"عدواني / قياسي / حذر لتحديد المعالجة."}],
+   [{fr:"Météo (Semaine humide / sèche)",en:"Weather (Wet / dry week)",ar:"الطقس (أسبوع رطب / جافّ)"},{fr:"Change le scénario climatique et les DSV.",en:"Changes the climate scenario and the DSVs.",ar:"يغيّر السيناريو المناخي وقيم DSV."}],
+   [{fr:"Nouvelle série",en:"New series",ar:"سلسلة جديدة"},{fr:"Regénère 14 jours de données.",en:"Regenerates 14 days of data.",ar:"يعيد توليد 14 يومًا من البيانات."}],
+   [{fr:"Classifieur (grille de feuilles)",en:"Classifier (leaf grid)",ar:"المصنّف (شبكة أوراق)"},{fr:"Cliquez une feuille : prédiction + niveau de confiance.",en:"Click a leaf: prediction + confidence level.",ar:"انقر ورقة: تنبّؤ + مستوى الثقة."}],
+   [{fr:"Mission → Valider",en:"Mission → Submit",ar:"المهمة ← تحقّق"},{fr:"Décider avec l'IA et ses limites.",en:"Decide with AI and its limits.",ar:"القرار بالذكاء الاصطناعي وحدوده."}]
+  ]}
+];
+
+let LANG=localStorage.getItem('guide_lang')||'en';
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!==undefined)e.innerHTML=h;return e;};
+
+function render(){
+  document.body.dir = LANG==='ar'?'rtl':'ltr';
+  document.documentElement.lang=LANG;
+  document.querySelectorAll('.langsw button').forEach(b=>b.classList.toggle('on',b.dataset.lang===LANG));
+  document.querySelectorAll('[data-t]').forEach(n=>n.textContent=T[n.dataset.t][LANG]);
+  // TOC
+  const toc=document.getElementById('toc');toc.innerHTML='';
+  APPS.forEach(a=>{const link=el('a',null,`<b>${a.code}</b> ${a.name[LANG]}`);link.href='#'+a.id;toc.appendChild(link);});
+  // apps
+  const box=document.getElementById('apps');box.innerHTML='';
+  APPS.forEach(a=>{
+    const s=el('section','app');s.id=a.id;
+    let rows=a.rows.map(r=>`<tr><td class="k"><span class="chip">${r[0][LANG]}</span></td><td>${r[1][LANG]}</td></tr>`).join('');
+    s.innerHTML=`<h2><span class="code">${a.code}</span> ${a.name[LANG]}</h2>
+      <div class="intro">${a.intro[LANG]}</div>
+      <img class="shot" src="${a.img}" alt="${a.name[LANG]}" loading="lazy">
+      ${a.img2?`<img class="shot" src="${a.img2}" alt="${a.name[LANG]} (AR)" loading="lazy">`:''}
+      <a class="open" href="${a.url}">${T.open[LANG]}</a>
+      <table><thead><tr><th>${T.colBtn[LANG]}</th><th>${T.colDesc[LANG]}</th></tr></thead><tbody>${rows}</tbody></table>`;
+    box.appendChild(s);
+  });
+}
+document.getElementById('langsw').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;LANG=b.dataset.lang;localStorage.setItem('guide_lang',LANG);render();});
+render();
+</script>
+</body>
+</html>

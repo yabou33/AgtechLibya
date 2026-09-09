@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explorateur des aquifères de Libye — GMMR</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:980px;margin:-4px 0 4px;font-size:14px}
+  .lead b{color:var(--ink)}
+  .grid-main{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start}
+  @media(max-width:980px){.grid-main{grid-template-columns:1fr}}
+  #map{height:520px;border-radius:12px;border:1px solid var(--line);z-index:0;background:#0c1a10}
+  .maphint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7}
+  .maphint i{width:13px;height:13px;border-radius:3px;display:inline-block;vertical-align:-2px;margin-inline-end:3px}
+  .maphint .ln{width:18px;height:0;border-top:3px solid;display:inline-block;vertical-align:3px;margin-inline-end:3px}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tabs button{border:1px solid var(--line);background:#fff;color:var(--muted);font:inherit;font-weight:700;font-size:12.5px;padding:7px 13px;border-radius:9px;cursor:pointer}
+  .tabs button.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .pane{display:none} .pane.on{display:block}
+  .fld{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+  .fld label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  select{border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:#fff;color:var(--ink);font:inherit;font-weight:700;width:100%}
+  select:focus{outline:none;border-color:var(--green)}
+  .aqhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .aqdot{width:16px;height:16px;border-radius:4px;flex:none;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+  .aqhead b{font-size:16px}
+  .aqtype{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:11px}
+  .t-fossil{background:#fbecea;color:#b1443a}.t-semi{background:#fdf3e3;color:#b5701a}.t-renew{background:#eef8ef;color:var(--impact)}
+  .frow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .frow .k{color:var(--muted)} .frow .v{font-weight:700;font-family:"JetBrains Mono",monospace;text-align:end}
+  .statusbar{margin-top:12px;padding:9px 12px;border-radius:9px;font-size:12.5px;font-weight:700}
+  svg.chart{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:10px}
+  .seg{display:inline-flex;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;overflow:hidden;width:100%;margin-bottom:12px}
+  .seg button{flex:1;background:transparent;border:0;color:var(--muted);padding:8px 6px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+  .seg button.on{background:var(--green);color:#fff}
+  .compnote{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.7;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+  .compnote b{color:var(--decision)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .ok{background:#eef8ef;border:1px solid #bfe3c3;color:var(--impact);font-size:12.5px;padding:9px 11px;border-radius:9px;margin-top:10px}
+  pre.fmt{background:#0e1512;color:#d7e3cd;border-radius:9px;padding:11px 13px;font-family:"JetBrains Mono",monospace;font-size:11px;overflow:auto;margin-top:10px;line-height:1.5}
+  .peda{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  .pcard{background:var(--green-bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .pcard h3{font-size:14px;font-weight:800;margin-bottom:6px;color:var(--green-d)}
+  .pcard p{font-size:13px;color:var(--muted);line-height:1.65}.pcard p b{color:var(--ink)}
+  .leaflet-popup-content{font-family:"Inter",sans-serif;font-size:12.5px}
+  .leaflet-popup-content b{color:var(--green-d)}
+  .leaflet-container{font-family:"Inter",sans-serif}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">G0</span> <b data-i18n="x_brand">Aquifères</b> <span data-i18n="x_brand2">Libye</span></div>
+  <div class="sub" data-i18n="x_sub">Grands systèmes aquifères & Grande Rivière Artificielle</div>
+  <div class="right">
+    <span class="chip">G0</span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="x_lead"></p>
+
+  <div class="grid-main">
+    <!-- ---- Map ---- -->
+    <div class="card">
+      <h2>🗺️ <span data-i18n="x_map_title"></span></h2>
+      <div id="map"></div>
+      <div class="maphint" id="maphint"></div>
+    </div>
+
+    <!-- ---- Right panel ---- -->
+    <div class="card">
+      <div class="tabs">
+        <button class="on" data-t="fiche" data-i18n="x_tab_fiche"></button>
+        <button data-t="comp" data-i18n="x_tab_comp"></button>
+        <button data-t="io" data-i18n="x_tab_io"></button>
+      </div>
+
+      <!-- Fiche -->
+      <div class="pane on" id="p-fiche">
+        <div class="fld">
+          <label data-i18n="x_pick_aq"></label>
+          <select id="aqSel"></select>
+        </div>
+        <div id="fiche"></div>
+      </div>
+
+      <!-- Comparateur -->
+      <div class="pane" id="p-comp">
+        <div class="seg" id="compMode">
+          <button class="on" data-v="res" data-i18n="c_mode_res"></button>
+          <button data-v="sal" data-i18n="c_mode_sal"></button>
+        </div>
+        <svg class="chart" id="comp" viewBox="0 0 900 360" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="compnote" id="compNote" data-i18n-html="c_note_res"></div>
+      </div>
+
+      <!-- Import / Export -->
+      <div class="pane" id="p-io">
+        <p class="lead" style="margin:0 0 12px" data-i18n-html="io_intro"></p>
+        <div class="btns">
+          <button class="btn ghost" onclick="doImport()">📥 <span data-i18n="import"></span> CSV / GeoJSON</button>
+          <button class="btn ghost" onclick="doExportCsv()">📤 <span data-i18n="export"></span> CSV</button>
+          <button class="btn ghost" onclick="doExport()">📤 <span data-i18n="export"></span> GeoJSON</button>
+          <button class="btn ghost" onclick="doExportGmmr()">📤 GMMR</button>
+        </div>
+        <div class="ok" data-i18n-html="io_persist"></div>
+        <div class="fld" style="margin-top:14px"><label data-i18n="io_example"></label></div>
+        <pre class="fmt" id="fmtEx"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Pedagogy ---- -->
+  <div class="card">
+    <h2>📚 <span data-i18n="p_title"></span></h2>
+    <div class="peda">
+      <div class="pcard"><h3 data-i18n="p_fossil_t"></h3><p data-i18n-html="p_fossil"></p></div>
+      <div class="pcard"><h3 data-i18n="p_gmmr_t"></h3><p data-i18n-html="p_gmmr"></p></div>
+      <div class="pcard"><h3 data-i18n="p_jefara_t"></h3><p data-i18n-html="p_jefara"></p></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="platform/public/assets/js/geo-search.js"></script>
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+
+/* ===== curated data — Libyan aquifer systems (schematic polygons) ===== */
+/* polygon rings are [lat,lon] for Leaflet ; figures are documented orders of magnitude */
+const AQ=[
+ {id:"nubian",color:"#3a9bd0",
+  name:{fr:"Grès de Nubie (Kufra–Sarir)",ar:"الحجر الرملي النوبي (الكفرة–السرير)",en:"Nubian Sandstone (Kufra–Sarir)"},
+  rock:{fr:"Grès continental (Paléozoïque–Mésozoïque)",ar:"حجر رملي قاري (باليوزوي–ميزوزوي)",en:"Continental sandstone (Palaeozoic–Mesozoic)"},
+  type:"fossil",
+  use:{fr:"GMMR (urbain Est) + oasis Kufra/Sarir",ar:"النهر الصناعي (شرق) + واحات الكفرة والسرير",en:"GMMR (eastern urban) + Kufra/Sarir oases"},
+  status:{fr:"Fossile miné — non renouvelable",ar:"أحفوري مُستنزَف — غير متجدد",en:"Mined fossil — non-renewable"},
+  area:760000, reserves:35000, recharge:30, ec:"0.4 – 1.2", tds:"250 – 900", depth:"100 – 500+",
+  poly:[[29,18.5],[28.5,25],[20.5,25],[20.5,19],[24,17.5],[29,18.5]]},
+
+ {id:"murzuq",color:"#8e6fc7",
+  name:{fr:"Bassin de Mourzouk",ar:"حوض مرزق",en:"Murzuq Basin"},
+  rock:{fr:"Grès gréseux (Paléozoïque)",ar:"حجر رملي (باليوزوي)",en:"Sandstone (Palaeozoic)"},
+  type:"fossil",
+  use:{fr:"Jebel Hasouna → Tripoli (GMMR Ouest) + oasis",ar:"جبل الحساونة ← طرابلس (النهر غرب) + واحات",en:"Jebel Hasouna → Tripoli (GMMR West) + oases"},
+  status:{fr:"Fossile — faible recharge",ar:"أحفوري — تغذية ضعيفة",en:"Fossil — low recharge"},
+  area:350000, reserves:4800, recharge:120, ec:"0.3 – 1.0", tds:"200 – 700", depth:"100 – 400",
+  poly:[[27.5,10],[27.5,16],[22,16],[21.5,11],[24,9.5],[27.5,10]]},
+
+ {id:"hamada",color:"#e0912b",
+  name:{fr:"Al Hamada / Kikla (Jefara profond)",ar:"الحمادة / كِكلة (الجفارة العميقة)",en:"Al Hamada / Kikla (deep Jefara)"},
+  rock:{fr:"Grès & carbonates (Mésozoïque)",ar:"حجر رملي وكربونات (ميزوزوي)",en:"Sandstone & carbonates (Mesozoic)"},
+  type:"semi",
+  use:{fr:"Irrigation intérieure (Jabal Nafusa)",ar:"ري داخلي (جبل نفوسة)",en:"Inland irrigation (Jabal Nafusa)"},
+  status:{fr:"Semi-fossile — exploitation modérée",ar:"شبه أحفوري — استغلال معتدل",en:"Semi-fossil — moderate use"},
+  area:40000, reserves:300, recharge:90, ec:"1.0 – 3.0", tds:"600 – 2000", depth:"200 – 600",
+  poly:[[31.5,10],[31,15],[28.5,14.5],[29,10],[30.5,9.8],[31.5,10]]},
+
+ {id:"jefara",color:"#d1584e",
+  name:{fr:"Plaine de la Jefara",ar:"سهل الجفارة",en:"Jefara Plain"},
+  rock:{fr:"Sables & calcaires côtiers (Mio-Quaternaire)",ar:"رمال وكلس ساحلي (ميو-رباعي)",en:"Coastal sands & limestone (Mio-Quaternary)"},
+  type:"renew",
+  use:{fr:"Agriculture intensive + urbain Tripoli",ar:"زراعة مكثفة + طرابلس الحضرية",en:"Intensive agriculture + Tripoli urban"},
+  status:{fr:"Surexploité — intrusion saline",ar:"استنزاف مفرط — تداخل ملحي",en:"Overexploited — saline intrusion"},
+  area:18000, reserves:90, recharge:180, ec:"2.0 – 8.0", tds:"1500 – 5000", depth:"20 – 100",
+  poly:[[33.2,11.5],[32.9,14.2],[31.9,13.8],[32.4,11.4],[33.2,11.5]]},
+
+ {id:"cyrenaica",color:"#3fa66a",
+  name:{fr:"Côtier de Cyrénaïque (Jebel Akhdar)",ar:"ساحل برقة (الجبل الأخضر)",en:"Cyrenaica coastal (Jebel Akhdar)"},
+  rock:{fr:"Calcaires karstiques (Miocène)",ar:"كلس كارستي (ميوسيني)",en:"Karstic limestone (Miocene)"},
+  type:"renew",
+  use:{fr:"Urbain Benghazi + agriculture Jebel",ar:"بنغازي الحضرية + زراعة الجبل",en:"Benghazi urban + Jebel farming"},
+  status:{fr:"Karst rechargé — intrusion à Benghazi",ar:"كارست متجدد — تداخل ببنغازي",en:"Recharged karst — intrusion at Benghazi"},
+  area:30000, reserves:120, recharge:300, ec:"1.0 – 5.0", tds:"700 – 3500", depth:"50 – 300",
+  poly:[[33.2,19.5],[33,23.2],[31.3,23],[31,20],[32,19.5],[33.2,19.5]]}
+];
+
+/* ===== GMMR conveyance lines (coords = [lat,lon]) ===== */
+const GMMR=[
+ {phase:1,color:"#00e5ff",name:{fr:"Phase I — Sarir/Tazerbo → Syrte/Benghazi",ar:"المرحلة I — السرير/تازربو ← سرت/بنغازي",en:"Phase I — Sarir/Tazerbo → Sirte/Benghazi"},
+  coords:[[25.7,21.4],[27.6,22.2],[30.76,20.22],[31.2,16.59]]},
+ {phase:1,color:"#00e5ff",name:{fr:"Phase I — Ajdabiya → Benghazi",ar:"المرحلة I — أجدابيا ← بنغازي",en:"Phase I — Ajdabiya → Benghazi"},
+  coords:[[30.76,20.22],[32.12,20.07]]},
+ {phase:2,color:"#ffd24a",name:{fr:"Phase II — Jebel Hasouna → Tripoli",ar:"المرحلة II — جبل الحساونة ← طرابلس",en:"Phase II — Jebel Hasouna → Tripoli"},
+  coords:[[27.5,14.3],[29.5,14.0],[31.5,13.4],[32.88,13.19]]},
+ {phase:3,color:"#ff7ac2",name:{fr:"Phase III — Kufra/Tazerbo & Sarir → Tobrouk",ar:"المرحلة III — الكفرة/تازربو والسرير ← طبرق",en:"Phase III — Kufra/Tazerbo & Sarir → Tobruk"},
+  coords:[[24.2,23.3],[25.7,21.4]]},
+ {phase:3,color:"#ff7ac2",name:{fr:"Phase III — Sarir → Tobrouk",ar:"المرحلة III — السرير ← طبرق",en:"Phase III — Sarir → Tobruk"},
+  coords:[[27.6,22.2],[32.08,23.96]]}
+];
+const FIELDS=[ /* wellfields */
+ {no:"Sarir",lat:27.6,lon:22.2},{no:"Tazerbo",lat:25.7,lon:21.4},
+ {no:"Kufra",lat:24.2,lon:23.3},{no:"Jebel Hasouna",lat:27.5,lon:14.3}];
+const CITIES=[
+ {no:"Tripoli",lat:32.88,lon:13.19},{no:"Benghazi",lat:32.12,lon:20.07},{no:"Sirte",lat:31.2,lon:16.59},
+ {no:"Misrata",lat:32.38,lon:15.09},{no:"Tobruk",lat:32.08,lon:23.96},{no:"Ajdabiya",lat:30.76,lon:20.22},{no:"Sabha",lat:27.04,lon:14.43}];
+
+Object.assign(I18N.DICT,{
+ x_brand:{fr:"Aquifères",ar:"الخزانات",en:"Aquifers"},x_brand2:{fr:"Libye",ar:"ليبيا",en:"Libya"},
+ x_sub:{fr:"Grands systèmes aquifères & Grande Rivière Artificielle",ar:"الخزانات الجوفية الكبرى والنهر الصناعي العظيم",en:"Major aquifer systems & Great Man-Made River"},
+ x_lead:{fr:"Explorez les <b>cinq grands systèmes aquifères</b> de Libye et les tracés de la <b>Grande Rivière Artificielle (GMMR)</b> qui transporte l'eau <b>fossile</b> du désert vers la côte. Cliquez un aquifère sur la carte pour sa fiche (réserves, recharge, salinité, usage), comparez <b>réserves vs recharge</b> pour comprendre pourquoi l'eau fossile est <b>non renouvelable</b>, puis exportez les données en GeoJSON.",
+   ar:"استكشف <b>الأنظمة الجوفية الخمسة الكبرى</b> في ليبيا ومسارات <b>النهر الصناعي العظيم (GMMR)</b> التي تنقل المياه <b>الأحفورية</b> من الصحراء إلى الساحل. انقر خزاناً على الخريطة لعرض بطاقته (المخزون، التغذية، الملوحة، الاستخدام)، وقارن <b>المخزون مقابل التغذية</b> لفهم لماذا المياه الأحفورية <b>غير متجددة</b>، ثم صدّر البيانات بصيغة GeoJSON.",
+   en:"Explore Libya's <b>five major aquifer systems</b> and the routes of the <b>Great Man-Made River (GMMR)</b> carrying <b>fossil</b> water from the desert to the coast. Click an aquifer on the map for its data sheet (reserves, recharge, salinity, use), compare <b>reserves vs recharge</b> to see why fossil water is <b>non-renewable</b>, then export the data as GeoJSON."},
+ x_map_title:{fr:"Carte des aquifères & GMMR",ar:"خريطة الخزانات والنهر الصناعي",en:"Aquifers & GMMR map"},
+ x_tab_fiche:{fr:"Fiche aquifère",ar:"بطاقة الخزان",en:"Aquifer sheet"},
+ x_tab_comp:{fr:"Comparateur",ar:"مقارنة",en:"Compare"},
+ x_tab_io:{fr:"Import/Export",ar:"استيراد/تصدير",en:"Import/Export"},
+ x_pick_aq:{fr:"Système aquifère",ar:"النظام الجوفي",en:"Aquifer system"},
+ f_area:{fr:"Superficie (part libyenne)",ar:"المساحة (الجزء الليبي)",en:"Area (Libyan part)"},
+ f_rock:{fr:"Roche-réservoir",ar:"الصخر الخازن",en:"Reservoir rock"},
+ f_type:{fr:"Type",ar:"النوع",en:"Type"},
+ f_reserves:{fr:"Réserves estimées",ar:"المخزون المقدّر",en:"Estimated reserves"},
+ f_recharge:{fr:"Recharge annuelle",ar:"التغذية السنوية",en:"Annual recharge"},
+ f_renew:{fr:"Temps de renouvellement",ar:"زمن التجدد",en:"Renewal time"},
+ f_ec:{fr:"Salinité (CE)",ar:"الملوحة (الناقلية)",en:"Salinity (EC)"},
+ f_tds:{fr:"Minéralisation (TDS)",ar:"التمعدن (TDS)",en:"Mineralisation (TDS)"},
+ f_depth:{fr:"Profondeur captée",ar:"عمق السحب",en:"Tapped depth"},
+ f_use:{fr:"Usage dominant",ar:"الاستخدام الغالب",en:"Dominant use"},
+ f_status:{fr:"Statut d'exploitation",ar:"حالة الاستغلال",en:"Exploitation status"},
+ ty_fossil:{fr:"Fossile (recharge quasi nulle)",ar:"أحفوري (تغذية شبه معدومة)",en:"Fossil (near-zero recharge)"},
+ ty_semi:{fr:"Semi-fossile",ar:"شبه أحفوري",en:"Semi-fossil"},
+ ty_renew:{fr:"Rechargé (pluvial)",ar:"متجدد (مطري)",en:"Recharged (rainfed)"},
+ c_mode_res:{fr:"Réserves vs recharge",ar:"المخزون مقابل التغذية",en:"Reserves vs recharge"},
+ c_mode_sal:{fr:"Salinité (CE)",ar:"الملوحة",en:"Salinity (EC)"},
+ c_res_label:{fr:"Réserves (Mm³, log)",ar:"المخزون (م.م³، لوغ)",en:"Reserves (Mm³, log)"},
+ c_rech_label:{fr:"Recharge (Mm³/an, log)",ar:"التغذية (م.م³/سنة، لوغ)",en:"Recharge (Mm³/yr, log)"},
+ c_sal_label:{fr:"CE moyenne (dS/m)",ar:"الناقلية (dS/m)",en:"Mean EC (dS/m)"},
+ c_note_res:{fr:"Échelle <b>logarithmique</b> : les barres de <b>réserves</b> écrasent celles de <b>recharge</b>. Pour le Nubien, la recharge est ~1 million de fois plus faible que le stock — <b>chaque m³ pompé est « miné »</b> et ne reviendra pas à l'échelle humaine. C'est la définition de l'<b>eau fossile</b>. À l'inverse, Jefara et Cyrénaïque sont rechargés mais <b>pompés au-delà de leur recharge</b> (déficit).",
+   ar:"مقياس <b>لوغاريتمي</b>: أعمدة <b>المخزون</b> تسحق أعمدة <b>التغذية</b>. في النوبي، التغذية أضعف بنحو مليون مرة من المخزون — <b>كل م³ مضخوخ «مُستنزَف»</b> ولن يعود على المقياس البشري. هذا تعريف <b>المياه الأحفورية</b>. أما الجفارة وبرقة فمتجددان لكن <b>يُضخّان فوق تغذيتهما</b> (عجز).",
+   en:"<b>Logarithmic</b> scale: <b>reserve</b> bars dwarf <b>recharge</b> bars. For the Nubian, recharge is ~1 million times smaller than the stock — <b>every pumped m³ is 'mined'</b> and will not return on a human timescale. That is the definition of <b>fossil water</b>. Conversely Jefara and Cyrenaica are recharged but <b>pumped beyond their recharge</b> (deficit)."},
+ c_note_sal:{fr:"Salinité (conductivité électrique) : les aquifères <b>fossiles profonds</b> (Nubien, Mourzouk) restent <b>doux</b> (CE faible). Les systèmes <b>côtiers</b> (Jefara, Cyrénaïque) montent en salinité à cause de l'<b>intrusion marine</b> déclenchée par la surexploitation — l'eau douce est remplacée par de l'eau saumâtre.",
+   ar:"الملوحة (الناقلية الكهربائية): الخزانات <b>الأحفورية العميقة</b> (النوبي، مرزق) تبقى <b>عذبة</b>. الأنظمة <b>الساحلية</b> (الجفارة، برقة) ترتفع ملوحتها بسبب <b>التداخل البحري</b> الناتج عن الاستنزاف — يحل الماء المسوّس محل العذب.",
+   en:"Salinity (electrical conductivity): <b>deep fossil</b> aquifers (Nubian, Murzuq) stay <b>fresh</b> (low EC). <b>Coastal</b> systems (Jefara, Cyrenaica) rise in salinity from <b>seawater intrusion</b> driven by overexploitation — fresh water is replaced by brackish."},
+ io_intro:{fr:"Export/import en <b>CSV</b> (tableau des aquifères) et <b>GeoJSON</b> (CRS84 lon,lat — polygones & tracés GMMR). L'import CSV met à jour les fiches par <b>id</b> ; le GeoJSON reste compatible SIG (QGIS…) et plateforme.",
+   ar:"تصدير/استيراد بصيغتي <b>CSV</b> (جدول الخزانات) و<b>GeoJSON</b> (مضلعات ومسارات النهر). يحدّث استيراد CSV البطاقات حسب <b>المعرّف</b>؛ ويبقى GeoJSON متوافقاً مع نظم المعلومات الجغرافية والمنصة.",
+   en:"Export/import as <b>CSV</b> (aquifer table) and <b>GeoJSON</b> (CRS84 lon,lat — polygons & GMMR routes). CSV import updates sheets by <b>id</b>; GeoJSON stays GIS-compatible (QGIS…) and platform-wide."},
+ io_persist:{fr:"💾 Données embarquées : l'app fonctionne 100% hors-ligne (statique). L'export GeoJSON permet d'ouvrir les couches dans un SIG ou de les partager.",
+   ar:"💾 بيانات مدمجة: التطبيق يعمل بالكامل دون اتصال. يتيح تصدير GeoJSON فتح الطبقات في نظام معلومات جغرافي أو مشاركتها.",
+   en:"💾 Embedded data: the app works fully offline (static). GeoJSON export lets you open the layers in a GIS or share them."},
+ io_example:{fr:"Exemple de format (CSV & feature aquifère)",ar:"مثال الصيغة (CSV وعنصر خزان)",en:"Format example (CSV & aquifer feature)"},
+ leg_aq:{fr:"aquifères (cliquables)",ar:"الخزانات (قابلة للنقر)",en:"aquifers (clickable)"},
+ leg_gmmr:{fr:"tracés GMMR",ar:"مسارات النهر الصناعي",en:"GMMR routes"},
+ leg_field:{fr:"◼ champs captants  ●  villes desservies",ar:"◼ حقول الآبار  ●  المدن المخدومة",en:"◼ wellfields  ●  served cities"},
+ leg_click:{fr:"Cliquez un polygone pour ouvrir sa fiche.",ar:"انقر مضلعاً لفتح بطاقته.",en:"Click a polygon to open its sheet."},
+ p_title:{fr:"Comprendre l'eau de Libye",ar:"فهم مياه ليبيا",en:"Understanding Libya's water"},
+ p_fossil_t:{fr:"💧 Eau fossile vs renouvelable",ar:"💧 مياه أحفورية مقابل متجددة",en:"💧 Fossil vs renewable water"},
+ p_fossil:{fr:"L'eau <b>fossile</b> s'est infiltrée il y a des <b>milliers d'années</b> sous un climat humide disparu. Aujourd'hui la recharge est quasi nulle : c'est un <b>stock fini</b>, comme du pétrole. Le Nubien et Mourzouk en sont : les exploiter = les épuiser.",
+   ar:"المياه <b>الأحفورية</b> تسربت قبل <b>آلاف السنين</b> في مناخ رطب زال. اليوم التغذية شبه معدومة: إنه <b>مخزون محدود</b> كالنفط. النوبي ومرزق منها: استغلالها = استنزافها.",
+   en:"<b>Fossil</b> water infiltrated <b>thousands of years ago</b> under a vanished humid climate. Recharge is now near zero: it is a <b>finite stock</b>, like oil. The Nubian and Murzuq are fossil — using them means depleting them."},
+ p_gmmr_t:{fr:"🚰 L'enjeu du GMMR",ar:"🚰 رهان النهر الصناعي",en:"🚰 The GMMR challenge"},
+ p_gmmr:{fr:"La <b>Grande Rivière Artificielle</b> transporte ~<b>6,5 M m³/jour</b> via des milliers de km de conduites depuis les champs de Sarir, Tazerbo, Kufra et Jebel Hasouna vers Tripoli, Benghazi et Syrte. Elle sécurise l'eau urbaine mais puise dans des <b>réserves non renouvelables</b>.",
+   ar:"ينقل <b>النهر الصناعي العظيم</b> نحو <b>6.5 مليون م³/يوم</b> عبر آلاف الكيلومترات من الأنابيب من حقول السرير وتازربو والكفرة وجبل الحساونة إلى طرابلس وبنغازي وسرت. يؤمّن ماء المدن لكنه يسحب من <b>مخزون غير متجدد</b>.",
+   en:"The <b>Great Man-Made River</b> carries ~<b>6.5 M m³/day</b> through thousands of km of pipeline from the Sarir, Tazerbo, Kufra and Jebel Hasouna fields to Tripoli, Benghazi and Sirte. It secures urban water but draws on <b>non-renewable reserves</b>."},
+ p_jefara_t:{fr:"⚠️ Surexploitation de la Jefara",ar:"⚠️ استنزاف الجفارة",en:"⚠️ Jefara overexploitation"},
+ p_jefara:{fr:"Dans la <b>plaine de la Jefara</b> (Tripoli), les prélèvements agricoles dépassent largement la recharge. La nappe baisse et la <b>mer envahit l'aquifère</b> : la salinité grimpe, des puits deviennent inutilisables. C'est le contre-exemple côtier du problème fossile.",
+   ar:"في <b>سهل الجفارة</b> (طرابلس)، يتجاوز السحب الزراعي التغذية بكثير. ينخفض منسوب المياه و<b>يغزو البحر الخزان</b>: ترتفع الملوحة وتصبح آبار غير صالحة. إنه المثال الساحلي المقابل لمشكلة الأحفوري.",
+   en:"In the <b>Jefara Plain</b> (Tripoli), farm abstraction far exceeds recharge. The water table drops and the <b>sea invades the aquifer</b>: salinity climbs and wells become unusable. It is the coastal counterpart of the fossil problem."},
+ u_km2:{fr:"km²",ar:"كم²",en:"km²"},u_km3:{fr:"km³",ar:"كم³",en:"km³"},
+ u_mm3:{fr:"Mm³/an",ar:"م.م³/سنة",en:"Mm³/yr"},u_dsm:{fr:"dS/m",ar:"dS/m",en:"dS/m"},
+ u_mgl:{fr:"mg/L",ar:"ملغ/ل",en:"mg/L"},u_m:{fr:"m",ar:"م",en:"m"},u_yr:{fr:"ans",ar:"سنة",en:"yr"}
+});
+
+/* ===== map ===== */
+let map, aqLayer, gmmrLayer, ptLayer, polyRefs={}, SEL=AQ[0].id, geoCtl=null;
+function initMap(){
+  map=L.map('map',{scrollWheelZoom:true}).setView([27,17.8],5);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {attribution:'Esri',maxZoom:17}).addTo(map);
+  aqLayer=L.layerGroup().addTo(map);
+  gmmrLayer=L.layerGroup().addTo(map);
+  ptLayer=L.layerGroup().addTo(map);
+  drawMap();
+  try{ map.fitBounds(L.latLngBounds([].concat(...AQ.map(a=>a.poly))).pad(0.05)); }catch(e){}
+  addGeoSearch();
+}
+function addGeoSearch(){
+  if(typeof GeoSearch==='undefined'||!map) return;
+  if(geoCtl){ try{ map.removeControl(geoCtl); if(geoCtl._layer) map.removeLayer(geoCtl._layer); }catch(e){} }
+  geoCtl=GeoSearch.add(map,{lang:I18N.lang, showLocalities:false});
+}
+function drawMap(){
+  aqLayer.clearLayers(); gmmrLayer.clearLayers(); ptLayer.clearLayers(); polyRefs={};
+  // aquifer polygons
+  AQ.forEach(a=>{
+    const pg=L.polygon(a.poly,{color:a.color,weight:2,fillColor:a.color,fillOpacity:a.id===SEL?.42:.22,opacity:.95});
+    pg.on('click',()=>selectAq(a.id));
+    pg.bindTooltip(a.name[I18N.lang]||a.name.fr,{sticky:true});
+    pg.addTo(aqLayer); polyRefs[a.id]=pg;
+  });
+  // GMMR lines
+  GMMR.forEach(g=>{
+    L.polyline(g.coords,{color:g.color,weight:3.4,opacity:.95,dashArray:'9 7',lineJoin:'round'})
+      .bindTooltip(g.name[I18N.lang]||g.name.fr,{sticky:true}).addTo(gmmrLayer);
+  });
+  // wellfields (squares) + cities (dots)
+  FIELDS.forEach(f=>L.marker([f.lat,f.lon],{icon:L.divIcon({className:'',iconSize:[13,13],
+    html:'<div style="width:13px;height:13px;background:#00e5ff;border:2px solid #06232b;border-radius:2px;box-shadow:0 0 5px #00e5ff"></div>'})})
+    .bindPopup('<b>'+f.no+'</b><br>'+(I18N.t('leg_field'))).addTo(ptLayer));
+  CITIES.forEach(c=>L.marker([c.lat,c.lon],{icon:L.divIcon({className:'',iconSize:[11,11],
+    html:'<div style="width:11px;height:11px;background:#fff;border:2px solid #333;border-radius:50%"></div>'})})
+    .bindTooltip(c.no,{permanent:true,direction:'right',className:'cityLbl',offset:[6,0]}).addTo(ptLayer));
+}
+function selectAq(id,noPan){
+  SEL=id; const a=AQ.find(x=>x.id===id); if(!a)return;
+  $('aqSel').value=id;
+  Object.entries(polyRefs).forEach(([k,pg])=>pg.setStyle({fillOpacity:k===id?.42:.18,weight:k===id?3.2:2}));
+  if(!noPan && map){ try{ map.fitBounds(polyRefs[id].getBounds().pad(0.15)); }catch(e){} }
+  renderFiche(a);
+}
+
+/* ===== fiche ===== */
+function fmtNum(n){ return n.toLocaleString(I18N.lang==='ar'?'ar':'fr'); }
+function renderFiche(a){
+  const t=I18N.t.bind(I18N);
+  const tcls=a.type==='fossil'?'t-fossil':a.type==='semi'?'t-semi':'t-renew';
+  const tlbl=a.type==='fossil'?t('ty_fossil'):a.type==='semi'?t('ty_semi'):t('ty_renew');
+  const renewYr=Math.round(a.reserves*1000/a.recharge); // km3->Mm3 / (Mm3/yr)
+  const scls=a.type==='fossil'?'t-fossil':a.type==='renew'?'t-semi':'t-semi';
+  const row=(k,v)=>`<div class="frow"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  $('fiche').innerHTML=
+    `<div class="aqhead"><span class="aqdot" style="background:${a.color}"></span><b>${a.name[I18N.lang]||a.name.fr}</b></div>
+     <div style="margin-bottom:10px"><span class="aqtype ${tcls}">${tlbl}</span></div>`+
+    row(t('f_rock'),a.rock[I18N.lang]||a.rock.fr)+
+    row(t('f_area'),fmtNum(a.area)+' '+t('u_km2'))+
+    row(t('f_depth'),a.depth+' '+t('u_m'))+
+    row(t('f_reserves'),'≈ '+fmtNum(a.reserves)+' '+t('u_km3'))+
+    row(t('f_recharge'),'≈ '+fmtNum(a.recharge)+' '+t('u_mm3'))+
+    row(t('f_renew'),'≈ '+fmtNum(renewYr)+' '+t('u_yr'))+
+    row(t('f_ec'),a.ec+' '+t('u_dsm'))+
+    row(t('f_tds'),a.tds+' '+t('u_mgl'))+
+    row(t('f_use'),a.use[I18N.lang]||a.use.fr)+
+    `<div class="statusbar ${a.type==='fossil'?'t-fossil':a.type==='renew'?'t-fossil':'t-semi'}">${t('f_status')} : ${a.status[I18N.lang]||a.status.fr}</div>`;
+}
+function fillSel(){
+  const s=$('aqSel'); s.innerHTML='';
+  AQ.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name[I18N.lang]||a.name.fr;s.appendChild(o);});
+  s.value=SEL;
+}
+
+/* ===== comparator ===== */
+let COMPMODE='res';
+function svgEl(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function drawComp(){
+  const svg=$('comp'); svg.innerHTML='';
+  const W=900,H=360,PADL=180,PADR=24,PADT=14,PADB=34,x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB;
+  const rowH=(y1-y0)/AQ.length;
+  const t=I18N.t.bind(I18N);
+  if(COMPMODE==='res'){
+    const lg=Math.log10, lmin=1, lmax=7.7; // 10 .. ~5e7 Mm3
+    const bx=v=>x0+(Math.max(lmin,lg(v))-lmin)/(lmax-lmin)*(x1-x0);
+    for(let e=1;e<=7;e++){ const xx=x0+(e-lmin)/(lmax-lmin)*(x1-x0);
+      svg.appendChild(svgEl('line',{x1:xx,y1:y0,x2:xx,y2:y1,stroke:'#eef3e5','stroke-width':1}));
+      const tx=svgEl('text',{x:xx,y:y1+15,'text-anchor':'middle',fill:'#9aa890','font-size':10});tx.textContent='10^'+e;svg.appendChild(tx);}
+    AQ.forEach((a,i)=>{
+      const cy=y0+i*rowH+rowH/2;
+      const lbl=svgEl('text',{x:x0-10,y:cy+2,'text-anchor':'end',fill:'#2c3a24','font-size':11.5,'font-weight':700});
+      lbl.textContent=(a.name[I18N.lang]||a.name.fr).slice(0,26);svg.appendChild(lbl);
+      const resMm=a.reserves*1000, recMm=a.recharge;
+      // reserves bar
+      svg.appendChild(svgEl('rect',{x:x0,y:cy-13,width:Math.max(2,bx(resMm)-x0),height:11,rx:2,fill:a.color,opacity:.9}));
+      svg.appendChild(svgEl('rect',{x:x0,y:cy+2,width:Math.max(2,bx(recMm)-x0),height:11,rx:2,fill:'#5a8f2c',opacity:.85}));
+      const v1=svgEl('text',{x:bx(resMm)+5,y:cy-4,fill:a.color,'font-size':9.5,'font-weight':700});v1.textContent=fmtNum(a.reserves)+' km³';svg.appendChild(v1);
+      const v2=svgEl('text',{x:bx(recMm)+5,y:cy+11,fill:'#5a8f2c','font-size':9.5,'font-weight':700});v2.textContent=a.recharge+' Mm³/an';svg.appendChild(v2);
+    });
+    // legend
+    lgd(svg,x0,H-4,[[a=>a,'','']]); // noop placeholder
+    legendRow(svg,[[t('c_res_label'),'#3a9bd0'],[t('c_rech_label'),'#5a8f2c']]);
+    $('compNote').setAttribute('data-i18n-html','c_note_res');
+  } else {
+    const emax=8.5, bx=v=>x0+v/emax*(x1-x0);
+    for(let e=0;e<=8;e+=2){ const xx=bx(e);
+      svg.appendChild(svgEl('line',{x1:xx,y1:y0,x2:xx,y2:y1,stroke:'#eef3e5','stroke-width':1}));
+      const tx=svgEl('text',{x:xx,y:y1+15,'text-anchor':'middle',fill:'#9aa890','font-size':10});tx.textContent=e;svg.appendChild(tx);}
+    AQ.forEach((a,i)=>{
+      const cy=y0+i*rowH+rowH/2;
+      const parts=a.ec.split('–').map(s=>parseFloat(s)); const mid=(parts[0]+parts[1])/2;
+      const lbl=svgEl('text',{x:x0-10,y:cy+2,'text-anchor':'end',fill:'#2c3a24','font-size':11.5,'font-weight':700});
+      lbl.textContent=(a.name[I18N.lang]||a.name.fr).slice(0,26);svg.appendChild(lbl);
+      // range bar
+      svg.appendChild(svgEl('rect',{x:bx(parts[0]),y:cy-8,width:Math.max(3,bx(parts[1])-bx(parts[0])),height:16,rx:3,
+        fill:mid>3?'#d1584e':mid>1.2?'#e0912b':'#3fa66a',opacity:.85}));
+      const v=svgEl('text',{x:bx(parts[1])+6,y:cy+4,fill:'#2c3a24','font-size':10,'font-weight':700});v.textContent=a.ec+' dS/m';svg.appendChild(v);
+    });
+    legendRow(svg,[['< 1.2 '+t('u_dsm'),'#3fa66a'],['1.2–3','#e0912b'],['> 3','#d1584e']]);
+    $('compNote').setAttribute('data-i18n-html','c_note_sal');
+  }
+  $('compNote').innerHTML=I18N.t($('compNote').getAttribute('data-i18n-html'));
+}
+function lgd(){} // unused
+function legendRow(svg,items){
+  let x=190; const y=8;
+  items.forEach(it=>{
+    svg.appendChild(svgEl('rect',{x:x,y:y-8,width:11,height:11,rx:2,fill:it[1]}));
+    const tx=svgEl('text',{x:x+16,y:y+2,fill:'#6f7d64','font-size':10.5,'font-weight':600});tx.textContent=it[0];svg.appendChild(tx);
+    x+= (it[0].length*6.3)+40;
+  });
+}
+
+/* ===== maphint legend ===== */
+function renderHint(){
+  const t=I18N.t.bind(I18N);
+  let s=`<span style="font-weight:700">${t('leg_aq')} :</span> `;
+  s+=AQ.map(a=>`<span style="white-space:nowrap"><i style="background:${a.color}"></i>${(a.name[I18N.lang]||a.name.fr).split('(')[0].trim()}</span>`).join(' &nbsp; ');
+  s+=`<br><span style="font-weight:700">${t('leg_gmmr')} :</span> `;
+  s+=`<span><i class="ln" style="border-color:#00e5ff"></i>I</span> &nbsp; <span><i class="ln" style="border-color:#ffd24a"></i>II</span> &nbsp; <span><i class="ln" style="border-color:#ff7ac2"></i>III</span>`;
+  s+=` &nbsp; · &nbsp; ${t('leg_field')}<br><span style="color:var(--green-d);font-weight:600">${t('leg_click')}</span>`;
+  $('maphint').innerHTML=s;
+}
+
+/* ===== import / export GeoJSON ===== */
+function aquifersGeoJSON(){
+  return {type:"FeatureCollection",name:"libya_aquifer_systems",
+    crs:{type:"name",properties:{name:"urn:ogc:def:crs:OGC:1.3:CRS84"}},
+    features:AQ.map(a=>({type:"Feature",
+      geometry:{type:"Polygon",coordinates:[a.poly.map(p=>[p[1],p[0]])]}, // [lat,lon]->[lon,lat], ring closed
+      properties:{id:a.id,name_fr:a.name.fr,name_en:a.name.en,name_ar:a.name.ar,rock_fr:a.rock.fr,
+        type:a.type,area_km2:a.area,reserves_km3:a.reserves,recharge_Mm3_yr:a.recharge,
+        ec_dS_m:a.ec,tds_mg_l:a.tds,tapped_depth_m:a.depth,dominant_use_fr:a.use.fr,status_fr:a.status.fr}}))};
+}
+function gmmrGeoJSON(){
+  return {type:"FeatureCollection",name:"gmmr_conveyance",
+    crs:{type:"name",properties:{name:"urn:ogc:def:crs:OGC:1.3:CRS84"}},
+    features:GMMR.map(g=>({type:"Feature",
+      geometry:{type:"LineString",coordinates:g.coords.map(c=>[c[1],c[0]])},
+      properties:{phase:g.phase,name_fr:g.name.fr,name_en:g.name.en}}))
+      .concat(FIELDS.map(f=>({type:"Feature",geometry:{type:"Point",coordinates:[f.lon,f.lat]},properties:{name:f.no,kind:"wellfield"}})))
+      .concat(CITIES.map(c=>({type:"Feature",geometry:{type:"Point",coordinates:[c.lon,c.lat]},properties:{name:c.no,kind:"city"}})))};
+}
+function doExport(){ Store.download('libya_aquifers.geojson',JSON.stringify(aquifersGeoJSON(),null,2),'application/geo+json'); }
+function doExportGmmr(){ Store.download('gmmr_conveyance.geojson',JSON.stringify(gmmrGeoJSON(),null,2),'application/geo+json'); }
+const CSV_H='id,name_fr,name_en,name_ar,type,area_km2,reserves_km3,recharge_Mm3_yr,ec_dS_m,tds_mg_l,tapped_depth_m,dominant_use_fr,status_fr';
+function csvCell(x){ x=(x==null?'':''+x); return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x; }
+function doExportCsv(){
+  const rows=AQ.map(a=>[a.id,a.name.fr,a.name.en,a.name.ar,a.type,a.area,a.reserves,a.recharge,
+    a.ec,a.tds,a.depth,a.use.fr,a.status.fr].map(csvCell).join(','));
+  Store.download('libya_aquifers.csv',[CSV_H,...rows].join('\n'),'text/csv');
+}
+function parseCsv(txt){
+  const lines=txt.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+  if(!lines.length) return [];
+  const split=l=>{ const out=[]; let cur='',q=false;
+    for(let i=0;i<l.length;i++){ const c=l[i];
+      if(q){ if(c==='"'){ if(l[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+      else { if(c===','){out.push(cur);cur='';} else if(c==='"')q=true; else cur+=c; } }
+    out.push(cur); return out.map(s=>s.trim()); };
+  const H=split(lines[0]);
+  return lines.slice(1).map(line=>{ const c=split(line); const o={}; H.forEach((h,i)=>o[h]=c[i]!==undefined?c[i]:''); return o; });
+}
+function importCsvRows(rows){
+  let n=0;
+  rows.forEach(r=>{ const id=r.id||('imp'+Date.now()+n); const ex=AQ.find(a=>a.id===id);
+    if(ex){ // merge attributes into existing aquifer (keeps its polygon)
+      if(r.type)ex.type=r.type; if(r.area_km2)ex.area=+r.area_km2||ex.area;
+      if(r.reserves_km3)ex.reserves=+r.reserves_km3||ex.reserves; if(r.recharge_Mm3_yr)ex.recharge=+r.recharge_Mm3_yr||ex.recharge;
+      if(r.ec_dS_m)ex.ec=r.ec_dS_m; if(r.tds_mg_l)ex.tds=r.tds_mg_l; if(r.tapped_depth_m)ex.depth=r.tapped_depth_m;
+      if(r.dominant_use_fr)ex.use.fr=r.dominant_use_fr; if(r.status_fr)ex.status.fr=r.status_fr;
+      if(r.name_fr){ex.name.fr=r.name_fr; ex.name.en=r.name_en||r.name_fr; ex.name.ar=r.name_ar||r.name_fr;}
+      n++;
+    } else { // new aquifer without geometry → small placeholder polygon near Libya centre
+      const cx=17.8, cy=27, d=0.6;
+      AQ.push({id,color:'#7cb342',
+        name:{fr:r.name_fr||id,en:r.name_en||id,ar:r.name_ar||id},
+        rock:{fr:'—',en:'—',ar:'—'}, type:r.type||'semi',
+        use:{fr:r.dominant_use_fr||'—',en:'—',ar:'—'}, status:{fr:r.status_fr||'—',en:'—',ar:'—'},
+        area:+r.area_km2||0,reserves:+r.reserves_km3||0,recharge:+r.recharge_Mm3_yr||1,
+        ec:r.ec_dS_m||'1 – 2',tds:r.tds_mg_l||'—',depth:r.tapped_depth_m||'—',
+        poly:[[cy+d,cx-d],[cy+d,cx+d],[cy-d,cx+d],[cy-d,cx-d],[cy+d,cx-d]]}); n++;
+    }
+  });
+  return n;
+}
+function doImport(){
+  Store.pickFile('.csv,.json,.geojson',(txt,fname)=>{ try{
+    const isCsv=/\.csv$/i.test(fname||'') || (txt.trim()[0]!=='{'&&txt.trim()[0]!=='[');
+    let n=0;
+    if(isCsv){ n=importCsvRows(parseCsv(txt)); }
+    else {
+      const j=JSON.parse(txt); const feats=j.features||[];
+      feats.forEach(f=>{ if(f.geometry&&f.geometry.type==='Polygon'){
+        const p=f.properties||{}, ring=f.geometry.coordinates[0];
+        const id=p.id||('imp'+(++n)); if(AQ.some(a=>a.id===id))return;
+        AQ.push({id,color:p.color||'#7cb342',
+          name:{fr:p.name_fr||id,ar:p.name_ar||id,en:p.name_en||id},
+          rock:{fr:p.rock_fr||'—',ar:p.rock_fr||'—',en:p.rock_fr||'—'},
+          type:p.type||'semi',use:{fr:p.dominant_use_fr||'—',ar:'—',en:'—'},
+          status:{fr:p.status_fr||'—',ar:'—',en:'—'},
+          area:+p.area_km2||0,reserves:+p.reserves_km3||0,recharge:+p.recharge_Mm3_yr||1,
+          ec:p.ec_dS_m||'1 – 2',tds:p.tds_mg_l||'—',depth:p.tapped_depth_m||'—',
+          poly:ring.map(c=>[c[1],c[0]])}); n++;
+      }});
+    }
+    drawMap(); fillSel(); selectAq(SEL,true); alert('✓ '+n);
+  }catch(e){ alert('⚠ '+e.message); } });
+}
+function showFmt(){
+  const a=AQ[0];
+  const ex={type:"Feature",geometry:{type:"Polygon",coordinates:[["[lon,lat] …"]]},
+    properties:{id:a.id,name_fr:a.name.fr,type:a.type,area_km2:a.area,
+      reserves_km3:a.reserves,recharge_Mm3_yr:a.recharge,ec_dS_m:a.ec,tapped_depth_m:a.depth}};
+  const csv='# CSV\n'+CSV_H+'\n'
+    +[a.id,a.name.fr,a.name.en,a.name.ar,a.type,a.area,a.reserves,a.recharge,a.ec,a.tds,a.depth,a.use.fr,a.status.fr].map(csvCell).join(',');
+  $('fmtEx').textContent=csv+'\n\n# GeoJSON\n'+JSON.stringify(ex,null,1);
+}
+
+/* ===== tabs & wiring ===== */
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on')); $('p-'+b.dataset.t).classList.add('on');
+  if(b.dataset.t==='comp') drawComp();
+  setTimeout(()=>{ if(map)map.invalidateSize(); },60);
+}));
+document.querySelectorAll('#compMode button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#compMode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  COMPMODE=b.dataset.v; drawComp();
+}));
+$('aqSel').addEventListener('change',e=>selectAq(e.target.value));
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{
+  applyHTML(); fillSel(); drawMap(); selectAq(SEL,true); renderHint(); showFmt(); addGeoSearch();
+  if($('p-comp').classList.contains('on')) drawComp();
+});
+
+/* boot */
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+initMap(); fillSel(); selectAq(SEL,true); renderHint(); showFmt();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

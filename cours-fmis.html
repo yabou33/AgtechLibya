@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cours — Gestion de ferme (FMIS) · M6</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:940px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  .wrap{max-width:1080px}
+  /* --- bandeau titre --- */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#5a8f2c,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:var(--shadow)}
+  .hero h1{font-size:24px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}
+  .toc a{font-size:12.5px;font-weight:600;color:var(--green-d);background:var(--green-bg);
+    border:1px solid var(--line);border-radius:20px;padding:5px 13px}
+  .toc a:hover{border-color:var(--green);background:#e7f2d8}
+  /* --- objectifs --- */
+  .obj{background:linear-gradient(180deg,#eef8ef,#f6fbf0);border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px}
+  .obj h2{color:var(--impact)}
+  .obj ul{margin:6px 0 0;padding-inline-start:20px;columns:2;column-gap:28px}
+  @media(max-width:720px){.obj ul{columns:1}}
+  .obj li{margin:5px 0;font-size:13.5px;color:var(--ink);break-inside:avoid}
+  /* --- sections --- */
+  .card h2{font-size:17px}
+  .card h3{font-size:14.5px;font-weight:800;color:var(--green-d);margin:14px 0 6px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--green);
+    color:#fff;font-size:13px;font-weight:800;flex:none}
+  p.par{color:var(--ink);font-size:14px;line-height:1.65;margin:8px 0;max-width:940px}
+  p.par b{color:var(--green-d)}
+  /* --- concepts grid --- */
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:12px 0}
+  .concept{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .concept .sym{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:15px}
+  .concept .nm{font-weight:700;font-size:13px;margin:2px 0 4px;color:var(--ink)}
+  .concept .ds{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .concept .u{font-family:"JetBrains Mono",monospace;color:var(--info);font-size:11.5px}
+  /* --- à retenir --- */
+  .retenir{background:#fdf7ea;border:1px solid #f0d9ac;border-inline-start:4px solid var(--info);
+    border-radius:11px;padding:12px 16px;margin:14px 0;font-size:13.5px;color:var(--ink);line-height:1.6}
+  .retenir .h{font-weight:800;color:#b5701a;text-transform:uppercase;font-size:11px;letter-spacing:.05em;display:block;margin-bottom:4px}
+  body[dir="rtl"] .retenir{border-inline-start:1px solid #f0d9ac;border-inline-end:4px solid var(--info)}
+  .fossil{background:#f3eefb;border-color:#d9c9f0;border-inline-start-color:var(--data)}
+  .fossil .h{color:var(--data)}
+  body[dir="rtl"] .fossil{border-inline-end-color:var(--data)}
+  /* --- figures --- */
+  .fig{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0}
+  .fig svg{width:100%;height:auto;display:block;direction:ltr}
+  .figcap{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+  .figcap b{color:var(--ink)}
+  /* --- systèmes / cartes --- */
+  .sysgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+  .sys{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:#fff;border-top:4px solid var(--sc,var(--green))}
+  .sys .nm{font-weight:800;font-size:14px;color:var(--ink)}
+  .sys .sub{font-size:11.5px;color:var(--muted);margin:2px 0 6px}
+  .sys .ds{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .sys .badge{margin-top:8px;font-size:10px}
+  /* --- table --- */
+  table.t{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:start}
+  table.t th{background:var(--green-bg);color:var(--green-d);font-weight:700;font-size:12px}
+  table.t td b{color:var(--ink)}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:13px;background:#0e1512;color:#d7e3cd;
+    border-radius:10px;padding:12px 16px;overflow:auto;margin:10px 0}
+  .formula .hl{color:#a5d16e;font-weight:700}
+  /* --- apps --- */
+  .appgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:6px}
+  .appcard{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:13px;
+    padding:15px 17px;transition:.16s;border-inline-start:4px solid var(--ac,var(--green))}
+  .appcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(60,80,40,.15);border-color:var(--ac,var(--green))}
+  body[dir="rtl"] .appcard{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--ac,var(--green))}
+  .appcard .ico{font-size:26px}
+  .appcard h4{font-size:14.5px;font-weight:800;margin:6px 0 4px;color:var(--ink)}
+  .appcard p{font-size:12.5px;color:var(--muted);flex:1;line-height:1.5;margin-bottom:10px}
+  .appcard .go{font-size:12.5px;font-weight:700;color:var(--green-d)}
+  .tpbanner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;
+    background:linear-gradient(120deg,#5a8f2c,#3fa66a);color:#fff;border-radius:15px;padding:20px 24px;margin-top:18px}
+  .tpbanner .tt{font-size:18px;font-weight:800}
+  .tpbanner .dd{font-size:13px;opacity:.92;margin-top:3px;max-width:560px}
+  .tpbanner .btn{background:#fff;color:var(--green-d)}
+  .tpbanner .btn:hover{background:#eef8ef}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:22px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">M6</span> <b data-i18n="c_brand">Gestion de ferme</b> <span data-i18n="c_brand2">FMIS</span></div>
+  <div class="sub" data-i18n="c_sub">Cours · le cockpit de l'exploitation, coûts, traçabilité, AgriScore</div>
+  <div class="right">
+    <span class="chip">M6 · <span data-i18n="c_course_chip">Cours</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="g0">M6</div>
+    <div>
+      <h1 data-i18n="c_title">Gestion de ferme — le FMIS</h1>
+      <div class="tag" data-i18n="c_tag">Le cockpit qui transforme des mesures dispersées en décisions et en marges</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="c_intro"></p>
+
+  <nav class="toc">
+    <a href="#s1" data-i18n="c_toc1">1 · Qu'est-ce qu'un FMIS</a>
+    <a href="#s2" data-i18n="c_toc2">2 · Coût de production</a>
+    <a href="#s3" data-i18n="c_toc3">3 · Traçabilité & AgriScore</a>
+    <a href="#s4" data-i18n="c_toc4">4 · Cas réels</a>
+    <a href="#apps" data-i18n="c_toc5">Applications</a>
+  </nav>
+
+  <!-- OBJECTIFS -->
+  <div class="card obj">
+    <h2>🎯 <span data-i18n="c_obj_h">Objectifs pédagogiques</span></h2>
+    <ul>
+      <li data-i18n="c_obj1">Définir un FMIS et citer les données qu'il agrège en un seul cockpit.</li>
+      <li data-i18n="c_obj2">Décomposer un coût de production par parcelle en quatre postes.</li>
+      <li data-i18n="c_obj3">Calculer un coût/ha, un coût/kg et une marge, et repérer une culture déficitaire.</li>
+      <li data-i18n="c_obj4">Expliquer la traçabilité d'un lot, de la parcelle au produit exporté.</li>
+      <li data-i18n="c_obj5">Interpréter un AgriScore et voir le forage comme un actif de l'exploitation.</li>
+      <li data-i18n="c_obj6">Comparer deux stratégies réelles (Poulina, SICAM) et situer le FMIS parmi les domaines.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 1 : QU'EST-CE QU'UN FMIS -->
+  <div class="card" id="s1">
+    <h2><span class="num">1</span> <span data-i18n="c_s1_h">Qu'est-ce qu'un FMIS ?</span></h2>
+    <p class="par" data-i18n-html="c_s1_p1"></p>
+
+    <h3 data-i18n="c_s1_h2">Le cockpit de l'exploitation</h3>
+    <p class="par" data-i18n-html="c_s1_p2"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 372" role="img">
+        <defs>
+          <linearGradient id="gFmis" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5a8f2c"/><stop offset="1" stop-color="#3fa66a"/>
+          </linearGradient>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#7f8c6b"/>
+          </marker>
+        </defs>
+        <!-- SOURCES (left column) -->
+        <g font-size="11.5" font-weight="700" fill="#3d5220">
+          <rect x="20" y="26" width="176" height="40" rx="9" fill="#eef6ea" stroke="#bfe3c3"/>
+          <text data-i18n="c_fig1_src1" x="108" y="51" text-anchor="middle">🛰️ Télédétection (NDVI)</text>
+          <rect x="20" y="80" width="176" height="40" rx="9" fill="#eef6ea" stroke="#bfe3c3"/>
+          <text data-i18n="c_fig1_src2" x="108" y="105" text-anchor="middle">🌡️ Capteurs de sol (IoT)</text>
+          <rect x="20" y="134" width="176" height="40" rx="9" fill="#eef6ea" stroke="#bfe3c3"/>
+          <text data-i18n="c_fig1_src3" x="108" y="159" text-anchor="middle">☁️ Météo & ET₀</text>
+          <rect x="20" y="188" width="176" height="40" rx="9" fill="#eef6ea" stroke="#bfe3c3"/>
+          <text data-i18n="c_fig1_src4" x="108" y="213" text-anchor="middle">💧 Irrigation & forages</text>
+          <rect x="20" y="242" width="176" height="40" rx="9" fill="#eef6ea" stroke="#bfe3c3"/>
+          <text data-i18n="c_fig1_src5" x="108" y="267" text-anchor="middle">👷 Opérations & intrants</text>
+        </g>
+        <!-- arrows sources -> FMIS -->
+        <g stroke="#7f8c6b" stroke-width="1.6" fill="none" marker-end="url(#arr)">
+          <path d="M196 46 C250 46 250 150 300 160"/>
+          <path d="M196 100 C250 100 250 158 300 170"/>
+          <path d="M196 154 L300 178"/>
+          <path d="M196 208 C250 208 250 196 300 188"/>
+          <path d="M196 262 C250 262 250 210 300 198"/>
+        </g>
+        <!-- FMIS central box -->
+        <rect x="300" y="120" width="150" height="120" rx="16" fill="url(#gFmis)"/>
+        <text x="375" y="170" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">FMIS</text>
+        <text data-i18n="c_fig1_core" x="375" y="196" text-anchor="middle" font-size="10.5" font-weight="600" fill="#eaf6df">agrège · calcule · trace</text>
+        <!-- arrows FMIS -> decisions -->
+        <g stroke="#7f8c6b" stroke-width="1.6" fill="none" marker-end="url(#arr)">
+          <path d="M450 150 C520 150 520 70 566 70"/>
+          <path d="M450 180 L566 180"/>
+          <path d="M450 210 C520 210 520 290 566 290"/>
+        </g>
+        <!-- DECISIONS (right column) -->
+        <g font-size="11.5" font-weight="700" fill="#1f5f8a">
+          <rect x="566" y="50" width="176" height="40" rx="9" fill="#eaf3fa" stroke="#bcd9ec"/>
+          <text data-i18n="c_fig1_dec1" x="654" y="75" text-anchor="middle">📅 Plan de culture</text>
+          <rect x="566" y="160" width="176" height="40" rx="9" fill="#fdf3e3" stroke="#f0d9ac"/>
+          <text data-i18n="c_fig1_dec2" x="654" y="185" text-anchor="middle" fill="#b5701a">💰 Coût / marge / ha</text>
+          <rect x="566" y="270" width="176" height="40" rx="9" fill="#f3eefb" stroke="#d9c9f0"/>
+          <text data-i18n="c_fig1_dec3" x="654" y="295" text-anchor="middle" fill="#6a4bb0">📦 Traçabilité des lots</text>
+        </g>
+        <text data-i18n="c_fig1_srch" x="108" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#5c6a49">SOURCES</text>
+        <text data-i18n="c_fig1_dech" x="654" y="40" text-anchor="middle" font-size="11" font-weight="800" fill="#5c6a49">DÉCISIONS</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig1_cap"></div>
+    </div>
+
+    <div class="cgrid">
+      <div class="concept"><div class="sym">◱</div><div class="nm" data-i18n="c_c_par">Parcelles</div><div class="ds" data-i18n="c_c_par_d">Le référentiel : contours, surface, culture, historique.</div></div>
+      <div class="concept"><div class="sym">↻</div><div class="nm" data-i18n="c_c_op">Opérations culturales</div><div class="ds" data-i18n="c_c_op_d">Semis, traitements, irrigation, récolte — datées.</div></div>
+      <div class="concept"><div class="sym">Σ</div><div class="nm" data-i18n="c_c_in">Intrants & ressources</div><div class="ds" data-i18n="c_c_in_d">Semences, engrais, eau, énergie, main-d'œuvre, machines.</div></div>
+      <div class="concept"><div class="sym">€</div><div class="nm" data-i18n="c_c_eco">Vue économique</div><div class="ds" data-i18n="c_c_eco_d">Chaque opération porte un coût → marge par parcelle.</div></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s1_ret"></span></div>
+  </div>
+
+  <!-- SECTION 2 : COUT DE PRODUCTION -->
+  <div class="card" id="s2">
+    <h2><span class="num">2</span> <span data-i18n="c_s2_h">Le coût de production par parcelle</span></h2>
+    <p class="par" data-i18n-html="c_s2_p1"></p>
+
+    <div class="formula"><span class="hl">Coût/ha</span> = intrants + eau/énergie + main-d'œuvre + amortissement &nbsp;|&nbsp; <span class="hl">Coût/kg</span> = Coût/ha ÷ rendement &nbsp;|&nbsp; <span class="hl">Marge</span> = recette − coût</div>
+    <p class="par" data-i18n-html="c_s2_p2"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 320" role="img">
+        <!-- axis -->
+        <line x1="70" y1="30" x2="70" y2="250" stroke="#c8d3b8" stroke-width="1.5"/>
+        <line x1="70" y1="250" x2="720" y2="250" stroke="#c8d3b8" stroke-width="1.5"/>
+        <g font-size="10.5" fill="#9aa890" text-anchor="end">
+          <text x="62" y="254">0</text><text x="62" y="195">1500</text><text x="62" y="140">3000</text><text x="62" y="85">4500</text><text x="62" y="36">6000</text>
+        </g>
+        <text data-i18n="c_fig2_yax" x="20" y="140" font-size="11" font-weight="700" fill="#6f7d64" transform="rotate(-90 20 140)" text-anchor="middle">DT / ha</text>
+
+        <!-- CULTURE A : rentable (cost stack + revenue line) -->
+        <!-- stacked cost bar A at x=170 -->
+        <g>
+          <rect x="150" y="200" width="70" height="50" fill="#e0912b"/>       <!-- intrants -->
+          <rect x="150" y="162" width="70" height="38" fill="#3a9bd0"/>       <!-- eau/energie -->
+          <rect x="150" y="120" width="70" height="42" fill="#5a8f2c"/>       <!-- main d'oeuvre -->
+          <rect x="150" y="100" width="70" height="20" fill="#8e6fc7"/>       <!-- amortissement -->
+        </g>
+        <!-- revenue A -->
+        <rect x="235" y="70" width="34" height="180" fill="#eef8ef" stroke="#8ecb96" stroke-width="1.5"/>
+        <line x1="150" y1="100" x2="269" y2="100" stroke="#2f7d3a" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <path d="M290 100 L290 70" stroke="#2f7d3a" stroke-width="1.6"/>
+        <path d="M287 74 l3 -6 l3 6 z" fill="#2f7d3a"/>
+        <text data-i18n="c_fig2_margep" x="298" y="88" font-size="10.5" font-weight="800" fill="#2f7d3a">marge +</text>
+        <text data-i18n="c_fig2_ca" x="200" y="270" font-size="12" font-weight="700" fill="#3d5220" text-anchor="middle">Blé irrigué</text>
+
+        <!-- CULTURE B : déficitaire -->
+        <g>
+          <rect x="470" y="180" width="70" height="70" fill="#e0912b"/>
+          <rect x="470" y="128" width="70" height="52" fill="#3a9bd0"/>
+          <rect x="470" y="80" width="70" height="48" fill="#5a8f2c"/>
+          <rect x="470" y="60" width="70" height="20" fill="#8e6fc7"/>
+        </g>
+        <rect x="555" y="150" width="34" height="100" fill="#fbecea" stroke="#e3a8a1" stroke-width="1.5"/>
+        <line x1="470" y1="150" x2="589" y2="150" stroke="#b23b30" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <path d="M610 60 L610 150" stroke="#b23b30" stroke-width="1.6"/>
+        <path d="M607 146 l3 6 l3 -6 z" fill="#b23b30"/>
+        <text data-i18n="c_fig2_marged" x="618" y="108" font-size="10.5" font-weight="800" fill="#b23b30">marge −</text>
+        <text data-i18n="c_fig2_cb" x="520" y="270" font-size="12" font-weight="700" fill="#3d5220" text-anchor="middle">Culture X</text>
+
+        <!-- legend -->
+        <g font-size="10.5" fill="#3d5220">
+          <rect x="150" y="292" width="12" height="12" fill="#e0912b"/><text data-i18n="c_fig2_l1" x="167" y="302">Intrants</text>
+          <rect x="250" y="292" width="12" height="12" fill="#3a9bd0"/><text data-i18n="c_fig2_l2" x="267" y="302">Eau / énergie</text>
+          <rect x="380" y="292" width="12" height="12" fill="#5a8f2c"/><text data-i18n="c_fig2_l3" x="397" y="302">Main-d'œuvre</text>
+          <rect x="510" y="292" width="12" height="12" fill="#8e6fc7"/><text data-i18n="c_fig2_l4" x="527" y="302">Amortissement</text>
+          <rect x="640" y="292" width="12" height="12" fill="#eef8ef" stroke="#8ecb96"/><text data-i18n="c_fig2_l5" x="657" y="302">Recette</text>
+        </g>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig2_cap"></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s2_ret"></span></div>
+  </div>
+
+  <!-- SECTION 3 : TRACABILITE & AGRISCORE -->
+  <div class="card" id="s3">
+    <h2><span class="num">3</span> <span data-i18n="c_s3_h">Traçabilité des lots & AgriScore</span></h2>
+    <p class="par" data-i18n-html="c_s3_p1"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 250" role="img">
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#3fa66a"/>
+          </marker>
+        </defs>
+        <!-- chain -->
+        <g font-size="11" font-weight="700" fill="#3d5220" text-anchor="middle">
+          <rect x="20" y="60" width="120" height="66" rx="11" fill="#eef8ef" stroke="#bfe3c3"/>
+          <text x="80" y="88">◱</text><text data-i18n="c_fig3_n1" x="80" y="108">Parcelle B-14</text>
+          <rect x="180" y="60" width="120" height="66" rx="11" fill="#eef8ef" stroke="#bfe3c3"/>
+          <text x="240" y="88">🌾</text><text data-i18n="c_fig3_n2" x="240" y="108">Récolte</text>
+          <rect x="340" y="60" width="120" height="66" rx="11" fill="#fdf3e3" stroke="#f0d9ac"/>
+          <text x="400" y="88">📦</text><text data-i18n="c_fig3_n3" x="400" y="108">Lot #LB-2207</text>
+          <rect x="500" y="60" width="120" height="66" rx="11" fill="#eaf3fa" stroke="#bcd9ec"/>
+          <text x="560" y="88">🏭</text><text data-i18n="c_fig3_n4" x="560" y="108">Conditionnement</text>
+          <rect x="660" y="60" width="90" height="66" rx="11" fill="#f3eefb" stroke="#d9c9f0"/>
+          <text x="705" y="88">🚢</text><text data-i18n="c_fig3_n5" x="705" y="108">Export</text>
+        </g>
+        <g stroke="#3fa66a" stroke-width="1.8" marker-end="url(#arr2)" fill="none">
+          <path d="M140 93 L178 93"/><path d="M300 93 L338 93"/><path d="M460 93 L498 93"/><path d="M620 93 L658 93"/>
+        </g>
+        <!-- back-trace arrow -->
+        <path d="M705 140 C705 175 80 175 80 138" stroke="#8e6fc7" stroke-width="1.6" stroke-dasharray="5 4" fill="none" marker-end="url(#arr2)"/>
+        <text data-i18n="c_fig3_back" x="400" y="192" font-size="11" font-weight="700" fill="#6a4bb0" text-anchor="middle">← remonter le lot exporté jusqu'à la parcelle d'origine</text>
+        <text data-i18n="c_fig3_top" x="20" y="30" font-size="12" font-weight="800" fill="#3d5220">Chaîne « de la parcelle au lot exporté »</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig3_cap"></div>
+    </div>
+
+    <h3 data-i18n="c_s3_h2">L'AgriScore : un indicateur de performance</h3>
+    <p class="par" data-i18n-html="c_s3_p2"></p>
+
+    <h3 data-i18n="c_s3_h3">Le registre des forages : un actif de l'exploitation</h3>
+    <p class="par" data-i18n-html="c_s3_p3"></p>
+    <div class="retenir fossil"><span class="h" data-i18n="c_ret_key">Point clé — la donnée comme actif</span><span data-i18n-html="c_s3_ret"></span></div>
+  </div>
+
+  <!-- SECTION 4 : CAS REELS -->
+  <div class="card" id="s4">
+    <h2><span class="num">4</span> <span data-i18n="c_s4_h">Cas réels : deux stratégies</span></h2>
+    <p class="par" data-i18n-html="c_s4_p1"></p>
+
+    <div class="sysgrid">
+      <div class="sys" style="--sc:#3a9bd0">
+        <div class="nm" data-i18n="c_case_pou_n">Poulina — 43 fermes</div>
+        <div class="sub" data-i18n="c_case_pou_s">Grands sites intégrés</div>
+        <div class="ds" data-i18n="c_case_pou_d">Peu de sites, mais grands et intégrés (élevage, aliment, agro-industrie). Le FMIS pilote des unités lourdes et consolide au niveau groupe.</div>
+        <span class="badge" style="background:#eaf3fa;color:#1f5f8a;border-color:#bcd9ec" data-i18n="c_case_concentr">Concentration</span>
+      </div>
+      <div class="sys" style="--sc:#e0912b">
+        <div class="nm" data-i18n="c_case_sic_n">SICAM — 2 614 parcelles</div>
+        <div class="sub" data-i18n="c_case_sic_s">Réseau de parcelles dispersées</div>
+        <div class="ds" data-i18n="c_case_sic_d">Des milliers de petites parcelles à suivre individuellement. Le FMIS gère la masse : géolocalisation, planning, coûts parcelle par parcelle.</div>
+        <span class="badge soon" data-i18n="c_case_disper">Dispersion</span>
+      </div>
+    </div>
+
+    <table class="t">
+      <thead><tr><th data-i18n="c_tbl_h1">Critère</th><th data-i18n="c_tbl_h2">Poulina (43 fermes)</th><th data-i18n="c_tbl_h3">SICAM (2 614 parcelles)</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="c_tbl_r1a">Nombre d'unités</td><td data-i18n="c_tbl_r1b"><b>Peu</b>, très grandes</td><td data-i18n="c_tbl_r1c"><b>Beaucoup</b>, petites</td></tr>
+        <tr><td data-i18n="c_tbl_r2a">Défi du FMIS</td><td data-i18n="c_tbl_r2b">Profondeur & intégration</td><td data-i18n="c_tbl_r2c">Volume & géolocalisation</td></tr>
+        <tr><td data-i18n="c_tbl_r3a">Valeur clé</td><td data-i18n="c_tbl_r3b">Consolidation groupe</td><td data-i18n="c_tbl_r3c">Coût par parcelle à l'échelle</td></tr>
+      </tbody>
+    </table>
+
+    <h3 data-i18n="c_s4_h2">Le FMIS relie tous les domaines</h3>
+    <p class="par" data-i18n-html="c_s4_p2"></p>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s4_ret"></span></div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="card" id="apps">
+    <h2>🧭 <span data-i18n="c_apps_h">Applications de ce domaine</span></h2>
+    <p class="lead" data-i18n="c_apps_p">Mettez en pratique le cours avec les applications interactives de la plateforme :</p>
+    <div class="appgrid">
+      <a class="appcard" style="--ac:#3fa66a" href="J4/agrimanager-v1.6.html">
+        <div class="ico">🗂️</div><h4 data-i18n="c_app_agm">AgriManager — le cockpit</h4>
+        <p data-i18n="c_app_agm_d">Parcelles, opérations, coûts de production, marges et AgriScore.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#e0912b" href="J2/Simulateur_Smart_Agriculture.html">
+        <div class="ico">📈</div><h4 data-i18n="c_app_sim">Simulateur Smart Agri</h4>
+        <p data-i18n="c_app_sim_d">ROI d'un pack IoT : CAPEX, économies, temps de retour (PBT).</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+    </div>
+
+    <div class="tpbanner">
+      <div>
+        <div class="tt">🧪 <span data-i18n="c_tp_t">TP guidé — Gestion de ferme (FMIS)</span></div>
+        <div class="dd" data-i18n="c_tp_d">Six étapes pas-à-pas : coût de production, culture déficitaire, AgriScore, ROI, avec questions auto-corrigées et compte-rendu exportable.</div>
+      </div>
+      <a class="btn" href="tp-fmis.html"><span data-i18n="c_tp_go">Commencer le TP</span> →</a>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="c_foot">Plateforme AgriTech Libye · EU4Skills — Module M6 · support de cours</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  c_brand:{fr:"Gestion de ferme",ar:"إدارة المزرعة",en:"Farm management"},
+  c_brand2:{fr:"FMIS",ar:"FMIS",en:"FMIS"},
+  c_sub:{fr:"Cours · le cockpit de l'exploitation, coûts, traçabilité, AgriScore",ar:"درس · قمرة قيادة المزرعة، التكاليف، التتبّع، AgriScore",en:"Course · the farm cockpit, costs, traceability, AgriScore"},
+  c_course_chip:{fr:"Cours",ar:"درس",en:"Course"},
+  c_title:{fr:"Gestion de ferme — le FMIS",ar:"إدارة المزرعة — نظام FMIS",en:"Farm management — the FMIS"},
+  c_tag:{fr:"Le cockpit qui transforme des mesures dispersées en décisions et en marges",ar:"قمرة القيادة التي تحوّل القياسات المتفرّقة إلى قرارات وهوامش ربح",en:"The cockpit that turns scattered measurements into decisions and margins"},
+  c_intro:{fr:"Tous les domaines précédents ont <b>mesuré</b> : télédétection, capteurs, météo, irrigation. Mais une donnée qui ne débouche sur aucune décision est perdue. Le <b>FMIS</b> (Farm Management Information System) est le domaine qui <b>fait converger</b> ces mesures — parcelles, opérations, intrants, main-d'œuvre, machines — pour répondre aux vraies questions du gestionnaire : <b>combien me coûte cet hectare, quelle culture me fait perdre de l'argent, et ce lot exporté vient-il bien de la parcelle B-14 ?</b>",
+    ar:"كل المجالات السابقة <b>قاست</b>: الاستشعار عن بُعد، المجسّات، المناخ، الري. لكن البيانات التي لا تُفضي إلى قرار ضائعة. <b>نظام FMIS</b> (نظام معلومات إدارة المزرعة) هو المجال الذي <b>يجمع</b> هذه القياسات — القطع، العمليات، المدخلات، اليد العاملة، الآلات — للإجابة عن أسئلة المدير الحقيقية: <b>كم يكلّفني هذا الهكتار، وأي محصول يخسّرني المال، وهل هذه الشحنة المصدَّرة أتت فعلاً من القطعة B-14؟</b>",
+    en:"Every previous domain <b>measured</b>: remote sensing, sensors, weather, irrigation. But data that leads to no decision is wasted. The <b>FMIS</b> (Farm Management Information System) is the domain that <b>brings these measurements together</b> — parcels, operations, inputs, labour, machines — to answer the manager's real questions: <b>how much does this hectare cost me, which crop is losing money, and did this exported lot really come from parcel B-14?</b>"},
+  c_toc1:{fr:"1 · Qu'est-ce qu'un FMIS",ar:"1 · ما هو FMIS",en:"1 · What is a FMIS"},
+  c_toc2:{fr:"2 · Coût de production",ar:"2 · تكلفة الإنتاج",en:"2 · Production cost"},
+  c_toc3:{fr:"3 · Traçabilité & AgriScore",ar:"3 · التتبّع وAgriScore",en:"3 · Traceability & AgriScore"},
+  c_toc4:{fr:"4 · Cas réels",ar:"4 · حالات واقعية",en:"4 · Real cases"},
+  c_toc5:{fr:"Applications",ar:"التطبيقات",en:"Apps"},
+
+  c_obj_h:{fr:"Objectifs pédagogiques",ar:"الأهداف التعليمية",en:"Learning objectives"},
+  c_obj1:{fr:"Définir un FMIS et citer les données qu'il agrège en un seul cockpit.",ar:"تعريف FMIS وذكر البيانات التي يجمعها في قمرة واحدة.",en:"Define a FMIS and list the data it aggregates into one cockpit."},
+  c_obj2:{fr:"Décomposer un coût de production par parcelle en quatre postes.",ar:"تفكيك تكلفة الإنتاج للقطعة إلى أربعة بنود.",en:"Break a per-parcel production cost into four items."},
+  c_obj3:{fr:"Calculer un coût/ha, un coût/kg et une marge, et repérer une culture déficitaire.",ar:"حساب التكلفة/هكتار والتكلفة/كغ والهامش، وكشف محصول خاسر.",en:"Compute a cost/ha, cost/kg and margin, and spot a loss-making crop."},
+  c_obj4:{fr:"Expliquer la traçabilité d'un lot, de la parcelle au produit exporté.",ar:"شرح تتبّع الدفعة من القطعة إلى المنتج المصدَّر.",en:"Explain a lot's traceability, from parcel to exported product."},
+  c_obj5:{fr:"Interpréter un AgriScore et voir le forage comme un actif de l'exploitation.",ar:"تفسير AgriScore واعتبار البئر أصلاً من أصول المزرعة.",en:"Interpret an AgriScore and see the borehole as a farm asset."},
+  c_obj6:{fr:"Comparer deux stratégies réelles (Poulina, SICAM) et situer le FMIS parmi les domaines.",ar:"مقارنة استراتيجيتين واقعيتين (Poulina، SICAM) وتحديد موقع FMIS بين المجالات.",en:"Compare two real strategies (Poulina, SICAM) and place the FMIS among the domains."},
+
+  c_ret:{fr:"À retenir",ar:"للتذكّر",en:"Remember"},
+  c_ret_key:{fr:"Point clé — la donnée comme actif",ar:"نقطة مفتاحية — البيانات كأصل",en:"Key point — data as an asset"},
+
+  // Section 1
+  c_s1_h:{fr:"Qu'est-ce qu'un FMIS ?",ar:"ما هو نظام FMIS؟",en:"What is a FMIS?"},
+  c_s1_p1:{fr:"Un <b>FMIS</b> — <i>Farm Management Information System</i> — est le logiciel central qui <b>agrège toutes les informations</b> d'une exploitation en un seul endroit : le contour des <b>parcelles</b>, les <b>opérations culturales</b> (semis, traitements, irrigation, récolte), les <b>intrants</b> consommés, la <b>main-d'œuvre</b> et les <b>machines</b>. Là où chaque domaine produit une mesure isolée, le FMIS les <b>relie à la parcelle</b> et à leur coût.",
+    ar:"<b>FMIS</b> — <i>نظام معلومات إدارة المزرعة</i> — هو البرنامج المركزي الذي <b>يجمع كل معلومات</b> المزرعة في مكان واحد: حدود <b>القطع</b>، و<b>العمليات الزراعية</b> (البذر، المعالجات، الري، الحصاد)، و<b>المدخلات</b> المستهلكة، و<b>اليد العاملة</b> و<b>الآلات</b>. وحيث ينتج كل مجال قياساً منفرداً، يربطها FMIS <b>بالقطعة</b> وبتكلفتها.",
+    en:"A <b>FMIS</b> — <i>Farm Management Information System</i> — is the central software that <b>aggregates all of a farm's information</b> in one place: the <b>parcel</b> boundaries, the <b>field operations</b> (sowing, spraying, irrigation, harvest), the <b>inputs</b> consumed, the <b>labour</b> and the <b>machines</b>. Where each domain yields an isolated measurement, the FMIS <b>ties them to the parcel</b> and to their cost."},
+  c_s1_h2:{fr:"Le cockpit de l'exploitation",ar:"قمرة قيادة المزرعة",en:"The farm cockpit"},
+  c_s1_p2:{fr:"On parle de <b>cockpit</b> car, comme dans un avion, le gestionnaire voit d'un coup d'œil l'état de tout son système et pilote depuis un seul tableau de bord. Les <b>sources</b> (satellite, capteurs de sol, météo, forages, opérations) entrent à gauche ; le FMIS les <b>agrège et calcule</b> ; des <b>décisions</b> en sortent à droite (plan de culture, coûts et marges, traçabilité).",
+    ar:"نسمّيه <b>قمرة قيادة</b> لأن المدير، كما في الطائرة، يرى بلمحة حالة نظامه كله ويقود من لوحة واحدة. تدخل <b>المصادر</b> (القمر الصناعي، مجسّات التربة، المناخ، الآبار، العمليات) من اليسار؛ ويقوم FMIS <b>بتجميعها وحسابها</b>؛ وتخرج <b>قرارات</b> من اليمين (خطة المحصول، التكاليف والهوامش، التتبّع).",
+    en:"We call it a <b>cockpit</b> because, as in an aircraft, the manager sees the whole system's state at a glance and steers from a single dashboard. The <b>sources</b> (satellite, soil sensors, weather, boreholes, operations) enter on the left; the FMIS <b>aggregates and computes</b>; <b>decisions</b> come out on the right (crop plan, costs and margins, traceability)."},
+  c_fig1_srch:{fr:"SOURCES",ar:"المصادر",en:"SOURCES"},
+  c_fig1_dech:{fr:"DÉCISIONS",ar:"القرارات",en:"DECISIONS"},
+  c_fig1_src1:{fr:"🛰️ Télédétection (NDVI)",ar:"🛰️ استشعار عن بُعد (NDVI)",en:"🛰️ Remote sensing (NDVI)"},
+  c_fig1_src2:{fr:"🌡️ Capteurs de sol (IoT)",ar:"🌡️ مجسّات التربة (IoT)",en:"🌡️ Soil sensors (IoT)"},
+  c_fig1_src3:{fr:"☁️ Météo & ET₀",ar:"☁️ المناخ وET₀",en:"☁️ Weather & ET₀"},
+  c_fig1_src4:{fr:"💧 Irrigation & forages",ar:"💧 الري والآبار",en:"💧 Irrigation & boreholes"},
+  c_fig1_src5:{fr:"👷 Opérations & intrants",ar:"👷 العمليات والمدخلات",en:"👷 Operations & inputs"},
+  c_fig1_core:{fr:"agrège · calcule · trace",ar:"يجمع · يحسب · يتتبّع",en:"aggregate · compute · trace"},
+  c_fig1_dec1:{fr:"📅 Plan de culture",ar:"📅 خطة المحصول",en:"📅 Crop plan"},
+  c_fig1_dec2:{fr:"💰 Coût / marge / ha",ar:"💰 تكلفة / هامش / هكتار",en:"💰 Cost / margin / ha"},
+  c_fig1_dec3:{fr:"📦 Traçabilité des lots",ar:"📦 تتبّع الدفعات",en:"📦 Lot traceability"},
+  c_fig1_cap:{fr:"<b>Le FMIS comme point de convergence.</b> Les données mesurées par tous les autres domaines entrent en tant que sources ; le FMIS les relie à la parcelle et au coût, puis produit des décisions actionnables.",
+    ar:"<b>FMIS كنقطة تلاقٍ.</b> تدخل البيانات المقيسة من كل المجالات الأخرى كمصادر؛ يربطها FMIS بالقطعة والتكلفة، ثم ينتج قرارات قابلة للتنفيذ.",
+    en:"<b>The FMIS as a convergence point.</b> Data measured by all the other domains enter as sources; the FMIS ties them to the parcel and the cost, then produces actionable decisions."},
+  c_c_par:{fr:"Parcelles",ar:"القطع",en:"Parcels"},
+  c_c_par_d:{fr:"Le référentiel : contours, surface, culture, historique.",ar:"المرجع: الحدود، المساحة، المحصول، التاريخ.",en:"The reference: boundaries, area, crop, history."},
+  c_c_op:{fr:"Opérations culturales",ar:"العمليات الزراعية",en:"Field operations"},
+  c_c_op_d:{fr:"Semis, traitements, irrigation, récolte — datées.",ar:"البذر، المعالجات، الري، الحصاد — مؤرَّخة.",en:"Sowing, spraying, irrigation, harvest — dated."},
+  c_c_in:{fr:"Intrants & ressources",ar:"المدخلات والموارد",en:"Inputs & resources"},
+  c_c_in_d:{fr:"Semences, engrais, eau, énergie, main-d'œuvre, machines.",ar:"البذور، الأسمدة، الماء، الطاقة، اليد العاملة، الآلات.",en:"Seed, fertiliser, water, energy, labour, machines."},
+  c_c_eco:{fr:"Vue économique",ar:"العرض الاقتصادي",en:"Economic view"},
+  c_c_eco_d:{fr:"Chaque opération porte un coût → marge par parcelle.",ar:"كل عملية تحمل تكلفة ← هامش لكل قطعة.",en:"Every operation carries a cost → margin per parcel."},
+  c_s1_ret:{fr:"Le FMIS ne <b>mesure</b> pas — il <b>consolide et donne du sens</b>. Sa valeur naît du fait que tout est rattaché à une <b>parcelle</b> et à un <b>coût</b> : c'est ce lien qui permet de passer de « il a plu 12 mm » à « cet hectare de blé m'a coûté 3 200 DT ».",
+    ar:"لا <b>يقيس</b> FMIS — بل <b>يوحّد ويمنح المعنى</b>. قيمته من أن كل شيء مرتبط بـ<b>قطعة</b> و<b>تكلفة</b>: هذا الرابط ينقلنا من «هطلت 12 مم» إلى «كلّفني هذا الهكتار من القمح 3200 د.ل».",
+    en:"The FMIS does not <b>measure</b> — it <b>consolidates and gives meaning</b>. Its value comes from everything being tied to a <b>parcel</b> and a <b>cost</b>: that link is what turns \"it rained 12 mm\" into \"this hectare of wheat cost me 3,200 TND\"."},
+
+  // Section 2
+  c_s2_h:{fr:"Le coût de production par parcelle",ar:"تكلفة الإنتاج لكل قطعة",en:"Per-parcel production cost"},
+  c_s2_p1:{fr:"Le cœur économique du FMIS est le <b>coût de production</b>, calculé parcelle par parcelle. Il additionne quatre grands postes : les <b>intrants</b> (semences, engrais, produits), l'<b>eau et l'énergie</b> (pompage, carburant, électricité), la <b>main-d'œuvre</b> et l'<b>amortissement</b> du matériel. Divisé par la surface, il donne le <b>coût/ha</b> ; divisé par le rendement, le <b>coût/kg</b>.",
+    ar:"القلب الاقتصادي لـFMIS هو <b>تكلفة الإنتاج</b>، محسوبة قطعةً قطعة. تجمع أربعة بنود كبرى: <b>المدخلات</b> (بذور، أسمدة، مبيدات)، و<b>الماء والطاقة</b> (الضخ، الوقود، الكهرباء)، و<b>اليد العاملة</b>، و<b>إهلاك</b> المعدّات. مقسومةً على المساحة تعطي <b>التكلفة/هكتار</b>؛ ومقسومةً على المردود تعطي <b>التكلفة/كغ</b>.",
+    en:"The economic heart of the FMIS is the <b>production cost</b>, computed parcel by parcel. It sums four major items: <b>inputs</b> (seed, fertiliser, products), <b>water and energy</b> (pumping, fuel, electricity), <b>labour</b> and equipment <b>depreciation</b>. Divided by area it gives the <b>cost/ha</b>; divided by yield, the <b>cost/kg</b>."},
+  c_s2_p2:{fr:"La <b>marge</b> est la recette (rendement × prix de vente) moins ce coût. Quand la marge devient <b>négative</b>, la culture est <b>déficitaire</b> : elle coûte plus qu'elle ne rapporte. Sans FMIS, on ne le découvre qu'en fin d'année, globalement ; avec, on le voit <b>parcelle par parcelle</b>, à temps pour réagir.",
+    ar:"<b>الهامش</b> هو الإيراد (المردود × سعر البيع) ناقص هذه التكلفة. وعندما يصبح الهامش <b>سالباً</b>، يكون المحصول <b>خاسراً</b>: يكلّف أكثر مما يدرّ. بلا FMIS لا يُكتشف ذلك إلا في نهاية العام إجمالاً؛ ومعه يُرى <b>قطعةً قطعة</b>، في وقت يسمح بالتصرّف.",
+    en:"The <b>margin</b> is revenue (yield × sale price) minus this cost. When the margin turns <b>negative</b>, the crop is <b>loss-making</b>: it costs more than it earns. Without a FMIS you only find out at year-end, globally; with one you see it <b>parcel by parcel</b>, in time to react."},
+  c_fig2_yax:{fr:"DT / ha",ar:"د.ل / هكتار",en:"TND / ha"},
+  c_fig2_ca:{fr:"Blé irrigué",ar:"قمح مروي",en:"Irrigated wheat"},
+  c_fig2_cb:{fr:"Culture X",ar:"محصول X",en:"Crop X"},
+  c_fig2_margep:{fr:"marge +",ar:"هامش +",en:"margin +"},
+  c_fig2_marged:{fr:"marge −",ar:"هامش −",en:"margin −"},
+  c_fig2_l1:{fr:"Intrants",ar:"مدخلات",en:"Inputs"},
+  c_fig2_l2:{fr:"Eau / énergie",ar:"ماء / طاقة",en:"Water / energy"},
+  c_fig2_l3:{fr:"Main-d'œuvre",ar:"يد عاملة",en:"Labour"},
+  c_fig2_l4:{fr:"Amortissement",ar:"إهلاك",en:"Depreciation"},
+  c_fig2_l5:{fr:"Recette",ar:"الإيراد",en:"Revenue"},
+  c_fig2_cap:{fr:"<b>Décomposition des coûts et marge.</b> À gauche, la recette dépasse le coût empilé : marge positive. À droite, le coût dépasse la recette : la culture est <b>déficitaire</b>. Le FMIS rend cette comparaison visible pour chaque parcelle.",
+    ar:"<b>تفكيك التكاليف والهامش.</b> على اليسار، يتجاوز الإيراد التكلفة المكدّسة: هامش موجب. على اليمين، تتجاوز التكلفة الإيراد: المحصول <b>خاسر</b>. يُظهر FMIS هذه المقارنة لكل قطعة.",
+    en:"<b>Cost breakdown and margin.</b> On the left, revenue exceeds the stacked cost: positive margin. On the right, cost exceeds revenue: the crop is <b>loss-making</b>. The FMIS makes this comparison visible for every parcel."},
+  c_s2_ret:{fr:"Le bon niveau d'analyse n'est pas la ferme entière mais la <b>parcelle</b>. Une exploitation rentable dans l'ensemble peut cacher des parcelles déficitaires qui « mangent » la marge des autres. Le premier réflexe FMIS : trier les parcelles par <b>marge/ha</b> et regarder le bas du classement.",
+    ar:"المستوى الصحيح للتحليل ليس المزرعة كلها بل <b>القطعة</b>. مزرعة رابحة إجمالاً قد تخفي قطعاً خاسرة «تأكل» هامش غيرها. أول ردّ فعل مع FMIS: ترتيب القطع حسب <b>الهامش/هكتار</b> والنظر إلى أسفل الترتيب.",
+    en:"The right level of analysis is not the whole farm but the <b>parcel</b>. A farm profitable overall can hide loss-making parcels that \"eat\" the others' margin. The first FMIS reflex: sort parcels by <b>margin/ha</b> and look at the bottom of the ranking."},
+
+  // Section 3
+  c_s3_h:{fr:"Traçabilité des lots & AgriScore",ar:"تتبّع الدفعات وAgriScore",en:"Lot traceability & AgriScore"},
+  c_s3_p1:{fr:"La <b>traçabilité</b> consiste à pouvoir suivre un produit sur toute sa chaîne : de la <b>parcelle</b> où il a poussé jusqu'au <b>lot exporté</b>, en passant par la récolte et le conditionnement. Chaque lot reçoit un <b>identifiant</b> qui pointe vers sa parcelle d'origine et toutes ses opérations. En cas de problème (résidu, qualité), on <b>remonte instantanément</b> jusqu'à la source — c'est une exigence des marchés d'export.",
+    ar:"<b>التتبّع</b> هو القدرة على متابعة المنتج عبر سلسلته كاملة: من <b>القطعة</b> التي نما فيها إلى <b>الدفعة المصدَّرة</b>، مروراً بالحصاد والتعبئة. تنال كل دفعة <b>معرِّفاً</b> يشير إلى قطعتها الأصلية وكل عملياتها. وعند وجود مشكلة (بقايا، جودة)، <b>نعود فوراً</b> إلى المصدر — وهو شرط أسواق التصدير.",
+    en:"<b>Traceability</b> means being able to follow a product across its whole chain: from the <b>parcel</b> where it grew to the <b>exported lot</b>, via harvest and packing. Each lot gets an <b>identifier</b> pointing back to its origin parcel and all its operations. If there is a problem (residue, quality), you <b>trace back instantly</b> to the source — a requirement of export markets."},
+  c_fig3_n1:{fr:"Parcelle B-14",ar:"القطعة B-14",en:"Parcel B-14"},
+  c_fig3_n2:{fr:"Récolte",ar:"الحصاد",en:"Harvest"},
+  c_fig3_n3:{fr:"Lot #LB-2207",ar:"دفعة #LB-2207",en:"Lot #LB-2207"},
+  c_fig3_n4:{fr:"Conditionnement",ar:"التعبئة",en:"Packing"},
+  c_fig3_n5:{fr:"Export",ar:"التصدير",en:"Export"},
+  c_fig3_top:{fr:"Chaîne « de la parcelle au lot exporté »",ar:"سلسلة «من القطعة إلى الدفعة المصدَّرة»",en:"Chain \"from parcel to exported lot\""},
+  c_fig3_back:{fr:"← remonter le lot exporté jusqu'à la parcelle d'origine",ar:"← تتبّع الدفعة المصدَّرة رجوعاً إلى القطعة الأصلية",en:"← trace the exported lot back to its origin parcel"},
+  c_fig3_cap:{fr:"<b>Traçabilité montante et descendante.</b> Le flux physique va de la parcelle à l'export ; l'identifiant du lot permet le chemin inverse — indispensable pour un rappel ou un certificat.",
+    ar:"<b>تتبّع صاعد ونازل.</b> يسير التدفّق المادي من القطعة إلى التصدير؛ ومعرّف الدفعة يتيح المسار العكسي — لا غنى عنه للسحب أو الشهادة.",
+    en:"<b>Downstream and upstream traceability.</b> The physical flow goes from parcel to export; the lot identifier enables the reverse path — essential for a recall or a certificate."},
+  c_s3_h2:{fr:"L'AgriScore : un indicateur de performance",ar:"AgriScore: مؤشّر أداء",en:"AgriScore: a performance indicator"},
+  c_s3_p2:{fr:"L'<b>AgriScore</b> est un <b>indice synthétique</b> (souvent sur 100) qui résume la performance d'une parcelle ou d'une exploitation en combinant plusieurs axes : santé du couvert (NDVI), efficience de l'eau, respect du planning, marge économique et traçabilité. C'est un <b>tableau de bord en un chiffre</b> : il ne remplace pas l'analyse détaillée mais permet de <b>comparer</b> et de <b>prioriser</b> d'un coup d'œil.",
+    ar:"<b>AgriScore</b> مؤشّر <b>تركيبي</b> (غالباً من 100) يلخّص أداء قطعة أو مزرعة بدمج عدة محاور: صحة الغطاء (NDVI)، كفاءة الماء، احترام الجدولة، الهامش الاقتصادي، والتتبّع. إنه <b>لوحة قيادة في رقم واحد</b>: لا يعوّض التحليل المفصّل لكنه يتيح <b>المقارنة</b> و<b>ترتيب الأولويات</b> بلمحة.",
+    en:"The <b>AgriScore</b> is a <b>composite index</b> (often out of 100) summarising a parcel's or a farm's performance by combining several axes: canopy health (NDVI), water efficiency, schedule adherence, economic margin and traceability. It is a <b>dashboard in a single number</b>: it does not replace detailed analysis but lets you <b>compare</b> and <b>prioritise</b> at a glance."},
+  c_s3_h3:{fr:"Le registre des forages : un actif de l'exploitation",ar:"سجلّ الآبار: أصل من أصول المزرعة",en:"The borehole register: a farm asset"},
+  c_s3_p3:{fr:"Dans un contexte libyen où l'eau est une ressource fossile, le FMIS traite le <b>forage comme un actif</b> à part entière : profondeur, débit, niveau piézométrique, coût de pompage, historique d'entretien. Rattacher chaque m³ pompé à une parcelle et à un coût énergétique fait du registre des forages une <b>brique économique</b> autant qu'hydrogéologique — le pont direct avec le module Géologie.",
+    ar:"في السياق الليبي حيث الماء مورد أحفوري، يعامل FMIS <b>البئر كأصل</b> كامل: العمق، التدفّق، المستوى البيزومتري، تكلفة الضخ، سجلّ الصيانة. وربط كل م³ مضخوخ بقطعة وبتكلفة طاقة يجعل سجلّ الآبار <b>لبنة اقتصادية</b> بقدر ما هي هيدروجيولوجية — الجسر المباشر مع وحدة الجيولوجيا.",
+    en:"In a Libyan context where water is a fossil resource, the FMIS treats the <b>borehole as a full asset</b>: depth, flow, piezometric level, pumping cost, maintenance history. Tying every m³ pumped to a parcel and an energy cost makes the borehole register an <b>economic brick</b> as much as a hydrogeological one — the direct bridge to the Geology module."},
+  c_s3_ret:{fr:"Traçabilité et AgriScore transforment la donnée brute en <b>capital immatériel</b> : un lot traçable se vend mieux, un AgriScore élevé rassure l'acheteur, un registre de forages documenté est un actif à l'inventaire. Le FMIS est là où la donnée <b>devient valeur</b>.",
+    ar:"يحوّل التتبّع وAgriScore البيانات الخام إلى <b>رأس مال غير ملموس</b>: الدفعة القابلة للتتبّع تُباع أفضل، وAgriScore المرتفع يطمئن المشتري، وسجلّ الآبار الموثّق أصلٌ في الجرد. FMIS هو حيث تصير البيانات <b>قيمة</b>.",
+    en:"Traceability and AgriScore turn raw data into <b>intangible capital</b>: a traceable lot sells better, a high AgriScore reassures the buyer, a documented borehole register is an asset on the books. The FMIS is where data <b>becomes value</b>."},
+
+  // Section 4
+  c_s4_h:{fr:"Cas réels : deux stratégies",ar:"حالات واقعية: استراتيجيتان",en:"Real cases: two strategies"},
+  c_s4_p1:{fr:"Deux grands groupes agro-industriels illustrent deux manières opposées d'utiliser un FMIS. <b>Poulina</b> gère <b>43 fermes</b> : peu de sites, mais très grands et intégrés. <b>SICAM</b> suit <b>2 614 parcelles</b> : une multitude de petites unités dispersées. Le même outil doit répondre à deux problèmes de nature différente.",
+    ar:"مجموعتان صناعيتان زراعيتان كبيرتان تجسّدان طريقتين متعاكستين لاستعمال FMIS. تدير <b>Poulina</b> <b>43 مزرعة</b>: مواقع قليلة لكن ضخمة ومتكاملة. وتتابع <b>SICAM</b> <b>2614 قطعة</b>: عدد هائل من الوحدات الصغيرة المتفرّقة. الأداة نفسها يجب أن تجيب عن مشكلتين مختلفتي الطبيعة.",
+    en:"Two large agro-industrial groups illustrate two opposite ways of using a FMIS. <b>Poulina</b> runs <b>43 farms</b>: few sites, but very large and integrated. <b>SICAM</b> tracks <b>2,614 parcels</b>: a multitude of small, scattered units. The same tool must answer two problems of different nature."},
+  c_case_pou_n:{fr:"Poulina — 43 fermes",ar:"Poulina — 43 مزرعة",en:"Poulina — 43 farms"},
+  c_case_pou_s:{fr:"Grands sites intégrés",ar:"مواقع كبيرة متكاملة",en:"Large integrated sites"},
+  c_case_pou_d:{fr:"Peu de sites, mais grands et intégrés (élevage, aliment, agro-industrie). Le FMIS pilote des unités lourdes et consolide au niveau groupe.",ar:"مواقع قليلة لكن كبيرة ومتكاملة (تربية، أعلاف، صناعة زراعية). يقود FMIS وحدات ثقيلة ويوحّد على مستوى المجموعة.",en:"Few but large, integrated sites (livestock, feed, agro-industry). The FMIS steers heavy units and consolidates at group level."},
+  c_case_concentr:{fr:"Concentration",ar:"تركيز",en:"Concentration"},
+  c_case_sic_n:{fr:"SICAM — 2 614 parcelles",ar:"SICAM — 2614 قطعة",en:"SICAM — 2,614 parcels"},
+  c_case_sic_s:{fr:"Réseau de parcelles dispersées",ar:"شبكة قطع متفرّقة",en:"A network of scattered parcels"},
+  c_case_sic_d:{fr:"Des milliers de petites parcelles à suivre individuellement. Le FMIS gère la masse : géolocalisation, planning, coûts parcelle par parcelle.",ar:"آلاف القطع الصغيرة تُتابَع فرادى. يدير FMIS الكتلة: التموضع الجغرافي، الجدولة، التكاليف قطعةً قطعة.",en:"Thousands of small parcels to track individually. The FMIS handles the mass: geolocation, scheduling, costs parcel by parcel."},
+  c_case_disper:{fr:"Dispersion",ar:"تشتّت",en:"Dispersion"},
+  c_tbl_h1:{fr:"Critère",ar:"المعيار",en:"Criterion"},
+  c_tbl_h2:{fr:"Poulina (43 fermes)",ar:"Poulina (43 مزرعة)",en:"Poulina (43 farms)"},
+  c_tbl_h3:{fr:"SICAM (2 614 parcelles)",ar:"SICAM (2614 قطعة)",en:"SICAM (2,614 parcels)"},
+  c_tbl_r1a:{fr:"Nombre d'unités",ar:"عدد الوحدات",en:"Number of units"},
+  c_tbl_r1b:{fr:"Peu, très grandes",ar:"قليلة، ضخمة جداً",en:"Few, very large"},
+  c_tbl_r1c:{fr:"Beaucoup, petites",ar:"كثيرة، صغيرة",en:"Many, small"},
+  c_tbl_r2a:{fr:"Défi du FMIS",ar:"تحدّي FMIS",en:"FMIS challenge"},
+  c_tbl_r2b:{fr:"Profondeur & intégration",ar:"العمق والتكامل",en:"Depth & integration"},
+  c_tbl_r2c:{fr:"Volume & géolocalisation",ar:"الحجم والتموضع الجغرافي",en:"Volume & geolocation"},
+  c_tbl_r3a:{fr:"Valeur clé",ar:"القيمة المفتاحية",en:"Key value"},
+  c_tbl_r3b:{fr:"Consolidation groupe",ar:"توحيد المجموعة",en:"Group consolidation"},
+  c_tbl_r3c:{fr:"Coût par parcelle à l'échelle",ar:"التكلفة لكل قطعة على نطاق واسع",en:"Per-parcel cost at scale"},
+  c_s4_h2:{fr:"Le FMIS relie tous les domaines",ar:"FMIS يربط كل المجالات",en:"The FMIS links all domains"},
+  c_s4_p2:{fr:"Le FMIS est le point où <b>tout ce qui a été mesuré converge</b>. Le NDVI de la télédétection, l'humidité des capteurs, l'ET₀ de la météo, le volume d'irrigation, le débit du forage : chaque valeur, une fois rattachée à sa parcelle et à son coût, devient une <b>ligne du compte de résultat</b>. C'est pourquoi le FMIS est le dernier maillon technique — celui qui donne un <b>sens économique</b> à toute la chaîne.",
+    ar:"FMIS هو النقطة التي <b>يتلاقى فيها كل ما قيس</b>. NDVI الاستشعار، رطوبة المجسّات، ET₀ المناخ، حجم الري، تدفّق البئر: كل قيمة، بعد ربطها بقطعتها وتكلفتها، تصير <b>سطراً في حساب النتيجة</b>. لذلك FMIS هو الحلقة التقنية الأخيرة — التي تمنح <b>معنى اقتصادياً</b> للسلسلة كلها.",
+    en:"The FMIS is the point where <b>everything measured converges</b>. Remote-sensing NDVI, sensor moisture, weather ET₀, irrigation volume, borehole flow: each value, once tied to its parcel and cost, becomes a <b>line in the income statement</b>. That is why the FMIS is the final technical link — the one that gives an <b>economic meaning</b> to the whole chain."},
+  c_s4_ret:{fr:"Il n'y a pas un « bon » usage du FMIS : Poulina en fait un outil de <b>consolidation</b> (peu de gros sites), SICAM un outil de <b>gestion de masse</b> (milliers de parcelles). Ce qui est universel, c'est le principe : <b>rattacher chaque donnée à une parcelle et à un coût</b>, pour décider avec des chiffres.",
+    ar:"لا يوجد استعمال «صحيح» وحيد لـFMIS: تجعله Poulina أداة <b>توحيد</b> (مواقع قليلة كبيرة)، وSICAM أداة <b>إدارة كتلة</b> (آلاف القطع). الثابت هو المبدأ: <b>ربط كل بيان بقطعة وبتكلفة</b> لاتخاذ القرار بالأرقام.",
+    en:"There is no single \"right\" use of a FMIS: Poulina makes it a <b>consolidation</b> tool (few large sites), SICAM a <b>mass-management</b> tool (thousands of parcels). What is universal is the principle: <b>tie every datum to a parcel and a cost</b>, to decide with numbers."},
+
+  // Apps
+  c_apps_h:{fr:"Applications de ce domaine",ar:"تطبيقات هذا المجال",en:"Apps for this domain"},
+  c_apps_p:{fr:"Mettez en pratique le cours avec les applications interactives de la plateforme :",ar:"طبّق الدرس عبر التطبيقات التفاعلية للمنصّة:",en:"Put the course into practice with the platform's interactive apps:"},
+  c_open:{fr:"Ouvrir →",ar:"فتح →",en:"Open →"},
+  c_app_agm:{fr:"AgriManager — le cockpit",ar:"AgriManager — قمرة القيادة",en:"AgriManager — the cockpit"},
+  c_app_agm_d:{fr:"Parcelles, opérations, coûts de production, marges et AgriScore.",ar:"القطع، العمليات، تكاليف الإنتاج، الهوامش، وAgriScore.",en:"Parcels, operations, production costs, margins and AgriScore."},
+  c_app_sim:{fr:"Simulateur Smart Agri",ar:"محاكي الزراعة الذكية",en:"Smart Agri Simulator"},
+  c_app_sim_d:{fr:"ROI d'un pack IoT : CAPEX, économies, temps de retour (PBT).",ar:"عائد حزمة IoT: التكلفة الرأسمالية، التوفير، مدة الاسترجاع (PBT).",en:"ROI of an IoT pack: CAPEX, savings, payback time (PBT)."},
+  c_tp_t:{fr:"TP guidé — Gestion de ferme (FMIS)",ar:"عمل تطبيقي موجّه — إدارة المزرعة (FMIS)",en:"Guided lab — Farm management (FMIS)"},
+  c_tp_d:{fr:"Six étapes pas-à-pas : coût de production, culture déficitaire, AgriScore, ROI, avec questions auto-corrigées et compte-rendu exportable.",ar:"ست خطوات تدريجية: تكلفة الإنتاج، المحصول الخاسر، AgriScore، العائد، مع أسئلة ذاتية التصحيح وتقرير قابل للتصدير.",en:"Six step-by-step stages: production cost, loss-making crop, AgriScore, ROI, with self-marked questions and an exportable report."},
+  c_tp_go:{fr:"Commencer le TP",ar:"ابدأ العمل التطبيقي",en:"Start the lab"},
+  c_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Module M6 · support de cours",ar:"منصّة أجريتك ليبيا · EU4Skills — الوحدة M6 · مادة الدرس",en:"AgriTech Libya Platform · EU4Skills — Module M6 · course material"}
+});
+
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',applyHTML);
+
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

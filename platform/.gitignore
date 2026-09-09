@@ -1,0 +1,12 @@
+# Base SQLite (contient identifiants API + données utilisateurs) — NE PAS versionner
+db/*.db
+db/*.db-journal
+db/*.sqlite
+
+# Le schéma, lui, EST versionné :
+!db/schema.sql
+
+# Divers
+*.log
+.DS_Store
+Thumbs.db

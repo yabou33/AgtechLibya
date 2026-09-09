@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriMap · Éditeur de parcelles</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+<link rel="stylesheet" href="../assets/css/theme.css">
+<style>
+  html,body{height:100%;overflow:hidden}
+  .layout{display:flex;flex-direction:column;height:100vh}
+  header.app{flex:none}
+  .mapzone{flex:1;min-height:0}
+  .hgroup{display:flex;align-items:center;gap:8px}
+  .projname{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;font-weight:700;color:var(--ink);min-width:180px}
+  .savechip{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body dir="ltr">
+<div class="layout">
+  <header class="app">
+    <div class="logo"><span class="es-logo">ezzayra</span><span><b>Agri</b><span>Map</span></span></div>
+    <div class="sub" data-i18n="tagline">—</div>
+    <div class="right">
+      <input class="projname" id="projName" value="Domaine Sebha">
+      <span class="savechip" id="saveChip"></span>
+      <div class="langbox" id="langbox">
+        <button data-lang="fr">FR</button><button data-lang="ar">ع</button><button data-lang="en">EN</button>
+      </div>
+      <button class="btn ghost" id="btnImport">⬇ <span data-i18n="import">Importer</span></button>
+      <button class="btn primary" id="btnExport">⬆ <span data-i18n="export">Exporter</span></button>
+    </div>
+  </header>
+  <div class="mapzone" id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="../assets/i18n/i18n.js"></script>
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/crops.js"></script>
+<script src="../assets/js/agrimap-draw.js"></script>
+<script src="../assets/js/geo-search.js"></script>
+<script>
+let carto, saveTimer;
+const chip = m => { document.getElementById('saveChip').textContent = m; };
+
+(async function(){
+  await Store.detect();
+  I18N.set(I18N.lang);
+
+  carto = AgriMap.create('#map', { name:'Domaine Sebha', center:[27.036,14.425], zoom:13, basemap:'sat', lang:I18N.lang });
+  if(window.GeoSearch && carto.map) GeoSearch.add(carto.map, { lang:I18N.lang });
+
+  // Auto-save (serveur ou localStorage) à chaque changement, débounce 800ms
+  carto.on('change', state => {
+    chip('…');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      if(carto._pid) state.id = carto._pid;
+      const r = await Store.saveProject(state);
+      if(r && r.id) carto._pid = r.id;
+      chip(Store.serverMode ? '✓ enregistré (serveur)' : '✓ enregistré (local)');
+    }, 800);
+  });
+
+  document.getElementById('projName').oninput = e => { carto.setName(e.target.value); };
+
+  // Langue
+  document.getElementById('langbox').addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    I18N.set(b.dataset.lang); carto.setLang(I18N.lang);
+    document.getElementById('map').closest('body').setAttribute('dir', I18N.lang==='ar'?'rtl':'ltr');
+    setTimeout(()=>carto.invalidate(),50);
+  });
+
+  // Export : projet JSON + GeoJSON (structuré/géo) + CSV (tabulaire, géométrie WKT)
+  document.getElementById('btnExport').onclick = () => {
+    const proj = carto.export(); proj.name = document.getElementById('projName').value;
+    const slug = proj.name.replace(/\s+/g,'_');
+    Store.download('projet_'+slug+'.json', JSON.stringify(proj,null,2), 'application/json');
+    Store.download('parcelles_'+slug+'.geojson', JSON.stringify(carto.exportGeoJSON(),null,2), 'application/geo+json');
+    Store.download('parcelles_'+slug+'.csv', carto.exportCSV(), 'text/csv');
+  };
+
+  // Import : CSV (tabulaire) OU GeoJSON (parcelles) OU projet JSON complet
+  document.getElementById('btnImport').onclick = () => Store.pickFile('.csv,.json,.geojson', (txt) => {
+    try {
+      const t = txt.trim();
+      if(t[0] !== '{' && t[0] !== '['){ // heuristique : pas du JSON -> CSV
+        const n = carto.importCSV(txt); chip(n ? n+' parcelle(s) importée(s) (CSV)' : 'CSV : colonne wkt requise'); return;
+      }
+      const j = JSON.parse(txt);
+      if(j.type === 'FeatureCollection'){ const n = carto.importGeoJSON(j); chip(n+' parcelle(s) importée(s)'); }
+      else if(j.format === 'agrimanager-irrigation'){ carto.load(j); document.getElementById('projName').value=j.name||''; chip('projet importé'); }
+      else chip('format non reconnu');
+    } catch(e){ chip('fichier illisible'); alert(e.message); }
+  });
+})();
+</script>
+</body>
+</html>

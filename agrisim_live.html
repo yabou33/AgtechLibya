@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriSim Live — Real Parcels & Vegetation Indices · SKILLS4EU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Moteur de dessin PARTAGÉ de la plateforme (standard pilotage-irrigation) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="platform/public/assets/js/agrimap-draw.js"></script>
+<script src="platform/public/assets/js/geo-search.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<style>
+  :root{
+    --bg:#0d1a10; --panel:#16241a; --panel2:#1b2c1f; --line:#2e4634;
+    --ink:#edf4e8; --sub:#a9bfa3; --moss:#97bc62; --gold:#c9922b; --forest:#2c5f2d; --danger:#e05b4b;
+    --blue:#38bdf8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:radial-gradient(1200px 700px at 85% 10%, #14301b 0%, var(--bg) 55%);
+    color:var(--ink); font:14px/1.45 "Segoe UI", Calibri, system-ui, sans-serif; min-height:100vh; padding-bottom:24px}
+  
+  header{display:flex; align-items:center; gap:14px; padding:14px 22px; border-bottom:1px solid var(--line); flex-wrap:wrap}
+  header h1{font-size:18.5px; font-weight:700}
+  header .ar{color:var(--gold); font-weight:700; font-size:15px}
+  header .tag{color:var(--sub); font-size:12px}
+  header .right{margin-left:auto; display:flex; align-items:center; gap:10px}
+
+  main{display:grid; grid-template-columns:1fr 370px; gap:14px; padding:14px 20px; align-items:start}
+  @media (max-width:1100px){ main{grid-template-columns:1fr} }
+  
+  .mapwrap{background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; position:relative}
+  .toolbar{display:flex; gap:6px; flex-wrap:wrap; padding:10px 12px; border-bottom:1px solid var(--line); align-items:center}
+  .toolbar .sep{width:1px; align-self:stretch; background:var(--line); margin:0 4px}
+  
+  button,select,input[type=date]{background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:6px 11px; font:inherit; cursor:pointer; transition:all .15s}
+  input[type=date]{cursor:auto; color-scheme:dark}
+  button:hover{border-color:var(--moss); color:#fff}
+  button:focus-visible,select:focus-visible{outline:2px solid var(--gold); outline-offset:1px}
+  button.active{background:var(--forest); border-color:var(--moss); color:#fff; box-shadow:0 0 8px rgba(151,188,98,0.3)}
+  button.gold{background:var(--gold); color:#1a1408; border-color:var(--gold); font-weight:700}
+  button.gold:hover{background:#dca635; color:#000}
+  button.danger{background:#451410; border-color:var(--danger); color:#fca5a5}
+  button.danger:hover{background:#7f1d1d}
+
+  #lmap{height:540px; z-index:1}
+  .px-tip{position:absolute; z-index:1100; pointer-events:none; background:rgba(22,36,26,.95); border:1px solid var(--line); border-radius:8px; padding:6px 9px; font-size:12px; color:#edf5eb; box-shadow:0 4px 14px rgba(0,0,0,.5); white-space:nowrap; display:none}
+  .px-tip b{font-family:Consolas,monospace; font-size:14px} .px-tip .sw{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-2px; margin-right:6px; border:1px solid #0009}
+  .px-tip .sub{color:#9fb699; font-size:11px}
+  .px-pin{background:rgba(22,36,26,.92); color:#fff; border:1px solid var(--moss); border-radius:6px; padding:2px 7px; font-size:11.5px; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.5)} .px-pin::before{display:none}
+  .leaflet-container.px-probe{cursor:crosshair}
+  
+  .map-hud{position:absolute; top:56px; right:12px; z-index:1000; background:rgba(22,36,26,0.92); backdrop-filter:blur(6px);
+    border:1px solid var(--line); border-radius:8px; padding:7px 12px; font-size:12px; color:var(--ink); pointer-events:none}
+  .map-hud b{color:var(--gold)}
+
+  .timebar{display:flex; align-items:center; gap:10px; padding:9px 14px; border-top:1px solid var(--line); flex-wrap:wrap}
+  .timebar .date{font-weight:700; color:var(--moss); min-width:160px}
+  .chips{display:flex; gap:6px; flex-wrap:wrap; padding:0 14px 10px; max-height:76px; overflow:auto}
+  .chip{background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:3px 10px; font-size:11.5px; cursor:pointer; color:var(--ink)}
+  .chip small{color:var(--gold)}
+  .chip.on{background:var(--forest); border-color:var(--moss); color:#fff}
+  
+  .statusline{padding:6px 14px 8px; font-size:12px; color:var(--sub)}
+  .statusline.err{color:var(--danger); font-weight:700}
+
+  aside .card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:12px}
+  aside h2{font-size:14px; font-weight:700; margin-bottom:2px}
+  aside h2 .ar{color:var(--gold); font-size:12.5px; margin-inline-start:6px}
+  aside .hint{color:var(--sub); font-size:12px; margin-bottom:8px}
+  
+  table{width:100%; border-collapse:collapse; font-size:12px}
+  th{color:var(--sub); font-weight:600; text-align:left; padding:4px 6px; border-bottom:1px solid var(--line)}
+  td{padding:6px 6px; border-bottom:1px solid rgba(46,70,52,.5)}
+  tr.sel td{background:rgba(151,188,98,.14)}
+  tr:hover td{background:rgba(151,188,98,.08); cursor:pointer}
+  td .del{color:var(--danger); cursor:pointer; border:none; background:none; font-size:13px; padding:0 4px}
+  .spark{width:64px; height:20px; vertical-align:middle}
+  
+  #chart{width:100%; height:190px; background:var(--panel2); border:1px solid var(--line); border-radius:8px}
+  .formula{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:12px; margin-top:8px; color:var(--sub)}
+  .rtl{direction:rtl; text-align:right}
+  
+  .doc h3{font-size:13px; color:var(--moss); margin-bottom:2px}
+  .doc h3 .arname{color:var(--gold); font-size:12px; font-weight:700}
+  .doc .frm{background:#0f1c12; border:1px solid var(--line); border-radius:6px; padding:5px 8px; margin:5px 0; font-family:Consolas,monospace; font-size:12px; color:var(--ink)}
+  .doc .bands{color:var(--sub); font-size:11.5px; margin-bottom:5px}
+  .rangeT{width:100%; border-collapse:collapse; font-size:11.5px; margin:5px 0}
+  .rangeT td{padding:2.5px 5px; border-bottom:1px solid rgba(46,70,52,.45)}
+  .rangeT .dot{display:inline-block; width:9px; height:9px; border-radius:5px; margin-inline-end:5px; vertical-align:middle}
+  .doc .arp{color:#cfc39a; font-size:11.5px; margin-top:6px; line-height:1.6}
+  .doc .pit{color:var(--gold); font-size:11.5px; margin-top:5px}
+
+  details{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin:0 20px 14px}
+  details summary{cursor:pointer; font-weight:700; color:var(--gold)}
+  details .ex{margin:10px 0 4px}
+  details .ex b{color:var(--moss)}
+  details .ex .ar{color:var(--gold); font-size:12.5px}
+  
+  footer{padding:8px 20px 14px; color:#6e8570; font-size:11.5px}
+  .warn{background:#241c0e; border:1px solid #6a5320; color:#e0c88a; border-radius:10px; padding:8px 12px; font-size:12px; margin:0 20px 14px}
+  kbd{background:var(--panel2); border:1px solid var(--line); border-radius:4px; padding:0 5px; font-size:11px}
+  .leaflet-container{background:#0a140c}
+
+  /* Modal API Config */
+  .modal-backdrop{position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.75); z-index:2000; display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px)}
+  .modal{background:#16241a; border:1px solid var(--line); border-radius:14px; width:90%; max-width:560px; padding:20px 24px; box-shadow:0 20px 40px rgba(0,0,0,0.7)}
+  .modal h3{font-size:17px; margin-bottom:10px; color:var(--gold)}
+  .modal .field{display:flex; flex-direction:column; gap:4px; margin-bottom:10px}
+  .modal .field label{color:var(--sub); font-size:11.5px; font-weight:700}
+  .modal .actions{display:flex; justify-content:flex-end; gap:10px; margin-top:16px}
+  .leaflet-labels-pane img{filter:drop-shadow(0 0 2px #000) drop-shadow(0 0 1px #000)}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style id="platform-skin">
+/* =====================================================================
+   SKIN PLATEFORME — thème « papier » clair-vert (harmonisé accueil/theme.css)
+   Surcharge intégralement le thème olive sombre d'origine.
+   Placé EN DERNIER dans le <head> pour gagner la cascade.
+   ===================================================================== */
+:root{
+  --bg:#fbfcf8; --panel:#ffffff; --panel2:#f6faf0; --line:#d8e4c8;
+  --ink:#2c3a24; --sub:#6f7d64; --moss:#5a8f2c; --gold:#5a8f2c; --forest:#7cb342;
+  --green:#7cb342; --green-d:#5a8f2c;
+}
+[hidden]{display:none!important}
+
+body{
+  background:#fbfcf8 !important; color:var(--ink);
+  font-family:"Inter","Segoe UI",system-ui,sans-serif;
+}
+body[dir=rtl], .ar, .rtl{font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif}
+
+/* En-tête blanc */
+header{background:#fff !important; border-bottom:1px solid var(--line) !important}
+header h1{color:var(--ink)}
+header .ar{color:var(--green-d)}
+header .tag{color:var(--sub)}
+
+/* Champs & boutons clairs, accents verts */
+button,select,input[type=date]{background:#fff; color:var(--ink); border:1px solid var(--line)}
+input[type=date]{color-scheme:light}
+button:hover{border-color:var(--green); color:var(--ink)}
+button:focus-visible,select:focus-visible{outline:2px solid var(--green-d); outline-offset:1px}
+button.active{background:var(--green); border-color:var(--green); color:#fff; box-shadow:0 0 0 2px rgba(124,179,66,.20)}
+button.gold{background:var(--green) !important; color:#fff !important; border-color:var(--green) !important; font-weight:700}
+button.gold:hover{background:var(--green-d) !important; color:#fff !important}
+button.danger{background:#fdecea !important; border-color:#e0857b !important; color:#b23b2e !important}
+button.danger:hover{background:#f8d7d2 !important; color:#7f1d1d !important}
+
+/* Carte / panneaux clairs */
+.mapwrap, aside .card{background:#fff; border:1px solid var(--line)}
+.toolbar{border-bottom:1px solid var(--line)}
+.toolbar .sep{background:var(--line)}
+.leaflet-container{background:#e9eef0 !important}
+.leaflet-control-layers,.leaflet-bar a,.leaflet-bar{background:#fff !important; color:var(--ink) !important; border-color:var(--line) !important}
+
+/* HUD carte : boîte claire, déplacée en bas-gauche (évite la recherche géo en haut) */
+.map-hud{
+  top:auto; bottom:12px; right:auto; left:12px;
+  background:rgba(255,255,255,.94) !important; border:1px solid var(--line) !important; color:var(--ink) !important;
+  box-shadow:0 4px 18px rgba(60,80,40,.12)
+}
+.map-hud b{color:var(--green-d)}
+
+/* Sonde pixel / épingles : boîtes claires */
+.px-tip{background:rgba(255,255,255,.96) !important; color:var(--ink) !important; border-color:var(--line) !important; box-shadow:0 4px 14px rgba(60,80,40,.18)}
+.px-tip .sub{color:var(--sub) !important}
+.px-pin{background:#fff !important; color:var(--ink) !important; border-color:var(--green) !important}
+
+/* Barre de temps, chips, statut */
+.timebar{border-top:1px solid var(--line)}
+.timebar .date{color:var(--green-d)}
+.chip{background:var(--panel2); border:1px solid var(--line); color:var(--ink)}
+.chip small{color:var(--green-d)}
+.chip.on{background:var(--green); border-color:var(--green); color:#fff}
+.statusline{color:var(--sub)}
+.statusline.err{color:#c0392b}
+
+/* Panneau droit / cartes / workflow guidé clair */
+aside h2{color:var(--ink)}
+aside h2 .ar{color:var(--green-d)}
+aside .hint{color:var(--sub)}
+#wfCard{border-color:var(--green) !important}
+#wfMod{color:var(--green-d) !important}
+#wfStep{color:var(--green-d) !important}
+#wfTitle{color:var(--ink)}
+#wfTextAr{color:#5c6b4e !important}
+
+/* Tables claires */
+th{color:var(--sub); border-bottom:1px solid var(--line)}
+td{border-bottom:1px solid var(--line)}
+tr.sel td{background:rgba(124,179,66,.16)}
+tr:hover td{background:rgba(124,179,66,.09)}
+td .del{color:#c0392b}
+
+/* Graphique & boîtes de formule/doc claires */
+#chart{background:var(--panel2); border:1px solid var(--line)}
+.formula{background:var(--panel2) !important; border:1px solid var(--line) !important; color:var(--sub)}
+.doc h3{color:var(--green-d)}
+.doc h3 .arname{color:var(--green-d)}
+.doc .frm{background:var(--panel2) !important; border-color:var(--line) !important; color:var(--ink) !important}
+.doc .bands{color:var(--sub)}
+.doc .arp, .doc .arp.rtl{color:#5c6b4e !important}
+.doc .pit{color:var(--green-d) !important}
+.rangeT td{border-bottom:1px solid var(--line)}
+.rangeT td.rtl{color:#5c6b4e !important}
+
+/* Guide d'atelier (details) + encadrés */
+details{background:#fff !important; border:1px solid var(--line) !important}
+details summary{color:var(--green-d) !important}
+details .ex b{color:var(--green-d)}
+details .ex .ar{color:var(--green-d)}
+details .rtl{color:#5c6b4e !important}
+.warn{background:#fbf6e3 !important; border-color:#e3d9a6 !important; color:#7a6321 !important}
+kbd{background:var(--panel2) !important; color:var(--green-d) !important; border-color:var(--line) !important}
+footer{color:var(--sub)}
+
+/* Modale de config claire */
+.modal{background:#fff !important; border-color:var(--line) !important; box-shadow:0 20px 40px rgba(40,55,25,.25)}
+.modal h3{color:var(--green-d) !important}
+.modal .field label{color:var(--sub)}
+.modal input[type=text],.modal input[type=password]{background:#fff; color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:6px 11px}
+
+/* ===== Barre d'outils de dessin STANDARD (overlay carto ; reste sombre) ===== */
+.agri-stdbar{display:flex; flex-direction:column; gap:3px; background:#16201b; border:1px solid #2b3a30;
+  border-radius:11px; padding:5px; box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.agri-stdbar .tool{width:38px; height:38px; border:none; background:transparent; color:#cdd8cb; border-radius:8px;
+  cursor:pointer; display:grid; place-items:center; position:relative; transition:.15s}
+.agri-stdbar .tool svg{width:20px; height:20px}
+.agri-stdbar .tool:hover{background:#ffffff1a; color:#fff}
+.agri-stdbar .tool.on{background:var(--green); color:#0d2b06}
+.agri-stdbar .sep{height:1px; background:#2b3a30; margin:3px 4px}
+.agri-stdbar .tool .tip{position:absolute; inset-inline-start:46px; top:50%; transform:translateY(-50%);
+  background:#0e1512; color:#e8efe6; font:600 12px/1 "Inter",system-ui; white-space:nowrap; padding:6px 9px;
+  border-radius:6px; opacity:0; pointer-events:none; transition:.12s; border:1px solid #2b3a30; z-index:5}
+.agri-stdbar .tool:hover .tip{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AgriSim Live — Real Parcels &amp; Vegetation Indices</h1>
+  <span class="ar">محاكي القطع والمؤشرات — بصور حقيقية</span>
+  <span class="tag">SKILLS4EU · Sentinel-2 L2A live (Sentinel Hub)</span>
+  <div class="right">
+    <button id="btnExport" style="font-size:12px" title="Exporter les parcelles : JSON projet + GeoJSON + CSV. CSV : name,type,radius_m,mean,min,max,wkt (géométrie WKT POLYGON((lng lat, ...)))">⬆ Export <span class="ar">تصدير</span></button>
+    <button id="btnImport" style="font-size:12px" title="Importer .csv (colonnes name,type,radius_m,mean,min,max,wkt) · .geojson (FeatureCollection) · .json (projet agrisim-live)">⬇ Import <span class="ar">استيراد</span></button>
+    <button id="btnConfig" style="font-size:12px">⚙️ API / Clés</button>
+    <a href="agrimap.html" style="text-decoration:none; background:var(--forest); color:#fff; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--moss)">🛰️ AgriMap</a>
+  </div>
+</header>
+
+<main>
+  <section class="mapwrap">
+    <div class="toolbar">
+      <div role="group" aria-label="Layer" style="display:flex;gap:5px">
+        <button id="l-rgb" class="active" title="Sentinel-2 true colour">S2 RGB</button>
+        <button id="l-ndvi" title="(B08−B04)/(B08+B04)">NDVI</button>
+        <button id="l-ndwi" title="Gao: (B08−B11)/(B08+B11)">NDWI</button>
+        <button id="l-ndre" title="(B08−B05)/(B08+B05)">NDRE</button>
+      </div>
+      
+      <div class="sep"></div>
+      
+      <button id="t-draw" title="Draw polygon parcel">✏️ Parcel <span style="color:var(--gold)">مضلع</span></button>
+      <button id="t-pivot" title="Draw center-pivot irrigation circle">🔘 Pivot (Circle) <span style="color:var(--gold)">محور</span></button>
+      <button id="t-rect" title="Draw rectangle">⏹️ Rect</button>
+      <button id="t-undo" title="Undo vertex">↩️</button>
+      <button id="t-inspect" title="Click a pixel to inspect real reflectances">🔍 Inspector</button>
+      <button id="btnRefresh" class="gold" title="Render index overlay">↻ Render</button>
+      
+      <div class="sep"></div>
+      
+      <span style="color:var(--sub);font-size:12px">Du</span> <input type="date" id="dFrom" style="width:125px">
+      <span style="color:var(--sub);font-size:12px">Au</span> <input type="date" id="dTo" style="width:125px">
+      <select id="cloud"><option>10</option><option selected>30</option><option>60</option></select>
+      <button id="btnSearch">🛰 Find dates</button>
+    </div>
+
+    <div id="lmap"></div>
+    <div class="px-tip" id="pxTip"></div>
+    <div class="map-hud" id="mapHud">Tool: <b>Ready</b> — Select ✏️ Parcel or 🔘 Pivot to draw</div>
+
+    <div class="timebar">
+      <button id="prevD" title="Previous date">◀</button>
+      <button id="play" title="Play the season">▶</button>
+      <button id="nextD" title="Next date">▶▶</button>
+      <span class="date" id="dateLabel">no date — press 🛰 Find dates</span>
+      <span style="color:var(--sub);font-size:12px;margin-left:auto">Opacity</span>
+      <input type="range" id="opacity" min="0" max="100" value="100" style="width:130px;accent-color:var(--moss)">
+    </div>
+    
+    <div class="chips" id="dateChips"></div>
+    <div class="statusline" id="mapStatus">Ready — search dates (🛰) or draw a parcel/pivot on the map.</div>
+  </section>
+
+  <aside>
+    <!-- Guided Workflow -->
+    <div class="card" id="wfCard" style="border-color:var(--gold)">
+      <h2 style="display:flex;align-items:center;gap:8px">Guided workflow <span class="ar">مسار موجَّه</span>
+        <span id="wfStep" style="margin-left:auto;color:var(--gold);font-size:12px"></span></h2>
+      <div id="wfDots" style="display:flex;gap:5px;margin:6px 0 8px"></div>
+      <div id="wfMod" style="color:var(--moss);font-weight:700;font-size:12px"></div>
+      <div id="wfTitle" style="font-weight:700;margin:2px 0 4px"></div>
+      <div id="wfText" class="hint" style="margin-bottom:4px"></div>
+      <div id="wfTextAr" class="hint rtl" style="margin-bottom:6px;color:#cfc39a"></div>
+      <div id="wfStatus" style="font-size:12px;min-height:18px;margin-bottom:8px;color:var(--sub)"></div>
+      <div style="display:flex;gap:8px">
+        <button id="wfPrev">← Back</button>
+        <button id="wfNext" class="gold" style="flex:1">Next step →</button>
+      </div>
+    </div>
+
+    <!-- Parcels Table -->
+    <div class="card">
+      <h2>Parcels &amp; zonal statistics <span class="ar">القطع والإحصاءات</span></h2>
+      <div class="hint">Draw polygons (✏️) or irrigation pivots (🔘). Stats are calculated live via Statistical API.</div>
+      <table id="ptable">
+        <thead><tr><th>Parcel</th><th>Type</th><th>Mean</th><th>Min/Max</th><th>Season</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Time Series Chart -->
+    <div class="card">
+      <h2>Time series <span class="ar">السلسلة الزمنية</span></h2>
+      <div class="hint" id="chartHint">Select a parcel to plot its real season (NDVI, NDWI, NDRE).</div>
+      <canvas id="chart" width="600" height="380"></canvas>
+      <div class="formula doc" id="formulaBox"></div>
+    </div>
+  </aside>
+</main>
+
+<details>
+  <summary>Workshop guide — 4 ready-made exercises · دليل الورشة</summary>
+  <div class="ex"><b>Exercise 1 — Compute the index by hand, on a REAL pixel.</b> <span class="ar">التمرين 1: احسبوا المؤشر يدوياً على بكسل حقيقي</span><br>
+  Activate the Pixel inspector and click one point inside a crop and one on bare soil. Read the real Sentinel-2 reflectances (B04, B08), compute NDVI on paper, then check against the inspector.
+  <div class="rtl" style="color:#cfc39a;margin-top:3px">فعِّلوا فاحص البكسل وانقروا نقطة داخل محصول وأخرى على تربة عارية. اقرأوا الانعكاسات الحقيقية (B04 وB08)، واحسبوا NDVI على الورق ثم قارنوا بقيمة الفاحص.</div></div>
+  <div class="ex"><b>Exercise 2 — Zonal statistics.</b> <span class="ar">التمرين 2: إحصاءات لكل قطعة</span><br>
+  Draw three parcels or pivots on different real fields. Rank them by mean NDVI on today's best date, then load their seasons.
+  <div class="rtl" style="color:#cfc39a;margin-top:3px">ارسموا ثلاث قطع أو محاور دائرية على حقول مختلفة ورتبوها حسب متوسط NDVI ثم قارنوا مواسمها.</div></div>
+  <div class="ex"><b>Exercise 3 — Time-series clinic & Anomaly detection.</b> <span class="ar">التمرين 3: تشخيص الشذوذ والانحراف</span><br>
+  Walk the available dates over an irrigated zone. Find a parcel whose NDVI diverges from its neighbours, draw suspect and control parcels, and compare the curves.
+  <div class="rtl" style="color:#cfc39a;margin-top:3px">تنقلوا بين التواريخ المتاحة فوق منطقة مروية، جدوا قطعة ينحرف مؤشرها عن جيرانها، وارسموا قطعة مشبوهة وأخرى شاهدة وقارنوا المنحنيين.</div></div>
+  <div class="ex"><b>Exercise 4 — Geology & Center-Pivot Irrigation: The pivot is a flowmeter.</b> <span class="ar">التمرين 4: المحور الدائري عدّاد مياه من الفضاء</span><br>
+  Pan the map to a desert pivot zone (Kufra, Wadi Sirhan, Gafsa...), select 🔘 Pivot tool, click center and radius. The circle's seasonal NDVI curve reflects the groundwater pumping schedule.
+  <div class="rtl" style="color:#cfc39a;margin-top:3px">حرِّكوا الخريطة نحو منطقة محاور صحراوية (الكفرة، وادي السرحان، قفصة...)، اختاروا أداة المحور الدائري 🔘 وارسموا المحور: منحنى NDVI الدائري يجسد جدول الضخ المائي من الخزان الجوفي.</div></div>
+</details>
+
+<!-- Modal API Config -->
+<div class="modal-backdrop" id="modalConfig">
+  <div class="modal">
+    <h3>⚙️ Sentinel Hub API Configuration</h3>
+    <div class="field">
+      <label>Mode</label>
+      <select id="cfgMode">
+        <option value="proxy" selected>Local PHP Proxy (sh_token.php)</option>
+        <option value="direct_keys">Direct OAuth Keys (Client ID + Secret)</option>
+        <option value="direct_token">Direct Bearer Token</option>
+      </select>
+    </div>
+    <div id="cfgGroupProxy" class="field">
+      <label>Proxy URL</label>
+      <input type="text" id="cfgProxyUrl" value="sh_token.php">
+    </div>
+    <div id="cfgGroupKeys" style="display:none">
+      <div class="field"><label>Client ID</label><input type="text" id="cfgClientId" value="" placeholder="Votre Sentinel Hub Client ID"></div>
+      <div class="field"><label>Client Secret</label><input type="password" id="cfgClientSecret" value="" placeholder="Votre Sentinel Hub Client Secret"></div>
+    </div>
+    <div id="cfgGroupToken" style="display:none" class="field">
+      <label>Access Token</label>
+      <input type="text" id="cfgToken">
+    </div>
+    <div id="cfgTestStatus" style="font-size:12px;margin-top:8px"></div>
+    <div class="actions">
+      <button id="btnTestAuth">🔌 Test Connection</button>
+      <button id="btnCloseConfig">Close</button>
+      <button id="btnSaveConfig" class="gold">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============ Sentinel Hub Configuration ============ */
+const SH = {
+  process: "https://services.sentinel-hub.com/api/v1/process",
+  catalog: "https://services.sentinel-hub.com/api/v1/catalog/1.0.0/search",
+  stats: "https://services.sentinel-hub.com/api/v1/statistics",
+  oauth: "https://services.sentinel-hub.com/oauth/token"
+};
+
+const authCfg = {
+  mode: localStorage.getItem('sh_auth_mode') || 'proxy',
+  proxyUrl: localStorage.getItem('sh_proxy_url') || 'sh_token.php',
+  clientId: localStorage.getItem('sh_client_id') || '',
+  clientSecret: localStorage.getItem('sh_client_secret') || '',
+  directToken: localStorage.getItem('sh_direct_token') || ''
+};
+
+let token = null, tokenExp = 0;
+
+async function getToken(){
+  if(token && Date.now() < tokenExp - 60000) return token;
+
+  // 1. Direct Bearer token
+  if (authCfg.mode === 'direct_token' && authCfg.directToken) {
+    token = authCfg.directToken.trim();
+    tokenExp = Date.now() + 3600000;
+    return token;
+  }
+  
+  // 2. Query via local proxy (avoids browser CORS block)
+  let targetUrl = authCfg.proxyUrl;
+  if (authCfg.mode === 'direct_keys' && authCfg.clientId && authCfg.clientSecret) {
+    const sep = targetUrl.includes('?') ? '&' : '?';
+    targetUrl += sep + 'client_id=' + encodeURIComponent(authCfg.clientId) + '&client_secret=' + encodeURIComponent(authCfg.clientSecret);
+  }
+
+  try {
+    const r = await fetch(targetUrl, { cache: "no-store" });
+    if (!r.ok) {
+      const txt = await r.text();
+      let msg = "Token proxy error (" + r.status + ")";
+      try { const j = JSON.parse(txt); msg = j.detail || j.error || msg; }catch(e){}
+      throw new Error(msg);
+    }
+    const j = await r.json();
+    if (!j.access_token) throw new Error("Token proxy: " + (j.error || "invalid response"));
+    token = j.access_token;
+    tokenExp = Date.now() + (j.expires_in || 3500) * 1000;
+    return token;
+  } catch(e) {
+    throw new Error("Sentinel Hub Auth failed: " + e.message + " — Check ⚙️ API / Clés.");
+  }
+}
+
+async function shFetch(url, payload, expect="json"){
+  const tk = await getToken();
+  const acceptHeader = (expect === "blob") ? "image/png" : "application/geo+json, application/json, */*";
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk, "Accept": acceptHeader },
+    body: JSON.stringify(payload)
+  });
+  if(!r.ok){ const t = await r.text(); throw new Error("API " + r.status + " — " + t.slice(0, 160)); }
+  return expect === "blob" ? r.blob() : r.json();
+}
+
+function setStatus(msg, err){
+  const e = document.getElementById("mapStatus");
+  e.textContent = msg;
+  e.className = "statusline" + (err ? " err" : "");
+}
+
+/* ============ Geodesic Circle to Polygon ============ */
+function circleToPolygon(centerLat, centerLng, radiusMeters, numPoints = 64) {
+  const coords = [];
+  const earthRadius = 6378137;
+  const latRad = centerLat * Math.PI / 180;
+  const lngRad = centerLng * Math.PI / 180;
+  const dByR = radiusMeters / earthRadius;
+
+  for (let i = 0; i <= numPoints; i++) {
+    const bearing = (i * 2 * Math.PI) / numPoints;
+    const pointLatRad = Math.asin(
+      Math.sin(latRad) * Math.cos(dByR) +
+      Math.cos(latRad) * Math.sin(dByR) * Math.cos(bearing)
+    );
+    const pointLngRad = lngRad + Math.atan2(
+      Math.sin(bearing) * Math.sin(dByR) * Math.cos(latRad),
+      Math.cos(dByR) - Math.sin(latRad) * Math.sin(pointLatRad)
+    );
+    coords.push([pointLatRad * 180 / Math.PI, pointLngRad * 180 / Math.PI]);
+  }
+  return coords;
+}
+
+/* ============ Spectral Indices Documentation ============ */
+const IDX = {
+ ndvi:{f:"(B08 - B04) / (B08 + B04)", min:0, max:0.9, ramp:[[0,'#a50f15'],[0.28,'#f46d43'],[0.55,'#fee08b'],[0.8,'#a6d96a'],[1,'#006837']]},
+ ndwi:{f:"(B08 - B11) / (B08 + B11)", min:-0.3, max:0.6, ramp:[[0,'#785028'],[0.5,'#e8e6d4'],[1,'#1a49b8']]},
+ ndre:{f:"(B08 - B05) / (B08 + B05)", min:0, max:0.5, ramp:[[0,'#a50f15'],[0.3,'#f46d43'],[0.6,'#fee08b'],[0.85,'#a6d96a'],[1,'#006837']]}
+};
+
+const BANDS = ["B02","B03","B04","B05","B08","B11"];
+
+const DOC = {
+ rgb:{name:"Satellite — Sentinel-2 true colour", arname:"سنتينل-2: الألوان الطبيعية",
+  frm:"RGB = 2.8×B04 · 2.8×B03 · 2.8×B02", bands:"Copernicus Sentinel-2 L2A, 10 m/pixel.",
+  rows:[], uses:"True color imagery for visual orientation and field limits.",
+  ar:"الصور الحقيقية بدقة 10 أمتار لتمييز حدود الحقول والتموضع.",
+  pit:"Limit: visual greenness does not reveal subtle physiological stress."},
+ ndvi:{name:"NDVI — Normalized Difference Vegetation Index", arname:"مؤشر الغطاء النباتي المعياري",
+  frm:"NDVI = (NIR − Red) / (NIR + Red)", bands:"NIR = B08 (842 nm, 10m) · Red = B04 (665 nm, 10m).",
+  rows:[["#a50f15","< 0.1","Water / rock / bare soil","ماء أو صخر أو تربة عارية"],
+        ["#f46d43","0.1 – 0.2","Bare soil / early emergence","تربة أو بداية إنبات"],
+        ["#fee08b","0.2 – 0.4","Sparse vegetation","غطاء خفيف أو مبكر"],
+        ["#a6d96a","0.4 – 0.6","Moderate canopy","غطاء متوسط"],
+        ["#1a9850","0.6 – 0.9","Dense healthy canopy","غطاء كثيف وسليم"]],
+  uses:"Vigour mapping, anomaly detection, biomass tracking.",
+  ar:"المؤشر الأساسي: يقيس نشاط اليخضور والكتلة الحيوية.",
+  pit:"Saturates above ~0.8 · Olive groves mix soil and trees in 10m pixels."},
+ ndwi:{name:"NDWI — Normalized Difference Water Index (Gao)", arname:"مؤشر الماء المعيari",
+  frm:"NDWI = (NIR − SWIR) / (NIR + SWIR)", bands:"NIR = B08 (842 nm) · SWIR = B11 (1610 nm, 20m).",
+  rows:[["#786428","< 0","Dry soil / low water","تربة جافة"],
+        ["#7d8f5a","0 – 0.2","Low canopy water","محتوى مائي منخفض"],
+        ["#5aa7e0","0.2 – 0.4","Moderate water","محتوى مائي متوسط"],
+        ["#2a5adf","> 0.4","Well-watered","غطاء جيد الارتواء"]],
+  uses:"Canopy WATER content — drops before NDVI during water stress.",
+  ar:"يقيس المحتوى المائي للأوراق وينخفض مع الإجهاد المائي قبل NDVI.",
+  pit:"Gao's NDWI (NIR/SWIR) ≠ McFeeters' (Green/NIR)."},
+ ndre:{name:"NDRE — Normalized Difference Red Edge", arname:"مؤشر الحافة الحمراء المعياري",
+  frm:"NDRE = (NIR − RedEdge) / (NIR + RedEdge)", bands:"NIR = B08 (842 nm) · RedEdge = B05 (705 nm, 20m).",
+  rows:[["#f46d43","< 0.1","Bare / very sparse","عارٍ أو خفيف"],
+        ["#fee08b","0.1 – 0.2","Low chlorophyll","يخضور منخفض"],
+        ["#a6d96a","0.2 – 0.3","Moderate / good","متوسط إلى جيد"],
+        ["#1a9850","> 0.3","High chlorophyll","يخضور مرتفع"]],
+  uses:"Red edge discriminates when NDVI saturates (nitrogen & dense crops).",
+  ar:"يبقى مميزاً عند تشبع NDVI — مناسب للتسميد الآزوتي والأغطية الكثيفة.",
+  pit:"NDRE values run lower than NDVI scale."}
+};
+
+function docHTML(l){
+  const d = DOC[l];
+  const rows = d.rows.length ? '<table class="rangeT">' + d.rows.map(r => `<tr><td><span class="dot" style="background:${r[0]}"></span>${r[1]}</td><td>${r[2]}</td><td class="rtl" style="color:#cfc39a">${r[3]}</td></tr>`).join("") + "</table>" : "";
+  return `<h3>${d.name} <span class="arname rtl" style="float:inline-end">${d.arname}</span></h3>
+    <div class="frm">${d.frm}</div><div class="bands">${d.bands}</div>${rows}
+    <div>${d.uses}</div><div class="arp rtl">${d.ar}</div><div class="pit">${d.pit}</div>`;
+}
+
+/* ============ Evalscripts ============ */
+function rampStops(ix){
+  return ix.ramp.map(([t,hex])=>{
+    const n = parseInt(hex.slice(1), 16);
+    return `[${(ix.min + t * (ix.max - ix.min)).toFixed(4)},[${(n>>16)&255},${(n>>8)&255},${n&255}]]`;
+  }).join(",");
+}
+
+function vizEval(l){
+  if(l === "rgb") return `//VERSION=3
+function setup(){return{input:[{bands:["B02","B03","B04","dataMask"]}],output:{bands:4}};}
+function evaluatePixel(s){return[2.8*s.B04,2.8*s.B03,2.8*s.B02,s.dataMask];}`;
+  const ix = IDX[l];
+  return `//VERSION=3
+function setup(){return{input:[{bands:["B04","B05","B08","B11","dataMask"]}],output:{bands:4}};}
+const stops=[${rampStops(ix)}];
+function colorOf(v){ if(v<=stops[0][0])return stops[0][1];
+ for(let i=1;i<stops.length;i++){ if(v<=stops[i][0]){ const f=(v-stops[i-1][0])/(stops[i][0]-stops[i-1][0]),a=stops[i-1][1],b=stops[i][1];
+  return[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}} return stops[stops.length-1][1];}
+function evaluatePixel(s){const B04=s.B04,B05=s.B05,B08=s.B08,B11=s.B11;
+ const v=${ix.f}; const c=colorOf(v); return[c[0]/255,c[1]/255,c[2]/255,s.dataMask];}`;
+}
+
+/* Index value per pixel encoded on 16 bits (R = high byte, G = low byte, B = 255 if valid) — lossless PNG, no alpha */
+function valueRange(ix){ const pad = (ix.max - ix.min) * 0.5; return [ix.min - pad, ix.max + pad]; }
+function valueEval(l){
+  const ix = IDX[l], [lo, hi] = valueRange(ix);
+  return `//VERSION=3
+function setup(){return{input:[{bands:["B04","B05","B08","B11","dataMask"]}],output:{bands:3,sampleType:"UINT8"}};}
+function evaluatePixel(s){const B04=s.B04,B05=s.B05,B08=s.B08,B11=s.B11; if(!s.dataMask) return [0,0,0];
+ let v=${ix.f}; if(!isFinite(v)) return [0,0,0];
+ let q=Math.round((v-(${lo}))/(${hi - lo})*65535); q=Math.max(0,Math.min(65535,q)); return [Math.floor(q/256), q%256, 255];}`;
+}
+
+const statEval = `//VERSION=3
+function setup(){return{input:[{bands:["B04","B05","B08","B11","dataMask"]}],
+ output:[{id:"data",bands:3,sampleType:"FLOAT32"},{id:"dataMask",bands:1}]};}
+function evaluatePixel(s){const B04=s.B04,B05=s.B05,B08=s.B08,B11=s.B11;
+ return{data:[(B08-B04)/(B08+B04),(B08-B11)/(B08+B11),(B08-B05)/(B08+B05)],dataMask:[s.dataMask]};}`;
+
+const pixelEval = `//VERSION=3
+function setup(){return{input:[{bands:["B02","B03","B04","B05","B08","B11","dataMask"]}],
+ output:[{id:"data",bands:6,sampleType:"FLOAT32"},{id:"dataMask",bands:1}]};}
+function evaluatePixel(s){return{data:[s.B02,s.B03,s.B04,s.B05,s.B08,s.B11],dataMask:[s.dataMask]};}`;
+
+/* ============ Map State & Tools ============ */
+let layer = "rgb", activeTool = null, curDate = null, dates = [], dateI = -1, visited = new Set();
+let parcels = [], selParcel = -1, drawing = [], pivotCenter = null;
+let rasterOverlay = null, inspected = false;
+const statCache = {}, serieCache = {};
+
+const lmap = L.map("lmap", { doubleClickZoom: false }).setView([34.5493, 8.6833], 14);
+const baseSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19, attribution: "Esri World Imagery · Sentinel-2 © Copernicus"
+}).addTo(lmap);
+/* ---- Noms des lieux (villes, villages, limites) au-dessus de l'imagerie ---- */
+lmap.createPane("labels"); lmap.getPane("labels").style.zIndex = 450; lmap.getPane("labels").style.pointerEvents = "none";
+const placeLabels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19, pane: "labels", attribution: "Toponymes © Esri"
+}).addTo(lmap);
+const roadLabels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19, pane: "labels", opacity: 0.85, attribution: "Routes © Esri"
+});
+L.control.layers(null, {"🏷 Noms des lieux": placeLabels, "🛣 Routes & pistes": roadLabels}, { position: "topleft" }).addTo(lmap);
+
+const drawGroup = L.layerGroup().addTo(lmap);
+const parcelGroup = L.layerGroup().addTo(lmap);
+
+function viewBBox(){
+  const b = lmap.getBounds();
+  return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+}
+
+function bboxDims(bb, maxPx=768){
+  const mx = 111320 * Math.cos((bb[1]+bb[3])/2 * Math.PI / 180), my = 110540;
+  let w = Math.max(32, Math.round((bb[2]-bb[0])*mx/10)), h = Math.max(32, Math.round((bb[3]-bb[1])*my/10));
+  const k = Math.max(w,h)/maxPx;
+  if(k>1){ w = Math.round(w/k); h = Math.round(h/k); }
+  return {w, h};
+}
+
+function geoOf(p){
+  const ring = p.pts.map(q => [q[1], q[0]]);
+  ring.push(ring[0]);
+  return { type: "Polygon", coordinates: [ring] };
+}
+
+function bboxOf(p){
+  const la = p.pts.map(q => q[0]), lo = p.pts.map(q => q[1]);
+  return [Math.min(...lo), Math.min(...la), Math.max(...lo), Math.max(...la)];
+}
+
+function setHud(txt){ document.getElementById("mapHud").innerHTML = txt; }
+
+/* ============ Drawing & Interaction ============ */
+const bDraw = document.getElementById("t-draw");
+const bPivot = document.getElementById("t-pivot");
+const bRect = document.getElementById("t-rect");
+const bIns = document.getElementById("t-inspect");
+
+function setTool(t){
+  activeTool = (activeTool === t) ? null : t;
+  bDraw.classList.toggle("active", activeTool === "draw");
+  bPivot.classList.toggle("active", activeTool === "pivot");
+  bRect.classList.toggle("active", activeTool === "rect");
+  bIns.classList.toggle("active", activeTool === "inspect");
+  
+  drawing = [];
+  pivotCenter = null;
+  drawGroup.clearLayers();
+  
+  if(!activeTool){
+    lmap.getContainer().style.cursor = "";
+    setHud("Tool: <b>Ready</b> — Select ✏️ Parcel or 🔘 Pivot");
+  } else if(activeTool === "draw"){
+    lmap.getContainer().style.cursor = "crosshair";
+    setHud("✏️ Parcel Polygon: <b>Click</b> vertices · <b>Click green 1st point</b> to finish / <span style='color:var(--gold);direction:rtl'>انقر أول نقطة للإغلاق</span>");
+  } else if(activeTool === "pivot"){
+    lmap.getContainer().style.cursor = "crosshair";
+    setHud("🔘 Center-Pivot: <b>Click 1</b> = Center · <b>Click 2</b> = Radius / <span style='color:var(--gold);direction:rtl'>نقرة 1 = المركز ، نقرة 2 = القطر</span>");
+  } else if(activeTool === "rect"){
+    lmap.getContainer().style.cursor = "crosshair";
+    setHud("⏹️ Rectangle: <b>Click 1</b> = 1st corner · <b>Click 2</b> = 2nd corner");
+  } else if(activeTool === "inspect"){
+    lmap.getContainer().style.cursor = "help";
+    setHud("🔍 Pixel Inspector: <b>Click</b> any pixel on the map to inspect real reflectance");
+  }
+}
+
+bDraw.onclick = () => setTool("draw");
+bPivot.onclick = () => setTool("pivot");
+bRect.onclick = () => setTool("rect");
+bIns.onclick = () => setTool("inspect");
+
+document.getElementById("t-undo").onclick = () => {
+  if (drawing.length > 0) {
+    drawing.pop();
+    refreshDraw();
+  }
+};
+
+function refreshDraw(mouseLL){
+  drawGroup.clearLayers();
+  
+  if (activeTool === "draw") {
+    drawing.forEach((p, idx) => {
+      const isOrigin = (idx === 0);
+      const isHoverClose = isOrigin && drawing.length >= 3 && mouseLL && lmap.distance(p, mouseLL) < (lmap.getZoom() > 14 ? 30 : 60);
+
+      const marker = L.circleMarker(p, {
+        radius: isOrigin ? (isHoverClose ? 10 : 7) : 5,
+        color: isOrigin ? "#97bc62" : "#c9922b",
+        fillColor: isOrigin ? (isHoverClose ? "#bbf7d0" : "#97bc62") : "#c9922b",
+        fillOpacity: 1,
+        weight: isOrigin ? 3 : 2
+      }).addTo(drawGroup);
+
+      if (isOrigin && drawing.length >= 3) {
+        marker.bindTooltip("✓ Click here to close parcel / انقر هنا للإغلاق", { permanent: true, direction: "top", className: "close-tip" });
+      }
+    });
+
+    if (drawing.length > 1) {
+      L.polyline(drawing, { color: "#97bc62", dashArray: "6 4", weight: 2.5 }).addTo(drawGroup);
+    }
+    if (drawing.length >= 1 && mouseLL) {
+      L.polyline([drawing[drawing.length - 1], mouseLL], { color: "#c9922b", dashArray: "3 3", weight: 2 }).addTo(drawGroup);
+    }
+
+    if (drawing.length === 0) {
+      setHud("✏️ Parcel Polygon: <b>Click</b> on the map to place 1st vertex");
+    } else if (drawing.length < 3) {
+      setHud(`✏️ Parcel: <b>${drawing.length} vertex(es)</b> — Click to continue`);
+    } else {
+      setHud(`✏️ Parcel: <b>${drawing.length} vertices</b> — <span style="color:#97bc62;font-weight:bold;cursor:pointer" onclick="closePoly()">[ ✓ Click here or green 1st point to FINISH ]</span>`);
+    }
+  } 
+  else if (activeTool === "pivot") {
+    if (pivotCenter) {
+      L.circleMarker(pivotCenter, { radius: 7, color: "#c9922b", fillColor: "#c9922b", fillOpacity: 1, weight: 2 }).addTo(drawGroup);
+      if (mouseLL) {
+        const r = Math.round(lmap.distance(pivotCenter, mouseLL));
+        L.circle(pivotCenter, { radius: r, color: "#97bc62", weight: 2.5, dashArray: "6 4", fillColor: "#97bc62", fillOpacity: 0.2 }).addTo(drawGroup);
+        L.polyline([pivotCenter, mouseLL], { color: "#c9922b", dashArray: "4 4", weight: 2 }).addTo(drawGroup);
+        L.circleMarker(mouseLL, { radius: 4, color: "#97bc62", fillColor: "#97bc62", fillOpacity: 1 }).addTo(drawGroup);
+        
+        const ha = (Math.PI * r * r) / 10000;
+        setHud(`🔘 Center-Pivot: Radius = <b>${r} m</b> · Area = <b>${ha.toFixed(2)} ha</b> — <span style="color:#97bc62">Click to SAVE / انقر للحفظ</span>`);
+      }
+    } else {
+      setHud("🔘 Center-Pivot: <b>Click 1</b> = Click on the map to place center well / انقر لوضع المركز");
+    }
+  }
+  else if (activeTool === "rect") {
+    if (drawing.length === 1 && mouseLL) {
+      const bounds = L.latLngBounds(drawing[0], mouseLL);
+      L.rectangle(bounds, { color: "#97bc62", weight: 2.5, dashArray: "6 4", fillColor: "#97bc62", fillOpacity: 0.2 }).addTo(drawGroup);
+      setHud("⏹️ Rectangle: Click to set 2nd corner");
+    } else {
+      setHud("⏹️ Rectangle: Click to place 1st corner");
+    }
+  }
+}
+
+lmap.on("mousemove", e => { if (activeTool) refreshDraw(e.latlng); });
+
+lmap.on("click", async e => {
+  if (activeTool === "draw") {
+    if (drawing.length >= 3) {
+      const distToFirst = lmap.distance(drawing[0], e.latlng);
+      const threshold = lmap.getZoom() > 15 ? 15 : (lmap.getZoom() > 13 ? 35 : 70);
+      if (distToFirst < threshold) {
+        closePoly();
+        return;
+      }
+    }
+    drawing.push([e.latlng.lat, e.latlng.lng]);
+    refreshDraw(e.latlng);
+  }
+  else if (activeTool === "pivot") {
+    if (!pivotCenter) {
+      pivotCenter = e.latlng;
+      refreshDraw(e.latlng);
+    } else {
+      const radius = Math.round(lmap.distance(pivotCenter, e.latlng));
+      savePivot(pivotCenter, radius);
+    }
+  }
+  else if (activeTool === "rect") {
+    if (drawing.length === 0) {
+      drawing.push([e.latlng.lat, e.latlng.lng]);
+      refreshDraw(e.latlng);
+    } else {
+      const p1 = drawing[0];
+      const p2 = [e.latlng.lat, e.latlng.lng];
+      const rectPts = [
+        [p1[0], p1[1]],
+        [p1[0], p2[1]],
+        [p2[0], p2[1]],
+        [p2[0], p1[1]]
+      ];
+      savePoly(rectPts, "Rect");
+    }
+  }
+  else if (activeTool === "inspect") {
+    await inspectPixel(e.latlng);
+  }
+});
+
+window.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && activeTool === "draw") closePoly();
+  if (e.key === "Escape" && activeTool) setTool(null);
+});
+
+function closePoly(){
+  if (drawing && drawing.length >= 3) {
+    savePoly(drawing.slice(), "Polygon");
+  }
+}
+
+function savePivot(center, radius){
+  if (radius < 10) radius = 50;
+  const pts = circleToPolygon(center.lat, center.lng, radius, 64);
+  const name = "Pivot " + (parcels.length + 1);
+  const p = { name, pts, type: "pivot", radius: Math.round(radius), center };
+  
+  p.layer = L.circle(center, { radius, color: "#c9922b", weight: 2.5, fillColor: "#c9922b", fillOpacity: 0.15 }).addTo(parcelGroup);
+  p.layer.bindTooltip(`${name} (${Math.round(radius)}m)`, { permanent: true, direction: "center", className: "plab" });
+  
+  finalizeAddParcel(p);
+}
+
+function savePoly(pts, typeName){
+  const name = "P" + (parcels.length + 1);
+  const p = { name, pts, type: typeName };
+  
+  p.layer = L.polygon(pts, { color: "#c9922b", weight: 2.5, fillColor: "#c9922b", fillOpacity: 0.15 }).addTo(parcelGroup);
+  p.layer.bindTooltip(name, { permanent: true, direction: "center", className: "plab" });
+  
+  finalizeAddParcel(p);
+}
+
+function finalizeAddParcel(p){
+  parcels.push(p);
+  selParcel = parcels.length - 1;
+  setTool(null);
+  
+  if (curDate) {
+    renderView();
+    parcelStats(p).then(s => { p.cur = s; updateTable(); }).catch(() => {});
+  }
+  updateTable();
+  wfStatus();
+}
+
+/* ============ Dates (Catalog) ============ */
+document.getElementById("btnSearch").onclick = findDates;
+
+async function findDates(){
+  setStatus("Searching Sentinel-2 acquisitions…");
+  try{
+    const j = await shFetch(SH.catalog, {
+      collections: ["sentinel-2-l2a"],
+      bbox: viewBBox(),
+      datetime: document.getElementById("dFrom").value + "T00:00:00Z/" + document.getElementById("dTo").value + "T23:59:59Z",
+      limit: 100,
+      filter: { op: "<=", args: [{ property: "eo:cloud_cover" }, +document.getElementById("cloud").value] },
+      "filter-lang": "cql2-json",
+      fields: { include: ["properties.datetime", "properties.eo:cloud_cover"], exclude: ["assets", "links"] }
+    });
+    
+    const byDay = {};
+    (j.features || []).forEach(f => {
+      const d = f.properties.datetime.slice(0, 10), cc = Math.round(f.properties["eo:cloud_cover"] ?? 0);
+      if (!(d in byDay) || cc < byDay[d]) byDay[d] = cc;
+    });
+    
+    dates = Object.entries(byDay).map(([d, cc]) => ({ d, cc })).sort((a, b) => a.d.localeCompare(b.d));
+    const zone = document.getElementById("dateChips");
+    zone.innerHTML = "";
+    
+    dates.forEach((s, i) => {
+      const c = document.createElement("button");
+      c.className = "chip";
+      c.innerHTML = `${s.d} <small>☁${s.cc}%</small>`;
+      c.onclick = () => gotoDate(i);
+      zone.appendChild(c);
+    });
+    
+    setStatus(dates.length + " dates found — click a date chip or play ▶.");
+    if (dates.length) gotoDate(dates.length - 1);
+  }catch(e){
+    setStatus(e.message, true);
+  }
+}
+
+function gotoDate(i){
+  dateI = i; curDate = dates[i].d; visited.add(curDate);
+  [...document.getElementById("dateChips").children].forEach((c, k) => c.classList.toggle("on", k === i));
+  document.getElementById("dateLabel").textContent = curDate + " · ☁" + dates[i].cc + "% (" + (i + 1) + "/" + dates.length + ")";
+  renderView();
+  refreshAllStats();
+  drawChart();
+  wfStatus();
+}
+
+document.getElementById("prevD").onclick = () => { if (dateI > 0) gotoDate(dateI - 1); };
+document.getElementById("nextD").onclick = () => { if (dateI >= 0 && dateI < dates.length - 1) gotoDate(dateI + 1); };
+
+let playing = false, playT = null;
+document.getElementById("play").onclick = function(){
+  if (playing) { clearInterval(playT); playing = false; this.textContent = "▶"; return; }
+  if (!dates.length) return;
+  playing = true; this.textContent = "⏸";
+  playT = setInterval(() => { gotoDate((dateI + 1) % dates.length); }, 1600);
+};
+
+/* ============ Raster Rendering ============ */
+document.getElementById("btnRefresh").onclick = renderView;
+
+async function renderView(){
+  if (!curDate) { setStatus("Find dates first (🛰).", true); return; }
+  
+  // Si une parcelle ou pivot existe, on délimite strictement le raster à sa géométrie
+  const targetParcel = (selParcel >= 0 && parcels[selParcel]) ? parcels[selParcel] : (parcels.length > 0 ? parcels[parcels.length - 1] : null);
+  const hasGeom = targetParcel !== null;
+  const geom = hasGeom ? geoOf(targetParcel) : null;
+  const bb = hasGeom ? bboxOf(targetParcel) : viewBBox();
+  const dim = bboxDims(bb, hasGeom ? 256 : 768);
+
+  const inputBounds = hasGeom 
+    ? { geometry: geom, properties: { crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84" } }
+    : { bbox: bb, properties: { crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84" } };
+
+  const label = hasGeom ? `${targetParcel.name} (${targetParcel.type === 'pivot' ? 'pivot' : 'polygon'})` : 'full view';
+  setStatus(`Rendering ${layer.toUpperCase()} on ${label} · ${curDate}…`);
+
+  try{
+    const blob = await shFetch(SH.process, {
+      input: {
+        bounds: inputBounds,
+        data: [{ type: "sentinel-2-l2a", dataFilter: { timeRange: { from: curDate + "T00:00:00Z", to: curDate + "T23:59:59Z" }, mosaickingOrder: "leastCC" } }]
+      },
+      output: { width: dim.w, height: dim.h, responses: [{ identifier: "default", format: { type: "image/png" } }] },
+      evalscript: vizEval(layer)
+    }, "blob");
+
+    if (rasterOverlay) lmap.removeLayer(rasterOverlay);
+    rasterOverlay = L.imageOverlay(URL.createObjectURL(blob), [[bb[1], bb[0]], [bb[3], bb[2]]], {
+      opacity: +document.getElementById("opacity").value / 100, interactive: false
+    }).addTo(lmap);
+    
+    parcelGroup.eachLayer(l => l.bringToFront && l.bringToFront());
+    setStatus(`${layer.toUpperCase()} délimité sur ${label} (${dim.w}×${dim.h} px) · ${curDate}`);
+    pixelGrid = null; lmap.getContainer().classList.remove("px-probe");
+    if (hasGeom && layer !== "rgb") loadValueGrid(bb, dim, targetParcel, layer, inputBounds);
+  }catch(e){
+    setStatus(e.message, true);
+  }
+}
+
+/* ============ Pixel probe: index value on hover, pins on click — inside the rendered parcel only ============ */
+let pixelGrid = null;                     // { bb, w, h, data, layer, date, parcel }
+const pinGroup = L.layerGroup().addTo(lmap);
+let pins = [];
+async function loadValueGrid(bb, dim, parcel, l, inputBounds){
+  const date = curDate;
+  try{
+    const blob = await shFetch(SH.process, {
+      input: { bounds: inputBounds, data: [{ type: "sentinel-2-l2a", dataFilter: { timeRange: { from: date + "T00:00:00Z", to: date + "T23:59:59Z" }, mosaickingOrder: "leastCC" } }] },
+      output: { width: dim.w, height: dim.h, responses: [{ identifier: "default", format: { type: "image/png" } }] },
+      evalscript: valueEval(l)
+    }, "blob");
+    const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("PNG decode")); im.src = URL.createObjectURL(blob); });
+    const cv = document.createElement("canvas"); cv.width = dim.w; cv.height = dim.h;
+    const ctx = cv.getContext("2d", { willReadFrequently: true }); ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, dim.w, dim.h).data, data = new Float32Array(dim.w * dim.h), [lo, hi] = valueRange(IDX[l]);
+    for (let i = 0, n = dim.w * dim.h; i < n; i++) data[i] = px[i * 4 + 2] < 128 ? NaN : lo + (px[i * 4] * 256 + px[i * 4 + 1]) / 65535 * (hi - lo);
+    if (layer !== l || curDate !== date) return;
+    pixelGrid = { bb, w: dim.w, h: dim.h, data, layer: l, date, parcel };
+    lmap.getContainer().classList.add("px-probe");
+    updatePins();
+    setHud(`🎯 Hover <b>${parcel.name}</b> to read ${l.toUpperCase()} per pixel · <b>click</b> = pin the value <span class="ar">مرّر المؤشر لقراءة القيمة، وانقر لتثبيتها</span>`);
+  }catch(e){ console.warn("Pixel probe unavailable:", e.message); }
+}
+function insideParcel(p, ll){
+  if (!p) return false;
+  if (p.type === "pivot" && p.center) return lmap.distance(p.center, ll) <= p.radius;
+  let inside = false; const x = ll.lng, y = ll.lat, pts = p.pts;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const yi = pts[i][0], xi = pts[i][1], yj = pts[j][0], xj = pts[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function pixelValueAt(ll){
+  if (!pixelGrid) return null;
+  const g = pixelGrid, bb = g.bb;
+  const col = Math.floor((ll.lng - bb[0]) / (bb[2] - bb[0]) * g.w), row = Math.floor((bb[3] - ll.lat) / (bb[3] - bb[1]) * g.h);
+  if (col < 0 || row < 0 || col >= g.w || row >= g.h) return null;
+  const v = g.data[row * g.w + col]; return isNaN(v) ? null : v;
+}
+function rampColorOf(ix, v){
+  const t = Math.max(0, Math.min(1, (v - ix.min) / (ix.max - ix.min))), st = ix.ramp;
+  let a = st[0], b = st[st.length - 1];
+  for (let i = 0; i < st.length - 1; i++) if (t >= st[i][0] && t <= st[i + 1][0]) { a = st[i]; b = st[i + 1]; break; }
+  const f = b[0] === a[0] ? 0 : (t - a[0]) / (b[0] - a[0]), h = x => parseInt(x, 16);
+  const c = [1, 3, 5].map(k => Math.round(h(a[1].slice(k, k + 2)) * (1 - f) + h(b[1].slice(k, k + 2)) * f));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+function classOf(l, v){
+  const ix = IDX[l], t = (v - ix.min) / (ix.max - ix.min);
+  if (l === "ndwi") return t < 0.33 ? "dry" : t < 0.66 ? "intermediate" : "moist / water";
+  return t < 0.25 ? "bare soil / very low" : t < 0.5 ? "low" : t < 0.75 ? "moderate" : "dense";
+}
+const pxTip = document.getElementById("pxTip");
+lmap.on("mousemove", e => {
+  if (activeTool || !pixelGrid || !insideParcel(pixelGrid.parcel, e.latlng)) { pxTip.style.display = "none"; return; }
+  const v = pixelValueAt(e.latlng), L_ = pixelGrid.layer.toUpperCase();
+  pxTip.innerHTML = v === null
+    ? `<span class="sub">${L_}: no data (cloud / outside image)</span>`
+    : `<span class="sw" style="background:${rampColorOf(IDX[pixelGrid.layer], v)}"></span><b>${v.toFixed(3)}</b> <span class="sub">${L_} · ${classOf(pixelGrid.layer, v)}</span><br><span class="sub">${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)} · ${pixelGrid.date} · click = pin</span>`;
+  const pt = e.containerPoint, box = lmap.getSize();
+  pxTip.style.display = "block";
+  pxTip.style.left = (pt.x + 16 + 230 > box.x ? pt.x - 240 : pt.x + 16) + "px";
+  pxTip.style.top = (pt.y + 14 + 50 > box.y ? pt.y - 52 : pt.y + 14) + "px";
+});
+lmap.on("mouseout", () => { pxTip.style.display = "none"; });
+function pinLabel(ll){ const v = pixelValueAt(ll); return `${pixelGrid ? pixelGrid.layer.toUpperCase() : layer.toUpperCase()} ${v === null ? "—" : v.toFixed(3)}`; }
+function addPin(ll){
+  const m = L.circleMarker(ll, { radius: 5, color: "#97bc62", weight: 2, fillColor: "#16241a", fillOpacity: 1 }).addTo(pinGroup);
+  m.bindTooltip(pinLabel(ll), { permanent: true, direction: "top", offset: [0, -6], className: "px-pin" });
+  m.on("click", ev => { L.DomEvent.stopPropagation(ev); pinGroup.removeLayer(m); pins = pins.filter(q => q.marker !== m); });
+  pins.push({ latlng: ll, marker: m });
+}
+function updatePins(){ pins.forEach(q => q.marker.setTooltipContent(pinLabel(q.latlng))); }
+function clearPins(){ pinGroup.clearLayers(); pins = []; }
+lmap.on("click", e => { if (activeTool || !pixelGrid || !insideParcel(pixelGrid.parcel, e.latlng)) return; addPin(e.latlng); });
+
+document.getElementById("opacity").oninput = function(){
+  if (rasterOverlay) rasterOverlay.setOpacity(this.value / 100);
+};
+
+/* ============ Zonal Statistics & Time Series ============ */
+function statPayload(geom, from, to, interval, evs, dims){
+  return {
+    input: {
+      bounds: { geometry: geom, properties: { crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84" } },
+      data: [{ type: "sentinel-2-l2a", dataFilter: { maxCloudCoverage: +document.getElementById("cloud").value, mosaickingOrder: "leastCC" } }]
+    },
+    aggregation: { timeRange: { from, to }, aggregationInterval: { of: interval }, width: dims.w, height: dims.h, evalscript: evs }
+  };
+}
+
+async function parcelStats(p){
+  const key = p.name + "|" + curDate;
+  if (statCache[key]) return statCache[key];
+  const dim = bboxDims(bboxOf(p), 160);
+  const j = await shFetch(SH.stats, statPayload(geoOf(p), curDate + "T00:00:00Z", curDate + "T23:59:59Z", "P1D", statEval, dim));
+  const it = j.data && j.data[0];
+  if (!it) return null;
+  const b = it.outputs.data.bands;
+  const out = { ndvi: b.B0.stats, ndwi: b.B1.stats, ndre: b.B2.stats };
+  statCache[key] = out;
+  return out;
+}
+
+async function parcelSerie(p){
+  const period = document.getElementById("dFrom").value + "|" + document.getElementById("dTo").value;
+  const key = p.name + "|" + period;
+  if (serieCache[key]) return serieCache[key];
+  const dim = bboxDims(bboxOf(p), 120);
+  const j = await shFetch(SH.stats, statPayload(geoOf(p), document.getElementById("dFrom").value + "T00:00:00Z", document.getElementById("dTo").value + "T23:59:59Z", "P1D", statEval, dim));
+  const pts = (j.data || []).map(it => ({
+    d: it.interval.from.slice(0, 10),
+    ndvi: it.outputs?.data?.bands?.B0?.stats?.mean,
+    ndwi: it.outputs?.data?.bands?.B1?.stats?.mean,
+    ndre: it.outputs?.data?.bands?.B2?.stats?.mean
+  })).filter(x => x.ndvi !== undefined && !isNaN(x.ndvi));
+  serieCache[key] = pts;
+  return pts;
+}
+
+async function refreshAllStats(){
+  for (const p of parcels) {
+    try { p.cur = await parcelStats(p); } catch(e){}
+  }
+  updateTable();
+}
+
+function updateTable(){
+  const tb = document.querySelector("#ptable tbody");
+  tb.innerHTML = "";
+  const lay = layer === "rgb" ? "ndvi" : layer;
+  
+  parcels.forEach((p, i) => {
+    const s = p.cur && p.cur[lay];
+    const tr = document.createElement("tr");
+    if (i === selParcel) tr.className = "sel";
+    const f = v => (v === undefined || v === null || isNaN(v)) ? "—" : (+v).toFixed(2);
+    const typeBadge = p.type === "pivot" ? `<span style="color:var(--moss)">Pivot</span>` : `<span>Poly</span>`;
+    
+    tr.innerHTML = `<td><b style="color:var(--gold)">${p.name}</b></td>
+      <td>${typeBadge}</td>
+      <td style="color:var(--gold);font-weight:700">${f(s?.mean)}</td>
+      <td>${f(s?.min)}/${f(s?.max)}</td>`;
+      
+    const tdS = document.createElement("td");
+    const sp = document.createElement("canvas");
+    sp.width = 64; sp.height = 20; sp.className = "spark";
+    tdS.appendChild(sp);
+    tr.appendChild(tdS);
+    
+    if (p.serie) {
+      const ser = p.serie.map(x => x[lay]).filter(v => v !== undefined);
+      const sc = sp.getContext("2d");
+      const ix = IDX[lay];
+      sc.strokeStyle = "#97bc62";
+      sc.lineWidth = 1.5;
+      sc.beginPath();
+      ser.forEach((v, k) => {
+        const px = k / Math.max(1, ser.length - 1) * 62 + 1;
+        const py = 19 - Math.max(0, Math.min(1, (v - ix.min) / (ix.max - ix.min))) * 18;
+        k ? sc.lineTo(px, py) : sc.moveTo(px, py);
+      });
+      sc.stroke();
+    }
+    
+    const tdD = document.createElement("td");
+    const del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "✕";
+    del.onclick = e => {
+      e.stopPropagation();
+      lmap.removeLayer(p.layer);
+      if (pixelGrid && pixelGrid.parcel === p) { pixelGrid = null; clearPins(); lmap.getContainer().classList.remove("px-probe"); pxTip.style.display = "none"; }
+      parcels.splice(i, 1);
+      if (selParcel === i) selParcel = -1;
+      else if (selParcel > i) selParcel--;
+      updateTable();
+      drawChart();
+      wfStatus();
+    };
+    tdD.appendChild(del);
+    tr.appendChild(tdD);
+    
+    tr.onclick = async () => {
+      selParcel = i;
+      updateTable();
+      if (curDate) renderView();
+      if (!p.serie) {
+        setStatus("Loading season for " + p.name + "…");
+        try {
+          p.serie = await parcelSerie(p);
+          setStatus(p.serie.length + " acquisitions loaded for " + p.name);
+        } catch(e){
+          setStatus(e.message, true);
+        }
+      }
+      updateTable();
+      drawChart();
+      wfStatus();
+    };
+    
+    tb.appendChild(tr);
+  });
+}
+
+/* ============ Time Series Chart ============ */
+const chart = document.getElementById("chart"), cctx = chart.getContext("2d");
+
+function drawChart(){
+  cctx.clearRect(0, 0, chart.width, chart.height);
+  const hint = document.getElementById("chartHint");
+  const p = parcels[selParcel];
+  if (!p || !p.serie || !p.serie.length) { hint.style.display = "block"; return; }
+  hint.style.display = "none";
+  
+  const L2 = { l: 46, r: 12, t: 16, b: 34 }, W2 = chart.width - L2.l - L2.r, H2 = chart.height - L2.t - L2.b;
+  cctx.strokeStyle = "#2e4634";
+  cctx.font = "11px Segoe UI";
+  cctx.fillStyle = "#a9bfa3";
+  
+  for (let g = 0; g <= 4; g++) {
+    const yy = L2.t + H2 - g / 4 * H2;
+    cctx.beginPath(); cctx.moveTo(L2.l, yy); cctx.lineTo(L2.l + W2, yy); cctx.stroke();
+    cctx.fillText((g / 4).toFixed(1), 14, yy + 4);
+  }
+  
+  const t0 = new Date(p.serie[0].d).getTime(), t1 = new Date(p.serie[p.serie.length - 1].d).getTime() || t0 + 1;
+  const X = x => L2.l + (new Date(x.d).getTime() - t0) / Math.max(1, t1 - t0) * W2;
+  const colors = { ndvi: "#7fd84f", ndwi: "#5aa7e0", ndre: "#c9922b" };
+  
+  ["ndvi", "ndwi", "ndre"].forEach(l => {
+    cctx.strokeStyle = colors[l];
+    cctx.lineWidth = 2.2;
+    cctx.beginPath();
+    p.serie.forEach((x, k) => {
+      const py = L2.t + H2 - Math.max(0, Math.min(1, x[l])) * H2;
+      k ? cctx.lineTo(X(x), py) : cctx.moveTo(X(x), py);
+    });
+    cctx.stroke();
+  });
+  
+  const n = Math.min(5, p.serie.length);
+  for (let k = 0; k < n; k++) {
+    const x = p.serie[Math.floor(k * (p.serie.length - 1) / Math.max(1, n - 1))];
+    cctx.fillText(x.d.slice(5), X(x) - 12, chart.height - 14);
+  }
+  
+  if (curDate) {
+    const cd = p.serie.find(x => x.d === curDate);
+    if (cd) {
+      const px = X(cd);
+      cctx.strokeStyle = "#ffd54a";
+      cctx.setLineDash([4, 4]);
+      cctx.beginPath(); cctx.moveTo(px, L2.t); cctx.lineTo(px, L2.t + H2); cctx.stroke();
+      cctx.setLineDash([]);
+    }
+  }
+  
+  cctx.font = "bold 12px Segoe UI";
+  cctx.fillStyle = colors.ndvi; cctx.fillText("NDVI", L2.l + 6, L2.t + 12);
+  cctx.fillStyle = colors.ndwi; cctx.fillText("NDWI", L2.l + 52, L2.t + 12);
+  cctx.fillStyle = colors.ndre; cctx.fillText("NDRE", L2.l + 100, L2.t + 12);
+  cctx.fillStyle = "#ffd54a"; cctx.fillText(p.name, chart.width - 60, L2.t + 12);
+}
+
+/* ============ Pixel Inspector ============ */
+async function inspectPixel(ll){
+  if (!curDate) { setStatus("Find dates first (🛰) to inspect real satellite pixels.", true); return; }
+  inspected = true;
+  wfStatus();
+  setStatus("Reading real Sentinel-2 pixel…");
+  const d = 0.00007;
+  const geom = { type: "Polygon", coordinates: [[[ll.lng - d, ll.lat - d], [ll.lng + d, ll.lat - d], [ll.lng + d, ll.lat + d], [ll.lng - d, ll.lat + d], [ll.lng - d, ll.lat - d]]] };
+  
+  try{
+    const j = await shFetch(SH.stats, statPayload(geom, curDate + "T00:00:00Z", curDate + "T23:59:59Z", "P1D", pixelEval, { w: 2, h: 2 }));
+    const b = j.data?.[0]?.outputs?.data?.bands;
+    if (!b) { setStatus("No data on this pixel/date.", true); return; }
+    
+    const v = Object.fromEntries(BANDS.map((n, i) => [n, b["B" + i].stats.mean]));
+    const ndvi = (v.B08 - v.B04) / (v.B08 + v.B04);
+    const ndwi = (v.B08 - v.B11) / (v.B08 + v.B11);
+    const ndre = (v.B08 - v.B05) / (v.B08 + v.B05);
+    const f = x => Number(x).toFixed(3);
+    
+    L.popup({ maxWidth: 300 }).setLatLng(ll).setContent(
+      `<div style="font:12px Segoe UI;color:#1c2b1e;padding:4px"><b style="color:#2c5f2d">Sentinel-2 Pixel · ${curDate}</b><br>
+       B02: ${f(v.B02)} · B03: ${f(v.B03)} · <b>B04 (Red): ${f(v.B04)}</b><br>
+       B05: ${f(v.B05)} · <b>B08 (NIR): ${f(v.B08)}</b> · B11: ${f(v.B11)}<hr style="margin:4px 0">
+       NDVI = (${f(v.B08)}−${f(v.B04)})/(${f(v.B08)}+${f(v.B04)}) = <b style="color:#8a5f10">${ndvi.toFixed(3)}</b><br>
+       NDWI: <b>${ndwi.toFixed(3)}</b> · NDRE: <b>${ndre.toFixed(3)}</b></div>`
+    ).openOn(lmap);
+    
+    setStatus("Pixel inspected — satellite reflectance and formula verified.");
+  }catch(e){
+    setStatus(e.message, true);
+  }
+}
+
+/* ============ Layers ============ */
+function setLayer(l){
+  layer = l;
+  ["rgb", "ndvi", "ndwi", "ndre"].forEach(k => document.getElementById("l-" + k).classList.toggle("active", k === l));
+  document.getElementById("formulaBox").innerHTML = docHTML(l);
+  if (curDate) renderView();
+  updateTable();
+  wfStatus();
+}
+
+["rgb", "ndvi", "ndwi", "ndre"].forEach(k => document.getElementById("l-" + k).onclick = () => setLayer(k));
+
+/* ============ Guided Pedagogical Workflow ============ */
+let wfI = 0;
+const WF = [
+ {mod:"M1 · SENSE (Day 1, 11:30)", ar:"سلسلة قيمة البيانات: استشعار",
+  title:"A pixel is a real measurement",
+  text:"This is real Sentinel-2 imagery. Activate the Pixel Inspector (🔍) and click on the map to see raw measured reflectances.",
+  textAr:"هذه صورة سنتينل-2 الحقيقية. فعِّلوا فاحص البكسل وانقروا لرؤية الانعكاسات الفعلية.",
+  setup:{layer:"rgb"},
+  check:() => inspected ? "✓ Real pixel read — raw satellite DATA acquired." : "Waiting: 🛰 Find dates, select one, then 🔍 click a pixel."},
+ {mod:"M1→M2 · From data to information", ar:"من البيانات إلى المعلومات",
+  title:"Compute NDVI by hand",
+  text:"Click one crop pixel and one bare-soil pixel. Read B04 and B08, compute (NIR−Red)/(NIR+Red) on paper, and check.",
+  textAr:"انقروا بكسل محصول وآخر تربة عارية. احسبوا NDVI على الورق وقارنوا بالقيمة.",
+  setup:{layer:"rgb"},
+  check:() => inspected ? "✓ Contrast between crop and soil verified." : "Activate 🔍 and click the map."},
+ {mod:"M2 · Indices & Pitfalls", ar:"المؤشرات وفخاخها",
+  title:"Same field, three indices",
+  text:"Render NDVI over your view, then toggle NDWI and NDRE (↻ re-renders). Compare relative patterns.",
+  textAr:"اعرضوا NDVI ثم بدّلوا إلى NDWI وNDRE وقارنوا الأنماط.",
+  setup:{layer:"ndvi"},
+  check:() => layer !== "rgb" ? "✓ Index view active — compare NDVI, NDWI, NDRE." : "Switch to NDVI / NDWI / NDRE."},
+ {mod:"M2 · TP 2.1 — Zonal Statistics", ar:"إحصاءات لكل قطعة",
+  title:"Draw three real parcels or pivots",
+  text:"Draw 3 parcels (✏️ Polygon or 🔘 Pivot). Mean NDVI is computed live via Statistical API. Rank them and load their seasons.",
+  textAr:"ارسموا ثلاث قطع أو محاور دائرية. يُحسب المتوسط مباشرة.",
+  setup:{layer:"ndvi"},
+  check:() => parcels.length >= 3 ? `✓ ${parcels.length} parcels drawn — click each to load season.` : `Waiting: ${parcels.length}/3 parcels drawn.`},
+ {mod:"M2 · TP 2.2 — Time-Series Clinic", ar:"عيادة السلاسل الزمنية",
+  title:"Walk the real season, find divergence",
+  text:"Use ◀ ▶▶ (or ▶ play) to explore dates. Look for a block whose index diverges, and draw a suspect parcel.",
+  textAr:"تنقلوا بين التواريخ وابحثوا عن شذوذ أو انحراف في مؤشر قطعة ما.",
+  setup:{layer:"ndvi"},
+  check:() => visited.size >= 3 ? (parcels.length >= 1 ? "✓ Dates explored and suspect parcel drawn." : "Dates explored ✓ — draw suspect parcel.") : `Explore dates: ${visited.size}/3 visited.`},
+ {mod:"M2 · TP 2.2 — Diagnosis by Comparison", ar:"التشخيص بالمقارنة",
+  title:"Suspect vs Control Curves",
+  text:"Draw a control parcel on a healthy neighbor. Compare curves: where suspect leaves control is 'since WHEN'.",
+  textAr:"ارسموا قطعة شاهدة وقارنوا المنحنيين لتحديد تاريخ بداية المشكلة.",
+  setup:{layer:"ndvi"},
+  check:() => (parcels.length >= 2 && selParcel >= 0 && parcels[selParcel].serie) ? "✓ Real curves loaded — read divergence date." : "Waiting: 2 parcels + click to load season."},
+ {mod:"Geology×M2 · Pivot as a Flowmeter", ar:"جيولوجيا: المحور عدّاد مياه فضائي",
+  title:"Desert Center-Pivots & Groundwater",
+  text:"Pan to a desert pivot zone (Kufra, Wadi Sirhan, Gafsa...), use 🔘 Pivot tool to draw a circular field. Every circle is abstraction seen from space.",
+  textAr:"حرِّكوا الخريطة نحو محاور صحراوية، استخدموا أداة المحور 🔘 لرسم دائرة: كل دائرة هي سحب مياه جوفية مرئي من الفضاء.",
+  setup:{layer:"ndvi"},
+  check:() => parcels.some(p => p.type === 'pivot') ? "✓ Irrigation pivot drawn — zonal stats loaded." : "Draw a center-pivot with 🔘 Pivot tool."},
+ {mod:"Geology×M3 · Abstraction in Chlorophyll", ar:"السحب مكتوب باليخضور",
+  title:"Pivot vs Outside Baseline",
+  text:"Draw one pivot parcel and one outside desert parcel; load both seasons to observe the pumping rhythm vs dry baseline.",
+  textAr:"قارنوا موسم المحور المروي مع التربة الصحراوية المجاورة.",
+  setup:{layer:"ndvi"},
+  check:() => parcels.length >= 2 ? "✓ Compare irrigation rhythm vs baseline." : "Waiting: 2 parcels (pivot + outside)."},
+ {mod:"Geology×M1 · Flow vs Stock", ar:"تدفق أم مخزون",
+  title:"Aquifer mining vs renewable flow",
+  text:"Satellite images show abstraction; GRACE and piezometers measure stock loss. In fossil aquifers, saved water is intergenerational value.",
+  textAr:"الصور تُظهر السحب بينما يقيس البيزومتر هبوط المخزون.",
+  setup:{layer:"ndvi"},
+  check:() => "Discussion: Water efficiency in fossil vs renewable aquifers. ✓ Closed."},
+ {mod:"M1 · DECISION → ACTION", ar:"إغلاق السلسلة: قرار وتنفيذ",
+  title:"Order the field check",
+  text:"State in 3 sentences: WHERE, since WHEN, and WHAT you order checked on the ground.",
+  textAr:"حددوا: أين؟ منذ متى؟ وما فحص الميدان المطلوب؟",
+  setup:{layer:"ndvi"},
+  check:() => "Wrap-up: SENSE → DATA → INFO → DECISION → ACTION. ✓ Done."}
+];
+
+function wfApply(){
+  const w = WF[wfI];
+  document.getElementById("wfStep").textContent = `step ${wfI + 1}/${WF.length}`;
+  document.getElementById("wfMod").textContent = w.mod;
+  document.getElementById("wfTitle").innerHTML = `${w.title} <span class="ar">${w.ar}</span>`;
+  document.getElementById("wfText").textContent = w.text;
+  document.getElementById("wfTextAr").textContent = w.textAr || "";
+  document.getElementById("wfDots").innerHTML = WF.map((_, k) => `<span style="flex:1;height:5px;border-radius:3px;background:${k < wfI ? "var(--moss)" : k === wfI ? "var(--gold)" : "var(--line)"}"></span>`).join("");
+  document.getElementById("wfPrev").disabled = wfI === 0;
+  document.getElementById("wfNext").textContent = wfI === WF.length - 1 ? "Restart ↻" : "Next step →";
+  if (w.setup && w.setup.layer && w.setup.layer !== layer) setLayer(w.setup.layer);
+  wfStatus();
+}
+
+function wfStatus(){
+  const el = document.getElementById("wfStatus");
+  if (!el || !WF[wfI]) return;
+  const msg = WF[wfI].check();
+  el.textContent = msg;
+  el.style.color = msg.startsWith("✓") ? "var(--moss)" : "var(--sub)";
+}
+
+document.getElementById("wfNext").onclick = () => { wfI = (wfI + 1) % WF.length; wfApply(); };
+document.getElementById("wfPrev").onclick = () => { if (wfI > 0) { wfI--; wfApply(); } };
+
+/* ============ Modal API Config ============ */
+const modalConfig = document.getElementById("modalConfig");
+const selCfgMode = document.getElementById("cfgMode");
+
+function updateModalVisibility(){
+  document.getElementById("cfgGroupProxy").style.display = selCfgMode.value === 'proxy' ? 'block' : 'none';
+  document.getElementById("cfgGroupKeys").style.display = selCfgMode.value === 'direct_keys' ? 'block' : 'none';
+  document.getElementById("cfgGroupToken").style.display = selCfgMode.value === 'direct_token' ? 'block' : 'none';
+}
+
+document.getElementById("btnConfig").onclick = () => {
+  selCfgMode.value = authCfg.mode;
+  document.getElementById("cfgProxyUrl").value = authCfg.proxyUrl;
+  document.getElementById("cfgClientId").value = authCfg.clientId;
+  document.getElementById("cfgClientSecret").value = authCfg.clientSecret;
+  document.getElementById("cfgToken").value = authCfg.directToken;
+  document.getElementById("cfgTestStatus").textContent = "";
+  updateModalVisibility();
+  modalConfig.style.display = "flex";
+};
+
+document.getElementById("btnCloseConfig").onclick = () => { modalConfig.style.display = "none"; };
+selCfgMode.onchange = updateModalVisibility;
+
+document.getElementById("btnSaveConfig").onclick = () => {
+  authCfg.mode = selCfgMode.value;
+  authCfg.proxyUrl = document.getElementById("cfgProxyUrl").value;
+  authCfg.clientId = document.getElementById("cfgClientId").value;
+  authCfg.clientSecret = document.getElementById("cfgClientSecret").value;
+  authCfg.directToken = document.getElementById("cfgToken").value;
+  
+  localStorage.setItem('sh_auth_mode', authCfg.mode);
+  localStorage.setItem('sh_proxy_url', authCfg.proxyUrl);
+  localStorage.setItem('sh_client_id', authCfg.clientId);
+  localStorage.setItem('sh_client_secret', authCfg.clientSecret);
+  localStorage.setItem('sh_direct_token', authCfg.directToken);
+  
+  token = null; tokenExp = 0;
+  modalConfig.style.display = "none";
+  setStatus("API settings saved.");
+};
+
+document.getElementById("btnTestAuth").onclick = async () => {
+  const statusEl = document.getElementById("cfgTestStatus");
+  statusEl.textContent = "Testing token acquisition…";
+  statusEl.style.color = "var(--gold)";
+  
+  authCfg.mode = selCfgMode.value;
+  authCfg.proxyUrl = document.getElementById("cfgProxyUrl").value;
+  authCfg.clientId = document.getElementById("cfgClientId").value;
+  authCfg.clientSecret = document.getElementById("cfgClientSecret").value;
+  authCfg.directToken = document.getElementById("cfgToken").value;
+  token = null; tokenExp = 0;
+
+  try {
+    const tk = await getToken();
+    statusEl.innerHTML = `<span style="color:var(--moss);font-weight:bold">✓ Success!</span> Token received (${tk.slice(0, 16)}...)`;
+  } catch(err) {
+    statusEl.innerHTML = `<span style="color:var(--danger);font-weight:bold">✗ Failed:</span> ${err.message}`;
+  }
+};
+
+/* ============ Initialization ============ */
+(function(){
+  const today = new Date(), from = new Date(today - 120 * 864e5);
+  document.getElementById("dTo").value = today.toISOString().slice(0, 10);
+  document.getElementById("dFrom").value = from.toISOString().slice(0, 10);
+  document.getElementById("formulaBox").innerHTML = docHTML("rgb");
+  wfApply();
+})();
+</script>
+
+<!-- ===================================================================
+     PONT MOTEUR DE DESSIN PARTAGÉ (leaflet-draw) → pipeline Sentinel
+     - Barre verticale STANDARD (Sélection · Parcelle · Pivot · Rect ·
+       Inspecteur · Annuler) façon pilotage-irrigation, montée sur `lmap`.
+     - Le dessin passe par L.Draw, puis est branché sur savePoly()/savePivot()
+       (pipeline de stats zonales Sentinel, table & workflow inchangés).
+     - Recherche géographique (localités libyennes + coordonnées).
+     =================================================================== -->
+<script>
+"use strict";
+(function(){
+  if(typeof L === "undefined" || typeof lmap === "undefined"){ return; }
+
+  /* 1) Neutraliser l'ancienne barre de dessin maison (on garde les éléments
+        pour ne pas casser les références JS existantes ; on les masque). */
+  ["t-draw","t-pivot","t-rect","t-undo","t-inspect"].forEach(function(id){
+    var b = document.getElementById(id); if(b) b.hidden = true;
+  });
+
+  /* 2) Icônes (jeu standard agrimap-draw.js) */
+  var ICON = {
+    select:'<path d="M4 3l7 17 2-7 7-2z"/>',
+    parcel:'<path d="M4 6l7-3 9 4-2 12-9 2-5-3z" fill="none"/>',
+    pivot:'<circle cx="12" cy="12" r="8" fill="none" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="1.5"/>',
+    rect:'<rect x="4" y="6" width="16" height="12" rx="1" fill="none"/>',
+    inspect:'<circle cx="11" cy="11" r="6" fill="none"/><path d="M20 20l-3.5-3.5" fill="none"/>',
+    undo:'<path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10h-3" fill="none"/>'
+  };
+  function svg(id){ return '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6">'+(ICON[id]||"")+'</svg>'; }
+
+  var GREEN = "#7cb342";
+  var drawHandler = null, stdTool = "select";
+
+  function stopHandler(){ if(drawHandler){ try{ drawHandler.disable(); }catch(e){} drawHandler = null; } }
+
+  function setStdTool(t){
+    stdTool = (stdTool === t) ? "select" : t;
+    document.querySelectorAll("#stdbar .tool").forEach(function(b){
+      b.classList.toggle("on", b.dataset.t === stdTool);
+    });
+    stopHandler();
+    /* Neutraliser l'outil natif (sauf inspecteur qu'on réutilise tel quel) */
+    if(typeof setTool === "function" && stdTool !== "inspect" && typeof activeTool !== "undefined" && activeTool){ setTool(null); }
+    lmap.getContainer().style.cursor = "";
+
+    if(!L.Draw){ setHud("⚠️ Moteur de dessin indisponible"); return; }
+
+    if(stdTool === "parcel"){
+      drawHandler = new L.Draw.Polygon(lmap, { allowIntersection:false, showArea:false, shapeOptions:{ color:GREEN, weight:2.5 } });
+      drawHandler.enable();
+      setHud("✏️ <b>Parcel</b>: click vertices · double-click or 1st point to close <span style='color:var(--gold);direction:rtl'>مضلع</span>");
+    } else if(stdTool === "pivot"){
+      drawHandler = new L.Draw.Circle(lmap, { shapeOptions:{ color:GREEN, weight:2.5, dashArray:"6 4" } });
+      drawHandler.enable();
+      setHud("🔘 <b>Pivot</b>: click = well center, then drag for radius <span style='color:var(--gold);direction:rtl'>محور</span>");
+    } else if(stdTool === "rect"){
+      drawHandler = new L.Draw.Rectangle(lmap, { shapeOptions:{ color:GREEN, weight:2.5 } });
+      drawHandler.enable();
+      setHud("⏹️ <b>Rectangle</b>: click-drag to draw");
+    } else if(stdTool === "inspect"){
+      if(typeof setTool === "function") setTool("inspect");
+      setHud("🔍 <b>Inspector</b>: click any pixel to read real reflectance");
+    } else {
+      setHud("Tool: <b>Ready</b> — standard bar: Parcel, Pivot, Rectangle");
+    }
+  }
+
+  /* 3) PONT : formes L.Draw → savePoly()/savePivot() (pipeline Sentinel existant) */
+  lmap.on(L.Draw.Event.CREATED, function(e){
+    var lyr = e.layer, ty = e.layerType;
+    if(ty === "circle"){
+      var c = lyr.getLatLng(), r = Math.round(lyr.getRadius());
+      savePivot(c, r);                       // -> circleToPolygon + finalizeAddParcel + parcelStats
+    } else if(ty === "polygon" || ty === "rectangle"){
+      var pts = lyr.getLatLngs()[0].map(function(ll){ return [ll.lat, ll.lng]; });
+      savePoly(pts, ty === "rectangle" ? "Rect" : "Polygon");
+    }
+    setStdTool("select");                    // savePivot/savePoly relancent déjà le rendu + stats
+  });
+
+  /* 4) Barre d'outils verticale standard (contrôle Leaflet, coin haut-gauche) */
+  var TOOLBTNS = [
+    { t:"select",  label:"Selection" },
+    { sep:1 },
+    { t:"parcel",  label:"Parcel" },
+    { t:"pivot",   label:"Pivot" },
+    { t:"rect",    label:"Rectangle" },
+    { sep:1 },
+    { t:"inspect", label:"Inspector" },
+    { t:"undo",    label:"Undo last vertex", action:"undo" }
+  ];
+  var StdBar = L.Control.extend({
+    options:{ position:"topleft" },
+    onAdd:function(){
+      var c = L.DomUtil.create("div", "agri-stdbar"); c.id = "stdbar";
+      var html = "";
+      TOOLBTNS.forEach(function(b){
+        if(b.sep){ html += '<div class="sep"></div>'; return; }
+        html += '<button class="tool'+(b.t==="select"?" on":"")+'" data-t="'+b.t+'"'
+             + (b.action?' data-a="'+b.action+'"':'')
+             + ' title="'+b.label+'">'+svg(b.t)+'<span class="tip">'+b.label+'</span></button>';
+      });
+      c.innerHTML = html;
+      L.DomEvent.disableClickPropagation(c); L.DomEvent.disableScrollPropagation(c);
+      c.querySelectorAll(".tool").forEach(function(btn){
+        btn.addEventListener("click", function(ev){
+          ev.preventDefault();
+          if(btn.dataset.a === "undo"){
+            if(drawHandler && typeof drawHandler.deleteLastVertex === "function"){
+              try{ drawHandler.deleteLastVertex(); }catch(e){}
+            }
+            return;
+          }
+          setStdTool(btn.dataset.t);
+        });
+      });
+      return c;
+    }
+  });
+  lmap.addControl(new StdBar());
+
+  /* 5) Recherche géographique (localités libyennes + coordonnées) */
+  if(window.GeoSearch && typeof GeoSearch.add === "function"){
+    try{ GeoSearch.add(lmap, { lang:"fr" }); }catch(e){ console.warn("GeoSearch:", e); }
+  }
+
+  setHud("Tool: <b>Ready</b> — standard bar: Parcel, Pivot, Rectangle");
+})();
+</script>
+
+<!-- ===================================================================
+     EXPORT / IMPORT UNIVERSEL (règles 2 & 6 de la plateforme)
+     - Tout ce qui est dessiné/calculé est exportable ET réimportable.
+     - Formats : CSV tabulaire (name,type,radius_m,mean,min,max,wkt)
+       + GeoJSON structuré (FeatureCollection) + JSON projet 'agrisim-live'.
+     - Réutilise savePoly()/savePivot()/circleToPolygon() pour reconstruire
+       les couches et relancer les stats zonales (pipeline inchangé).
+     - S'appuie sur Store.download()/Store.pickFile() (store.js) avec fallback.
+     =================================================================== -->
+<script>
+"use strict";
+(function(){
+  /* Fallback si store.js indisponible */
+  var DL = (window.Store && Store.download) ? Store.download : function(name, content, mime){
+    var blob = new Blob([content], { type: mime || "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  };
+  var PICK = (window.Store && Store.pickFile) ? Store.pickFile : function(accept, cb){
+    var inp = document.createElement("input");
+    inp.type = "file"; inp.accept = accept || ".json,.geojson,.csv";
+    inp.onchange = function(e){ var f = e.target.files[0]; if(!f) return;
+      var rd = new FileReader(); rd.onload = function(){ cb(rd.result, f.name); }; rd.readAsText(f); };
+    inp.click();
+  };
+
+  function say(msg, err){ if(typeof setStatus === "function") setStatus(msg, err); }
+
+  /* ---- Géométrie : anneau [lng,lat] fermé (pivot -> circleToPolygon) ---- */
+  function ringLngLat(p){
+    var ring;
+    if(p.type === "pivot" && p.center && p.radius){
+      ring = circleToPolygon(p.center.lat, p.center.lng, p.radius, 64).map(function(q){ return [q[1], q[0]]; });
+    } else {
+      ring = (p.pts || []).map(function(q){ return [q[1], q[0]]; });
+      if(ring.length && (ring[0][0] !== ring[ring.length-1][0] || ring[0][1] !== ring[ring.length-1][1])) ring.push(ring[0].slice());
+    }
+    return ring;
+  }
+  function ndviStat(p){ return (p.cur && p.cur.ndvi) ? p.cur.ndvi : {}; }
+  function num(v){ return (v === undefined || v === null || isNaN(v)) ? "" : +v; }
+
+  /* ============ EXPORT ============ */
+  function toGeoJSON(){
+    return {
+      type: "FeatureCollection",
+      name: "agrisim-live",
+      crs: { type: "name", properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+      features: parcels.map(function(p){
+        var s = ndviStat(p);
+        var props = { name: p.name, type: p.type,
+          mean: num(s.mean), min: num(s.min), max: num(s.max),
+          ndvi_mean: num(s.mean),
+          ndwi_mean: num(p.cur && p.cur.ndwi && p.cur.ndwi.mean),
+          ndre_mean: num(p.cur && p.cur.ndre && p.cur.ndre.mean) };
+        if(p.type === "pivot" && p.radius) props.radius_m = p.radius;
+        return { type: "Feature", properties: props, geometry: { type: "Polygon", coordinates: [ringLngLat(p)] } };
+      })
+    };
+  }
+  function toProject(){
+    return {
+      format: "agrisim-live", version: 1, exportedAt: new Date().toISOString(),
+      parcels: parcels.map(function(p){
+        var o = { name: p.name, type: p.type, pts: p.pts };
+        if(p.type === "pivot"){ o.radius = p.radius; if(p.center) o.center = { lat: p.center.lat, lng: p.center.lng }; }
+        if(p.cur) o.cur = p.cur;
+        if(p.serie) o.serie = p.serie;
+        return o;
+      }),
+      dates: dates
+    };
+  }
+  function csvCell(v){ v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function wktOf(p){
+    var ring = ringLngLat(p);
+    return "POLYGON((" + ring.map(function(c){ return (+c[0]).toFixed(6) + " " + (+c[1]).toFixed(6); }).join(", ") + "))";
+  }
+  function toCSV(){
+    var head = ["name","type","radius_m","mean","min","max","wkt"];
+    var rows = parcels.map(function(p){
+      var s = ndviStat(p);
+      return [p.name, p.type, (p.type === "pivot" && p.radius) ? p.radius : "",
+        num(s.mean), num(s.min), num(s.max), wktOf(p)].map(csvCell).join(",");
+    });
+    return head.join(",") + "\n" + rows.join("\n") + "\n";
+  }
+  function toSeriesCSV(){
+    var head = ["parcel","date","ndvi","ndwi","ndre"], rows = [];
+    parcels.forEach(function(p){
+      (p.serie || []).forEach(function(x){
+        rows.push([p.name, x.d, num(x.ndvi), num(x.ndwi), num(x.ndre)].map(csvCell).join(","));
+      });
+    });
+    return rows.length ? (head.join(",") + "\n" + rows.join("\n") + "\n") : null;
+  }
+
+  document.getElementById("btnExport").onclick = function(){
+    if(!parcels.length){ say("Rien à exporter — dessinez une parcelle ou un pivot d'abord.", true); return; }
+    var stamp = new Date().toISOString().slice(0,10);
+    DL("agrisim_" + stamp + ".json", JSON.stringify(toProject(), null, 2), "application/json");
+    DL("agrisim_parcelles_" + stamp + ".geojson", JSON.stringify(toGeoJSON(), null, 2), "application/geo+json");
+    DL("agrisim_parcelles_" + stamp + ".csv", toCSV(), "text/csv");
+    var serCSV = toSeriesCSV();
+    if(serCSV) DL("agrisim_series_" + stamp + ".csv", serCSV, "text/csv");
+    say(parcels.length + " parcelle(s) exportée(s) — JSON + GeoJSON + CSV" + (serCSV ? " + séries CSV" : "") + ".");
+  };
+
+  /* ============ IMPORT ============ */
+  function parseCSV(text){
+    var rows = [], row = [], cur = "", q = false;
+    for(var i = 0; i < text.length; i++){ var ch = text[i];
+      if(q){ if(ch === '"'){ if(text[i+1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if(ch === '"') q = true;
+      else if(ch === ",") { row.push(cur); cur = ""; }
+      else if(ch === "\n"){ row.push(cur); rows.push(row); row = []; cur = ""; }
+      else if(ch !== "\r") cur += ch;
+    }
+    if(cur !== "" || row.length){ row.push(cur); rows.push(row); }
+    return rows.filter(function(r){ return r.length && r.some(function(c){ return c !== ""; }); });
+  }
+  function parseWKT(wkt){
+    var m = /POLYGON\s*\(\(([^)]+)\)\)/i.exec(wkt || ""); if(!m) return null;
+    return m[1].split(",").map(function(pr){ var s = pr.trim().split(/\s+/).map(Number); return [s[0], s[1]]; }); // [lng,lat]
+  }
+  function centroidLL(ringLL){ // ringLL = [[lng,lat],...]
+    var r = ringLL.slice();
+    if(r.length > 1 && r[0][0] === r[r.length-1][0] && r[0][1] === r[r.length-1][1]) r.pop();
+    var sx = 0, sy = 0; r.forEach(function(c){ sx += c[0]; sy += c[1]; });
+    return { lat: sy / r.length, lng: sx / r.length };
+  }
+  function ringToPtsLatLng(ringLL){ // [lng,lat] -> [lat,lng], anneau ouvert
+    var pts = ringLL.map(function(c){ return [c[1], c[0]]; });
+    if(pts.length > 1 && pts[0][0] === pts[pts.length-1][0] && pts[0][1] === pts[pts.length-1][1]) pts.pop();
+    return pts;
+  }
+  function rebuild(type, radius, ringLL){
+    if(type === "pivot" && radius){ savePivot(centroidLL(ringLL), Math.round(+radius)); return true; }
+    var pts = ringToPtsLatLng(ringLL);
+    if(pts.length >= 3){ savePoly(pts, "Polygon"); return true; }
+    return false;
+  }
+  function renameLast(name){
+    var np = parcels[parcels.length-1]; if(!np || !name) return;
+    np.name = name;
+    try{ if(np.layer && np.layer.setTooltipContent) np.layer.setTooltipContent(np.type === "pivot" && np.radius ? (name + " (" + np.radius + "m)") : name); }catch(e){}
+  }
+
+  function importCSV(text){
+    var rows = parseCSV(text); if(rows.length < 2) return 0;
+    var head = rows[0].map(function(h){ return h.trim().toLowerCase(); });
+    var iN = head.indexOf("name"), iT = head.indexOf("type"), iR = head.indexOf("radius_m"), iW = head.indexOf("wkt");
+    if(iW < 0) return 0; // fichier séries ou sans géométrie -> non reconstructible
+    var n = 0;
+    for(var r = 1; r < rows.length; r++){
+      var c = rows[r], ring = parseWKT(c[iW]); if(!ring) continue;
+      var type = iT >= 0 ? (c[iT] || "").toLowerCase() : "polygon";
+      var radius = iR >= 0 ? c[iR] : "";
+      if(rebuild(type, radius, ring)){
+        if(iN >= 0 && c[iN]) renameLast(c[iN]);
+        n++;
+      }
+    }
+    return n;
+  }
+  function importFeatureCollection(fc){
+    if(!fc || !fc.features) return 0; var n = 0;
+    fc.features.forEach(function(f){
+      if(!f.geometry || f.geometry.type !== "Polygon") return;
+      var ring = f.geometry.coordinates[0], pr = f.properties || {};
+      var type = (pr.type || "polygon").toLowerCase();
+      if(rebuild(type, pr.radius_m, ring)){
+        if(pr.name) renameLast(pr.name);
+        n++;
+      }
+    });
+    return n;
+  }
+  function importProject(j){
+    var n = 0;
+    (j.parcels || []).forEach(function(p){
+      if(p.type === "pivot" && p.center && p.radius){ savePivot({ lat: p.center.lat, lng: p.center.lng }, Math.round(+p.radius)); }
+      else if(p.pts && p.pts.length >= 3){ savePoly(p.pts.map(function(q){ return [q[0], q[1]]; }), "Polygon"); }
+      else return;
+      var np = parcels[parcels.length-1];
+      if(p.name) renameLast(p.name);
+      if(p.cur) np.cur = p.cur;
+      if(p.serie) np.serie = p.serie;
+      n++;
+    });
+    return n;
+  }
+
+  function fitToParcels(){
+    try{ if(typeof parcelGroup !== "undefined" && parcelGroup.getLayers().length) lmap.fitBounds(parcelGroup.getBounds().pad(0.2)); }catch(e){}
+  }
+
+  document.getElementById("btnImport").onclick = function(){
+    PICK(".csv,.json,.geojson", function(txt){
+      try{
+        var t = (txt || "").trim(), n = 0;
+        if(t[0] !== "{" && t[0] !== "["){                 // heuristique : pas du JSON -> CSV
+          n = importCSV(txt);
+          say(n ? (n + " parcelle(s) importée(s) depuis CSV.") : "CSV : colonne 'wkt' requise (name,type,radius_m,mean,min,max,wkt).", !n);
+        } else {
+          var j = JSON.parse(txt);
+          if(j.type === "FeatureCollection"){ n = importFeatureCollection(j); say(n + " parcelle(s) importée(s) depuis GeoJSON."); }
+          else if(j.format === "agrisim-live"){ n = importProject(j); say(n + " parcelle(s) importée(s) depuis le projet agrisim-live."); }
+          else { say("Format JSON non reconnu (attendu : FeatureCollection ou agrisim-live).", true); return; }
+        }
+        if(n){ if(typeof updateTable === "function") updateTable(); if(typeof drawChart === "function") drawChart(); if(typeof wfStatus === "function") wfStatus(); fitToParcels(); }
+      }catch(e){ say("Fichier illisible : " + e.message, true); }
+    });
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="ss_title">Lecture de courbes de sonde</title>
+<style>
+:root{
+  --bg:#0e1512;--panel:#16201b;--panel-2:#1c2a23;--line:#2b3a30;--line-2:#38493d;
+  --ink:#e8efe6;--muted:#8fa596;--faint:#5f7568;
+  --water:#2ea8d8;--water-d:#1c7fa8;--soil:#c9a24b;
+  --good:#5fb15a;--warn:#d99a2b;--bad:#d1584e;
+  --shadow:0 6px 22px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.45}
+.tabnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit}
+.topbar{display:flex;align-items:center;gap:14px;padding:12px 20px;background:linear-gradient(180deg,#16201b,#111a15);border-bottom:1px solid var(--line)}
+.logo{width:34px;height:34px;border-radius:9px;flex:none;background:radial-gradient(120% 120% at 30% 20%,#c9a24b,#7d6222);display:grid;place-items:center}
+.logo svg{width:20px;height:20px}
+.brand .t1{font-weight:700;font-size:.98rem}
+.brand .t2{color:var(--muted);font-size:.74rem}
+.spacer{flex:1}
+.mod-badge{font-size:.72rem;color:var(--soil);border:1px solid rgba(201,162,75,.4);background:rgba(201,162,75,.1);padding:4px 11px;border-radius:20px;font-weight:700}
+/* langue */
+.langbox{display:inline-flex;gap:4px;margin-inline-end:10px}
+.langbox button{border:1px solid var(--line,#d8e4c8);background:#fff;color:var(--muted,#6f7d64);border-radius:7px;padding:4px 9px;font:inherit;font-size:.75rem;font-weight:700;cursor:pointer;line-height:1}
+.langbox button:hover{border-color:#7cb342}
+.langbox button.on{background:#7cb342;color:#fff;border-color:#7cb342}
+
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+.lead{color:var(--muted);font-size:.9rem;max-width:820px;margin-bottom:20px}
+.lead b{color:var(--ink)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
+.card h2{margin:0 0 4px;font-size:1rem}
+.card .sub{color:var(--muted);font-size:.78rem;margin-bottom:14px}
+
+.ctlbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.ctlbar .seg{display:inline-flex;background:#131d17;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.ctlbar .seg button{background:transparent;border:0;color:var(--muted);padding:8px 14px;font:inherit;font-size:.82rem;cursor:pointer}
+.ctlbar .seg button.on{background:var(--water);color:#04202c;font-weight:700}
+.tbtn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:#18241d;color:var(--ink);font-size:.84rem;cursor:pointer}
+.tbtn:hover{border-color:var(--water-d)}
+.tbtn.primary{background:linear-gradient(180deg,#2ea8d8,#1c7fa8);border-color:#2ea8d8;color:#04202c;font-weight:700}
+
+.chartwrap{background:#0b120f;border:1px solid var(--line);border-radius:12px;padding:8px}
+svg.chart{width:100%;height:auto;display:block;touch-action:none}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-top:10px;padding:0 6px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:16px;height:3px;border-radius:2px;display:inline-block}
+.legend i.dash{height:0;border-top:2px dashed currentColor;width:16px}
+
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:14px}
+.ro{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+.ro .l{color:var(--muted);font-size:.74rem}
+.ro .v{font-size:1.5rem;font-weight:800;margin-top:2px}
+.ro .v.water{color:var(--water)}.ro .v.warn{color:var(--warn)}.ro .v.bad{color:var(--bad)}.ro .v.good{color:var(--good)}
+.ro .x{color:var(--faint);font-size:.72rem;margin-top:3px}
+
+.diag{display:flex;gap:11px;align-items:flex-start;padding:13px 14px;border-radius:11px;font-size:.86rem;border:1px solid;margin-top:14px}
+.diag svg{width:19px;height:19px;flex:none;margin-top:1px}
+.diag.warn{background:rgba(217,154,43,.12);border-color:rgba(217,154,43,.5);color:#e9be6f}
+.diag.good{background:rgba(95,177,90,.12);border-color:rgba(95,177,90,.45);color:#8fd08a}
+.diag.bad{background:rgba(209,88,78,.14);border-color:rgba(209,88,78,.5);color:#e79086}
+.diag b{display:block;color:var(--ink);margin-bottom:1px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+
+/* quiz identify events */
+.mission h2{color:#dcc079}
+.q{margin-bottom:16px}
+.q .qt{font-size:.9rem;margin-bottom:8px}
+.q .qt b{color:var(--soil)}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:#0e1713;cursor:pointer;font-size:.85rem}
+.opt:hover{border-color:var(--line-2)}
+.opt.sel{border-color:var(--water);background:#12242c}
+.opt.correct{border-color:var(--good);background:rgba(95,177,90,.12)}
+.opt.wrong{border-color:var(--bad);background:rgba(209,88,78,.12)}
+.opt .mk{width:20px;height:20px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-size:.7rem;flex:none}
+.opt.correct .mk{background:var(--good);border-color:var(--good);color:#04202c}
+.opt.wrong .mk{background:var(--bad);border-color:var(--bad);color:#fff}
+.explain{font-size:.82rem;color:var(--muted);margin-top:8px;padding:10px 12px;background:#0e1713;border-radius:8px;border-left:3px solid var(--soil);display:none}
+.explain.show{display:block}
+.score{font-size:.86rem;color:var(--muted);margin-top:10px}
+.score b{color:var(--good);font-size:1.05rem}
+.hoverbox{font-size:.78rem;color:var(--muted);padding:8px 10px;background:#0e1713;border-radius:8px;margin-top:8px;min-height:20px}
+.hoverbox b{color:var(--ink)}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../platform/public/assets/css/skin-sim.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v18M7 8h10M6 13h12M8 18h8" stroke="#f0e0b0" stroke-width="2" stroke-linecap="round"/></svg></div>
+  <div class="brand">
+    <div class="t1" data-i18n="ss_brand1">Lecture de courbes de sonde</div>
+    <div class="t2" data-i18n="ss_brand2">Sonde capacitive multi-profondeur · humidité volumique</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="langbox">
+    <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+    <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+    <button data-lang="en" onclick="I18N.set('en')">EN</button>
+  </div>
+  <div class="mod-badge" data-i18n="ss_badge">M5 · Jour 5</div>
+</div>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="ss_lead"></p>
+
+  <div class="card">
+    <h2 data-i18n="ss_card_h2">Courbe d'humidité du sol — 5 jours</h2>
+    <div class="sub" data-i18n="ss_card_sub">Chaque scénario correspond à un cas de pilotage réel</div>
+
+    <div class="ctlbar">
+      <div class="seg" id="scen">
+        <button class="on" data-s="good" data-i18n="ss_sc_good">Pilotage correct</button>
+        <button data-s="over" data-i18n="ss_sc_over">Sur-irrigation</button>
+        <button data-s="under" data-i18n="ss_sc_under">Sous-irrigation</button>
+        <button data-s="drain" data-i18n="ss_sc_drain">Drainage / fuite</button>
+      </div>
+      <div class="spacer" style="flex:1"></div>
+      <button class="tbtn" id="thBtn" onclick="toggleTh()">Afficher les seuils</button>
+    </div>
+
+    <div class="chartwrap">
+      <svg class="chart" id="svg" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="legend">
+      <span style="color:var(--water)"><i style="background:var(--water)"></i><span data-i18n="ss_lg_30">Humidité 30 cm</span></span>
+      <span style="color:var(--soil)"><i style="background:var(--soil)"></i><span data-i18n="ss_lg_60">Humidité 60 cm</span></span>
+      <span style="color:var(--good)"><i class="dash" style="color:var(--good)"></i><span data-i18n="ss_lg_cc">Capacité au champ (CC)</span></span>
+      <span style="color:var(--warn)"><i class="dash" style="color:var(--warn)"></i><span data-i18n="ss_lg_sr">Seuil de recharge</span></span>
+      <span style="color:var(--bad)"><i class="dash" style="color:var(--bad)"></i><span data-i18n="ss_lg_pf">Point de flétrissement (PF)</span></span>
+    </div>
+    <div class="hoverbox" id="hover" data-i18n="ss_hover_default">Survolez la courbe pour lire les valeurs jour par jour.</div>
+
+    <div class="readout" id="readout"></div>
+    <div id="diag"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card mission">
+      <h2 data-i18n="ss_mission_h2">Mission — diagnostiquer la courbe affichée</h2>
+      <div class="sub" data-i18n="ss_mission_sub">Répondez selon le scénario sélectionné, puis validez.</div>
+
+      <div class="q" id="q1">
+        <div class="qt" data-i18n-html="ss_q1"></div>
+        <div class="opts">
+          <div class="opt" data-q="1" data-a="0"><span class="mk"></span><span data-i18n="ss_q1a0"></span></div>
+          <div class="opt" data-q="1" data-a="1"><span class="mk"></span><span data-i18n="ss_q1a1"></span></div>
+          <div class="opt" data-q="1" data-a="2"><span class="mk"></span><span data-i18n="ss_q1a2"></span></div>
+        </div>
+        <div class="explain" id="e1"></div>
+      </div>
+
+      <div class="q" id="q2">
+        <div class="qt" data-i18n-html="ss_q2"></div>
+        <div class="opts" id="q2opts"></div>
+        <div class="explain" id="e2"></div>
+      </div>
+
+      <button class="tbtn primary" onclick="grade()" data-i18n="ss_validate">Valider</button>
+      <div class="score" id="scorebox"></div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="ss_ref_h2">Repères de lecture</h2>
+      <div class="sub" data-i18n="ss_ref_sub">La grammaire de la courbe</div>
+      <div style="font-size:.86rem;color:var(--muted);line-height:1.7">
+        <p style="margin:0 0 10px" data-i18n-html="ss_ref_p1"></p>
+        <p style="margin:0 0 10px" data-i18n-html="ss_ref_p2"></p>
+        <p style="margin:0 0 10px" data-i18n-html="ss_ref_p3"></p>
+        <p style="margin:0 0 10px" data-i18n-html="ss_ref_p4"></p>
+        <p style="margin:0" data-i18n-html="ss_ref_p5"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../platform/public/assets/i18n/i18n.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+
+Object.assign(I18N.DICT,{
+  ss_title:{fr:"Lecture de courbes de sonde",en:"Reading soil probe curves",ar:"قراءة منحنيات مجسّات التربة"},
+  ss_brand1:{fr:"Lecture de courbes de sonde",en:"Reading soil probe curves",ar:"قراءة منحنيات مجسّات التربة"},
+  ss_brand2:{fr:"Sonde capacitive multi-profondeur · humidité volumique",en:"Multi-depth capacitive probe · volumetric moisture",ar:"مجس سعوي متعدد الأعماق · الرطوبة الحجمية"},
+  ss_badge:{fr:"M5 · Jour 5",en:"M5 · Day 5",ar:"الوحدة 5 · اليوم 5"},
+  ss_lead:{fr:"Une sonde raconte l'histoire de l'irrigation. Apprenez à lire la « grammaire » de la courbe : <b>pics d'irrigation</b>, <b>paliers diurnes</b> (l'évapotranspiration en journée), <b>drainage</b> quand on dépasse la capacité au champ, et le <b>seuil de recharge</b>. Choisissez un scénario, survolez la courbe, puis identifiez les événements.",
+    en:"A probe tells the story of irrigation. Learn to read the “grammar” of the curve: <b>irrigation peaks</b>, <b>daytime steps</b> (evapotranspiration during the day), <b>drainage</b> when field capacity is exceeded, and the <b>refill threshold</b>. Pick a scenario, hover over the curve, then identify the events.",
+    ar:"يحكي المجس قصة الري. تعلّم قراءة «نحو» المنحنى: <b>قفزات الري</b>، <b>الدرجات النهارية</b> (التبخّر-النتح خلال النهار)، <b>الصرف</b> عند تجاوز السعة الحقلية، و<b>عتبة إعادة الري</b>. اختر سيناريو، مرّر فوق المنحنى، ثم حدّد الأحداث."},
+  ss_card_h2:{fr:"Courbe d'humidité du sol — 5 jours",en:"Soil moisture curve — 5 days",ar:"منحنى رطوبة التربة — 5 أيام"},
+  ss_card_sub:{fr:"Chaque scénario correspond à un cas de pilotage réel",en:"Each scenario matches a real irrigation-management case",ar:"كل سيناريو يمثّل حالة ري واقعية"},
+  ss_sc_good:{fr:"Pilotage correct",en:"Correct management",ar:"ري سليم"},
+  ss_sc_over:{fr:"Sur-irrigation",en:"Over-irrigation",ar:"إفراط في الري"},
+  ss_sc_under:{fr:"Sous-irrigation",en:"Under-irrigation",ar:"نقص في الري"},
+  ss_sc_drain:{fr:"Drainage / fuite",en:"Drainage / leak",ar:"صرف / تسرّب"},
+  ss_th_show:{fr:"Afficher les seuils",en:"Show thresholds",ar:"إظهار العتبات"},
+  ss_th_hide:{fr:"Masquer les seuils",en:"Hide thresholds",ar:"إخفاء العتبات"},
+  ss_lg_30:{fr:"Humidité 30 cm",en:"Moisture 30 cm",ar:"الرطوبة 30 سم"},
+  ss_lg_60:{fr:"Humidité 60 cm",en:"Moisture 60 cm",ar:"الرطوبة 60 سم"},
+  ss_lg_cc:{fr:"Capacité au champ (CC)",en:"Field capacity (FC)",ar:"السعة الحقلية (CC)"},
+  ss_lg_sr:{fr:"Seuil de recharge",en:"Refill threshold",ar:"عتبة إعادة الري"},
+  ss_lg_pf:{fr:"Point de flétrissement (PF)",en:"Wilting point (WP)",ar:"نقطة الذبول (PF)"},
+  ss_hover_default:{fr:"Survolez la courbe pour lire les valeurs jour par jour.",en:"Hover over the curve to read values day by day.",ar:"مرّر فوق المنحنى لقراءة القيم يوماً بيوم."},
+  ss_mission_h2:{fr:"Mission — diagnostiquer la courbe affichée",en:"Mission — diagnose the displayed curve",ar:"المهمة — تشخيص المنحنى المعروض"},
+  ss_mission_sub:{fr:"Répondez selon le scénario sélectionné, puis validez.",en:"Answer according to the selected scenario, then submit.",ar:"أجب حسب السيناريو المختار، ثم تحقّق."},
+  ss_q1:{fr:"<b>Q1.</b> Que montrent les remontées verticales brutales de la courbe ?",en:"<b>Q1.</b> What do the sharp vertical rises of the curve show?",ar:"<b>س1.</b> ماذا تمثّل الارتفاعات العمودية المفاجئة في المنحنى؟"},
+  ss_q1a0:{fr:"Des épisodes de pluie mesurés par la sonde",en:"Rainfall events measured by the probe",ar:"أحداث مطرية يقيسها المجس"},
+  ss_q1a1:{fr:"Des apports d'irrigation",en:"Irrigation inputs",ar:"إضافات الري"},
+  ss_q1a2:{fr:"Des erreurs de capteur",en:"Sensor errors",ar:"أخطاء في المستشعر"},
+  ss_q2:{fr:"<b>Q2.</b> D'après ce scénario, quelle est votre recommandation de pilotage ?",en:"<b>Q2.</b> Based on this scenario, what is your management recommendation?",ar:"<b>س2.</b> بناءً على هذا السيناريو، ما توصيتك في الري؟"},
+  ss_validate:{fr:"Valider",en:"Submit",ar:"تحقّق"},
+  ss_ref_h2:{fr:"Repères de lecture",en:"Reading cues",ar:"مفاتيح القراءة"},
+  ss_ref_sub:{fr:"La grammaire de la courbe",en:"The grammar of the curve",ar:"نحو المنحنى"},
+  ss_ref_p1:{fr:'<b style="color:var(--water)">Pic vertical</b> → apport d\'eau (irrigation ou pluie). La hauteur du pic = quantité infiltrée.',
+    en:'<b style="color:var(--water)">Vertical peak</b> → water input (irrigation or rain). The peak height = amount infiltrated.',
+    ar:'<b style="color:var(--water)">قفزة عمودية</b> ← إضافة ماء (ري أو مطر). ارتفاع القفزة = كمية الماء المتسرّب.'},
+  ss_ref_p2:{fr:'<b style="color:var(--ink)">Descente en escalier</b> → paliers diurnes : le sol se dessèche le jour (racines + évaporation), se stabilise la nuit.',
+    en:'<b style="color:var(--ink)">Staircase descent</b> → daytime steps: the soil dries during the day (roots + evaporation) and stabilises at night.',
+    ar:'<b style="color:var(--ink)">هبوط متدرّج</b> ← درجات نهارية: تجف التربة نهاراً (الجذور + التبخّر) وتستقر ليلاً.'},
+  ss_ref_p3:{fr:'<b style="color:var(--good)">Plafonnement à la CC</b> → le sol est plein. Au-dessus, l\'eau part en <b style="color:var(--bad)">drainage profond</b> (perdue, elle lessive les nutriments).',
+    en:'<b style="color:var(--good)">Plateau at FC</b> → the soil is full. Above it, water leaves as <b style="color:var(--bad)">deep drainage</b> (lost, it leaches nutrients).',
+    ar:'<b style="color:var(--good)">استواء عند السعة الحقلية</b> ← التربة ممتلئة. فوقها يذهب الماء <b style="color:var(--bad)">صرفاً عميقاً</b> (يُفقد ويغسل المغذيات).'},
+  ss_ref_p4:{fr:'<b style="color:var(--warn)">Seuil de recharge</b> → niveau où l\'on doit déclencher l\'irrigation avant le stress.',
+    en:'<b style="color:var(--warn)">Refill threshold</b> → the level at which irrigation must be triggered before stress.',
+    ar:'<b style="color:var(--warn)">عتبة إعادة الري</b> ← المستوى الذي يجب عنده بدء الري قبل الإجهاد.'},
+  ss_ref_p5:{fr:'<b style="color:var(--bad)">Sous le PF</b> → stress sévère, la plante ne peut plus extraire l\'eau.',
+    en:'<b style="color:var(--bad)">Below WP</b> → severe stress, the plant can no longer extract water.',
+    ar:'<b style="color:var(--bad)">تحت نقطة الذبول</b> ← إجهاد شديد، لم يعد النبات قادراً على سحب الماء.'},
+  // JS — axes / seuils / survol
+  ss_day:{fr:"Jour",en:"Day",ar:"يوم"},
+  ss_th_cc:{fr:"CC",en:"FC",ar:"CC"},
+  ss_th_sr:{fr:"Recharge",en:"Refill",ar:"إعادة"},
+  ss_th_pf:{fr:"PF",en:"WP",ar:"PF"},
+  ss_hv_state:{fr:"état",en:"state",ar:"الحالة"},
+  ss_hv_over:{fr:"sur-irrigation",en:"over-irrigation",ar:"إفراط ري"},
+  ss_hv_conf:{fr:"confort",en:"comfort",ar:"مريح"},
+  ss_hv_pilot:{fr:"à piloter",en:"to manage",ar:"يحتاج متابعة"},
+  ss_hv_irr:{fr:"irriguer",en:"irrigate",ar:"يحتاج ري"},
+  ss_hv_stress:{fr:"stress",en:"stress",ar:"إجهاد"},
+  // JS — lectures
+  ss_ro_hum:{fr:"Humidité actuelle (30 cm)",en:"Current moisture (30 cm)",ar:"الرطوبة الحالية (30 سم)"},
+  ss_ro_state:{fr:"état :",en:"state:",ar:"الحالة:"},
+  ss_ro_irr:{fr:"Irrigations sur 5 j",en:"Irrigations over 5 d",ar:"مرات الري خلال 5 أيام"},
+  ss_ro_peaks:{fr:"pics détectés",en:"peaks detected",ar:"قفزات مكتشفة"},
+  ss_ro_abovecc:{fr:"Temps au-dessus de la CC",en:"Time above FC",ar:"الوقت فوق السعة الحقلية"},
+  ss_ro_drain:{fr:"= drainage / eau perdue",en:"= drainage / water lost",ar:"= صرف / ماء مفقود"},
+  ss_ro_amp:{fr:"Amplitude min–max",en:"Min–max range",ar:"المدى الأدنى–الأقصى"},
+  ss_ro_rec:{fr:"recharge",en:"refill",ar:"إعادة"},
+  ss_state_over:{fr:"Sur-irrigation",en:"Over-irrigation",ar:"إفراط في الري"},
+  ss_state_conf:{fr:"Confort",en:"Comfort",ar:"مريح"},
+  ss_state_pilot:{fr:"À piloter",en:"To manage",ar:"يحتاج متابعة"},
+  ss_state_irr:{fr:"À irriguer",en:"To irrigate",ar:"يحتاج ري"},
+  ss_state_stress:{fr:"Stress",en:"Stress",ar:"إجهاد"},
+  // JS — diagnostic
+  ss_diag_good_t:{fr:"Pilotage sain",en:"Healthy management",ar:"ري سليم"},
+  ss_diag_good_x:{fr:"Les apports arrivent quand la courbe touche le seuil de recharge, sans dépasser la CC. Peu de drainage : l'eau reste disponible pour les racines.",
+    en:"Inputs arrive when the curve reaches the refill threshold, without exceeding FC. Little drainage: water stays available to the roots.",
+    ar:"تصل الإضافات عندما يبلغ المنحنى عتبة إعادة الري دون تجاوز السعة الحقلية. صرف قليل: يبقى الماء متاحاً للجذور."},
+  ss_diag_over_t:{fr:"Sur-irrigation",en:"Over-irrigation",ar:"إفراط في الري"},
+  ss_diag_over_x:{fr:"La courbe dépasse la capacité au champ à chaque apport : l'excédent part en drainage profond. Eau et engrais perdus, risque de lessivage des nitrates. Réduisez la dose.",
+    en:"The curve exceeds field capacity at every input: the excess leaves as deep drainage. Water and fertiliser lost, risk of nitrate leaching. Reduce the dose.",
+    ar:"يتجاوز المنحنى السعة الحقلية عند كل إضافة: يذهب الفائض صرفاً عميقاً. ماء وسماد مفقودان، وخطر غسل النترات. قلّل الجرعة."},
+  ss_diag_under_t:{fr:"Sous-irrigation",en:"Under-irrigation",ar:"نقص في الري"},
+  ss_diag_under_x:{fr:"La courbe passe sous le seuil de recharge et frôle le PF : la plante subit un stress. Rapprochez les apports ou augmentez légèrement la dose.",
+    en:"The curve drops below the refill threshold and grazes the WP: the plant is stressed. Shorten the interval between inputs or slightly increase the dose.",
+    ar:"يهبط المنحنى تحت عتبة إعادة الري ويقارب نقطة الذبول: يعاني النبات إجهاداً. قرّب مواعيد الري أو زد الجرعة قليلاً."},
+  ss_diag_drain_t:{fr:"Drainage / fuite probable",en:"Drainage / likely leak",ar:"صرف / تسرّب محتمل"},
+  ss_diag_drain_x:{fr:"Remontées très hautes puis chutes trop rapides : soit dose excessive, soit fuite/percolation. Vérifiez le débit et la dose réelle appliquée.",
+    en:"Very high rises then overly rapid falls: either an excessive dose or a leak/percolation. Check the flow rate and the actual dose applied.",
+    ar:"ارتفاعات عالية جداً ثم هبوط سريع جداً: إما جرعة مفرطة أو تسرّب/ترشّح. تحقّق من التدفق والجرعة الفعلية المطبّقة."},
+  // JS — mission Q2
+  ss_q2_good_0:{fr:"Continuer, le pilotage est correct",en:"Continue, the management is correct",ar:"استمر، الري سليم"},
+  ss_q2_good_1:{fr:"Doubler la dose",en:"Double the dose",ar:"مضاعفة الجرعة"},
+  ss_q2_good_2:{fr:"Arrêter toute irrigation une semaine",en:"Stop all irrigation for a week",ar:"إيقاف كل ري لمدة أسبوع"},
+  ss_q2_good_exp:{fr:"La courbe reste entre le seuil de recharge et la CC : c'est exactement la zone visée. On garde ce rythme.",
+    en:"The curve stays between the refill threshold and FC: exactly the target zone. Keep this rhythm.",
+    ar:"يبقى المنحنى بين عتبة إعادة الري والسعة الحقلية: هذه هي المنطقة المستهدفة تماماً. حافظ على هذا الإيقاع."},
+  ss_q2_over_0:{fr:"Augmenter encore la dose",en:"Increase the dose further",ar:"زيادة الجرعة أكثر"},
+  ss_q2_over_1:{fr:"Réduire la dose pour ne plus dépasser la CC",en:"Reduce the dose so it no longer exceeds FC",ar:"تقليل الجرعة كي لا تتجاوز السعة الحقلية"},
+  ss_q2_over_2:{fr:"Irriguer deux fois plus souvent",en:"Irrigate twice as often",ar:"الري بوتيرة مضاعفة"},
+  ss_q2_over_exp:{fr:"Chaque apport dépasse la CC → drainage. Il faut réduire la dose (ou la durée) pour remplir juste jusqu'à la CC, sans excédent.",
+    en:"Every input exceeds FC → drainage. Reduce the dose (or duration) to fill just up to FC, without excess.",
+    ar:"كل إضافة تتجاوز السعة الحقلية ← صرف. يجب تقليل الجرعة (أو المدة) للملء حتى السعة الحقلية فقط دون فائض."},
+  ss_q2_under_0:{fr:"Rapprocher les apports / augmenter un peu la dose",en:"Shorten intervals / slightly increase the dose",ar:"تقريب مواعيد الري / زيادة الجرعة قليلاً"},
+  ss_q2_under_1:{fr:"Espacer davantage les apports",en:"Space the inputs out more",ar:"مباعدة مواعيد الري أكثر"},
+  ss_q2_under_2:{fr:"Ne rien changer",en:"Change nothing",ar:"عدم تغيير شيء"},
+  ss_q2_under_exp:{fr:"La courbe descend sous le seuil de recharge et approche le PF : la plante manque d'eau. On resserre les apports.",
+    en:"The curve drops below the refill threshold and nears the WP: the plant lacks water. Tighten the inputs.",
+    ar:"يهبط المنحنى تحت عتبة إعادة الري ويقترب من نقطة الذبول: ينقص الماء للنبات. نكثّف مواعيد الري."},
+  ss_q2_drain_0:{fr:"Continuer ainsi",en:"Continue as is",ar:"الاستمرار كما هو"},
+  ss_q2_drain_1:{fr:"Vérifier débit/dose et chercher une fuite",en:"Check flow/dose and look for a leak",ar:"فحص التدفق/الجرعة والبحث عن تسرّب"},
+  ss_q2_drain_2:{fr:"Ajouter de l'engrais",en:"Add fertiliser",ar:"إضافة سماد"},
+  ss_q2_drain_exp:{fr:"Montées très hautes et chutes anormalement rapides : dose excessive ou percolation/fuite. On contrôle le matériel avant tout.",
+    en:"Very high rises and abnormally rapid falls: excessive dose or percolation/leak. Check the equipment first of all.",
+    ar:"ارتفاعات عالية جداً وهبوط سريع غير طبيعي: جرعة مفرطة أو ترشّح/تسرّب. نفحص المعدّات أولاً."},
+  // JS — validation
+  ss_e1:{fr:"Les remontées verticales sont des apports d'eau. Dans un pilotage instrumenté, on distingue irrigation et pluie en croisant avec la station météo — mais la signature « montée brutale » est toujours un apport.",
+    en:"The vertical rises are water inputs. In instrumented management, irrigation and rain are told apart by cross-checking with the weather station — but the “sharp rise” signature is always an input.",
+    ar:"الارتفاعات العمودية هي إضافات ماء. في الري المُجهَّز بالأدوات، نميّز بين الري والمطر بمقارنة بيانات محطة الأرصاد — لكن بصمة «الارتفاع المفاجئ» هي دائماً إضافة ماء."},
+  ss_score:{fr:"Score :",en:"Score:",ar:"النتيجة:"},
+  ss_score_ok:{fr:"✓ bien lu",en:"✓ well read",ar:"✓ قراءة صحيحة"},
+  ss_score_no:{fr:"— relisez la courbe et les repères",en:"— re-read the curve and the cues",ar:"— أعد قراءة المنحنى والمفاتيح"}
+});
+
+// thresholds (% vol) — argilo-limoneux
+const CC=38, SR=26, PF=16, CONF=30;
+let showTh=true, scen='good', series=null;
+
+// geometry
+const W=900,H=340,PADL=48,PADR=16,PADT=18,PADB=42;
+const x0=PADL, x1=W-PADR, y0=PADT, y1=H-PADB;
+const DAYS=5, PPD=48; // points per day (~30min)
+const N=DAYS*PPD;
+const yMin=10, yMax=44;
+const sx=i=> x0 + (i/(N-1))*(x1-x0);
+const sy=v=> y1 - (v-yMin)/(yMax-yMin)*(y1-y0);
+
+function genSeries(kind){
+  // returns {s30:[], s60:[], irrig:[dayIndex...], label}
+  const s30=[], s60=[];
+  let m=32, m60=33;
+  const irrig=[];
+  for(let d=0;d<DAYS;d++){
+    // decide irrigation each morning depending on scenario
+    let doIrr=false, dose=0;
+    if(kind==='good'){ doIrr = (m<=SR+1); dose=8; }
+    if(kind==='over'){ doIrr = true; dose=11; }
+    if(kind==='under'){ doIrr = (d%2===0)&&(m<=SR); dose=5; }
+    if(kind==='drain'){ doIrr = true; dose=13; }
+    for(let h=0;h<PPD;h++){
+      const idx=d*PPD+h;
+      const hourOfDay=(h/PPD)*24;
+      // morning irrigation event at ~06:00
+      if(doIrr && h===12){ // 06:00
+        m=Math.min(m+dose, kind==='drain'?46:CC+ (kind==='over'?5:1));
+        m60=Math.min(m60+dose*0.55, CC+ (kind==='over'?4:0.5));
+        irrig.push(idx);
+      }
+      // diurnal ET drawdown : stronger midday
+      const etFactor=Math.max(0,Math.sin((hourOfDay-6)/12*Math.PI));
+      const etRate=(kind==='under'?0.42:0.33)*etFactor;
+      m-=etRate;
+      m60-=etRate*0.5;
+      // drainage above CC (fast loss)
+      if(m>CC){ const ex=(m-CC); m-=ex*0.35; m60+=ex*0.10; }
+      if(m60>CC){ m60-=(m60-CC)*0.25; }
+      m=Math.max(m,12); m60=Math.max(m60,14);
+      s30.push(m); s60.push(m60);
+    }
+  }
+  return {s30,s60,irrig};
+}
+
+function setThBtn(){ $('thBtn').textContent = I18N.t(showTh?'ss_th_hide':'ss_th_show'); }
+
+function draw(){
+  series=genSeries(scen);
+  const svg=$('svg'); svg.innerHTML='';
+  setThBtn();
+  // grid + y labels
+  for(let v=15;v<=44;v+=5){
+    const y=sy(v);
+    line(x0,y,x1,y,'#1a251e',1);
+    txt(x0-8,y+4,v+'%','end','#5f7568',11);
+  }
+  // day separators + x labels
+  for(let d=0;d<=DAYS;d++){
+    const x=x0+(d*PPD/(N-1))*(x1-x0);
+    line(x,y0,x,y1,'#1a251e',1);
+    if(d<DAYS) txt(x0+((d+0.5)*PPD/(N-1))*(x1-x0), y1+22, I18N.t('ss_day')+' '+(d+1),'middle','#8fa596',12);
+  }
+  // threshold lines
+  if(showTh){
+    thLine(CC,'var(--good)',I18N.t('ss_th_cc'));
+    thLine(SR,'var(--warn)',I18N.t('ss_th_sr'));
+    thLine(PF,'var(--bad)',I18N.t('ss_th_pf'));
+  }
+  // irrigation markers
+  series.irrig.forEach(i=>{
+    const x=sx(i);
+    line(x,y0,x,y1,'rgba(46,168,216,.25)',2);
+    // droplet
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',x);t.setAttribute('y',y0+12);t.setAttribute('text-anchor','middle');
+    t.setAttribute('fill','var(--water)');t.setAttribute('font-size','13');t.textContent='💧';
+    svg.appendChild(t);
+  });
+  // curves
+  path(series.s60,'var(--soil)',2);
+  path(series.s30,'var(--water)',2.4);
+  // hover layer
+  const hl=document.createElementNS(NS,'rect');
+  hl.setAttribute('x',x0);hl.setAttribute('y',y0);hl.setAttribute('width',x1-x0);hl.setAttribute('height',y1-y0);
+  hl.setAttribute('fill','transparent');hl.style.cursor='crosshair';
+  svg.appendChild(hl);
+  const cursor=document.createElementNS(NS,'line');
+  cursor.setAttribute('stroke','#e8efe6');cursor.setAttribute('stroke-width','1');cursor.setAttribute('opacity','0');
+  cursor.setAttribute('y1',y0);cursor.setAttribute('y2',y1);svg.appendChild(cursor);
+  const dot=document.createElementNS(NS,'circle');
+  dot.setAttribute('r','4');dot.setAttribute('fill','var(--water)');dot.setAttribute('opacity','0');svg.appendChild(dot);
+
+  function move(ev){
+    const pt=svg.getBoundingClientRect();
+    const px=(ev.clientX-pt.left)/pt.width*W;
+    let i=Math.round((px-x0)/(x1-x0)*(N-1)); i=Math.max(0,Math.min(N-1,i));
+    const x=sx(i);
+    cursor.setAttribute('x1',x);cursor.setAttribute('x2',x);cursor.setAttribute('opacity','.5');
+    dot.setAttribute('cx',x);dot.setAttribute('cy',sy(series.s30[i]));dot.setAttribute('opacity','1');
+    const day=Math.floor(i/PPD)+1, hr=Math.round((i%PPD)/PPD*24);
+    const m=series.s30[i];
+    let stKey = m>CC?'ss_hv_over':m>=CONF?'ss_hv_conf':m>=SR?'ss_hv_pilot':m>PF?'ss_hv_irr':'ss_hv_stress';
+    $('hover').innerHTML=`<b>${I18N.t('ss_day')} ${day}, ${String(hr).padStart(2,'0')}:00</b> — 30 cm : <b>${m.toFixed(1)}%</b> · 60 cm : ${series.s60[i].toFixed(1)}% — ${I18N.t('ss_hv_state')} : <b>${I18N.t(stKey)}</b>`;
+  }
+  hl.addEventListener('mousemove',move);
+  hl.addEventListener('touchmove',e=>{if(e.touches[0])move(e.touches[0]);},{passive:true});
+
+  updateReadout();
+}
+function line(a,b,c,d,col,w){const l=document.createElementNS(NS,'line');l.setAttribute('x1',a);l.setAttribute('y1',b);l.setAttribute('x2',c);l.setAttribute('y2',d);l.setAttribute('stroke',col);l.setAttribute('stroke-width',w);$('svg').appendChild(l);}
+function txt(x,y,s,anc,col,size){const t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('text-anchor',anc);t.setAttribute('fill',col);t.setAttribute('font-size',size);t.textContent=s;$('svg').appendChild(t);}
+function thLine(v,col,label){const y=sy(v);const l=document.createElementNS(NS,'line');l.setAttribute('x1',x0);l.setAttribute('y1',y);l.setAttribute('x2',x1);l.setAttribute('y2',y);l.setAttribute('stroke',col);l.setAttribute('stroke-width',1.4);l.setAttribute('stroke-dasharray','6 5');l.setAttribute('opacity','.8');$('svg').appendChild(l);txt(x1-4,y-5,label,'end',col,11);}
+function path(arr,col,w){let d='';arr.forEach((v,i)=>{d+=(i?'L':'M')+sx(i).toFixed(1)+' '+sy(v).toFixed(1)+' ';});const p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('fill','none');p.setAttribute('stroke',col);p.setAttribute('stroke-width',w);p.setAttribute('stroke-linejoin','round');$('svg').appendChild(p);}
+
+function updateReadout(){
+  const s=series.s30;
+  const last=s[s.length-1];
+  const peak=Math.max(...s), trough=Math.min(...s);
+  const nIrr=series.irrig.length;
+  const drainPts=s.filter(v=>v>CC).length;
+  const drainPct=(drainPts/s.length*100);
+  const state = last>CC?['ss_state_over','bad']:last>=CONF?['ss_state_conf','good']:last>=SR?['ss_state_pilot','warn']:last>PF?['ss_state_irr','warn']:['ss_state_stress','bad'];
+  $('readout').innerHTML=`
+    <div class="ro"><div class="l">${I18N.t('ss_ro_hum')}</div><div class="v water tabnum">${last.toFixed(1)}<small style="font-size:.9rem">%</small></div><div class="x">${I18N.t('ss_ro_state')} ${I18N.t(state[0])}</div></div>
+    <div class="ro"><div class="l">${I18N.t('ss_ro_irr')}</div><div class="v tabnum">${nIrr}</div><div class="x">${I18N.t('ss_ro_peaks')}</div></div>
+    <div class="ro"><div class="l">${I18N.t('ss_ro_abovecc')}</div><div class="v ${drainPct>8?'bad':'good'} tabnum">${drainPct.toFixed(0)}<small style="font-size:.9rem">%</small></div><div class="x">${I18N.t('ss_ro_drain')}</div></div>
+    <div class="ro"><div class="l">${I18N.t('ss_ro_amp')}</div><div class="v tabnum">${trough.toFixed(0)}–${peak.toFixed(0)}<small style="font-size:.9rem">%</small></div><div class="x">CC ${CC} · ${I18N.t('ss_ro_rec')} ${SR} · PF ${PF}</div></div>`;
+
+  // diagnosis banner
+  const D={
+    good:['good','ss_diag_good_t','ss_diag_good_x'],
+    over:['bad','ss_diag_over_t','ss_diag_over_x'],
+    under:['warn','ss_diag_under_t','ss_diag_under_x'],
+    drain:['bad','ss_diag_drain_t','ss_diag_drain_x']
+  }[scen];
+  $('diag').innerHTML=`<div class="diag ${D[0]}">${ic(D[0])}<div><b>${I18N.t(D[1])}</b>${I18N.t(D[2])}</div></div>`;
+}
+function ic(t){const p=t==='good'?'M20 6 9 17l-5-5':t==='warn'?'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z':'M12 8v4m0 4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z';return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${p}"/></svg>`;}
+
+// scenario buttons
+document.querySelectorAll('#scen button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#scen button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); scen=b.dataset.s; resetMission(); draw();
+}));
+function toggleTh(){showTh=!showTh;setThBtn();draw();}
+
+// mission Q2 options depend on scenario
+const Q2={
+  good:{opts:['ss_q2_good_0','ss_q2_good_1','ss_q2_good_2'],correct:0,exp:'ss_q2_good_exp'},
+  over:{opts:['ss_q2_over_0','ss_q2_over_1','ss_q2_over_2'],correct:1,exp:'ss_q2_over_exp'},
+  under:{opts:['ss_q2_under_0','ss_q2_under_1','ss_q2_under_2'],correct:0,exp:'ss_q2_under_exp'},
+  drain:{opts:['ss_q2_drain_0','ss_q2_drain_1','ss_q2_drain_2'],correct:1,exp:'ss_q2_drain_exp'}
+};
+function resetMission(){
+  sel={};
+  const q=Q2[scen];
+  $('q2opts').innerHTML=q.opts.map((o,i)=>`<div class="opt" data-q="2" data-a="${i}"><span class="mk"></span>${I18N.t(o)}</div>`).join('');
+  bindOpts();
+  $('e1').classList.remove('show');$('e2').classList.remove('show');
+  $('scorebox').innerHTML='';
+  document.querySelectorAll('.opt').forEach(o=>o.classList.remove('correct','wrong','sel'));
+}
+let sel={};
+function bindOpts(){
+  document.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
+    const q=o.dataset.q;
+    document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(x=>x.classList.remove('sel'));
+    o.classList.add('sel'); sel[q]=+o.dataset.a;
+  });
+}
+function grade(){
+  const q2=Q2[scen];
+  const ans={1:1,2:q2.correct};
+  let score=0;
+  [1,2].forEach(q=>{
+    document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(o=>{
+      o.classList.remove('correct','wrong');
+      const a=+o.dataset.a;
+      if(a===ans[q])o.classList.add('correct');
+      else if(sel[q]===a)o.classList.add('wrong');
+    });
+    if(sel[q]===ans[q])score++;
+  });
+  $('e1').classList.add('show');
+  $('e1').textContent=I18N.t('ss_e1');
+  $('e2').classList.add('show');
+  $('e2').textContent=I18N.t(q2.exp);
+  $('scorebox').innerHTML=`${I18N.t('ss_score')} <b>${score}/2</b> ${score===2?I18N.t('ss_score_ok'):I18N.t('ss_score_no')}`;
+}
+
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{applyHTML();resetMission();draw();});
+
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+resetMission();
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cours — Géologie & Hydrogéologie · G0</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:940px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  .wrap{max-width:1080px}
+  /* --- bandeau titre --- */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#5a8f2c,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:var(--shadow)}
+  .hero h1{font-size:24px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}
+  .toc a{font-size:12.5px;font-weight:600;color:var(--green-d);background:var(--green-bg);
+    border:1px solid var(--line);border-radius:20px;padding:5px 13px}
+  .toc a:hover{border-color:var(--green);background:#e7f2d8}
+  /* --- objectifs --- */
+  .obj{background:linear-gradient(180deg,#eef8ef,#f6fbf0);border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px}
+  .obj h2{color:var(--impact)}
+  .obj ul{margin:6px 0 0;padding-inline-start:20px;columns:2;column-gap:28px}
+  @media(max-width:720px){.obj ul{columns:1}}
+  .obj li{margin:5px 0;font-size:13.5px;color:var(--ink);break-inside:avoid}
+  /* --- sections --- */
+  .card h2{font-size:17px}
+  .card h3{font-size:14.5px;font-weight:800;color:var(--green-d);margin:14px 0 6px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--green);
+    color:#fff;font-size:13px;font-weight:800;flex:none}
+  p.par{color:var(--ink);font-size:14px;line-height:1.65;margin:8px 0;max-width:940px}
+  p.par b{color:var(--green-d)}
+  /* --- concepts grid --- */
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:12px 0}
+  .concept{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .concept .sym{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:15px}
+  .concept .nm{font-weight:700;font-size:13px;margin:2px 0 4px;color:var(--ink)}
+  .concept .ds{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .concept .u{font-family:"JetBrains Mono",monospace;color:var(--info);font-size:11.5px}
+  /* --- à retenir --- */
+  .retenir{background:#fdf7ea;border:1px solid #f0d9ac;border-inline-start:4px solid var(--info);
+    border-radius:11px;padding:12px 16px;margin:14px 0;font-size:13.5px;color:var(--ink);line-height:1.6}
+  .retenir .h{font-weight:800;color:#b5701a;text-transform:uppercase;font-size:11px;letter-spacing:.05em;display:block;margin-bottom:4px}
+  body[dir="rtl"] .retenir{border-inline-start:1px solid #f0d9ac;border-inline-end:4px solid var(--info)}
+  .fossil{background:#f3eefb;border-color:#d9c9f0;border-inline-start-color:var(--data)}
+  .fossil .h{color:var(--data)}
+  body[dir="rtl"] .fossil{border-inline-end-color:var(--data)}
+  /* --- figures --- */
+  .fig{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0}
+  .fig svg{width:100%;height:auto;display:block;direction:ltr}
+  .figcap{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+  .figcap b{color:var(--ink)}
+  /* --- systèmes aquifères --- */
+  .sysgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+  .sys{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:#fff;border-top:4px solid var(--sc,var(--green))}
+  .sys .nm{font-weight:800;font-size:14px;color:var(--ink)}
+  .sys .sub{font-size:11.5px;color:var(--muted);margin:2px 0 6px}
+  .sys .ds{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .sys .badge{margin-top:8px;font-size:10px}
+  /* --- table --- */
+  table.t{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:start}
+  table.t th{background:var(--green-bg);color:var(--green-d);font-weight:700;font-size:12px}
+  table.t td b{color:var(--ink)}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:13px;background:#0e1512;color:#d7e3cd;
+    border-radius:10px;padding:12px 16px;overflow:auto;margin:10px 0}
+  .formula .hl{color:#a5d16e;font-weight:700}
+  /* --- apps --- */
+  .appgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:6px}
+  .appcard{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:13px;
+    padding:15px 17px;transition:.16s;border-inline-start:4px solid var(--ac,var(--green))}
+  .appcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(60,80,40,.15);border-color:var(--ac,var(--green))}
+  body[dir="rtl"] .appcard{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--ac,var(--green))}
+  .appcard .ico{font-size:26px}
+  .appcard h4{font-size:14.5px;font-weight:800;margin:6px 0 4px;color:var(--ink)}
+  .appcard p{font-size:12.5px;color:var(--muted);flex:1;line-height:1.5;margin-bottom:10px}
+  .appcard .go{font-size:12.5px;font-weight:700;color:var(--green-d)}
+  .tpbanner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;
+    background:linear-gradient(120deg,#5a8f2c,#3fa66a);color:#fff;border-radius:15px;padding:20px 24px;margin-top:18px}
+  .tpbanner .tt{font-size:18px;font-weight:800}
+  .tpbanner .dd{font-size:13px;opacity:.92;margin-top:3px;max-width:560px}
+  .tpbanner .btn{background:#fff;color:var(--green-d)}
+  .tpbanner .btn:hover{background:#eef8ef}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:22px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">G0</span> <b data-i18n="c_brand">Géologie</b> <span data-i18n="c_brand2">& Hydrogéologie</span></div>
+  <div class="sub" data-i18n="c_sub">Cours · nappes, aquifère de Nubie, essais de pompage</div>
+  <div class="right">
+    <span class="chip">G0 · <span data-i18n="c_course_chip">Cours</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="g0">G0</div>
+    <div>
+      <h1 data-i18n="c_title">Géologie & Hydrogéologie de l'eau souterraine</h1>
+      <div class="tag" data-i18n="c_tag">Module fondamental · comprendre les nappes libyennes avant de piloter l'irrigation</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="c_intro"></p>
+
+  <nav class="toc">
+    <a href="#s1" data-i18n="c_toc1">1 · Aquifères</a>
+    <a href="#s2" data-i18n="c_toc2">2 · Systèmes libyens</a>
+    <a href="#s3" data-i18n="c_toc3">3 · Log de forage</a>
+    <a href="#s4" data-i18n="c_toc4">4 · Essais de pompage</a>
+    <a href="#s5" data-i18n="c_toc5">5 · GMMR</a>
+    <a href="#s6" data-i18n="c_toc6">6 · Piézométrie & IoT</a>
+    <a href="#apps" data-i18n="c_toc7">Applications</a>
+  </nav>
+
+  <!-- OBJECTIFS -->
+  <div class="card obj">
+    <h2>🎯 <span data-i18n="c_obj_h">Objectifs pédagogiques</span></h2>
+    <ul>
+      <li data-i18n="c_obj1">Distinguer une nappe libre d'une nappe captive et lire une coupe hydrogéologique.</li>
+      <li data-i18n="c_obj2">Manipuler les paramètres T, K et S et savoir ce qu'ils décrivent.</li>
+      <li data-i18n="c_obj3">Expliquer pourquoi l'eau du grès de Nubie est une ressource fossile.</li>
+      <li data-i18n="c_obj4">Lire un log de forage : lithologie, crépines, niveau statique et rabattement.</li>
+      <li data-i18n="c_obj5">Interpréter un essai de pompage par la droite de Cooper-Jacob (T et S).</li>
+      <li data-i18n="c_obj6">Situer le GMMR et le suivi piézométrique (IoT, GRACE) dans la gestion durable.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 1 : AQUIFERES -->
+  <div class="card" id="s1">
+    <h2><span class="num">1</span> <span data-i18n="c_s1_h">L'aquifère et ses paramètres</span></h2>
+    <p class="par" data-i18n-html="c_s1_p1"></p>
+
+    <h3 data-i18n="c_s1_h2">Nappe libre vs nappe captive</h3>
+    <p class="par" data-i18n-html="c_s1_p2"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 372" role="img">
+        <defs>
+          <pattern id="hatchRock" width="10" height="10" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <rect width="10" height="10" fill="#c9cdbf"/><line x1="0" y1="0" x2="0" y2="10" stroke="#9aa890" stroke-width="2"/>
+          </pattern>
+          <linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f4faf7"/><stop offset="1" stop-color="#eef6ea"/>
+          </linearGradient>
+        </defs>
+        <!-- sky -->
+        <rect x="0" y="0" width="760" height="70" fill="url(#gSky)"/>
+        <!-- vadose / unsaturated -->
+        <rect x="0" y="70" width="760" height="70" fill="#f0e6d0"/>
+        <!-- unconfined saturated aquifer -->
+        <rect x="0" y="140" width="760" height="62" fill="#cfe6f4"/>
+        <!-- aquitard (clay) -->
+        <rect x="0" y="202" width="760" height="34" fill="#b9c3a8"/>
+        <!-- confined aquifer -->
+        <rect x="0" y="236" width="760" height="70" fill="#9fd0ec"/>
+        <!-- bedrock -->
+        <rect x="0" y="306" width="760" height="66" fill="url(#hatchRock)"/>
+        <!-- ground surface line -->
+        <path d="M0 70 Q160 62 320 70 T640 68 L760 70" fill="none" stroke="#7a6a45" stroke-width="2.5"/>
+        <!-- water table (nappe libre) dashed -->
+        <line x1="0" y1="140" x2="760" y2="140" stroke="#2f7fb5" stroke-width="2" stroke-dasharray="7 5"/>
+        <!-- water-table triangle symbol -->
+        <path d="M120 140 l7 -9 l-14 0 z" fill="#2f7fb5"/>
+        <line x1="106" y1="146" x2="134" y2="146" stroke="#2f7fb5" stroke-width="1.6"/>
+        <line x1="111" y1="150" x2="129" y2="150" stroke="#2f7fb5" stroke-width="1.6"/>
+        <!-- piezometric surface of confined aquifer (above ground = artesian) -->
+        <line x1="470" y1="46" x2="760" y2="46" stroke="#8e6fc7" stroke-width="2" stroke-dasharray="4 4"/>
+        <!-- ordinary well to unconfined -->
+        <rect x="196" y="60" width="12" height="120" fill="#3a3a3a"/>
+        <rect x="198" y="140" width="8" height="40" fill="#2f7fb5" opacity="0.65"/>
+        <!-- artesian well to confined, water gushes above ground -->
+        <rect x="600" y="58" width="12" height="192" fill="#3a3a3a"/>
+        <rect x="602" y="46" width="8" height="204" fill="#8e6fc7" opacity="0.35"/>
+        <path d="M606 46 q-10 -12 4 -20 q10 8 -4 20" fill="#8e6fc7" opacity="0.8"/>
+        <!-- labels -->
+        <text data-i18n="c_fig1_vad" x="14" y="108" font-size="12.5" font-weight="700" fill="#8a7444">Zone non saturée</text>
+        <text data-i18n="c_fig1_free" x="14" y="176" font-size="12.5" font-weight="700" fill="#1f5f8a">Nappe libre</text>
+        <text data-i18n="c_fig1_clay" x="14" y="224" font-size="11.5" font-weight="700" fill="#5c6a49">Couche imperméable</text>
+        <text data-i18n="c_fig1_conf" x="14" y="278" font-size="12.5" font-weight="700" fill="#1f5f8a">Nappe captive</text>
+        <text data-i18n="c_fig1_rock" x="14" y="342" font-size="12.5" font-weight="700" fill="#5b5f52">Socle imperméable</text>
+        <text data-i18n="c_fig1_wt" x="150" y="134" font-size="11" font-weight="700" fill="#2f7fb5">niveau statique</text>
+        <text data-i18n="c_fig1_well" x="150" y="56" font-size="11" font-weight="700" fill="#333">puits ordinaire</text>
+        <text data-i18n="c_fig1_arte" x="628" y="40" font-size="11" font-weight="700" fill="#6a4bb0">puits artésien</text>
+        <text data-i18n="c_fig1_piezo" x="486" y="40" font-size="10.5" font-weight="600" fill="#6a4bb0">surface piézométrique</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig1_cap"></div>
+    </div>
+
+    <h3 data-i18n="c_s1_h3">Les paramètres à connaître</h3>
+    <div class="cgrid">
+      <div class="concept"><div class="sym">n</div><div class="nm" data-i18n="c_por_n">Porosité</div><div class="ds" data-i18n="c_por_d">Fraction de vides dans la roche. <span class="u">— (%)</span></div></div>
+      <div class="concept"><div class="sym">K</div><div class="nm" data-i18n="c_k_n">Perméabilité (conductivité)</div><div class="ds" data-i18n="c_k_d">Aptitude à laisser circuler l'eau. <span class="u">m/j</span></div></div>
+      <div class="concept"><div class="sym">T = K·b</div><div class="nm" data-i18n="c_t_n">Transmissivité</div><div class="ds" data-i18n="c_t_d">Débit transmis sur toute l'épaisseur b. <span class="u">m²/j</span></div></div>
+      <div class="concept"><div class="sym">S</div><div class="nm" data-i18n="c_s_n">Coef. d'emmagasinement</div><div class="ds" data-i18n="c_s_d">Volume libéré par baisse d'1 m de charge. <span class="u">—</span></div></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s1_ret"></span></div>
+  </div>
+
+  <!-- SECTION 2 : SYSTEMES LIBYENS -->
+  <div class="card" id="s2">
+    <h2><span class="num">2</span> <span data-i18n="c_s2_h">Les grands systèmes aquifères de Libye</span></h2>
+    <p class="par" data-i18n-html="c_s2_p1"></p>
+
+    <div class="sysgrid">
+      <div class="sys" style="--sc:#8e6fc7">
+        <div class="nm" data-i18n="c_sys_nub_n">Grès de Nubie (NSAS)</div>
+        <div class="sub" data-i18n="c_sys_nub_s">Kufra · Sarir — SE Libye</div>
+        <div class="ds" data-i18n="c_sys_nub_d">Immense système transfrontalier. Eau fossile, recharge quasi nulle. Alimente le GMMR.</div>
+        <span class="badge" style="background:#f3eefb;color:#6a4bb0;border-color:#d9c9f0" data-i18n="c_sys_fossil">Eau fossile</span>
+      </div>
+      <div class="sys" style="--sc:#e0912b">
+        <div class="nm" data-i18n="c_sys_mur_n">Bassin de Murzuq</div>
+        <div class="sub" data-i18n="c_sys_mur_s">SW Libye</div>
+        <div class="ds" data-i18n="c_sys_mur_d">Grès paléozoïques profonds, ressource fossile exploitée pour l'agriculture et le GMMR ouest.</div>
+        <span class="badge" style="background:#f3eefb;color:#6a4bb0;border-color:#d9c9f0" data-i18n="c_sys_fossil">Eau fossile</span>
+      </div>
+      <div class="sys" style="--sc:#d1584e">
+        <div class="nm" data-i18n="c_sys_jef_n">Plaine de Jefara</div>
+        <div class="sub" data-i18n="c_sys_jef_s">NW côtier · Tripoli</div>
+        <div class="ds" data-i18n="c_sys_jef_d">Nappe côtière peu profonde, surexploitée : intrusion saline, salinisation des sols.</div>
+        <span class="badge soon" data-i18n="c_sys_over">Surexploitée</span>
+      </div>
+      <div class="sys" style="--sc:#3fa66a">
+        <div class="nm" data-i18n="c_sys_cyr_n">Karst de Cyrénaïque</div>
+        <div class="sub" data-i18n="c_sys_cyr_s">NE · Jebel Akhdar</div>
+        <div class="ds" data-i18n="c_sys_cyr_d">Calcaires fissurés, recharge par la pluie côtière ; ressource plus renouvelable mais vulnérable.</div>
+        <span class="badge" data-i18n="c_sys_renew">Partiellement renouvelable</span>
+      </div>
+    </div>
+
+    <h3 data-i18n="c_s2_h2">Le système de grès de Nubie : une eau fossile</h3>
+    <p class="par" data-i18n-html="c_s2_p2"></p>
+    <div class="retenir fossil"><span class="h" data-i18n="c_ret_key">Point clé — durabilité</span><span data-i18n-html="c_s2_ret"></span></div>
+  </div>
+
+  <!-- SECTION 3 : LOG DE FORAGE -->
+  <div class="card" id="s3">
+    <h2><span class="num">3</span> <span data-i18n="c_s3_h">Lire un log de forage</span></h2>
+    <p class="par" data-i18n-html="c_s3_p1"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 400" role="img">
+        <!-- depth axis -->
+        <line x1="70" y1="30" x2="70" y2="370" stroke="#c8d3b8" stroke-width="1.5"/>
+        <g font-size="10.5" fill="#9aa890" text-anchor="end">
+          <text x="62" y="34">0 m</text><text x="62" y="120">50</text><text x="62" y="210">100</text>
+          <text x="62" y="300">150</text><text x="62" y="364">200 m</text>
+        </g>
+        <!-- lithology column -->
+        <g>
+          <rect x="90" y="30" width="90" height="70" fill="#f0e6d0"/>   <!-- sand top -->
+          <rect x="90" y="100" width="90" height="55" fill="#b9c3a8"/>  <!-- clay aquitard -->
+          <rect x="90" y="155" width="90" height="180" fill="#cfe6f4"/> <!-- sandstone aquifer -->
+          <rect x="90" y="335" width="90" height="35" fill="url(#hatchRock)"/>
+        </g>
+        <!-- casing (plein) & screen (crépiné) -->
+        <rect x="126" y="30" width="18" height="125" fill="#7a7f72"/>   <!-- solid casing -->
+        <g>  <!-- screen slots -->
+          <rect x="126" y="155" width="18" height="150" fill="#5a8f2c" opacity="0.35"/>
+          <g stroke="#3d6a1e" stroke-width="1.6">
+            <line x1="128" y1="163" x2="142" y2="163"/><line x1="128" y1="175" x2="142" y2="175"/>
+            <line x1="128" y1="187" x2="142" y2="187"/><line x1="128" y1="199" x2="142" y2="199"/>
+            <line x1="128" y1="211" x2="142" y2="211"/><line x1="128" y1="223" x2="142" y2="223"/>
+            <line x1="128" y1="235" x2="142" y2="235"/><line x1="128" y1="247" x2="142" y2="247"/>
+            <line x1="128" y1="259" x2="142" y2="259"/><line x1="128" y1="271" x2="142" y2="271"/>
+            <line x1="128" y1="283" x2="142" y2="283"/><line x1="128" y1="295" x2="142" y2="295"/>
+          </g>
+        </g>
+        <!-- static water level -->
+        <line x1="90" y1="120" x2="360" y2="120" stroke="#2f7fb5" stroke-width="2" stroke-dasharray="7 5"/>
+        <path d="M330 120 l7 -9 l-14 0 z" fill="#2f7fb5"/>
+        <!-- dynamic water level (pumping) -->
+        <line x1="90" y1="215" x2="360" y2="215" stroke="#d1584e" stroke-width="2" stroke-dasharray="4 4"/>
+        <!-- drawdown bracket -->
+        <line x1="300" y1="120" x2="300" y2="215" stroke="#b5701a" stroke-width="1.4"/>
+        <line x1="296" y1="120" x2="304" y2="120" stroke="#b5701a" stroke-width="1.4"/>
+        <line x1="296" y1="215" x2="304" y2="215" stroke="#b5701a" stroke-width="1.4"/>
+        <!-- labels -->
+        <text data-i18n="c_fig3_sand" x="190" y="70" font-size="12" font-weight="700" fill="#8a7444">Sables / alluvions</text>
+        <text data-i18n="c_fig3_clay" x="190" y="132" font-size="12" font-weight="700" fill="#5c6a49">Argile (toit imperméable)</text>
+        <text data-i18n="c_fig3_ss" x="190" y="255" font-size="12" font-weight="700" fill="#1f5f8a">Grès aquifère</text>
+        <text data-i18n="c_fig3_rock" x="190" y="357" font-size="11.5" font-weight="700" fill="#5b5f52">Substratum</text>
+        <text data-i18n="c_fig3_screen" x="370" y="290" font-size="11.5" font-weight="700" fill="#3d6a1e">Crépine (screen)</text>
+        <text data-i18n="c_fig3_casing" x="370" y="90" font-size="11.5" font-weight="700" fill="#5f6459">Tubage plein (casing)</text>
+        <text data-i18n="c_fig3_static" x="370" y="116" font-size="11.5" font-weight="700" fill="#2f7fb5">Niveau statique</text>
+        <text data-i18n="c_fig3_dyn" x="370" y="219" font-size="11.5" font-weight="700" fill="#d1584e">Niveau dynamique (pompage)</text>
+        <text data-i18n="c_fig3_dd" x="310" y="172" font-size="11.5" font-weight="800" fill="#b5701a">Rabattement s</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig3_cap"></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s3_ret"></span></div>
+  </div>
+
+  <!-- SECTION 4 : ESSAIS DE POMPAGE -->
+  <div class="card" id="s4">
+    <h2><span class="num">4</span> <span data-i18n="c_s4_h">Essais de pompage : Theis & Cooper-Jacob</span></h2>
+    <p class="par" data-i18n-html="c_s4_p1"></p>
+
+    <div class="formula">s(t) = <span class="hl">2.3·Q</span> / (4·π·T) · log₁₀(<span class="hl">2.25·T·t</span> / (r²·S))</div>
+    <p class="par" data-i18n-html="c_s4_p2"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 340" role="img">
+        <!-- axes -->
+        <line x1="70" y1="40" x2="70" y2="290" stroke="#c8d3b8" stroke-width="1.5"/>
+        <line x1="70" y1="290" x2="720" y2="290" stroke="#c8d3b8" stroke-width="1.5"/>
+        <!-- log-cycle vertical grid: t = 1,10,100,1000 -->
+        <g stroke="#eef3e5" stroke-width="1">
+          <line x1="150" y1="40" x2="150" y2="290"/><line x1="310" y1="40" x2="310" y2="290"/>
+          <line x1="470" y1="40" x2="470" y2="290"/><line x1="630" y1="40" x2="630" y2="290"/>
+        </g>
+        <g font-size="11" fill="#9aa890" text-anchor="middle">
+          <text x="150" y="308">1</text><text x="310" y="308">10</text>
+          <text x="470" y="308">100</text><text x="630" y="308">1000</text>
+        </g>
+        <!-- straight Cooper-Jacob line (drawdown increases downward-in-time -> we draw s upward) -->
+        <line x1="150" y1="250" x2="630" y2="70" stroke="#3a9bd0" stroke-width="3" stroke-linecap="round"/>
+        <!-- data points on the line -->
+        <g fill="#2f7fb5">
+          <circle cx="150" cy="250" r="4"/><circle cx="310" cy="190" r="4"/>
+          <circle cx="470" cy="130" r="4"/><circle cx="630" cy="70" r="4"/>
+        </g>
+        <!-- Δs over one log cycle (from t=10 to t=100) -->
+        <line x1="470" y1="190" x2="470" y2="130" stroke="#b5701a" stroke-width="1.6"/>
+        <line x1="310" y1="190" x2="470" y2="190" stroke="#b5701a" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="466" y1="190" x2="474" y2="190" stroke="#b5701a" stroke-width="1.6"/>
+        <line x1="466" y1="130" x2="474" y2="130" stroke="#b5701a" stroke-width="1.6"/>
+        <!-- t0 intercept -->
+        <circle cx="150" cy="250" r="0"/>
+        <line x1="90" y1="250" x2="150" y2="250" stroke="#3fa66a" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <!-- axis titles -->
+        <text data-i18n="c_fig4_x" x="395" y="332" font-size="12" font-weight="700" fill="#6f7d64" text-anchor="middle">Temps t (échelle log)</text>
+        <text data-i18n="c_fig4_y" x="20" y="165" font-size="12" font-weight="700" fill="#6f7d64" transform="rotate(-90 20 165)" text-anchor="middle">Rabattement s (m)</text>
+        <text data-i18n="c_fig4_ds" x="484" y="164" font-size="12" font-weight="800" fill="#b5701a">Δs / cycle log</text>
+        <text data-i18n="c_fig4_line" x="360" y="150" font-size="11.5" font-weight="700" fill="#2f7fb5">droite semi-log</text>
+        <text data-i18n="c_fig4_t0" x="96" y="244" font-size="10.5" font-weight="700" fill="#3fa66a">t₀ → S</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig4_cap"></div>
+    </div>
+
+    <table class="t">
+      <thead><tr><th data-i18n="c_tbl_q">On mesure</th><th data-i18n="c_tbl_read">On lit sur le graphe</th><th data-i18n="c_tbl_get">On calcule</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="c_tbl_r1a">Rabattement s au fil du temps</td><td data-i18n="c_tbl_r1b">Pente Δs sur un cycle log</td><td><b>T = 2.3·Q / (4·π·Δs)</b></td></tr>
+        <tr><td data-i18n="c_tbl_r2a">Distance r au puits de pompage</td><td data-i18n="c_tbl_r2b">Intercept t₀ (s = 0)</td><td><b>S = 2.25·T·t₀ / r²</b></td></tr>
+      </tbody>
+    </table>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s4_ret"></span></div>
+  </div>
+
+  <!-- SECTION 5 : GMMR -->
+  <div class="card" id="s5">
+    <h2><span class="num">5</span> <span data-i18n="c_s5_h">Le Grand Fleuve Artificiel (GMMR)</span></h2>
+    <p class="par" data-i18n-html="c_s5_p1"></p>
+    <div class="cgrid">
+      <div class="concept"><div class="sym">≈ 4 000 km</div><div class="nm" data-i18n="c_gmmr_net">Réseau de canalisations</div><div class="ds" data-i18n="c_gmmr_net_d">Conduites béton Ø 4 m enterrées.</div></div>
+      <div class="concept"><div class="sym">≈ 2,4 Mm³/j</div><div class="nm" data-i18n="c_gmmr_flow">Débit transféré</div><div class="ds" data-i18n="c_gmmr_flow_d">Du désert (Sarir, Kufra) vers la côte.</div></div>
+      <div class="concept"><div class="sym">Sarir → côte</div><div class="nm" data-i18n="c_gmmr_dir">Transfert</div><div class="ds" data-i18n="c_gmmr_dir_d">Vers Benghazi, Syrte, Tripoli.</div></div>
+      <div class="concept"><div class="sym">fossile</div><div class="nm" data-i18n="c_gmmr_lim">Limite majeure</div><div class="ds" data-i18n="c_gmmr_lim_d">Réserve non renouvelable → horizon fini.</div></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s5_ret"></span></div>
+  </div>
+
+  <!-- SECTION 6 : PIEZOMETRIE & IoT -->
+  <div class="card" id="s6">
+    <h2><span class="num">6</span> <span data-i18n="c_s6_h">Suivi piézométrique, IoT & GRACE</span></h2>
+    <p class="par" data-i18n-html="c_s6_p1"></p>
+    <h3 data-i18n="c_s6_h2">Le pont IoT : piézomètre ESP32</h3>
+    <p class="par" data-i18n-html="c_s6_p2"></p>
+    <h3 data-i18n="c_s6_h3">Vue satellite : la mission GRACE</h3>
+    <p class="par" data-i18n-html="c_s6_p3"></p>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s6_ret"></span></div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="card" id="apps">
+    <h2>🧭 <span data-i18n="c_apps_h">Applications de ce domaine</span></h2>
+    <p class="lead" data-i18n="c_apps_p">Mettez en pratique le cours avec les applications interactives de la plateforme :</p>
+    <div class="appgrid">
+      <a class="appcard" style="--ac:#8e6fc7" href="explorateur-aquiferes.html">
+        <div class="ico">🗺️</div><h4 data-i18n="c_app_expl">Explorateur d'aquifères</h4>
+        <p data-i18n="c_app_expl_d">Parcourir les systèmes aquifères libyens, réserves vs recharge.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#e0912b" href="log-forage.html">
+        <div class="ico">📊</div><h4 data-i18n="c_app_log">Log de forage</h4>
+        <p data-i18n="c_app_log_d">Lire une colonne litho, crépines et niveaux (démo Sarir).</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#3a9bd0" href="hydrogeo-sarir.html">
+        <div class="ico">💧</div><h4 data-i18n="c_app_sarir">Hydrogéo Sarir</h4>
+        <p data-i18n="c_app_sarir_d">Données réelles Sarir : essai Theis / Cooper-Jacob, calcul de T et S.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#3fa66a" href="hydrosim.html">
+        <div class="ico">📉</div><h4 data-i18n="c_app_hydro">HydroSim — bilan de nappe</h4>
+        <p data-i18n="c_app_hydro_d">Simuler la déplétion d'une nappe fossile sous exploitation.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#d1584e" href="agri_geology_live.html">
+        <div class="ico">🛰️</div><h4 data-i18n="c_app_live">Agri-Géologie Live</h4>
+        <p data-i18n="c_app_live_d">Vue géologie/hydrogéologie en direct, couches et contexte régional.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+    </div>
+
+    <div class="tpbanner">
+      <div>
+        <div class="tt">🧪 <span data-i18n="c_tp_t">TP guidé — Géologie & Hydrogéologie</span></div>
+        <div class="dd" data-i18n="c_tp_d">Cinq étapes pas-à-pas qui vous font manipuler ces applications, avec questions, auto-correction et compte-rendu exportable.</div>
+      </div>
+      <a class="btn" href="tp-geologie-hydro.html"><span data-i18n="c_tp_go">Commencer le TP</span> →</a>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="c_foot">Plateforme AgriTech Libye · EU4Skills — Module G0 · support de cours</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  c_brand:{fr:"Géologie",ar:"الجيولوجيا",en:"Geology"},
+  c_brand2:{fr:"& Hydrogéologie",ar:"والهيدروجيولوجيا",en:"& Hydrogeology"},
+  c_sub:{fr:"Cours · nappes, aquifère de Nubie, essais de pompage",ar:"درس · الطبقات الحاملة، خزان النوبة، اختبارات الضخ",en:"Course · aquifers, Nubian system, pumping tests"},
+  c_course_chip:{fr:"Cours",ar:"درس",en:"Course"},
+  c_title:{fr:"Géologie & Hydrogéologie de l'eau souterraine",ar:"جيولوجيا وهيدروجيولوجيا المياه الجوفية",en:"Geology & Hydrogeology of groundwater"},
+  c_tag:{fr:"Module fondamental · comprendre les nappes libyennes avant de piloter l'irrigation",ar:"وحدة أساسية · فهم الطبقات الحاملة الليبية قبل إدارة الري",en:"Foundation module · understand Libyan aquifers before managing irrigation"},
+  c_intro:{fr:"En Libye, plus de <b>95 % de l'eau douce</b> vient du sous-sol. Comprendre <b>où</b> se trouve cette eau, <b>combien</b> il en reste et à <b>quelle vitesse</b> elle se renouvelle est le socle de toute agriculture durable. Ce cours pose les concepts d'hydrogéologie, les grands systèmes aquifères du pays, la lecture d'un forage et l'interprétation d'un essai de pompage — puis renvoie vers les applications où vous les manipulerez.",
+    ar:"في ليبيا، أكثر من <b>95٪ من المياه العذبة</b> تأتي من باطن الأرض. إن فهم <b>أين</b> توجد هذه المياه و<b>كم</b> تبقّى منها و<b>بأي سرعة</b> تتجدّد هو أساس كل زراعة مستدامة. يضع هذا الدرس مفاهيم الهيدروجيولوجيا، والأنظمة المائية الكبرى في البلاد، وقراءة البئر، وتفسير اختبار الضخ — ثم يحيل إلى التطبيقات التي ستستعملها.",
+    en:"In Libya, over <b>95% of fresh water</b> comes from underground. Understanding <b>where</b> that water sits, <b>how much</b> remains and <b>how fast</b> it renews is the foundation of any sustainable agriculture. This course lays out the hydrogeology concepts, the country's major aquifer systems, how to read a borehole and how to interpret a pumping test — then points you to the apps where you will practise them."},
+  c_toc1:{fr:"1 · Aquifères",ar:"1 · الطبقات الحاملة",en:"1 · Aquifers"},
+  c_toc2:{fr:"2 · Systèmes libyens",ar:"2 · الأنظمة الليبية",en:"2 · Libyan systems"},
+  c_toc3:{fr:"3 · Log de forage",ar:"3 · سجل البئر",en:"3 · Borehole log"},
+  c_toc4:{fr:"4 · Essais de pompage",ar:"4 · اختبارات الضخ",en:"4 · Pumping tests"},
+  c_toc5:{fr:"5 · GMMR",ar:"5 · النهر الصناعي",en:"5 · GMMR"},
+  c_toc6:{fr:"6 · Piézométrie & IoT",ar:"6 · القياس البيزومتري",en:"6 · Piezometry & IoT"},
+  c_toc7:{fr:"Applications",ar:"التطبيقات",en:"Apps"},
+
+  c_obj_h:{fr:"Objectifs pédagogiques",ar:"الأهداف التعليمية",en:"Learning objectives"},
+  c_obj1:{fr:"Distinguer une nappe libre d'une nappe captive et lire une coupe hydrogéologique.",ar:"التمييز بين الطبقة الحرة والطبقة المحصورة وقراءة مقطع هيدروجيولوجي.",en:"Tell an unconfined from a confined aquifer and read a hydrogeological cross-section."},
+  c_obj2:{fr:"Manipuler les paramètres T, K et S et savoir ce qu'ils décrivent.",ar:"استعمال المعاملات T و K و S ومعرفة ما تصفه.",en:"Work with the parameters T, K and S and know what they describe."},
+  c_obj3:{fr:"Expliquer pourquoi l'eau du grès de Nubie est une ressource fossile.",ar:"شرح لماذا تُعدّ مياه حجر النوبة مورداً أحفورياً.",en:"Explain why Nubian sandstone water is a fossil resource."},
+  c_obj4:{fr:"Lire un log de forage : lithologie, crépines, niveau statique et rabattement.",ar:"قراءة سجل البئر: الصخارة، المصافي، المستوى الساكن والهبوط.",en:"Read a borehole log: lithology, screens, static level and drawdown."},
+  c_obj5:{fr:"Interpréter un essai de pompage par la droite de Cooper-Jacob (T et S).",ar:"تفسير اختبار الضخ بخط كوبر-جاكوب (T و S).",en:"Interpret a pumping test with the Cooper-Jacob straight line (T and S)."},
+  c_obj6:{fr:"Situer le GMMR et le suivi piézométrique (IoT, GRACE) dans la gestion durable.",ar:"وضع النهر الصناعي والمتابعة البيزومترية (إنترنت الأشياء، GRACE) في إطار الإدارة المستدامة.",en:"Place the GMMR and piezometric monitoring (IoT, GRACE) within sustainable management."},
+
+  c_ret:{fr:"À retenir",ar:"للتذكّر",en:"Remember"},
+  c_ret_key:{fr:"Point clé — durabilité",ar:"نقطة مفتاحية — الاستدامة",en:"Key point — sustainability"},
+
+  // Section 1
+  c_s1_h:{fr:"L'aquifère et ses paramètres",ar:"الطبقة الحاملة ومعاملاتها",en:"The aquifer and its parameters"},
+  c_s1_p1:{fr:"Un <b>aquifère</b> est une formation géologique suffisamment poreuse et perméable pour <b>contenir</b> et <b>laisser circuler</b> de l'eau en quantité exploitable — typiquement des sables, des grès ou des calcaires fissurés. À l'inverse, une couche d'argile qui retient l'eau sans la laisser passer est un <b>aquitard</b> (ou toit imperméable).",
+    ar:"<b>الطبقة الحاملة</b> هي تشكيل جيولوجي مسامي ونفوذ بما يكفي <b>لاحتواء</b> الماء و<b>تمريره</b> بكمية قابلة للاستغلال — عادةً الرمال أو الحجر الرملي أو الكلس المتشقّق. في المقابل، طبقة الطين التي تحبس الماء دون تمريره تُسمّى <b>حاجزاً مائياً</b> (سقف كتيم).",
+    en:"An <b>aquifer</b> is a geological formation porous and permeable enough to <b>hold</b> and <b>transmit</b> usable amounts of water — typically sand, sandstone or fissured limestone. Conversely, a clay layer that holds water without letting it through is an <b>aquitard</b> (impermeable roof)."},
+  c_s1_h2:{fr:"Nappe libre vs nappe captive",ar:"طبقة حرة مقابل طبقة محصورة",en:"Unconfined vs confined aquifer"},
+  c_s1_p2:{fr:"Une <b>nappe libre</b> a sa surface supérieure — le <b>niveau statique</b> — libre de monter et descendre ; elle est directement alimentée par l'infiltration. Une <b>nappe captive</b> est coincée entre deux couches imperméables et se trouve sous pression : dans un forage, l'eau remonte au-dessus du toit de l'aquifère (surface piézométrique), et si cette surface dépasse le sol, le puits est <b>artésien</b> (jaillissant).",
+    ar:"<b>الطبقة الحرة</b> سطحها العلوي — <b>المستوى الساكن</b> — حرّ في الصعود والنزول، وتتغذّى مباشرة بالتسرّب. أما <b>الطبقة المحصورة</b> فمحبوسة بين طبقتين كتيمتين وتحت ضغط: في البئر يرتفع الماء فوق سقف الطبقة (السطح البيزومتري)، وإذا تجاوز هذا السطح سطح الأرض كان البئر <b>ارتوازياً</b> (متدفّقاً).",
+    en:"An <b>unconfined aquifer</b> has its upper surface — the <b>static water table</b> — free to rise and fall; it is recharged directly by infiltration. A <b>confined aquifer</b> is trapped between two impermeable layers and under pressure: in a borehole the water rises above the aquifer roof (the piezometric surface), and if that surface is above the ground the well is <b>artesian</b> (flowing)."},
+  c_fig1_cap:{fr:"<b>Coupe hydrogéologique.</b> Une nappe libre en surface (niveau statique libre) et une nappe captive sous pression, séparées par une couche imperméable, reposant sur le socle. Le puits de droite est artésien.",
+    ar:"<b>مقطع هيدروجيولوجي.</b> طبقة حرة سطحية (مستوى ساكن حرّ) وطبقة محصورة تحت ضغط، يفصلهما حاجز كتيم، فوق القاعدة الصخرية. البئر الأيمن ارتوازي.",
+    en:"<b>Hydrogeological cross-section.</b> A shallow unconfined aquifer (free water table) and a pressurised confined aquifer, separated by an impermeable layer, over bedrock. The right-hand well is artesian."},
+  c_fig1_vad:{fr:"Zone non saturée",ar:"المنطقة غير المشبعة",en:"Unsaturated zone"},
+  c_fig1_free:{fr:"Nappe libre",ar:"طبقة حرة",en:"Unconfined aquifer"},
+  c_fig1_clay:{fr:"Couche imperméable",ar:"طبقة كتيمة",en:"Impermeable layer"},
+  c_fig1_conf:{fr:"Nappe captive",ar:"طبقة محصورة",en:"Confined aquifer"},
+  c_fig1_rock:{fr:"Socle imperméable",ar:"قاعدة صخرية كتيمة",en:"Impermeable bedrock"},
+  c_fig1_wt:{fr:"niveau statique",ar:"المستوى الساكن",en:"static level"},
+  c_fig1_well:{fr:"puits ordinaire",ar:"بئر عادي",en:"ordinary well"},
+  c_fig1_arte:{fr:"puits artésien",ar:"بئر ارتوازي",en:"artesian well"},
+  c_fig1_piezo:{fr:"surface piézométrique",ar:"السطح البيزومتري",en:"piezometric surface"},
+  c_s1_h3:{fr:"Les paramètres à connaître",ar:"المعاملات الواجب معرفتها",en:"The parameters to know"},
+  c_por_n:{fr:"Porosité",ar:"المسامية",en:"Porosity"},
+  c_por_d:{fr:"Fraction de vides dans la roche.",ar:"نسبة الفراغات في الصخر.",en:"Void fraction in the rock."},
+  c_k_n:{fr:"Perméabilité (conductivité)",ar:"النفاذية (الناقلية)",en:"Permeability (conductivity)"},
+  c_k_d:{fr:"Aptitude à laisser circuler l'eau.",ar:"القدرة على تمرير الماء.",en:"Ability to transmit water."},
+  c_t_n:{fr:"Transmissivité",ar:"الناقلية المائية",en:"Transmissivity"},
+  c_t_d:{fr:"Débit transmis sur toute l'épaisseur b.",ar:"التدفّق عبر كامل السُّمك b.",en:"Flow transmitted over the whole thickness b."},
+  c_s_n:{fr:"Coef. d'emmagasinement",ar:"معامل التخزين",en:"Storage coefficient"},
+  c_s_d:{fr:"Volume libéré par baisse d'1 m de charge.",ar:"الحجم المحرَّر عند انخفاض الشحنة متراً واحداً.",en:"Volume released per 1 m drop in head."},
+  c_s1_ret:{fr:"La <b>transmissivité T = K·b</b> mesure combien un aquifère débite ; le <b>coefficient d'emmagasinement S</b> mesure combien il stocke. Une nappe libre a un S de l'ordre de 0,05–0,3 (drainage gravitaire), une nappe captive un S minuscule (10⁻³–10⁻⁵) car l'eau n'est libérée que par décompression. Ces deux nombres sont exactement ce qu'un essai de pompage permet de retrouver.",
+    ar:"<b>الناقلية T = K·b</b> تقيس كم تُنتج الطبقة، و<b>معامل التخزين S</b> يقيس كم تخزّن. الطبقة الحرة لها S بين 0.05 و0.3 (صرف بالجاذبية)، والمحصورة لها S ضئيل جداً (10⁻³–10⁻⁵) لأن الماء لا يتحرّر إلا بانخفاض الضغط. وهذان الرقمان هما بالضبط ما يستخرجه اختبار الضخ.",
+    en:"<b>Transmissivity T = K·b</b> measures how much an aquifer yields; the <b>storage coefficient S</b> measures how much it stores. An unconfined aquifer has S of about 0.05–0.3 (gravity drainage); a confined one has a tiny S (10⁻³–10⁻⁵) since water is released only by decompression. These two numbers are exactly what a pumping test recovers."},
+
+  // Section 2
+  c_s2_h:{fr:"Les grands systèmes aquifères de Libye",ar:"الأنظمة المائية الكبرى في ليبيا",en:"Libya's major aquifer systems"},
+  c_s2_p1:{fr:"La Libye est un pays hyper-aride sans cours d'eau permanent : sa richesse en eau est <b>souterraine</b> et concentrée dans quatre grands ensembles très inégaux en renouvellement.",
+    ar:"ليبيا بلد شديد الجفاف بلا مجرى مائي دائم: ثروتها المائية <b>جوفية</b> ومتركّزة في أربعة أنظمة كبرى متفاوتة جداً في التجدّد.",
+    en:"Libya is a hyper-arid country with no permanent river: its water wealth is <b>underground</b>, concentrated in four large systems that renew very unequally."},
+  c_sys_nub_n:{fr:"Grès de Nubie (NSAS)",ar:"حجر النوبة (NSAS)",en:"Nubian Sandstone (NSAS)"},
+  c_sys_nub_s:{fr:"Kufra · Sarir — SE Libye",ar:"الكفرة · السرير — جنوب شرق ليبيا",en:"Kufra · Sarir — SE Libya"},
+  c_sys_nub_d:{fr:"Immense système transfrontalier. Eau fossile, recharge quasi nulle. Alimente le GMMR.",ar:"نظام هائل عابر للحدود. ماء أحفوري، تغذية شبه معدومة. يغذّي النهر الصناعي.",en:"Vast transboundary system. Fossil water, near-zero recharge. Feeds the GMMR."},
+  c_sys_fossil:{fr:"Eau fossile",ar:"ماء أحفوري",en:"Fossil water"},
+  c_sys_mur_n:{fr:"Bassin de Murzuq",ar:"حوض مرزق",en:"Murzuq Basin"},
+  c_sys_mur_s:{fr:"SW Libye",ar:"جنوب غرب ليبيا",en:"SW Libya"},
+  c_sys_mur_d:{fr:"Grès paléozoïques profonds, ressource fossile exploitée pour l'agriculture et le GMMR ouest.",ar:"حجر رملي باليوزوي عميق، مورد أحفوري مستغَلّ للزراعة والفرع الغربي للنهر الصناعي.",en:"Deep Palaeozoic sandstone, fossil resource tapped for farming and the western GMMR."},
+  c_sys_jef_n:{fr:"Plaine de Jefara",ar:"سهل الجفارة",en:"Jefara Plain"},
+  c_sys_jef_s:{fr:"NW côtier · Tripoli",ar:"الساحل الشمالي الغربي · طرابلس",en:"NW coast · Tripoli"},
+  c_sys_jef_d:{fr:"Nappe côtière peu profonde, surexploitée : intrusion saline, salinisation des sols.",ar:"طبقة ساحلية ضحلة مفرطة الاستغلال: تداخل مياه مالحة، تملّح التربة.",en:"Shallow coastal aquifer, over-pumped: saline intrusion, soil salinisation."},
+  c_sys_over:{fr:"Surexploitée",ar:"مفرطة الاستغلال",en:"Over-exploited"},
+  c_sys_cyr_n:{fr:"Karst de Cyrénaïque",ar:"كارست برقة",en:"Cyrenaica karst"},
+  c_sys_cyr_s:{fr:"NE · Jebel Akhdar",ar:"الشمال الشرقي · الجبل الأخضر",en:"NE · Jebel Akhdar"},
+  c_sys_cyr_d:{fr:"Calcaires fissurés, recharge par la pluie côtière ; ressource plus renouvelable mais vulnérable.",ar:"كلس متشقّق يتغذّى بأمطار الساحل؛ مورد أكثر تجدّداً لكنه هشّ.",en:"Fissured limestone recharged by coastal rain; more renewable but vulnerable."},
+  c_sys_renew:{fr:"Partiellement renouvelable",ar:"متجدّد جزئياً",en:"Partly renewable"},
+  c_s2_h2:{fr:"Le système de grès de Nubie : une eau fossile",ar:"نظام حجر النوبة: ماء أحفوري",en:"The Nubian Sandstone system: fossil water"},
+  c_s2_p2:{fr:"L'eau contenue dans le grès de Nubie s'est infiltrée il y a <b>plusieurs milliers à dizaines de milliers d'années</b>, à une époque où le Sahara était humide. Sous le climat actuel, la recharge est <b>quasi nulle</b> : chaque mètre cube pompé n'est donc <b>pas remplacé</b>. On parle d'eau <b>fossile</b> — l'exploiter revient à « miner » un stock fini, exactement comme un gisement de pétrole.",
+    ar:"الماء المخزون في حجر النوبة تسرّب منذ <b>آلاف إلى عشرات الآلاف من السنين</b>، حين كانت الصحراء رطبة. وفي المناخ الحالي التغذية <b>شبه معدومة</b>: فكل متر مكعّب يُضخّ <b>لا يُعوَّض</b>. يُسمّى هذا الماء <b>أحفورياً</b> — واستغلاله أشبه بـ«تعدين» مخزون محدود، تماماً كحقل نفط.",
+    en:"The water held in the Nubian sandstone infiltrated <b>thousands to tens of thousands of years ago</b>, when the Sahara was humid. Under today's climate recharge is <b>near zero</b>: every cubic metre pumped is therefore <b>not replaced</b>. This is <b>fossil</b> water — using it is like \"mining\" a finite stock, exactly like an oil field."},
+  c_s2_ret:{fr:"Une ressource fossile impose une logique de <b>stock</b>, pas de <b>flux</b>. La bonne question n'est pas « combien puis-je pomper cette année ? » mais « <b>pendant combien de décennies</b> la nappe restera-t-elle exploitable, et à quel coût de rabattement ? ». C'est tout l'enjeu du suivi piézométrique.",
+    ar:"المورد الأحفوري يفرض منطق <b>مخزون</b> لا منطق <b>تدفّق</b>. السؤال الصحيح ليس «كم أضخّ هذا العام؟» بل «<b>لكم عقد</b> ستبقى الطبقة قابلة للاستغلال، وبأي تكلفة هبوط؟». وهذا جوهر المتابعة البيزومترية.",
+    en:"A fossil resource imposes a logic of <b>stock</b>, not <b>flow</b>. The right question is not \"how much can I pump this year?\" but \"<b>for how many decades</b> will the aquifer stay usable, and at what drawdown cost?\". That is the whole point of piezometric monitoring."},
+
+  // Section 3
+  c_s3_h:{fr:"Lire un log de forage",ar:"قراءة سجل البئر",en:"Reading a borehole log"},
+  c_s3_p1:{fr:"Le <b>log de forage</b> est la carte d'identité d'un puits. On y lit, de haut en bas : la <b>colonne lithologique</b> (les couches traversées), la position du <b>tubage plein</b> (casing, qui isole les mauvaises couches) et des <b>crépines</b> (screen, la partie perforée qui laisse entrer l'eau), le <b>niveau statique</b> (au repos) et le <b>niveau dynamique</b> (en pompage). L'écart entre les deux est le <b>rabattement s</b>.",
+    ar:"<b>سجل البئر</b> هو بطاقة هوية البئر. نقرأ فيه من الأعلى إلى الأسفل: <b>العمود الصخاري</b> (الطبقات المخترَقة)، وموضع <b>التبطين الكامل</b> (casing الذي يعزل الطبقات السيئة) و<b>المصافي</b> (screen، الجزء المثقّب الذي يُدخل الماء)، و<b>المستوى الساكن</b> (عند الراحة) و<b>المستوى الديناميكي</b> (أثناء الضخ). الفرق بينهما هو <b>الهبوط s</b>.",
+    en:"The <b>borehole log</b> is a well's identity card. From top to bottom you read: the <b>lithological column</b> (the layers drilled through), the position of the <b>solid casing</b> (which seals off bad layers) and the <b>screens</b> (the slotted part that lets water in), the <b>static level</b> (at rest) and the <b>dynamic level</b> (while pumping). The gap between them is the <b>drawdown s</b>."},
+  c_fig3_cap:{fr:"<b>Log de forage schématique.</b> Le tubage plein traverse les sables et l'argile ; les crépines sont placées en face du grès aquifère. En pompant, le niveau passe du statique au dynamique : la différence est le rabattement.",
+    ar:"<b>سجل بئر تخطيطي.</b> التبطين الكامل يخترق الرمال والطين؛ توضع المصافي مقابل الحجر الرملي الحامل. أثناء الضخ ينتقل المستوى من الساكن إلى الديناميكي: والفرق هو الهبوط.",
+    en:"<b>Schematic borehole log.</b> Solid casing crosses the sand and clay; screens sit against the sandstone aquifer. When pumping, the level moves from static to dynamic: the difference is the drawdown."},
+  c_fig3_sand:{fr:"Sables / alluvions",ar:"رمال / رواسب",en:"Sand / alluvium"},
+  c_fig3_clay:{fr:"Argile (toit imperméable)",ar:"طين (سقف كتيم)",en:"Clay (impermeable roof)"},
+  c_fig3_ss:{fr:"Grès aquifère",ar:"حجر رملي حامل",en:"Sandstone aquifer"},
+  c_fig3_rock:{fr:"Substratum",ar:"القاعدة",en:"Substratum"},
+  c_fig3_screen:{fr:"Crépine (screen)",ar:"مصفاة (screen)",en:"Screen"},
+  c_fig3_casing:{fr:"Tubage plein (casing)",ar:"تبطين كامل (casing)",en:"Solid casing"},
+  c_fig3_static:{fr:"Niveau statique",ar:"المستوى الساكن",en:"Static level"},
+  c_fig3_dyn:{fr:"Niveau dynamique (pompage)",ar:"المستوى الديناميكي (ضخ)",en:"Dynamic level (pumping)"},
+  c_fig3_dd:{fr:"Rabattement s",ar:"الهبوط s",en:"Drawdown s"},
+  c_s3_ret:{fr:"Les crépines se placent <b>en face de la couche productive</b> (ici le grès), jamais en face de l'argile. Un rabattement qui <b>s'aggrave d'année en année à débit constant</b> est le signal le plus direct qu'une nappe fossile se vide.",
+    ar:"توضع المصافي <b>مقابل الطبقة المنتجة</b> (هنا الحجر الرملي)، لا مقابل الطين أبداً. والهبوط الذي <b>يتفاقم عاماً بعد عام عند تدفّق ثابت</b> هو أوضح إشارة على أن طبقة أحفورية تُستنزف.",
+    en:"Screens go <b>against the productive layer</b> (here the sandstone), never against clay. A drawdown that <b>worsens year after year at constant discharge</b> is the most direct signal that a fossil aquifer is being emptied."},
+
+  // Section 4
+  c_s4_h:{fr:"Essais de pompage : Theis & Cooper-Jacob",ar:"اختبارات الضخ: ثايس وكوبر-جاكوب",en:"Pumping tests: Theis & Cooper-Jacob"},
+  c_s4_p1:{fr:"Pour connaître T et S d'un aquifère, on réalise un <b>essai de pompage</b> : on pompe à débit constant Q dans un puits et on mesure le rabattement s au cours du temps dans un piézomètre voisin. La solution de <b>Theis</b> décrit cette courbe complète ; l'approximation de <b>Cooper-Jacob</b> la simplifie en une <b>droite</b> quand on porte s en fonction du <b>logarithme du temps</b>.",
+    ar:"لمعرفة T و S لطبقة حاملة نُجري <b>اختبار ضخ</b>: نضخّ بتدفّق ثابت Q من بئر ونقيس الهبوط s عبر الزمن في بيزومتر مجاور. حلّ <b>ثايس</b> يصف هذا المنحنى كاملاً؛ وتقريب <b>كوبر-جاكوب</b> يبسّطه إلى <b>خطّ مستقيم</b> عند رسم s بدلالة <b>لوغاريتم الزمن</b>.",
+    en:"To find an aquifer's T and S you run a <b>pumping test</b>: pump at a constant rate Q from a well and measure drawdown s over time in a nearby piezometer. The <b>Theis</b> solution describes the full curve; the <b>Cooper-Jacob</b> approximation simplifies it into a <b>straight line</b> when s is plotted against the <b>logarithm of time</b>."},
+  c_s4_p2:{fr:"Aux temps suffisamment longs, la courbe de Theis devient une droite : c'est là que Cooper-Jacob s'applique. La <b>pente</b> de cette droite (le rabattement gagné par cycle logarithmique de temps, Δs) donne <b>T</b>, et l'abscisse à l'origine <b>t₀</b> (où la droite coupe s = 0) donne <b>S</b>.",
+    ar:"عند أزمنة طويلة كفاية يصير منحنى ثايس خطاً مستقيماً: وهناك يُطبَّق كوبر-جاكوب. <b>ميل</b> هذا الخط (الهبوط المكتسب في كل دورة لوغاريتمية للزمن، Δs) يعطي <b>T</b>، والتقاطع الأصلي <b>t₀</b> (حيث يقطع الخط s = 0) يعطي <b>S</b>.",
+    en:"At long enough times the Theis curve becomes a straight line: that is where Cooper-Jacob applies. The <b>slope</b> of that line (the drawdown gained per log cycle of time, Δs) gives <b>T</b>, and the time intercept <b>t₀</b> (where the line crosses s = 0) gives <b>S</b>."},
+  c_fig4_cap:{fr:"<b>Droite de Cooper-Jacob.</b> Rabattement s en fonction de log(temps). La pente Δs sur un cycle log fournit T ; l'intercept t₀ fournit S. Sur données réelles de Sarir, on trouve des T de l'ordre de 260 à 1860 m²/j.",
+    ar:"<b>خط كوبر-جاكوب.</b> الهبوط s بدلالة لوغاريتم الزمن. الميل Δs في دورة لوغاريتمية يعطي T، والتقاطع t₀ يعطي S. على بيانات السرير الحقيقية نجد T بين 260 و1860 م²/يوم.",
+    en:"<b>Cooper-Jacob straight line.</b> Drawdown s versus log(time). The slope Δs over one log cycle gives T; the intercept t₀ gives S. On real Sarir data, T falls around 260 to 1860 m²/day."},
+  c_fig4_x:{fr:"Temps t (échelle log)",ar:"الزمن t (مقياس لوغاريتمي)",en:"Time t (log scale)"},
+  c_fig4_y:{fr:"Rabattement s (m)",ar:"الهبوط s (م)",en:"Drawdown s (m)"},
+  c_fig4_ds:{fr:"Δs / cycle log",ar:"Δs / دورة لوغاريتمية",en:"Δs / log cycle"},
+  c_fig4_line:{fr:"droite semi-log",ar:"خط شبه لوغاريتمي",en:"semi-log line"},
+  c_fig4_t0:{fr:"t₀ → S",ar:"t₀ ← S",en:"t₀ → S"},
+  c_tbl_q:{fr:"On mesure",ar:"نقيس",en:"We measure"},
+  c_tbl_read:{fr:"On lit sur le graphe",ar:"نقرأ على الرسم",en:"We read on the graph"},
+  c_tbl_get:{fr:"On calcule",ar:"نحسب",en:"We compute"},
+  c_tbl_r1a:{fr:"Rabattement s au fil du temps",ar:"الهبوط s عبر الزمن",en:"Drawdown s over time"},
+  c_tbl_r1b:{fr:"Pente Δs sur un cycle log",ar:"الميل Δs في دورة لوغاريتمية",en:"Slope Δs per log cycle"},
+  c_tbl_r2a:{fr:"Distance r au puits de pompage",ar:"المسافة r إلى بئر الضخ",en:"Distance r to the pumping well"},
+  c_tbl_r2b:{fr:"Intercept t₀ (s = 0)",ar:"التقاطع t₀ (s = 0)",en:"Intercept t₀ (s = 0)"},
+  c_s4_ret:{fr:"Retenez la logique plus que la formule : <b>une pente forte = un aquifère peu transmissif</b> (T faible), et l'instant où la droite « démarre » renseigne sur le stockage S. C'est exactement le calcul que fait l'app <i>Hydrogéo Sarir</i> à partir des vrais essais.",
+    ar:"احفظ المنطق أكثر من المعادلة: <b>الميل الكبير = طبقة قليلة النقل</b> (T صغير)، ولحظة «انطلاق» الخط تدلّ على التخزين S. وهذا بالضبط ما يحسبه تطبيق <i>هيدروجيو السرير</i> من الاختبارات الحقيقية.",
+    en:"Keep the logic more than the formula: <b>a steep slope = a poorly transmissive aquifer</b> (low T), and where the line \"starts\" tells you about storage S. This is exactly the calculation the <i>Hydrogéo Sarir</i> app performs from the real tests."},
+
+  // Section 5
+  c_s5_h:{fr:"Le Grand Fleuve Artificiel (GMMR)",ar:"النهر الصناعي العظيم",en:"The Great Man-Made River (GMMR)"},
+  c_s5_p1:{fr:"Le <b>GMMR</b> (Great Man-Made River) est le plus vaste projet de transfert d'eau souterraine au monde : un réseau de conduites géantes qui achemine l'eau fossile pompée dans les champs captants du désert (Sarir, Kufra, Murzuq) jusqu'aux villes et périmètres agricoles de la côte. C'est une prouesse d'ingénierie, mais qui repose sur une ressource par définition <b>non renouvelable</b>.",
+    ar:"<b>النهر الصناعي العظيم</b> هو أضخم مشروع لنقل المياه الجوفية في العالم: شبكة أنابيب عملاقة تنقل الماء الأحفوري المضخوخ من حقول الصحراء (السرير، الكفرة، مرزق) إلى مدن وأراضي الساحل الزراعية. إنه إنجاز هندسي، لكنه يقوم على مورد <b>غير متجدّد</b> بالتعريف.",
+    en:"The <b>GMMR</b> is the world's largest groundwater transfer project: a network of giant pipelines carrying fossil water pumped from desert wellfields (Sarir, Kufra, Murzuq) to the cities and farmland of the coast. It is an engineering feat — but one resting on a resource that is by definition <b>non-renewable</b>."},
+  c_gmmr_net:{fr:"Réseau de canalisations",ar:"شبكة الأنابيب",en:"Pipeline network"},
+  c_gmmr_net_d:{fr:"Conduites béton Ø 4 m enterrées.",ar:"أنابيب خرسانية قطر 4 م مدفونة.",en:"Buried 4 m Ø concrete pipes."},
+  c_gmmr_flow:{fr:"Débit transféré",ar:"التدفّق المنقول",en:"Transferred flow"},
+  c_gmmr_flow_d:{fr:"Du désert (Sarir, Kufra) vers la côte.",ar:"من الصحراء (السرير، الكفرة) إلى الساحل.",en:"From the desert (Sarir, Kufra) to the coast."},
+  c_gmmr_dir:{fr:"Transfert",ar:"النقل",en:"Transfer"},
+  c_gmmr_dir_d:{fr:"Vers Benghazi, Syrte, Tripoli.",ar:"نحو بنغازي وسرت وطرابلس.",en:"To Benghazi, Sirte, Tripoli."},
+  c_gmmr_lim:{fr:"Limite majeure",ar:"القيد الأساسي",en:"Major limit"},
+  c_gmmr_lim_d:{fr:"Réserve non renouvelable → horizon fini.",ar:"مخزون غير متجدّد ← أفق محدود.",en:"Non-renewable reserve → finite horizon."},
+  c_s5_ret:{fr:"Le GMMR déplace le problème dans l'espace (désert → côte) mais pas dans le temps : il <b>ne crée pas d'eau</b>. À l'échelle agricole, cela impose de coupler chaque hectare irrigué à une vraie <b>efficience</b> — d'où le lien avec les modules irrigation et bilan hydrique.",
+    ar:"النهر الصناعي ينقل المشكلة في المكان (صحراء ← ساحل) لا في الزمن: فهو <b>لا يخلق ماءً</b>. وعلى المستوى الزراعي يفرض ربط كل هكتار مروي بـ<b>كفاءة</b> حقيقية — ومن هنا الصلة بوحدتَي الري والميزان المائي.",
+    en:"The GMMR moves the problem in space (desert → coast) but not in time: it <b>creates no water</b>. At farm scale this forces every irrigated hectare to be tied to real <b>efficiency</b> — hence the link with the irrigation and water-balance modules."},
+
+  // Section 6
+  c_s6_h:{fr:"Suivi piézométrique, IoT & GRACE",ar:"المتابعة البيزومترية، إنترنت الأشياء وGRACE",en:"Piezometric monitoring, IoT & GRACE"},
+  c_s6_p1:{fr:"Puisque la ressource est un stock, il faut le <b>surveiller</b>. Le <b>suivi piézométrique</b> consiste à mesurer régulièrement le niveau de l'eau dans des puits d'observation : sa baisse continue chiffre directement la déplétion de la nappe. On combine trois échelles : le capteur au fond du puits, la mesure au sol, et la vue spatiale.",
+    ar:"بما أن المورد مخزون، وجب <b>مراقبته</b>. تقوم <b>المتابعة البيزومترية</b> على قياس مستوى الماء دوريّاً في آبار مراقبة: وانخفاضه المستمر يُحدِّد استنزاف الطبقة مباشرة. ونجمع ثلاثة مقاييس: المجسّ في قاع البئر، والقياس الأرضي، والرؤية الفضائية.",
+    en:"Since the resource is a stock, it must be <b>monitored</b>. <b>Piezometric monitoring</b> means regularly measuring the water level in observation wells: its steady fall directly quantifies aquifer depletion. Three scales combine: the sensor at the bottom of the well, the ground measurement, and the space view."},
+  c_s6_h2:{fr:"Le pont IoT : piézomètre ESP32",ar:"جسر إنترنت الأشياء: بيزومتر ESP32",en:"The IoT bridge: ESP32 piezometer"},
+  c_s6_p2:{fr:"Un <b>piézomètre connecté</b> associe un capteur de pression immergé à un microcontrôleur <b>ESP32</b> (Wi-Fi/GSM) qui transmet le niveau à intervalles réguliers. On passe ainsi d'un relevé manuel mensuel à une <b>série continue</b>, capable de détecter une baisse anormale ou l'effet d'un nouveau forage voisin en temps quasi réel.",
+    ar:"يجمع <b>البيزومتر المتّصل</b> بين مجسّ ضغط مغمور ومتحكّم دقيق <b>ESP32</b> (واي-فاي/GSM) يرسل المستوى على فترات منتظمة. وهكذا ننتقل من قراءة يدوية شهرية إلى <b>سلسلة متّصلة</b> قادرة على كشف انخفاض شاذّ أو أثر بئر جديد مجاور في وقت شبه فوري.",
+    en:"A <b>connected piezometer</b> pairs a submerged pressure sensor with an <b>ESP32</b> microcontroller (Wi-Fi/GSM) that transmits the level at regular intervals. This turns a monthly manual reading into a <b>continuous series</b>, able to catch an abnormal fall or the effect of a new nearby borehole in near real time."},
+  c_s6_h3:{fr:"Vue satellite : la mission GRACE",ar:"الرؤية الفضائية: مهمة GRACE",en:"The space view: the GRACE mission"},
+  c_s6_p3:{fr:"À l'échelle du bassin, les satellites <b>GRACE</b> mesurent d'infimes variations de gravité liées à la <b>masse d'eau</b> stockée sous la surface. Sur le Sahara oriental, GRACE confirme une <b>perte nette</b> continue des réserves de grès de Nubie — une validation indépendante, vue du ciel, de ce que montrent les piézomètres au sol.",
+    ar:"على مقياس الحوض، تقيس أقمار <b>GRACE</b> تغيّرات دقيقة في الجاذبية مرتبطة بـ<b>كتلة الماء</b> المخزونة تحت السطح. وفوق شرق الصحراء تؤكّد GRACE <b>خسارة صافية</b> مستمرّة في احتياطي حجر النوبة — تأكيد مستقلّ من الفضاء لِما تُظهره البيزومترات على الأرض.",
+    en:"At basin scale, the <b>GRACE</b> satellites measure minute gravity changes tied to the <b>mass of water</b> stored below the surface. Over the eastern Sahara, GRACE confirms a steady <b>net loss</b> of Nubian sandstone reserves — an independent, from-space validation of what the ground piezometers show."},
+  c_s6_ret:{fr:"Capteur (ESP32), sol (piézomètre) et espace (GRACE) racontent la même histoire à trois résolutions. Leur convergence sur une <b>baisse continue</b> est la preuve opérationnelle qu'une nappe fossile doit être gérée comme un capital qui s'épuise.",
+    ar:"المجسّ (ESP32) والأرض (البيزومتر) والفضاء (GRACE) تروي القصة نفسها بثلاث دقّات. وتقاطعها على <b>انخفاض مستمرّ</b> هو الدليل العملي على أن الطبقة الأحفورية تُدار كرأس مال ينضب.",
+    en:"Sensor (ESP32), ground (piezometer) and space (GRACE) tell the same story at three resolutions. Their agreement on a <b>steady decline</b> is the operational proof that a fossil aquifer must be managed as a depleting capital."},
+
+  // Apps
+  c_apps_h:{fr:"Applications de ce domaine",ar:"تطبيقات هذا المجال",en:"Apps for this domain"},
+  c_apps_p:{fr:"Mettez en pratique le cours avec les applications interactives de la plateforme :",ar:"طبّق الدرس عبر التطبيقات التفاعلية للمنصّة:",en:"Put the course into practice with the platform's interactive apps:"},
+  c_open:{fr:"Ouvrir →",ar:"فتح →",en:"Open →"},
+  c_app_expl:{fr:"Explorateur d'aquifères",ar:"مستكشف الطبقات الحاملة",en:"Aquifer explorer"},
+  c_app_expl_d:{fr:"Parcourir les systèmes aquifères libyens, réserves vs recharge.",ar:"تصفّح الأنظمة الليبية، الاحتياطي مقابل التغذية.",en:"Browse Libyan aquifer systems, reserves vs recharge."},
+  c_app_log:{fr:"Log de forage",ar:"سجل البئر",en:"Borehole log"},
+  c_app_log_d:{fr:"Lire une colonne litho, crépines et niveaux (démo Sarir).",ar:"قراءة العمود الصخاري والمصافي والمستويات (نموذج السرير).",en:"Read a litho column, screens and levels (Sarir demo)."},
+  c_app_sarir:{fr:"Hydrogéo Sarir",ar:"هيدروجيو السرير",en:"Hydrogeo Sarir"},
+  c_app_sarir_d:{fr:"Données réelles Sarir : essai Theis / Cooper-Jacob, calcul de T et S.",ar:"بيانات السرير الحقيقية: اختبار ثايس/كوبر-جاكوب، حساب T وS.",en:"Real Sarir data: Theis / Cooper-Jacob test, computing T and S."},
+  c_app_hydro:{fr:"HydroSim — bilan de nappe",ar:"هيدروسيم — ميزان الطبقة",en:"HydroSim — aquifer balance"},
+  c_app_hydro_d:{fr:"Simuler la déplétion d'une nappe fossile sous exploitation.",ar:"محاكاة استنزاف طبقة أحفورية تحت الاستغلال.",en:"Simulate the depletion of a fossil aquifer under pumping."},
+  c_app_live:{fr:"Agri-Géologie Live",ar:"أجري-جيولوجيا مباشر",en:"Agri-Geology Live"},
+  c_app_live_d:{fr:"Vue géologie/hydrogéologie en direct, couches et contexte régional.",ar:"عرض جيولوجي/هيدروجيولوجي مباشر، طبقات وسياق إقليمي.",en:"Live geology/hydrogeology view, layers and regional context."},
+  c_tp_t:{fr:"TP guidé — Géologie & Hydrogéologie",ar:"عمل تطبيقي موجّه — الجيولوجيا والهيدروجيولوجيا",en:"Guided lab — Geology & Hydrogeology"},
+  c_tp_d:{fr:"Cinq étapes pas-à-pas qui vous font manipuler ces applications, avec questions, auto-correction et compte-rendu exportable.",ar:"خمس خطوات تدريجية تجعلك تستعمل هذه التطبيقات، مع أسئلة وتصحيح تلقائي وتقرير قابل للتصدير.",en:"Five step-by-step stages that make you use these apps, with questions, self-correction and an exportable report."},
+  c_tp_go:{fr:"Commencer le TP",ar:"ابدأ العمل التطبيقي",en:"Start the lab"},
+  c_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Module G0 · support de cours",ar:"منصّة أجريتك ليبيا · EU4Skills — الوحدة G0 · مادة الدرس",en:"AgriTech Libya Platform · EU4Skills — Module G0 · course material"}
+});
+
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',applyHTML);
+
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

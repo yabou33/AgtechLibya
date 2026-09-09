@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cahier de Travaux Pratiques — Télédétection & Hydrogéologie · SKILLS4EU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<!-- Polices standard plateforme (Inter · IBM Plex Sans Arabic · JetBrains Mono déjà chargée) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Moteur de dessin PARTAGÉ de la plateforme (standard pilotage-irrigation) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="platform/public/assets/js/agrimap-draw.js"></script>
+<script src="platform/public/assets/js/geo-search.js"></script>
+<!-- Couche de données partagée : helpers Store.download / Store.pickFile (règle 6 import/export) -->
+<script src="platform/public/assets/js/store.js"></script>
+<style>
+  :root{
+    --bg:#0c150e; --panel:#142217; --panel2:#1a2e20; --line:#2b4731;
+    --ink:#edf5eb; --sub:#9fb699; --moss:#97bc62; --gold:#d4af37; --gold2:#e5c158;
+    --blue:#38bdf8; --forest:#2c5f2d; --danger:#ef4444; --amber:#f59e0b;
+    --radius:12px; --shadow:0 8px 24px rgba(0,0,0,0.45);
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    background:radial-gradient(1200px 700px at 80% 0%, #15331e 0%, var(--bg) 60%);
+    color:var(--ink); font:14px/1.5 "Nunito Sans",system-ui,sans-serif; min-height:100vh; padding-bottom:40px
+  }
+  
+  /* Header */
+  header{
+    background:#142217e6; backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; position:sticky; top:0; z-index:1100; flex-wrap:wrap
+  }
+  header .logo{font-size:18px; font-weight:800; display:flex; align-items:center; gap:6px}
+  header .logo b{color:var(--moss)} header .logo span{color:var(--gold)}
+  header .tag{color:var(--sub); font-size:12px; border-left:1px solid var(--line); padding-left:12px}
+  header .ar{color:var(--gold); font-size:13.5px; font-weight:700}
+  header .right{margin-left:auto; display:flex; align-items:center; gap:10px}
+
+  /* Nav Tabs for 4 TP Labs */
+  .tp-nav{
+    background:var(--panel); border-bottom:1px solid var(--line); padding:0 24px; display:flex; gap:6px; overflow-x:auto
+  }
+  .tp-tab{
+    background:none; border:none; border-bottom:3px solid transparent; color:var(--sub);
+    padding:12px 16px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; white-space:nowrap; transition:all .15s
+  }
+  .tp-tab:hover{color:var(--ink)}
+  .tp-tab.active{color:var(--gold); border-bottom-color:var(--gold); background:rgba(212,175,55,0.06)}
+  .tp-badge{background:var(--panel2); color:var(--moss); font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--line)}
+  .tp-tab.active .tp-badge{background:var(--gold); color:#142217; font-weight:900}
+
+  main{display:grid; grid-template-columns:1fr 430px; gap:16px; padding:16px 20px; align-items:start}
+  @media (max-width:1150px){ main{grid-template-columns:1fr} }
+  
+  /* Map & Studio */
+  .mapwrap{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; position:relative; box-shadow:var(--shadow)}
+  .toolbar{display:flex; gap:6px; flex-wrap:wrap; padding:10px 14px; border-bottom:1px solid var(--line); align-items:center}
+  .toolbar .sep{width:1px; align-self:stretch; background:var(--line); margin:0 4px}
+  
+  button,select,input[type=date],input[type=text],input[type=number]{
+    background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:8px;
+    padding:6px 12px; font:inherit; cursor:pointer; transition:all .15s; font-size:12.5px
+  }
+  input[type=text],input[type=number]{cursor:auto}
+  button:hover{border-color:var(--moss); color:#fff}
+  button.active{background:var(--forest); border-color:var(--moss); color:#fff; box-shadow:0 0 10px rgba(151,188,98,0.35)}
+  button.gold{background:var(--gold); color:#141a10; border-color:var(--gold); font-weight:800}
+  button.gold:hover{background:var(--gold2); color:#000}
+  
+  #lmap{height:520px; z-index:1}
+  
+  .map-hud{
+    position:absolute; top:54px; right:12px; z-index:1000; background:rgba(20,34,23,0.94); backdrop-filter:blur(8px);
+    border:1px solid var(--line); border-radius:8px; padding:8px 14px; font-size:12px; color:var(--ink); pointer-events:none
+  }
+  .map-hud b{color:var(--gold)}
+
+  .timebar{display:flex; align-items:center; gap:10px; padding:8px 14px; border-top:1px solid var(--line); flex-wrap:wrap}
+  .timebar .date{font-weight:700; color:var(--moss); min-width:150px; font-size:12.5px}
+  .chips{display:flex; gap:6px; flex-wrap:wrap; padding:0 14px 10px; max-height:70px; overflow:auto}
+  .chip{background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:2px 10px; font-size:11.5px; cursor:pointer; color:var(--ink)}
+  .chip.on{background:var(--forest); border-color:var(--moss); color:#fff}
+  
+  .statusline{padding:6px 14px 8px; font-size:12px; color:var(--sub)}
+  .statusline.err{color:var(--danger); font-weight:700}
+  .statusline.ok{color:var(--moss); font-weight:700}
+
+  /* Right Panel / Student Worksheets */
+  aside .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:var(--shadow)}
+  aside h2{font-size:15px; font-weight:800; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  aside h2 .ar{color:var(--gold); font-size:13px; margin-left:auto}
+  aside .hint{color:var(--sub); font-size:12px; margin-bottom:10px; line-height:1.45}
+
+  .step-box{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px}
+  .step-num{display:inline-block; background:var(--forest); color:var(--moss); font-weight:800; font-size:11px; padding:2px 8px; border-radius:6px; margin-bottom:4px}
+  .step-title{font-weight:800; font-size:13px; margin-bottom:4px; color:var(--ink)}
+  .step-desc{font-size:12px; color:var(--sub); margin-bottom:8px}
+  
+  .q-field{margin-top:8px}
+  .q-label{font-size:11.5px; color:var(--gold); font-weight:700; display:block; margin-bottom:3px}
+  .q-input{width:100%; background:#0e1a11; border:1px solid var(--line); border-radius:6px; padding:6px 10px; color:var(--ink); font-size:12px}
+  .q-input:focus{border-color:var(--moss); outline:none}
+
+  /* Clinic Diagnostic Cards */
+  .clinic-card{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; cursor:pointer; transition:all .15s}
+  .clinic-card:hover{border-color:var(--moss); background:rgba(151,188,98,0.08)}
+  .clinic-card.selected{border-color:var(--gold); background:rgba(212,175,55,0.12)}
+  .clinic-card h3{font-size:13px; font-weight:800; color:var(--moss); margin-bottom:4px; display:flex; justify-content:space-between}
+
+  /* Table */
+  table{width:100%; border-collapse:collapse; font-size:12px}
+  th{color:var(--sub); font-weight:700; text-align:left; padding:5px 6px; border-bottom:1px solid var(--line)}
+  td{padding:6px 6px; border-bottom:1px solid rgba(43,71,49,0.5)}
+  tr.sel td{background:rgba(151,188,98,0.15)}
+  tr:hover td{background:rgba(151,188,98,0.08); cursor:pointer}
+  
+  canvas.chart-box{width:100%; height:170px; background:#0c170f; border:1px solid var(--line); border-radius:8px; margin-top:8px}
+  .formula{font-family:'JetBrains Mono',monospace; background:#0a130c; padding:6px 10px; border-radius:6px; font-size:11.5px; color:var(--blue); margin:6px 0; border:1px solid rgba(43,71,49,0.7)}
+  .rtl{direction:rtl; text-align:right}
+
+  /* Printable Student Report Overlay */
+  .report-box{background:#0e1a11; border:1px solid var(--gold); border-radius:10px; padding:14px; margin-top:10px}
+  .report-box h4{color:var(--gold); font-size:13px; margin-bottom:6px}
+  
+  @media print{
+    header, .toolbar, .timebar, .tp-nav, .modal-backdrop{display:none !important}
+    body{background:#fff; color:#000}
+    main{grid-template-columns:1fr; padding:0}
+    .mapwrap, aside .card{box-shadow:none; border:1px solid #ccc; background:#fff; color:#000}
+  }
+  .leaflet-labels-pane img{filter:drop-shadow(0 0 2px #000) drop-shadow(0 0 1px #000)}
+</style>
+
+<!-- ===================================================================
+     SKIN PLATEFORME — thème « papier » clair-vert (theme.css harmonisé)
+     Surcharge le thème olive sombre. Placé APRÈS le style d'origine pour gagner.
+     =================================================================== -->
+<style id="platform-skin">
+  :root{
+    /* Palette plateforme (theme.css) */
+    --bg:#fbfcf8; --panel:#ffffff; --panel2:#f1f7e9; --line:#d8e4c8;
+    --ink:#2c3a24; --sub:#6f7d64; --moss:#5a8f2c; --forest:#7cb342;
+    --gold:#5a8f2c; --gold2:#7cb342; --blue:#3a9bd0;
+    --shadow:0 4px 18px rgba(60,80,40,.10);
+  }
+  [hidden]{display:none!important}
+
+  body{
+    background:var(--paper,#fbfcf8) !important;
+    color:var(--ink);
+    font-family:"Inter","Segoe UI",system-ui,sans-serif;
+  }
+  .ar,.rtl{font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif}
+  .formula,.mono{font-family:"JetBrains Mono",monospace}
+
+  /* En-tête blanc */
+  header{background:#fff !important; backdrop-filter:none; border-bottom:1px solid var(--line)}
+  header .logo b{color:var(--moss)} header .logo span{color:var(--forest)}
+  header .ar{color:var(--moss)}
+
+  /* Onglets TP verts */
+  .tp-nav{background:#fff}
+  .tp-tab.active{color:var(--moss); border-bottom-color:var(--forest); background:rgba(124,179,66,.10)}
+  .tp-badge{background:var(--panel2); color:var(--moss); border:1px solid var(--green-l,#a5d16e)}
+  .tp-tab.active .tp-badge{background:var(--forest); color:#fff}
+
+  /* Champs & boutons */
+  button,select,input[type=date],input[type=text],input[type=number]{
+    background:#fff; color:var(--ink); border:1px solid var(--line)
+  }
+  button{cursor:pointer}
+  button:hover{border-color:var(--forest); color:var(--ink)}
+  button.active{background:var(--forest); border-color:var(--forest); color:#fff; box-shadow:0 0 0 2px rgba(124,179,66,.20)}
+  button.gold{background:var(--forest); color:#fff; border-color:var(--forest)}
+  button.gold:hover{background:var(--moss); color:#fff}
+
+  /* Cartes / panneaux clairs */
+  .mapwrap,aside .card{background:#fff; border:1px solid var(--line); box-shadow:var(--shadow)}
+  .toolbar{border-bottom:1px solid var(--line)}
+  .toolbar .sep{background:var(--line)}
+
+  /* HUD carte : boîte claire, déplacée en bas-gauche (évite la recherche géo) */
+  .map-hud{
+    top:auto; bottom:12px; right:auto; left:12px;
+    background:rgba(255,255,255,.94); border:1px solid var(--line); color:var(--ink);
+    box-shadow:var(--shadow)
+  }
+  .map-hud b{color:var(--moss)}
+
+  .timebar{border-top:1px solid var(--line)}
+  .timebar .date{color:var(--moss)}
+  .chip{background:var(--panel2); border:1px solid var(--line); color:var(--ink)}
+  .chip.on{background:var(--forest); border-color:var(--forest); color:#fff}
+  .statusline{color:var(--sub)}
+  .statusline.ok{color:var(--moss)} .statusline.err{color:#d1584e}
+
+  /* Fiches étudiant claires */
+  aside h2 .ar{color:var(--moss)}
+  .step-box{background:var(--panel2); border:1px solid var(--line)}
+  .step-num{background:var(--forest); color:#fff}
+  .q-label{color:var(--moss)}
+  .q-input{background:#fff; border:1px solid var(--line); color:var(--ink)}
+  .q-input:focus{border-color:var(--forest)}
+
+  .clinic-card{background:var(--panel2); border:1px solid var(--line)}
+  .clinic-card:hover{border-color:var(--forest); background:#eef6e2}
+  .clinic-card.selected{border-color:var(--forest); background:rgba(124,179,66,.14)}
+  .clinic-card h3{color:var(--moss)}
+
+  th{color:var(--sub); border-bottom:1px solid var(--line)}
+  td{border-bottom:1px solid var(--line)}
+  tr.sel td{background:rgba(124,179,66,.16)}
+  tr:hover td{background:rgba(124,179,66,.09)}
+
+  canvas.chart-box{background:#f6faef; border:1px solid var(--line)}
+  .formula{background:#eef3e5; color:#2c3a24; border:1px solid var(--line)}
+
+  .report-box{background:#f6faef; border:1px solid var(--forest)}
+  .report-box h4{color:var(--moss)}
+  /* Textes clairs codés en dur dans le HTML -> encre foncée sur fond clair */
+  #reportSummary{color:var(--ink) !important}
+  #boxCorrectionB14 ol{color:var(--ink) !important}
+  #boxCorrectionB14 .hint{color:var(--moss) !important}
+
+  /* Barre d'outils de dessin standard (overlay carto : reste sombre, contrôle) */
+  .agri-stdbar{display:flex; flex-direction:column; gap:3px; background:#16201b; border:1px solid #2b3a30;
+    border-radius:11px; padding:5px; box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  .agri-stdbar .tool{width:38px; height:38px; border:none; background:transparent; color:#cdd8cb; border-radius:8px;
+    cursor:pointer; display:grid; place-items:center; position:relative; transition:.15s}
+  .agri-stdbar .tool svg{width:20px; height:20px}
+  .agri-stdbar .tool:hover{background:#ffffff1a; color:#fff}
+  .agri-stdbar .tool.on{background:var(--forest); color:#04202c}
+  .agri-stdbar .sep{height:1px; background:#2b3a30; margin:3px 4px}
+  .agri-stdbar .tool .tip{position:absolute; inset-inline-start:46px; top:50%; transform:translateY(-50%);
+    background:#0e1512; color:#e8efe6; font:600 12px/1 "Inter",system-ui; white-space:nowrap; padding:6px 9px;
+    border-radius:6px; opacity:0; pointer-events:none; transition:.12s; border:1px solid #2b3a30; z-index:5}
+  .agri-stdbar .tool:hover .tip{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <b>SKILLS4EU</b> · <span>Travaux Pratiques</span>
+  </div>
+  <div class="tag">Module 2 Télédétection & Passerelle Hydrogéologie · Expertise France</div>
+  <div class="ar">الاستشعار عن بعد ورصد الأرض — جلسات العمل التطبيقي</div>
+  <div class="right">
+    <button id="btnExportData" class="gold" style="font-size:12px" title="Export données · CSV (tabulaire) + GeoJSON (géo) — Export data — تصدير البيانات (CSV + GeoJSON)">⬆️ Exporter (CSV/GeoJSON)</button>
+    <button id="btnImportData" style="font-size:12px" title="Import données · CSV ou GeoJSON/JSON — Import data — استيراد البيانات">⬇️ Importer (CSV/GeoJSON)</button>
+    <button id="btnExportPDF" class="gold" style="font-size:12px">📄 Exporter la fiche de TP</button>
+    <a href="agrimap.html" style="text-decoration:none; background:var(--panel2); color:var(--ink); padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--line)">🛰️ AgriMap</a>
+    <a href="agrisim_live.html" style="text-decoration:none; background:var(--forest); color:#fff; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--moss)">🌱 AgriSim</a>
+  </div>
+</header>
+
+<!-- Onglets des Séances de TP (Conformes aux Slides M2 & Géologie) -->
+<nav class="tp-nav">
+  <button class="tp-tab active" id="tabTP1">
+    <span class="tp-badge">TP 2.1</span> Cartographie NDVI & Statistiques Zonales
+  </button>
+  <button class="tp-tab" id="tabTP2">
+    <span class="tp-badge">TP 2.2</span> Clinique des Séries Temporelles & Cas B-14
+  </button>
+  <button class="tp-tab" id="tabTP3">
+    <span class="tp-badge">TP M2</span> Pivots du Désert comme Débitmètres & GRACE
+  </button>
+  <button class="tp-tab" id="tabTP4">
+    <span class="tp-badge">TP M5</span> Essai de Pompage, Rabattement & Énergie
+  </button>
+</nav>
+
+<main>
+  <!-- Zone Cartographique & Outils -->
+  <section class="mapwrap">
+    <div class="toolbar">
+      <div role="group" aria-label="Layers" style="display:flex;gap:4px">
+        <button id="l-rgb" class="active" title="Sentinel-2 Couleurs Naturelles">S2 RGB</button>
+        <button id="l-ndvi" title="NDVI: Vigueur & Détection Anomalie">NDVI</button>
+        <button id="l-ndwi" title="NDWI: Teneur en eau foliaire">NDWI</button>
+        <button id="l-ndre" title="NDRE: Red-Edge (Nutrition/Azote)">NDRE</button>
+        <button id="l-si" title="Indice de Salinité">🧂 Salinité</button>
+      </div>
+      
+      <div class="sep"></div>
+      
+      <!-- Outils de Dessin Simplifiés (Sans double-clic) -->
+      <button id="t-pivot" title="Dessiner un pivot circulaire">🔘 Pivot (Cercle)</button>
+      <button id="t-poly" title="Dessiner une parcelle">✏️ Parcelle</button>
+      <button id="t-rect" title="Dessiner un rectangle">⏹️ Rect</button>
+      <button id="t-undo" title="Annuler le dernier point">↩️</button>
+      <button id="t-inspect" title="Inspecter le pixel">🔍 Inspecteur</button>
+      <button id="btnRefresh" class="gold" title="Recalculer le raster découpé">↻ Afficher</button>
+      
+      <div class="sep"></div>
+      
+      <!-- Sites TP Réels -->
+      <span style="color:var(--sub);font-size:11.5px">Zone TP :</span>
+      <select id="selZone" style="width:160px">
+        <option value="34.8500,10.6000,13" selected>SDA Zitouna (Sfax - Cas B-14)</option>
+        <option value="24.1848,23.3150,13">Kufra (Pivots - Aquifère Nubie)</option>
+        <option value="27.0377,14.4283,13">Fezzan / Sebha (Oasis & Forages)</option>
+        <option value="32.7500,12.5000,13">Jefara (Intrusion Saline Côtière)</option>
+        <option value="34.5493,8.6833,14">Gafsa (Périmètres Irrigués)</option>
+      </select>
+
+      <span style="color:var(--sub);font-size:12px">Du</span> <input type="date" id="dFrom" style="width:115px">
+      <span style="color:var(--sub);font-size:12px">Au</span> <input type="date" id="dTo" style="width:115px">
+      <button id="btnSearch">🛰 Chercher</button>
+    </div>
+
+    <div id="lmap"></div>
+    <div class="map-hud" id="mapHud">Outil : <b>Prêt</b> — Choisissez 🔘 Pivot ou ✏️ Parcelle pour digitaliser</div>
+
+    <div class="timebar">
+      <button id="prevD">◀</button>
+      <button id="play">▶</button>
+      <button id="nextD">▶▶</button>
+      <span class="date" id="dateLabel">Aucune date — Cliquez sur 🛰 Chercher</span>
+      <span style="color:var(--sub);font-size:12px;margin-left:auto">Opacité :</span>
+      <input type="range" id="opacity" min="0" max="100" value="100" style="width:110px;accent-color:var(--moss)">
+    </div>
+    
+    <div class="chips" id="dateChips"></div>
+    <div class="statusline" id="mapStatus">Prêt pour la séance de Travaux Pratiques.</div>
+  </section>
+
+  <!-- Panneau Étudiant & Fiche d'Exercices -->
+  <aside>
+    <!-- Identification de l'Étudiant / Binôme -->
+    <div class="card" style="padding:12px 16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label class="q-label">Étudiant(e) / Binôme :</label>
+          <input type="text" id="studName" class="q-input" placeholder="Ex: Ahmed & Yassine" value="Binôme Agronomie / Géologie">
+        </div>
+        <div>
+          <label class="q-label">Groupe / Promo :</label>
+          <input type="text" id="studGroup" class="q-input" placeholder="Ex: Master AgroTech 2026" value="Master 2 AgriTech">
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= CONTENU TP 2.1 ================= -->
+    <div id="paneTP1" class="tp-pane">
+      <div class="card">
+        <h2>TP 2.1 — Carte NDVI & Statistiques Zonales <span class="ar">تطبيقي 2.1</span></h2>
+        <div class="hint">Objectif : Digitaliser 3 à 5 parcelles ou pivots, extraire les statistiques NDVI et identifier la parcelle la plus stressée.</div>
+        
+        <div class="step-box">
+          <span class="step-num">Étape 1/4 · Cadrage</span>
+          <div class="step-title">1. Sélectionner et cadrer la zone agricole</div>
+          <div class="step-desc">Positionnez la carte sur le site de votre région et recherchez les scènes Sentinel-2 sans nuages.</div>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Étape 2/4 · Digitalisation</span>
+          <div class="step-title">2. Digitaliser 3 à 5 parcelles (✏️) ou pivots (🔘)</div>
+          <div class="step-desc">Utilisez l'outil 🔘 Pivot ou ✏️ Parcelle pour entourer vos champs. Les statistiques sont calculées en temps réel.</div>
+          
+          <table id="tableTP1" style="margin-top:6px">
+            <thead><tr><th>Parcelle</th><th>Type</th><th>NDVI Moy</th><th>Min/Max</th></tr></thead>
+            <tbody><tr><td colspan="4" style="color:var(--sub);text-align:center">Dessinez des parcelles pour voir les statistiques</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Étape 3/4 · Interprétation</span>
+          <div class="step-title">3. Question de synthèse agronomique</div>
+          <div class="q-field">
+            <span class="q-label">Quelle parcelle présente le NDVI le plus faible ? Quelle hypothèse formulez-vous ?</span>
+            <input type="text" id="ansTP1_1" class="q-input" placeholder="Ex: La parcelle P2 a un NDVI moyen de 0.22 (stress hydrique suspecté)">
+          </div>
+          <div class="q-field">
+            <span class="q-label">Quel contrôle terrain ordonnez-vous en priorité ?</span>
+            <input type="text" id="ansTP1_2" class="q-input" placeholder="Ex: Vérifier la pression au manomètre et déboucher les rampes">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= CONTENU TP 2.2 ================= -->
+    <div id="paneTP2" class="tp-pane" style="display:none">
+      <div class="card">
+        <h2>TP 2.2 — La Clinique des Séries Temporelles <span class="ar">عيادة السلاسل</span></h2>
+        <div class="hint">Analysez les 3 cas anonymisés réels et découvrez la correction du Cas B-14 (SDA Zitouna, Sfax).</div>
+
+        <!-- Cas A -->
+        <div class="clinic-card" id="cardCaseA" onclick="selectClinicCase('A')">
+          <h3><span>Série A · Stress Hydrique Progressif</span> <span class="tp-badge">Cas A</span></h3>
+          <div class="step-desc">Le NDVI décline lentement sur 3 passages successifs alors que les voisins restent stables.</div>
+          <div class="formula">NDVI: 0.68 → 0.58 → 0.46 → 0.35 (Voisins: 0.65 stable)</div>
+        </div>
+
+        <!-- Cas B (Cas B-14) -->
+        <div class="clinic-card selected" id="cardCaseB" onclick="selectClinicCase('B')">
+          <h3><span>Série B · Anomalie Localisée (Cas B-14)</span> <span class="tp-badge" style="background:var(--gold);color:#142217">Cas B-14</span></h3>
+          <div class="step-desc">Un bloc spécifique décroche brutalement alors que le reste de l'oliveraie (1000 ha) conserve sa vigueur.</div>
+          <div class="formula">Bloc B-14: NDVI = 0.28 (vs 0.52 sur les blocs A et C)</div>
+        </div>
+
+        <!-- Cas C -->
+        <div class="clinic-card" id="cardCaseC" onclick="selectClinicCase('C')">
+          <h3><span>Série C · Sénescence Phénologique Normale</span> <span class="tp-badge">Cas C</span></h3>
+          <div class="step-desc">La parcelle entière décline à la date normale de maturité / récolte. Pas d'anomalie.</div>
+          <div class="formula">Déclin généralisé synchrone avec le calendrier cultural</div>
+        </div>
+
+        <!-- Correction Détaillée B-14 -->
+        <div id="boxCorrectionB14" class="report-box">
+          <h4>🔍 Correction : Le cas B-14 étape par étape (SDA Zitouna)</h4>
+          <ol style="font-size:12px;line-height:1.6;padding-left:18px;color:#d1e7dd">
+            <li><b>Passage Sentinel-2 :</b> Détection précoce d'une anomalie NDVI sur le bloc B-14.</li>
+            <li><b>Croisement sondes sol :</b> L'horizon 40 cm ne se recharge plus après irrigation.</li>
+            <li><b>Vérification terrain ciblée :</b> Deux rampes de goutte-à-goutte entartrées confirmées.</li>
+            <li><b>Action corrective :</b> Rinçage à l'acide nitrique programmé immédiatement.</li>
+            <li><b>Résultat :</b> Fermeture de l'anomalie, coût d'incident quasi nul !</li>
+          </ol>
+          <div class="hint" style="margin-top:6px;color:var(--gold)">
+            <i>« Le satellite dit OÙ · Les sondes disent POURQUOI · La plateforme ferme la boucle. »</i>
+          </div>
+        </div>
+
+        <!-- Graphique clinique -->
+        <canvas class="chart-box" id="clinicChart" width="380" height="150"></canvas>
+      </div>
+    </div>
+
+    <!-- ================= CONTENU TP M2 (PIVOTS & GRACE) ================= -->
+    <div id="paneTP3" class="tp-pane" style="display:none">
+      <div class="card">
+        <h2>TP M2 — Pivots comme Débitmètres &amp; GRACE <span class="ar">المحاور وعدّاد الفضاء</span></h2>
+        <div class="hint">Objectif : Comprendre que chaque pivot circulaire dans le désert est une extraction directe du stock fossile de Nubie.</div>
+        
+        <div class="step-box">
+          <span class="step-num">Exercice Pratique · Kufra / Fezzan</span>
+          <div class="step-title">1. Dessiner un pivot circulaire (🔘)</div>
+          <div class="step-desc">Placez le centre du forage et ajustez le rayon du pivot à 400 m (soit ~50 ha).</div>
+          
+          <div class="formula">Surface = π × R² · Volume Pompé = Surface (ha) × 6 500 m³/ha/an</div>
+          
+          <div class="q-field">
+            <span class="q-label">Calcul : Pour 10 pivots de 50 ha, quel est le volume fossile extrait par an ?</span>
+            <input type="text" id="ansTP3_1" class="q-input" placeholder="Ex: 10 × 50 ha × 6500 m³ = 3.25 millions de m³/an" value="3.25 millions de m³ / an">
+          </div>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Pesée Satellitaire GRACE</span>
+          <div class="step-title">2. Tendance de perte de masse du Système des Grès de Nubie</div>
+          <canvas class="chart-box" id="graceTPChart" width="380" height="130"></canvas>
+          <div class="step-desc" style="margin-top:6px">
+            Tendance mesurée par GRACE : <b>-1.6 cm eq. eau / an</b>. La distinction fondamentale : un aquifère renouvelable gère un flux, un aquifère fossile exploite un stock.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= CONTENU TP M5 (HYDROGÉOLOGIE) ================= -->
+    <div id="paneTP4" class="tp-pane" style="display:none">
+      <div class="card">
+        <h2>TP M5 — Essai de Pompage &amp; Rabattement <span class="ar">تجارب الضخ والطاقة</span></h2>
+        <div class="hint">Objectif : Calculer le rabattement dynamique (Theis / Cooper-Jacob) et la facture énergétique permanente de l'exhaure.</div>
+        
+        <div class="step-box">
+          <span class="step-num">Simulateur Forage & Piezomètre ESP32</span>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px">
+            <span>Débit de pompage (Q) :</span> <b id="tpQVal" style="color:var(--gold)">120 m³/h</b>
+          </div>
+          <input type="range" id="rgTPQ" min="30" max="250" value="120" style="width:100%;accent-color:var(--gold)">
+          
+          <div class="formula" style="margin-top:8px">Rabattement Theis : s = (Q / 4πT) × ln(2.25Tt / r²S)</div>
+          
+          <div style="display:flex;justify-content:space-between;margin:6px 0;font-size:12px">
+            <span>Profondeur dynamique de l'eau :</span> <b id="tpDepthVal" style="color:var(--danger)">-34.4 m</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
+            <span>Consommation énergétique :</span> <b id="tpEnergyVal">0.14 kWh / m³</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px">
+            <span>Coût annuel énergie (pivot 40 ha) :</span> <b id="tpCostVal" style="color:var(--gold)">18 100 DT / an</b>
+          </div>
+        </div>
+
+        <div class="step-box">
+          <span class="step-num">Question d'Examen</span>
+          <div class="q-field">
+            <span class="q-label">Pourquoi l'installation d'un forage voisin abaisse-t-elle le niveau de votre propre pompe ?</span>
+            <input type="text" id="ansTP4_1" class="q-input" placeholder="Ex: Interférence des cônes de rabattement (rayon d'influence R)" value="Interférence hydrodynamique des cônes de dépression des forages voisins">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rapport de Synthèse Étudiant Exportable -->
+    <div class="card" id="cardReport" style="border-color:var(--gold)">
+      <h2>Fiche de Synthèse du TP <span class="ar">تقرير الطالب</span></h2>
+      <div class="hint">Cette synthèse regroupe vos parcelles digitalisées, vos calculs et vos réponses prêtes à l'exportation.</div>
+      <div id="reportSummary" style="font-size:12px;line-height:1.6;color:#d1e7dd">
+        • <b>Étudiant(s) :</b> <span id="repName">Binôme Agronomie / Géologie</span><br>
+        • <b>Parcelles tracées :</b> <span id="repParcelsCount">0 parcelle</span><br>
+        • <b>Site d'étude :</b> <span id="repSite">SDA Zitouna (Sfax)</span><br>
+        • <b>Statut validation :</b> <span style="color:var(--moss);font-weight:700">✓ Prêt pour évaluation</span>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+"use strict";
+/* ============ Configuration Sentinel Hub OAuth ============ */
+const SH = {
+  process: "https://services.sentinel-hub.com/api/v1/process",
+  catalog: "https://services.sentinel-hub.com/api/v1/catalog/1.0.0/search",
+  stats: "https://services.sentinel-hub.com/api/v1/statistics"
+};
+
+let token = null, tokenExp = 0;
+
+async function getToken(){
+  if(token && Date.now() < tokenExp - 60000) return token;
+  const r = await fetch("sh_token.php", { cache: "no-store" });
+  if(!r.ok) throw new Error("Erreur jeton proxy (" + r.status + ")");
+  const j = await r.json();
+  token = j.access_token; tokenExp = Date.now() + (j.expires_in || 3500) * 1000;
+  return token;
+}
+
+async function shFetch(url, payload, expect="json"){
+  const tk = await getToken();
+  const acceptHeader = (expect === "blob") ? "image/png" : "application/geo+json, application/json, */*";
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk, "Accept": acceptHeader },
+    body: JSON.stringify(payload)
+  });
+  if(!r.ok){ const t = await r.text(); throw new Error("API " + r.status + " — " + t.slice(0, 160)); }
+  return expect === "blob" ? r.blob() : r.json();
+}
+
+function setStatus(msg, err){
+  const e = document.getElementById("mapStatus");
+  e.textContent = msg;
+  e.className = "statusline" + (err ? " err" : " ok");
+}
+
+/* ============ Géométrie Pivot Circulaire (64 sommets géodésiques) ============ */
+function circleToPolygon(centerLat, centerLng, radiusMeters, numPoints = 64) {
+  const coords = [];
+  const earthRadius = 6378137;
+  const latRad = centerLat * Math.PI / 180;
+  const lngRad = centerLng * Math.PI / 180;
+  const dByR = radiusMeters / earthRadius;
+
+  for (let i = 0; i <= numPoints; i++) {
+    const bearing = (i * 2 * Math.PI) / numPoints;
+    const pointLatRad = Math.asin(
+      Math.sin(latRad) * Math.cos(dByR) +
+      Math.cos(latRad) * Math.sin(dByR) * Math.cos(bearing)
+    );
+    const pointLngRad = lngRad + Math.atan2(
+      Math.sin(bearing) * Math.sin(dByR) * Math.cos(latRad),
+      Math.cos(dByR) - Math.sin(latRad) * Math.sin(pointLatRad)
+    );
+    coords.push([pointLatRad * 180 / Math.PI, pointLngRad * 180 / Math.PI]);
+  }
+  return coords;
+}
+
+/* ============ Indices Spectraux ============ */
+const IDX = {
+ ndvi:{f:"(B08 - B04) / (B08 + B04)", min:0, max:0.9, ramp:[[0,'#a50f15'],[0.28,'#f46d43'],[0.55,'#fee08b'],[0.8,'#a6d96a'],[1,'#006837']]},
+ ndwi:{f:"(B08 - B11) / (B08 + B11)", min:-0.3, max:0.6, ramp:[[0,'#785028'],[0.5,'#e8e6d4'],[1,'#1a49b8']]},
+ ndre:{f:"(B08 - B05) / (B08 + B05)", min:0, max:0.5, ramp:[[0,'#a50f15'],[0.3,'#f46d43'],[0.6,'#fee08b'],[0.85,'#a6d96a'],[1,'#006837']]},
+ si:{f:"Math.sqrt(B02 * B04)", min:0, max:0.4, ramp:[[0,'#3c82b4'],[0.5,'#efe6a0'],[1,'#b01f1f']]}
+};
+
+function rampStops(ix){
+  return ix.ramp.map(([t,hex])=>{
+    const n = parseInt(hex.slice(1), 16);
+    return `[${(ix.min + t * (ix.max - ix.min)).toFixed(4)},[${(n>>16)&255},${(n>>8)&255},${n&255}]]`;
+  }).join(",");
+}
+
+function vizEval(l){
+  if(l === "rgb") return `//VERSION=3
+function setup(){return{input:[{bands:["B02","B03","B04","dataMask"]}],output:{bands:4}};}
+function evaluatePixel(s){return[2.8*s.B04,2.8*s.B03,2.8*s.B02,s.dataMask];}`;
+  const ix = IDX[l];
+  return `//VERSION=3
+function setup(){return{input:[{bands:["B02","B04","B05","B08","B11","dataMask"]}],output:{bands:4}};}
+const stops=[${rampStops(ix)}];
+function colorOf(v){ if(v<=stops[0][0])return stops[0][1];
+ for(let i=1;i<stops.length;i++){ if(v<=stops[i][0]){ const f=(v-stops[i-1][0])/(stops[i][0]-stops[i-1][0]),a=stops[i-1][1],b=stops[i][1];
+  return[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}} return stops[stops.length-1][1];}
+function evaluatePixel(s){const B02=s.B02,B04=s.B04,B05=s.B05,B08=s.B08,B11=s.B11;
+ const v=${ix.f}; const c=colorOf(v); return[c[0]/255,c[1]/255,c[2]/255,s.dataMask];}`;
+}
+
+const statEval = `//VERSION=3
+function setup(){return{input:[{bands:["B02","B04","B05","B08","B11","dataMask"]}],
+ output:[{id:"data",bands:4,sampleType:"FLOAT32"},{id:"dataMask",bands:1}]};}
+function evaluatePixel(s){const B02=s.B02,B04=s.B04,B05=s.B05,B08=s.B08,B11=s.B11;
+ return{data:[(B08-B04)/(B08+B04),(B08-B11)/(B08+B11),(B08-B05)/(B08+B05),Math.sqrt(B02*B04)],dataMask:[s.dataMask]};}`;
+
+/* ============ Leaflet Map & Drawing ============ */
+let layer = "rgb", activeTool = null, curDate = null, dates = [], dateI = -1;
+let parcels = [], selParcel = -1, drawing = [], pivotCenter = null;
+let rasterOverlay = null;
+const statCache = {}, serieCache = {};
+
+const lmap = L.map("lmap", { doubleClickZoom: false }).setView([34.8500, 10.6000], 13);
+const baseSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19, attribution: "Esri World Imagery · Sentinel-2 © Copernicus"
+}).addTo(lmap);
+/* ---- Noms des lieux (villes, villages, limites) au-dessus de l'imagerie ---- */
+lmap.createPane("labels"); lmap.getPane("labels").style.zIndex = 450; lmap.getPane("labels").style.pointerEvents = "none";
+const placeLabels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19, pane: "labels", attribution: "Toponymes © Esri"
+}).addTo(lmap);
+const roadLabels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19, pane: "labels", opacity: 0.85, attribution: "Routes © Esri"
+});
+L.control.layers(null, {"🏷 Noms des lieux": placeLabels, "🛣 Routes & pistes": roadLabels}, { position: "topleft" }).addTo(lmap);
+
+const drawGroup = L.layerGroup().addTo(lmap);
+const parcelGroup = L.layerGroup().addTo(lmap);
+
+function viewBBox(){ const b = lmap.getBounds(); return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]; }
+function bboxDims(bb, maxPx=768){
+  const mx = 111320 * Math.cos((bb[1]+bb[3])/2 * Math.PI / 180), my = 110540;
+  let w = Math.max(32, Math.round((bb[2]-bb[0])*mx/10)), h = Math.max(32, Math.round((bb[3]-bb[1])*my/10));
+  const k = Math.max(w,h)/maxPx; if(k>1){ w = Math.round(w/k); h = Math.round(h/k); } return {w, h};
+}
+function geoOf(p){ const ring = p.pts.map(q => [q[1], q[0]]); ring.push(ring[0]); return { type: "Polygon", coordinates: [ring] }; }
+function bboxOf(p){ const la = p.pts.map(q => q[0]), lo = p.pts.map(q => q[1]); return [Math.min(...lo), Math.min(...la), Math.max(...lo), Math.max(...la)]; }
+function setHud(txt){ document.getElementById("mapHud").innerHTML = txt; }
+
+/* ============ Sélection de Zone ============ */
+document.getElementById("selZone").onchange = function(){
+  const [lat, lng, zoom] = this.value.split(",").map(Number);
+  lmap.setView([lat, lng], zoom);
+  document.getElementById("repSite").textContent = this.options[this.selectedIndex].text;
+  findDates();
+};
+
+/* ============ Outils de Dessin ============ */
+const bPivot = document.getElementById("t-pivot");
+const bPoly = document.getElementById("t-poly");
+const bRect = document.getElementById("t-rect");
+const bIns = document.getElementById("t-inspect");
+
+function setTool(t){
+  activeTool = (activeTool === t) ? null : t;
+  bPivot.classList.toggle("active", activeTool === "pivot");
+  bPoly.classList.toggle("active", activeTool === "poly");
+  bRect.classList.toggle("active", activeTool === "rect");
+  bIns.classList.toggle("active", activeTool === "inspect");
+  
+  drawing = []; pivotCenter = null; drawGroup.clearLayers();
+  
+  if(!activeTool){
+    lmap.getContainer().style.cursor = "";
+    setHud("Outil : <b>Prêt</b> — Choisissez 🔘 Pivot ou ✏️ Parcelle");
+  } else if(activeTool === "pivot"){
+    lmap.getContainer().style.cursor = "crosshair";
+    setHud("🔘 Pivot : <b>Clic 1</b> = Centre forage · <b>Clic 2</b> = Rayon");
+  } else if(activeTool === "poly"){
+    lmap.getContainer().style.cursor = "crosshair";
+    setHud("✏️ Parcelle : Cliquez les sommets · <b>Cliquez sur le 1er point vert</b> pour fermer");
+  } else if(activeTool === "rect"){
+    lmap.getContainer().style.cursor = "crosshair";
+    setHud("⏹️ Rectangle : <b>Clic 1</b> = Coin 1 · <b>Clic 2</b> = Coin 2");
+  } else if(activeTool === "inspect"){
+    lmap.getContainer().style.cursor = "help";
+    setHud("🔍 Inspecteur : Cliquez sur un pixel pour lire les réflectances");
+  }
+}
+
+bPivot.onclick = () => setTool("pivot");
+bPoly.onclick = () => setTool("poly");
+bRect.onclick = () => setTool("rect");
+bIns.onclick = () => setTool("inspect");
+document.getElementById("t-undo").onclick = () => { if (drawing.length > 0) { drawing.pop(); refreshDraw(); } };
+
+function refreshDraw(mouseLL){
+  drawGroup.clearLayers();
+  if (activeTool === "pivot") {
+    if (pivotCenter) {
+      L.circleMarker(pivotCenter, { radius: 7, color: "#d4af37", fillColor: "#d4af37", fillOpacity: 1 }).addTo(drawGroup);
+      if (mouseLL) {
+        const r = Math.round(lmap.distance(pivotCenter, mouseLL));
+        L.circle(pivotCenter, { radius: r, color: "#97bc62", weight: 2.5, dashArray: "6 4", fillColor: "#97bc62", fillOpacity: 0.2 }).addTo(drawGroup);
+        L.polyline([pivotCenter, mouseLL], { color: "#d4af37", dashArray: "4 4", weight: 2 }).addTo(drawGroup);
+        const ha = (Math.PI * r * r) / 10000;
+        setHud(`🔘 Pivot : Rayon = <b>${r} m</b> · Surface = <b>${ha.toFixed(1)} ha</b>`);
+      }
+    }
+  } else if (activeTool === "poly") {
+    drawing.forEach((p, idx) => {
+      const isOrigin = (idx === 0);
+      const marker = L.circleMarker(p, {
+        radius: isOrigin ? 8 : 5,
+        color: isOrigin ? "#97bc62" : "#d4af37",
+        fillColor: isOrigin ? "#97bc62" : "#d4af37",
+        fillOpacity: 1
+      }).addTo(drawGroup);
+      if (isOrigin && drawing.length >= 3) marker.bindTooltip("✓ Clic ici pour fermer", { permanent: true, direction: "top" });
+    });
+    if (drawing.length > 1) L.polyline(drawing, { color: "#97bc62", dashArray: "6 4", weight: 2.5 }).addTo(drawGroup);
+    if (drawing.length >= 1 && mouseLL) L.polyline([drawing[drawing.length - 1], mouseLL], { color: "#d4af37", dashArray: "3 3", weight: 2 }).addTo(drawGroup);
+    if (drawing.length >= 3) setHud(`✏️ Parcelle : <b>${drawing.length} sommets</b> — <span style="color:#97bc62;font-weight:bold;cursor:pointer" onclick="closePoly()">[ ✓ Clic pour FERMER ]</span>`);
+  } else if (activeTool === "rect" && drawing.length === 1 && mouseLL) {
+    L.rectangle(L.latLngBounds(drawing[0], mouseLL), { color: "#97bc62", weight: 2.5, dashArray: "6 4", fillColor: "#97bc62", fillOpacity: 0.2 }).addTo(drawGroup);
+  }
+}
+
+lmap.on("mousemove", e => { if (activeTool) refreshDraw(e.latlng); });
+
+lmap.on("click", async e => {
+  if (activeTool === "pivot") {
+    if (!pivotCenter) { pivotCenter = e.latlng; refreshDraw(e.latlng); }
+    else { const r = Math.round(lmap.distance(pivotCenter, e.latlng)); savePivot(pivotCenter, r); }
+  } else if (activeTool === "poly") {
+    if (drawing.length >= 3 && lmap.distance(drawing[0], e.latlng) < (lmap.getZoom() > 14 ? 30 : 60)) { closePoly(); return; }
+    drawing.push([e.latlng.lat, e.latlng.lng]); refreshDraw(e.latlng);
+  } else if (activeTool === "rect") {
+    if (drawing.length === 0) { drawing.push([e.latlng.lat, e.latlng.lng]); refreshDraw(e.latlng); }
+    else {
+      const p1 = drawing[0], p2 = [e.latlng.lat, e.latlng.lng];
+      savePoly([[p1[0], p1[1]], [p1[0], p2[1]], [p2[0], p2[1]], [p2[0], p1[1]]], "Rect");
+    }
+  } else if (activeTool === "inspect") {
+    await inspectPixel(e.latlng);
+  }
+});
+
+function closePoly(){ if (drawing && drawing.length >= 3) savePoly(drawing.slice(), "Poly"); }
+
+function savePivot(center, radius){
+  if (radius < 15) radius = 100;
+  const pts = circleToPolygon(center.lat, center.lng, radius, 64);
+  const ha = (Math.PI * radius * radius) / 10000;
+  const name = "Pivot " + (parcels.length + 1);
+  const p = { name, pts, type: "pivot", radius, center, ha };
+  p.layer = L.circle(center, { radius, color: "#d4af37", weight: 2.5, fillColor: "#d4af37", fillOpacity: 0.15 }).addTo(parcelGroup);
+  p.layer.bindTooltip(`${name} (${Math.round(radius)}m · ${ha.toFixed(1)}ha)`, { permanent: true, direction: "center" });
+  finalizeAddParcel(p);
+}
+
+function savePoly(pts, typeName){
+  const name = "P" + (parcels.length + 1);
+  const p = { name, pts, type: typeName };
+  p.layer = L.polygon(pts, { color: "#d4af37", weight: 2.5, fillColor: "#d4af37", fillOpacity: 0.15 }).addTo(parcelGroup);
+  p.layer.bindTooltip(name, { permanent: true, direction: "center" });
+  finalizeAddParcel(p);
+}
+
+function finalizeAddParcel(p){
+  parcels.push(p); selParcel = parcels.length - 1; setTool(null);
+  if (curDate) { renderView(); parcelStats(p).then(s => { p.cur = s; updateTP1Table(); }).catch(() => {}); }
+  updateTP1Table(); updateReportSummary();
+}
+
+/* ============ Dates Catalog ============ */
+document.getElementById("btnSearch").onclick = findDates;
+
+async function findDates(){
+  setStatus("Recherche des scènes Sentinel-2…");
+  try{
+    const j = await shFetch(SH.catalog, {
+      collections: ["sentinel-2-l2a"],
+      bbox: viewBBox(),
+      datetime: document.getElementById("dFrom").value + "T00:00:00Z/" + document.getElementById("dTo").value + "T23:59:59Z",
+      limit: 60,
+      filter: { op: "<=", args: [{ property: "eo:cloud_cover" }, 30] },
+      "filter-lang": "cql2-json",
+      fields: { include: ["properties.datetime", "properties.eo:cloud_cover"], exclude: ["assets", "links"] }
+    });
+    const byDay = {};
+    (j.features || []).forEach(f => {
+      const d = f.properties.datetime.slice(0, 10), cc = Math.round(f.properties["eo:cloud_cover"] ?? 0);
+      if (!(d in byDay) || cc < byDay[d]) byDay[d] = cc;
+    });
+    dates = Object.entries(byDay).map(([d, cc]) => ({ d, cc })).sort((a, b) => a.d.localeCompare(b.d));
+    const zone = document.getElementById("dateChips"); zone.innerHTML = "";
+    dates.forEach((s, i) => {
+      const c = document.createElement("button"); c.className = "chip";
+      c.innerHTML = `${s.d} <small>☁${s.cc}%</small>`;
+      c.onclick = () => gotoDate(i);
+      zone.appendChild(c);
+    });
+    setStatus(`${dates.length} dates trouvées — Cliquez sur une date.`);
+    if (dates.length) gotoDate(dates.length - 1);
+  }catch(e){ setStatus(e.message, true); }
+}
+
+function gotoDate(i){
+  dateI = i; curDate = dates[i].d;
+  [...document.getElementById("dateChips").children].forEach((c, k) => c.classList.toggle("on", k === i));
+  document.getElementById("dateLabel").textContent = `${curDate} · ☁${dates[i].cc}% (${i+1}/${dates.length})`;
+  renderView(); refreshAllStats();
+}
+
+document.getElementById("prevD").onclick = () => { if (dateI > 0) gotoDate(dateI - 1); };
+document.getElementById("nextD").onclick = () => { if (dateI >= 0 && dateI < dates.length - 1) gotoDate(dateI + 1); };
+
+/* ============ Rendu Raster Découpé sur Parcelle/Pivot ============ */
+document.getElementById("btnRefresh").onclick = renderView;
+
+async function renderView(){
+  if (!curDate) { setStatus("Recherchez d'abord des dates satellites.", true); return; }
+  const targetParcel = (selParcel >= 0 && parcels[selParcel]) ? parcels[selParcel] : (parcels.length > 0 ? parcels[parcels.length - 1] : null);
+  const hasGeom = targetParcel !== null;
+  const geom = hasGeom ? geoOf(targetParcel) : null;
+  const bb = hasGeom ? bboxOf(targetParcel) : viewBBox();
+  const dim = bboxDims(bb, hasGeom ? 256 : 768);
+
+  const inputBounds = hasGeom 
+    ? { geometry: geom, properties: { crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84" } }
+    : { bbox: bb, properties: { crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84" } };
+
+  const label = hasGeom ? `${targetParcel.name}` : 'vue générale';
+  setStatus(`Calcul ${layer.toUpperCase()} délimité sur ${label}…`);
+
+  try{
+    const blob = await shFetch(SH.process, {
+      input: {
+        bounds: inputBounds,
+        data: [{ type: "sentinel-2-l2a", dataFilter: { timeRange: { from: curDate + "T00:00:00Z", to: curDate + "T23:59:59Z" }, mosaickingOrder: "leastCC" } }]
+      },
+      output: { width: dim.w, height: dim.h, responses: [{ identifier: "default", format: { type: "image/png" } }] },
+      evalscript: vizEval(layer)
+    }, "blob");
+
+    if (rasterOverlay) lmap.removeLayer(rasterOverlay);
+    rasterOverlay = L.imageOverlay(URL.createObjectURL(blob), [[bb[1], bb[0]], [bb[3], bb[2]]], {
+      opacity: +document.getElementById("opacity").value / 100, interactive: false
+    }).addTo(lmap);
+    
+    parcelGroup.eachLayer(l => l.bringToFront && l.bringToFront());
+    setStatus(`Indice ${layer.toUpperCase()} délimité sur ${label} (${dim.w}×${dim.h} px)`);
+  }catch(e){ setStatus(e.message, true); }
+}
+
+document.getElementById("opacity").oninput = function(){ if (rasterOverlay) rasterOverlay.setOpacity(this.value / 100); };
+
+/* ============ Statistiques Zonales ============ */
+function statPayload(geom, from, to, interval, evs, dims){
+  return {
+    input: {
+      bounds: { geometry: geom, properties: { crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84" } },
+      data: [{ type: "sentinel-2-l2a", dataFilter: { maxCloudCoverage: 30, mosaickingOrder: "leastCC" } }]
+    },
+    aggregation: { timeRange: { from, to }, aggregationInterval: { of: interval }, width: dims.w, height: dims.h, evalscript: evs }
+  };
+}
+
+async function parcelStats(p){
+  const key = p.name + "|" + curDate;
+  if (statCache[key]) return statCache[key];
+  const dim = bboxDims(bboxOf(p), 160);
+  const j = await shFetch(SH.stats, statPayload(geoOf(p), curDate + "T00:00:00Z", curDate + "T23:59:59Z", "P1D", statEval, dim));
+  const it = j.data && j.data[0];
+  if (!it) return null;
+  const b = it.outputs.data.bands;
+  const out = { ndvi: b.B0.stats, ndwi: b.B1.stats, ndre: b.B2.stats, si: b.B3.stats };
+  statCache[key] = out;
+  return out;
+}
+
+async function refreshAllStats(){ for (const p of parcels) { try { p.cur = await parcelStats(p); } catch(e){} } updateTP1Table(); }
+
+function updateTP1Table(){
+  const tb = document.querySelector("#tableTP1 tbody");
+  if (!parcels.length) { tb.innerHTML = `<tr><td colspan="4" style="color:var(--sub);text-align:center">Dessinez des parcelles pour voir les statistiques</td></tr>`; return; }
+  tb.innerHTML = "";
+  parcels.forEach((p, i) => {
+    const s = p.cur && p.cur.ndvi;
+    const tr = document.createElement("tr"); if (i === selParcel) tr.className = "sel";
+    const f = v => (v === undefined || v === null || isNaN(v)) ? "—" : (+v).toFixed(2);
+    tr.innerHTML = `<td><b>${p.name}</b></td><td>${p.type === 'pivot' ? 'Pivot' : 'Poly'}</td><td style="color:var(--moss);font-weight:700">${f(s?.mean)}</td><td>${f(s?.min)}/${f(s?.max)}</td>`;
+    tr.onclick = () => { selParcel = i; updateTP1Table(); if (curDate) renderView(); };
+    tb.appendChild(tr);
+  });
+}
+
+function updateReportSummary(){
+  document.getElementById("repName").textContent = document.getElementById("studName").value || "Binôme Étudiant";
+  document.getElementById("repParcelsCount").textContent = `${parcels.length} parcelle(s) / pivot(s)`;
+}
+
+/* ============ Sélection des Onglets TP ============ */
+const tabs = [
+  { tab: "tabTP1", pane: "paneTP1" },
+  { tab: "tabTP2", pane: "paneTP2", onShow: () => { selectClinicCase('B'); } },
+  { tab: "tabTP3", pane: "paneTP3", onShow: () => { drawGraceTPChart(); } },
+  { tab: "tabTP4", pane: "paneTP4", onShow: () => { updateHydroCalc(); } }
+];
+
+tabs.forEach(({ tab, pane, onShow }) => {
+  document.getElementById(tab).onclick = () => {
+    tabs.forEach(t => {
+      document.getElementById(t.tab).classList.toggle("active", t.tab === tab);
+      document.getElementById(t.pane).style.display = (t.tab === tab) ? "block" : "none";
+    });
+    if (onShow) onShow();
+  };
+});
+
+/* ============ TP 2.2 Clinique des Séries Temporelles ============ */
+const clinicChart = document.getElementById("clinicChart"), clCtx = clinicChart.getContext("2d");
+function selectClinicCase(caseId){
+  document.querySelectorAll(".clinic-card").forEach(c => c.classList.remove("selected"));
+  document.getElementById("cardCase" + caseId).classList.add("selected");
+  document.getElementById("boxCorrectionB14").style.display = (caseId === "B") ? "block" : "none";
+  
+  clCtx.clearRect(0, 0, clinicChart.width, clinicChart.height);
+  clCtx.strokeStyle = "#2b4731"; clCtx.font = "10px Nunito Sans"; clCtx.fillStyle = "#9fb699";
+  for(let i=0; i<=4; i++){
+    const y = 15 + i * 28; clCtx.beginPath(); clCtx.moveTo(25, y); clCtx.lineTo(360, y); clCtx.stroke();
+    clCtx.fillText((1 - i*0.25).toFixed(2), 2, y+3);
+  }
+  
+  const datesMock = ["15 Mar", "02 Avr", "20 Avr", "08 Mai", "26 Mai", "15 Juin"];
+  let curveHealthy = [0.65, 0.68, 0.70, 0.69, 0.67, 0.64];
+  let curveTarget = [];
+  
+  if (caseId === "A") curveTarget = [0.66, 0.58, 0.48, 0.38, 0.30, 0.24];
+  else if (caseId === "B") curveTarget = [0.65, 0.67, 0.32, 0.28, 0.27, 0.58]; // B-14 drop then recovery after acid flush
+  else if (caseId === "C") curveTarget = [0.66, 0.68, 0.69, 0.52, 0.35, 0.20]; // Normal harvest
+  
+  // Trace courbe saine (voisin)
+  clCtx.strokeStyle = "#97bc62"; clCtx.lineWidth = 2; clCtx.beginPath();
+  curveHealthy.forEach((v, idx) => {
+    const x = 35 + idx * 60, y = 15 + (1 - v) * 112;
+    idx ? clCtx.lineTo(x, y) : clCtx.moveTo(x, y);
+    clCtx.fillText(datesMock[idx], x - 12, 142);
+  });
+  clCtx.stroke();
+  
+  // Trace courbe anomalie
+  clCtx.strokeStyle = (caseId === "B") ? "#ef4444" : (caseId === "A" ? "#f59e0b" : "#38bdf8");
+  clCtx.lineWidth = 2.5; clCtx.beginPath();
+  curveTarget.forEach((v, idx) => {
+    const x = 35 + idx * 60, y = 15 + (1 - v) * 112;
+    idx ? clCtx.lineTo(x, y) : clCtx.moveTo(x, y);
+  });
+  clCtx.stroke();
+}
+
+/* ============ TP M2 Courbe GRACE ============ */
+const graceTPChart = document.getElementById("graceTPChart"), gtx = graceTPChart.getContext("2d");
+function drawGraceTPChart(){
+  gtx.clearRect(0, 0, graceTPChart.width, graceTPChart.height);
+  gtx.strokeStyle = "#2b4731"; gtx.font = "10px Nunito Sans"; gtx.fillStyle = "#9fb699";
+  for(let i=0; i<=3; i++){
+    const y = 15 + i * 30; gtx.beginPath(); gtx.moveTo(25, y); gtx.lineTo(360, y); gtx.stroke();
+    gtx.fillText(`-${i*10}cm`, 2, y+3);
+  }
+  gtx.strokeStyle = "#38bdf8"; gtx.lineWidth = 2; gtx.beginPath();
+  const yrs = [2004, 2008, 2012, 2016, 2020, 2024];
+  yrs.forEach((yr, idx) => {
+    const x = 35 + idx * 60, y = 18 + idx * 16 + Math.sin(idx * 2) * 4;
+    idx ? gtx.lineTo(x, y) : gtx.moveTo(x, y);
+    gtx.fillText(yr, x - 10, 122);
+  });
+  gtx.stroke();
+}
+
+/* ============ TP M5 Calculs Hydrogéologie ============ */
+const rgTPQ = document.getElementById("rgTPQ");
+rgTPQ.oninput = updateHydroCalc;
+
+function updateHydroCalc(){
+  const Q = +rgTPQ.value;
+  document.getElementById("tpQVal").textContent = Q + " m³/h";
+  const depth = (20 + Q * 0.12).toFixed(1);
+  document.getElementById("tpDepthVal").textContent = `-${depth} m`;
+  const energy = (0.0027 * depth).toFixed(2);
+  document.getElementById("tpEnergyVal").textContent = `${energy} kWh / m³`;
+  const cost = Math.round(Q * 1800 * energy * 0.28);
+  document.getElementById("tpCostVal").textContent = `${cost.toLocaleString()} DT / an`;
+}
+
+/* ============ Sélection des Couches ============ */
+function setLayer(l){
+  layer = l;
+  ["rgb", "ndvi", "ndwi", "ndre", "si"].forEach(k => {
+    const el = document.getElementById("l-" + k);
+    if (el) el.classList.toggle("active", k === l);
+  });
+  if (curDate) renderView();
+}
+["rgb", "ndvi", "ndwi", "ndre", "si"].forEach(k => {
+  const el = document.getElementById("l-" + k);
+  if (el) el.onclick = () => setLayer(k);
+});
+
+/* ============ Export / Import des Données (Règle 6 : CSV tabulaire + GeoJSON géo) ============
+   Réutilise EXACTEMENT le style d'échappement CSV et la géométrie WKT POLYGON((lng lat,...))
+   du moteur partagé agrimap-draw.js (exportCSV/parseCSV/importCSV), via Store.download / Store.pickFile.
+   Le CSV vient EN PLUS du GeoJSON (structuré/géo) — l'un n'écrase pas l'autre. */
+function csvCell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+
+function wktOfParcel(p){                       // anneau [lng,lat] déjà fermé fourni par geoOf()
+  const ring = geoOf(p).coordinates[0];
+  return 'POLYGON((' + ring.map(c => (+c[0]).toFixed(6) + ' ' + (+c[1]).toFixed(6)).join(', ') + '))';
+}
+
+function parcelAreaHa(p){
+  if (p.ha) return +(+p.ha).toFixed(3);        // pivots : surface déjà connue
+  const pts = p.pts; if (!pts || pts.length < 3) return '';
+  const latRef = pts.reduce((s, q) => s + q[0], 0) / pts.length;   // shoelace planaire local (m)
+  const mx = 111320 * Math.cos(latRef * Math.PI / 180), my = 110540;
+  let a = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const xi = pts[i][1] * mx, yi = pts[i][0] * my, xj = pts[j][1] * mx, yj = pts[j][0] * my;
+    a += xj * yi - xi * yj;
+  }
+  return +(Math.abs(a) / 2 / 10000).toFixed(3);
+}
+
+/* --- Export CSV (tabulaire) : 1 ligne par parcelle/pivot + stats zonales + géométrie WKT --- */
+function exportParcelsCSV(){
+  const head = ['name','type','area_ha','radius_m','date','ndvi_mean','ndvi_min','ndvi_max','ndwi_mean','ndre_mean','si_mean','wkt'];
+  const num = v => (v === undefined || v === null || isNaN(v)) ? '' : (+v).toFixed(4);
+  const rows = parcels.map(p => {
+    const s = p.cur || {};
+    return [
+      p.name, p.type || 'Poly', parcelAreaHa(p), (p.radius != null ? Math.round(p.radius) : ''),
+      curDate || '',
+      num(s.ndvi && s.ndvi.mean), num(s.ndvi && s.ndvi.min), num(s.ndvi && s.ndvi.max),
+      num(s.ndwi && s.ndwi.mean), num(s.ndre && s.ndre.mean), num(s.si && s.si.mean),
+      wktOfParcel(p)
+    ].map(csvCell).join(',');
+  });
+  return head.join(',') + '\n' + rows.join('\n') + '\n';
+}
+
+/* --- Parseur CSV robuste (guillemets/virgules dans les cellules) — copié d'agrimap-draw.js --- */
+function parseParcelsCSV(text){
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++){ const ch = text[i];
+    if (q){ if (ch === '"'){ if (text[i+1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(cur); cur = ''; }
+    else if (ch === '\n'){ row.push(cur); rows.push(row); row = []; cur = ''; }
+    else if (ch !== '\r') cur += ch;
+  }
+  if (cur !== '' || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r => r.length && r.some(c => c !== ''));
+}
+
+function importParcelsCSV(text){
+  const rows = parseParcelsCSV(text); if (rows.length < 2) return 0;
+  const head = rows[0].map(h => h.trim().toLowerCase()), ix = n => head.indexOf(n);
+  const iN = ix('name'), iT = ix('type'), iR = ix('radius_m'), iW = ix('wkt');
+  if (iW < 0) return 0;                          // colonne wkt requise
+  let n = 0;
+  for (let r = 1; r < rows.length; r++){ const c = rows[r];
+    const m = /POLYGON\s*\(\(([^)]+)\)\)/i.exec(c[iW] || ''); if (!m) continue;
+    const pts = m[1].split(',')                  // WKT = "lng lat, ..." -> pts en [lat,lng]
+      .map(pr => { const s = pr.trim().split(/\s+/).map(Number); return [s[1], s[0]]; })
+      .filter(qq => isFinite(qq[0]) && isFinite(qq[1]));
+    if (pts.length && pts[0][0] === pts[pts.length-1][0] && pts[0][1] === pts[pts.length-1][1]) pts.pop();
+    if (pts.length < 3) continue;
+    const type = iT >= 0 ? (c[iT] || 'Poly') : 'Poly';
+    const radius = iR >= 0 ? +c[iR] : 0;
+    if (type === 'pivot' && radius > 0){
+      const latC = pts.reduce((a, qq) => a + qq[0], 0) / pts.length;
+      const lngC = pts.reduce((a, qq) => a + qq[1], 0) / pts.length;
+      savePivot(L.latLng(latC, lngC), Math.round(radius));
+    } else savePoly(pts, type);
+    if (iN >= 0 && c[iN]) renameLastParcel(c[iN]);
+    n++;
+  }
+  return n;
+}
+
+function renameLastParcel(name){
+  const p = parcels[parcels.length - 1]; if (!p) return;
+  p.name = name;
+  if (p.layer && p.layer.getTooltip()) p.layer.setTooltipContent(name);
+  updateTP1Table(); updateReportSummary();
+}
+
+/* --- Boutons Export / Import (CSV + GeoJSON) --- */
+document.getElementById("btnExportData").onclick = () => {
+  if (!parcels.length){ setStatus("Aucune parcelle à exporter — dessinez d'abord des parcelles/pivots.", true); return; }
+  const slug = (document.getElementById("studName").value || 'TP').trim().replace(/\s+/g, '_').replace(/[^\w\-]/g, '') || 'TP';
+  const fc = { type: 'FeatureCollection', features: parcels.map(p => ({
+    type: 'Feature',
+    properties: { name: p.name, type: p.type || 'Poly', area_ha: parcelAreaHa(p),
+      radius_m: (p.radius != null ? Math.round(p.radius) : null), date: curDate || null, stats: p.cur || null },
+    geometry: geoOf(p)
+  })) };
+  Store.download('parcelles_' + slug + '.geojson', JSON.stringify(fc, null, 2), 'application/geo+json');
+  Store.download('parcelles_' + slug + '.csv', exportParcelsCSV(), 'text/csv');
+  setStatus(parcels.length + " parcelle(s) exportée(s) — GeoJSON (géo) + CSV (tabulaire) téléchargés.");
+};
+
+document.getElementById("btnImportData").onclick = () => Store.pickFile('.csv,.json,.geojson', (txt) => {
+  try{
+    const t = txt.trim();
+    if (t[0] !== '{' && t[0] !== '['){          // heuristique : ne commence pas par { ou [ -> CSV
+      const n = importParcelsCSV(txt);
+      setStatus(n ? (n + " parcelle(s) importée(s) depuis CSV.")
+                  : "CSV : colonne 'wkt' requise (POLYGON((lng lat, ...))).", !n);
+      return;
+    }
+    const j = JSON.parse(txt);                    // sinon : GeoJSON / JSON structuré
+    const feats = j.type === 'FeatureCollection' ? (j.features || []) : (Array.isArray(j) ? j : []);
+    if (!feats.length){ setStatus("GeoJSON/JSON : aucune entité 'Feature' trouvée.", true); return; }
+    let n = 0;
+    feats.forEach(f => {
+      const g = f.geometry; if (!g || g.type !== 'Polygon') return;
+      const ring = g.coordinates[0].map(c => [c[1], c[0]]);   // [lng,lat] -> [lat,lng]
+      if (ring.length && ring[0][0] === ring[ring.length-1][0] && ring[0][1] === ring[ring.length-1][1]) ring.pop();
+      if (ring.length < 3) return;
+      const pr = f.properties || {};
+      if (pr.type === 'pivot' && pr.radius_m > 0){
+        const latC = ring.reduce((a, qq) => a + qq[0], 0) / ring.length;
+        const lngC = ring.reduce((a, qq) => a + qq[1], 0) / ring.length;
+        savePivot(L.latLng(latC, lngC), Math.round(pr.radius_m));
+      } else savePoly(ring, pr.type || 'Poly');
+      if (pr.name) renameLastParcel(pr.name);
+      n++;
+    });
+    setStatus(n + " parcelle(s) importée(s) depuis GeoJSON/JSON.", !n);
+  }catch(e){ setStatus("Fichier illisible : " + e.message, true); }
+});
+
+/* ============ Impression / Exportation Fiche de TP ============ */
+document.getElementById("btnExportPDF").onclick = () => {
+  window.print();
+};
+
+/* ============ Initialisation ============ */
+(function(){
+  const today = new Date(), from = new Date(today - 120 * 864e5);
+  document.getElementById("dTo").value = today.toISOString().slice(0, 10);
+  document.getElementById("dFrom").value = from.toISOString().slice(0, 10);
+  updateTP1Table(); updateReportSummary();
+})();
+</script>
+
+<!-- ===================================================================
+     PONT MOTEUR DE DESSIN PARTAGÉ (leaflet-draw) → pipeline Sentinel/TP
+     - Barre d'outils verticale STANDARD (Sélection · Parcelle · Pivot · Rect
+       · Inspecteur · Annuler) façon pilotage-irrigation, montée sur `lmap`.
+     - Le dessin passe par L.Draw (comportement standard de la plateforme),
+       puis est branché sur savePoly()/savePivot() : le pipeline de stats
+       zonales Sentinel, la table TP et la fiche de synthèse restent inchangés.
+     - Recherche géographique (localités libyennes + coordonnées).
+     =================================================================== -->
+<script>
+"use strict";
+(function(){
+  if(typeof L === "undefined" || typeof lmap === "undefined"){ return; }
+
+  /* 1) Neutraliser l'ancienne barre de dessin maison (on garde les éléments
+        pour ne pas casser les références JS existantes ; on les masque). */
+  ["t-pivot","t-poly","t-rect","t-undo","t-inspect"].forEach(function(id){
+    var b = document.getElementById(id); if(b) b.hidden = true;
+  });
+
+  /* 2) Icônes (jeu standard agrimap-draw.js) */
+  var ICON = {
+    select:'<path d="M4 3l7 17 2-7 7-2z"/>',
+    parcel:'<path d="M4 6l7-3 9 4-2 12-9 2-5-3z" fill="none"/>',
+    pivot:'<circle cx="12" cy="12" r="8" fill="none" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="1.5"/>',
+    rect:'<rect x="4" y="6" width="16" height="12" rx="1" fill="none"/>',
+    inspect:'<circle cx="11" cy="11" r="6" fill="none"/><path d="M20 20l-3.5-3.5" fill="none"/>',
+    undo:'<path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10h-3" fill="none"/>'
+  };
+  function svg(id){ return '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6">'+(ICON[id]||"")+'</svg>'; }
+
+  var GREEN = "#7cb342";
+  var drawHandler = null, stdTool = "select";
+
+  function stopHandler(){ if(drawHandler){ try{ drawHandler.disable(); }catch(e){} drawHandler = null; } }
+
+  function setStdTool(t){
+    stdTool = (stdTool === t) ? "select" : t;
+    document.querySelectorAll("#stdbar .tool").forEach(function(b){
+      b.classList.toggle("on", b.dataset.t === stdTool);
+    });
+    stopHandler();
+    /* Neutraliser l'outil natif (sauf inspecteur qu'on réutilise tel quel) */
+    if(typeof setTool === "function" && stdTool !== "inspect" && typeof activeTool !== "undefined" && activeTool){ setTool(null); }
+    lmap.getContainer().style.cursor = "";
+
+    if(!L.Draw){ setHud("⚠️ Moteur de dessin indisponible"); return; }
+
+    if(stdTool === "parcel"){
+      drawHandler = new L.Draw.Polygon(lmap, { allowIntersection:false, showArea:false, shapeOptions:{ color:GREEN, weight:2.5 } });
+      drawHandler.enable();
+      setHud("✏️ <b>Parcelle</b> : cliquez les sommets · double-clic ou 1er point pour fermer");
+    } else if(stdTool === "pivot"){
+      drawHandler = new L.Draw.Circle(lmap, { shapeOptions:{ color:GREEN, weight:2.5, dashArray:"6 4" } });
+      drawHandler.enable();
+      setHud("🔘 <b>Pivot</b> : clic = centre du forage, puis glissez pour le rayon");
+    } else if(stdTool === "rect"){
+      drawHandler = new L.Draw.Rectangle(lmap, { shapeOptions:{ color:GREEN, weight:2.5 } });
+      drawHandler.enable();
+      setHud("⏹️ <b>Rectangle</b> : cliquer-glisser pour tracer");
+    } else if(stdTool === "inspect"){
+      if(typeof setTool === "function") setTool("inspect");
+      setHud("🔍 <b>Inspecteur</b> : cliquez un pixel pour lire les réflectances");
+    } else {
+      setHud("Outil : <b>Prêt</b> — barre standard : Parcelle, Pivot, Rectangle");
+    }
+  }
+
+  /* 3) PONT : formes L.Draw → savePoly()/savePivot() (pipeline Sentinel existant) */
+  lmap.on(L.Draw.Event.CREATED, function(e){
+    var lyr = e.layer, ty = e.layerType;
+    if(ty === "circle"){
+      var c = lyr.getLatLng(), r = Math.round(lyr.getRadius());
+      savePivot(c, r);                       // -> circleToPolygon + finalizeAddParcel + parcelStats
+    } else if(ty === "polygon" || ty === "rectangle"){
+      var pts = lyr.getLatLngs()[0].map(function(ll){ return [ll.lat, ll.lng]; });
+      savePoly(pts, ty === "rectangle" ? "Rect" : "Poly");
+    }
+    setStdTool("select");                    // revient à Sélection (savePivot/savePoly relancent déjà les stats)
+  });
+
+  /* 4) Barre d'outils verticale standard (contrôle Leaflet, coin haut-gauche) */
+  var TOOLBTNS = [
+    { t:"select",  label:"Sélection" },
+    { sep:1 },
+    { t:"parcel",  label:"Parcelle" },
+    { t:"pivot",   label:"Pivot" },
+    { t:"rect",    label:"Rectangle" },
+    { sep:1 },
+    { t:"inspect", label:"Inspecteur" },
+    { t:"undo",    label:"Annuler le dernier point", action:"undo" }
+  ];
+  var StdBar = L.Control.extend({
+    options:{ position:"topleft" },
+    onAdd:function(){
+      var c = L.DomUtil.create("div", "agri-stdbar"); c.id = "stdbar";
+      var html = "";
+      TOOLBTNS.forEach(function(b){
+        if(b.sep){ html += '<div class="sep"></div>'; return; }
+        html += '<button class="tool'+(b.t==="select"?" on":"")+'" data-t="'+b.t+'"'
+             + (b.action?' data-a="'+b.action+'"':'')
+             + ' title="'+b.label+'">'+svg(b.t)+'<span class="tip">'+b.label+'</span></button>';
+      });
+      c.innerHTML = html;
+      L.DomEvent.disableClickPropagation(c); L.DomEvent.disableScrollPropagation(c);
+      c.querySelectorAll(".tool").forEach(function(btn){
+        btn.addEventListener("click", function(ev){
+          ev.preventDefault();
+          if(btn.dataset.a === "undo"){
+            if(drawHandler && typeof drawHandler.deleteLastVertex === "function"){
+              try{ drawHandler.deleteLastVertex(); }catch(e){}
+            }
+            return;
+          }
+          setStdTool(btn.dataset.t);
+        });
+      });
+      return c;
+    }
+  });
+  lmap.addControl(new StdBar());
+
+  /* 5) BONUS — Recherche géographique (localités libyennes + coordonnées) */
+  if(window.GeoSearch && typeof GeoSearch.add === "function"){
+    try{ GeoSearch.add(lmap, { lang:"fr" }); }catch(e){ console.warn("GeoSearch:", e); }
+  }
+
+  setHud("Outil : <b>Prêt</b> — barre standard : Parcelle, Pivot, Rectangle");
+})();
+</script>
+</body>
+</html>

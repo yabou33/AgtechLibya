@@ -1,0 +1,6 @@
+[
+  { "local_time": "2026-02-23T15:00:00+00:00", "site_name": "Domaine Sebha", "site_id": "66204", "probe_id": "1338798", "probe_measure": "Soil Moisture 30cm", "soil_value": 22.4, "unit": "%VWC" },
+  { "local_time": "2026-02-23T15:00:00+00:00", "site_name": "Domaine Sebha", "site_id": "66204", "probe_id": "1338799", "probe_measure": "Soil Moisture 50cm", "soil_value": 18.9, "unit": "%VWC" },
+  { "local_time": "2026-02-23T15:00:00+00:00", "site_name": "Domaine Sebha", "site_id": "66204", "probe_id": "1338800", "probe_measure": "Soil Salinity 20cm", "soil_value": 0.31, "unit": "µS/cm" },
+  { "local_time": "2026-02-23T15:00:00+00:00", "site_name": "Domaine Sebha", "site_id": "66204", "probe_id": "1338801", "probe_measure": "Soil Temperature 50cm", "soil_value": 17.2, "unit": "ºC" }
+]

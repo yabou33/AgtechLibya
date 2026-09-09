@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log de forage — colonne lithologique</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:960px;margin:-4px 0 4px;font-size:14px}
+  .lead b{color:var(--ink)}
+  .grid-main{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
+  @media(max-width:960px){.grid-main{grid-template-columns:1fr}}
+  .fld{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+  .fld label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink);
+    font:inherit;font-weight:600;width:100%}
+  textarea{font-weight:500;resize:vertical;min-height:38px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green)}
+  .sec{border-top:1px solid var(--line);margin:14px 0 12px;padding-top:12px}
+  .sec h3{font-size:12.5px;font-weight:800;color:var(--green-d);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+  .lyr,.scr{display:grid;grid-template-columns:20px 1fr 58px 58px 26px;gap:6px;align-items:center;margin-bottom:6px}
+  .scr{grid-template-columns:1fr 1fr 26px}
+  .lyr .sw{width:18px;height:18px;border-radius:4px;border:1px solid var(--line)}
+  .lyr input,.lyr select,.scr input{padding:6px 7px;font-size:12.5px}
+  .xbtn{border:1px solid var(--line);background:#fff;color:var(--decision);border-radius:7px;cursor:pointer;font-weight:800;font-size:13px;line-height:1;padding:6px 0}
+  .xbtn:hover{background:#fbecea;border-color:#eecac5}
+  .addbtn{border:1px dashed var(--green-l);background:var(--green-bg);color:var(--green-d);border-radius:8px;
+    padding:7px 12px;font:inherit;font-weight:700;font-size:12.5px;cursor:pointer;margin-top:2px}
+  .addbtn:hover{border-style:solid}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .colwrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 6px 4px;overflow:auto}
+  svg.col{width:100%;height:auto;display:block;max-width:420px;margin:0 auto}
+  .colhead{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12.5px;color:var(--muted);margin:2px 6px 12px}
+  .colhead b{color:var(--ink)}
+  .legend{display:flex;gap:12px 16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:12px 6px 2px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:15px;height:14px;border-radius:3px;display:inline-block;border:1px solid var(--line)}
+  .legend i.ln{height:0;width:16px;border:0;border-top:2px dashed currentColor;border-radius:0}
+  .hoverbox{font-size:13px;color:var(--muted);padding:9px 12px;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;margin-top:12px;min-height:20px}
+  .hoverbox b{color:var(--ink)}
+  .note{font-size:12px;color:var(--faint);margin-top:6px}
+  .fmt{font-family:"JetBrains Mono",monospace;font-size:11.5px;background:#0e1512;color:#d7e3cd;border-radius:9px;padding:11px 13px;overflow:auto;margin:4px 0;white-space:pre;line-height:1.5}
+  .peda{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:720px){.peda{grid-template-columns:1fr}}
+  .peda h4{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:5px;display:flex;gap:7px;align-items:center}
+  .peda p{font-size:13px;color:var(--muted);line-height:1.55}
+  .peda p b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">G0</span> <b data-i18n="lf_brand">Log</b> <span data-i18n="lf_brand2">de forage</span></div>
+  <div class="sub" data-i18n="lf_sub">Colonne lithologique · complétion de puits · aquifère nubien</div>
+  <div class="right">
+    <span class="chip">G0 · <span data-i18n="g0"></span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="lf_lead"></p>
+
+  <div class="grid-main">
+    <!-- ---- Éditeur ---- -->
+    <div class="card">
+      <h2>📋 <span data-i18n="lf_editor"></span></h2>
+
+      <div class="sec" style="border-top:0;margin-top:0;padding-top:0">
+        <h3>🗂️ <span data-i18n="lf_head"></span></h3>
+        <div class="fld"><label data-i18n="lf_name"></label><input type="text" id="h_name"></div>
+        <div class="fld"><label data-i18n="lf_loc"></label><input type="text" id="h_loc"></div>
+        <div class="row2">
+          <div class="fld"><label data-i18n="lf_lat"></label><input type="number" step="0.0001" id="h_lat"></div>
+          <div class="fld"><label data-i18n="lf_lng"></label><input type="number" step="0.0001" id="h_lng"></div>
+        </div>
+        <div class="row2">
+          <div class="fld"><label data-i18n="lf_date"></label><input type="date" id="h_date"></div>
+          <div class="fld"><label data-i18n="lf_diam"></label><input type="text" id="h_diam"></div>
+        </div>
+        <div class="row3">
+          <div class="fld"><label data-i18n="lf_td"></label><input type="number" step="1" id="h_td"></div>
+          <div class="fld"><label data-i18n="lf_ns"></label><input type="number" step="0.1" id="h_ns"></div>
+          <div class="fld"><label data-i18n="lf_nd"></label><input type="number" step="0.1" id="h_nd"></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h3>⛰️ <span data-i18n="lf_layers"></span></h3>
+        <div id="layers"></div>
+        <button class="addbtn" onclick="addLayer()">＋ <span data-i18n="lf_add_layer"></span></button>
+      </div>
+
+      <div class="sec">
+        <h3>🛠️ <span data-i18n="lf_compl"></span></h3>
+        <div class="row2">
+          <div class="fld"><label data-i18n="lf_casing"></label><input type="number" step="1" id="c_casing"></div>
+          <div class="fld"><label data-i18n="lf_diam2"></label><input type="text" id="c_holed"></div>
+        </div>
+        <div class="row2">
+          <div class="fld"><label data-i18n="lf_cem_t"></label><input type="number" step="1" id="c_cemt"></div>
+          <div class="fld"><label data-i18n="lf_cem_b"></label><input type="number" step="1" id="c_cemb"></div>
+        </div>
+        <div class="row2">
+          <div class="fld"><label data-i18n="lf_grv_t"></label><input type="number" step="1" id="c_grvt"></div>
+          <div class="fld"><label data-i18n="lf_grv_b"></label><input type="number" step="1" id="c_grvb"></div>
+        </div>
+        <label style="font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:block;margin:6px 0 8px" data-i18n="lf_screens"></label>
+        <div id="screens"></div>
+        <button class="addbtn" onclick="addScreen()">＋ <span data-i18n="lf_add_screen"></span></button>
+      </div>
+
+      <div class="btns">
+        <button class="btn ghost" onclick="doImport()" title="JSON (.json) ou CSV (.csv) — colonnes : from_m,to_m,litho,description">📥 <span data-i18n="import"></span></button>
+        <button class="btn ghost" onclick="doExport()" title="Télécharge JSON + CSV (from_m,to_m,litho,description ; en-tête en # clé,valeur)">📤 <span data-i18n="export"></span></button>
+        <button class="btn ghost" onclick="loadDemo(true)">🧪 <span data-i18n="lf_demo"></span></button>
+        <button class="btn ghost" onclick="toggleFmt()">❔ <span data-i18n="format_help"></span></button>
+      </div>
+      <pre class="fmt" id="fmt" hidden></pre>
+      <p class="note" data-i18n="lf_saved"></p>
+    </div>
+
+    <!-- ---- Colonne ---- -->
+    <div class="card">
+      <h2>🪨 <span data-i18n="lf_column"></span></h2>
+      <div class="colhead" id="colhead"></div>
+      <div class="colwrap">
+        <svg class="col" id="col" viewBox="0 0 300 690" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="legend" id="legLith"></div>
+      <div class="legend" id="legCompl"></div>
+      <div class="hoverbox" id="hover"></div>
+    </div>
+  </div>
+
+  <!-- ---- Pédagogie ---- -->
+  <div class="card">
+    <h2>🎓 <span data-i18n="lf_learn"></span></h2>
+    <div class="peda">
+      <div>
+        <h4>📖 <span data-i18n="lf_p1_t"></span></h4>
+        <p data-i18n-html="lf_p1"></p>
+      </div>
+      <div>
+        <h4>💧 <span data-i18n="lf_p2_t"></span></h4>
+        <p data-i18n-html="lf_p2"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const LS="logforage_v1";
+
+Object.assign(I18N.DICT,{
+  lf_brand:{fr:"Log",ar:"سجل",en:"Log"},
+  lf_brand2:{fr:"de forage",ar:"الحفر",en:"borehole"},
+  lf_sub:{fr:"Colonne lithologique · complétion de puits · aquifère nubien",ar:"العمود الليثولوجي · تجهيز البئر · الخزان النوبي",en:"Lithology column · well completion · Nubian aquifer"},
+  lf_lead:{fr:"Un <b>log de forage</b> est la carte d'identité d'un puits : il empile, en profondeur, les <b>couches géologiques</b> traversées et montre l'<b>ouvrage</b> (tubage, crépines, massif de gravier, cimentation) ainsi que les <b>niveaux d'eau</b>. Saisis tes couches, l'app dessine la <b>colonne lithologique</b> ; exporte/importe en JSON. Démo : un forage type <b>grès nubien de Sarir (SE Libye)</b>.",
+    ar:"<b>سجل الحفر</b> هو بطاقة هوية البئر: يرتّب حسب العمق <b>الطبقات الجيولوجية</b> المخترَقة ويُظهر <b>تجهيز البئر</b> (التغليف، المصافي، حشوة الحصى، التدعيم الإسمنتي) و<b>مناسيب الماء</b>. أدخل طبقاتك فيرسم التطبيق <b>العمود الليثولوجي</b>؛ صدّر واستورد بصيغة JSON. نموذج: بئر من طراز <b>الحجر الرملي النوبي بالسرير (جنوب شرق ليبيا)</b>.",
+    en:"A <b>borehole log</b> is a well's identity card: it stacks, with depth, the <b>geological layers</b> crossed and shows the <b>completion</b> (casing, screens, gravel pack, cement) and the <b>water levels</b>. Enter your layers and the app draws the <b>lithology column</b>; export/import as JSON. Demo: a <b>Nubian sandstone (Sarir, SE Libya)</b> well."},
+  lf_editor:{fr:"Saisie du forage",ar:"إدخال بيانات البئر",en:"Borehole entry"},
+  lf_head:{fr:"En-tête du forage",ar:"ترويسة البئر",en:"Borehole header"},
+  lf_name:{fr:"Nom / réf.",ar:"الاسم / المرجع",en:"Name / ref."},
+  lf_loc:{fr:"Localisation",ar:"الموقع",en:"Location"},
+  lf_lat:{fr:"Latitude",ar:"خط العرض",en:"Latitude"},
+  lf_lng:{fr:"Longitude",ar:"خط الطول",en:"Longitude"},
+  lf_date:{fr:"Date",ar:"التاريخ",en:"Date"},
+  lf_diam:{fr:"Diamètre foré",ar:"قطر الحفر",en:"Drilled diameter"},
+  lf_td:{fr:"Prof. totale (m)",ar:"العمق الكلي (م)",en:"Total depth (m)"},
+  lf_ns:{fr:"Niv. statique (m)",ar:"المنسوب الساكن (م)",en:"Static level (m)"},
+  lf_nd:{fr:"Niv. dynamique (m)",ar:"المنسوب الديناميكي (م)",en:"Dynamic level (m)"},
+  lf_layers:{fr:"Couches lithologiques",ar:"الطبقات الليثولوجية",en:"Lithology layers"},
+  lf_add_layer:{fr:"Ajouter une couche",ar:"إضافة طبقة",en:"Add a layer"},
+  lf_compl:{fr:"Ouvrage / complétion",ar:"تجهيز البئر",en:"Well completion"},
+  lf_casing:{fr:"Tubage plein jusqu'à (m)",ar:"تغليف مصمت حتى (م)",en:"Blank casing to (m)"},
+  lf_diam2:{fr:"Ø tubage",ar:"قطر التغليف",en:"Casing Ø"},
+  lf_cem_t:{fr:"Ciment — toit (m)",ar:"الإسمنت — الأعلى (م)",en:"Cement — top (m)"},
+  lf_cem_b:{fr:"Ciment — mur (m)",ar:"الإسمنت — الأسفل (م)",en:"Cement — base (m)"},
+  lf_grv_t:{fr:"Gravier — toit (m)",ar:"الحصى — الأعلى (م)",en:"Gravel — top (m)"},
+  lf_grv_b:{fr:"Gravier — mur (m)",ar:"الحصى — الأسفل (م)",en:"Gravel — base (m)"},
+  lf_screens:{fr:"Crépines (intervalles productifs)",ar:"المصافي (المجالات المنتجة)",en:"Screens (productive intervals)"},
+  lf_add_screen:{fr:"Ajouter une crépine",ar:"إضافة مصفاة",en:"Add a screen"},
+  lf_demo:{fr:"Démo Sarir",ar:"نموذج السرير",en:"Sarir demo"},
+  lf_saved:{fr:"Enregistré automatiquement dans le navigateur (localStorage).",ar:"يُحفظ تلقائياً في المتصفح (localStorage).",en:"Auto-saved in the browser (localStorage)."},
+  lf_column:{fr:"Colonne lithologique",ar:"العمود الليثولوجي",en:"Lithology column"},
+  lf_top:{fr:"Toit",ar:"الأعلى",en:"Top"},
+  lf_bot:{fr:"Mur",ar:"الأسفل",en:"Base"},
+  lf_desc:{fr:"Description",ar:"وصف",en:"Description"},
+  lf_learn:{fr:"Comprendre un log de forage",ar:"فهم سجل الحفر",en:"Understanding a borehole log"},
+  lf_p1_t:{fr:"À quoi sert un log ?",ar:"ما فائدة السجل؟",en:"What is a log for?"},
+  lf_p1:{fr:"Il enregistre, mètre par mètre, la <b>succession des roches</b> rencontrées au forage (déblais, diagraphies). On y lit l'épaisseur de l'<b>aquifère</b>, la position des <b>argiles</b> imperméables (aquitards) et la profondeur du <b>socle</b>. C'est la base pour dimensionner la pompe, placer les crépines et estimer le débit.",
+    ar:"يسجّل متراً بمتر <b>تعاقب الصخور</b> المخترَقة أثناء الحفر (الفتات، التسجيلات). منه نقرأ سُمك <b>الخزان الجوفي</b> وموضع <b>الطين</b> غير المنفذ (الطبقات الحاجزة) وعمق <b>القاعدة الصخرية</b>. وهو أساس اختيار المضخة ووضع المصافي وتقدير التصرف.",
+    en:"It records, metre by metre, the <b>rock succession</b> met while drilling (cuttings, logs). From it we read the <b>aquifer</b> thickness, the position of impermeable <b>clays</b> (aquitards) and the depth to <b>bedrock</b>. It is the basis for sizing the pump, setting the screens and estimating yield."},
+  lf_p2_t:{fr:"Lire crépines & niveaux",ar:"قراءة المصافي والمناسيب",en:"Reading screens & levels"},
+  lf_p2:{fr:"Les <b>crépines</b> (traits) sont placées en face des couches <b>productives</b> (grès, sable) pour laisser entrer l'eau ; le <b>massif de gravier</b> les entoure et filtre les fines, la <b>cimentation</b> isole le haut du puits. Le <b>niveau statique</b> (NS ▽) est la nappe au repos ; en pompant elle descend jusqu'au <b>niveau dynamique</b> (ND ▼) — l'écart est le <b>rabattement</b>.",
+    ar:"تُوضع <b>المصافي</b> (خطوط) أمام الطبقات <b>المنتجة</b> (حجر رملي، رمل) لدخول الماء؛ و<b>حشوة الحصى</b> تحيط بها وترشّح الدقائق، ويعزل <b>التدعيم الإسمنتي</b> أعلى البئر. <b>المنسوب الساكن</b> (NS ▽) هو الماء عند السكون؛ وبالضخ ينخفض إلى <b>المنسوب الديناميكي</b> (ND ▼) — والفرق هو <b>الهبوط</b>.",
+    en:"<b>Screens</b> (lines) face the <b>productive</b> layers (sandstone, sand) to let water in; the <b>gravel pack</b> surrounds them and filters fines, the <b>cement</b> seals the top of the well. The <b>static level</b> (SL ▽) is the water table at rest; while pumping it falls to the <b>dynamic level</b> (DL ▼) — the gap is the <b>drawdown</b>."},
+  // completion legend
+  cl_casing:{fr:"Tubage",ar:"التغليف",en:"Casing"},
+  cl_screen:{fr:"Crépine",ar:"المصفاة",en:"Screen"},
+  cl_gravel:{fr:"Massif de gravier",ar:"حشوة الحصى",en:"Gravel pack"},
+  cl_cement:{fr:"Cimentation",ar:"التدعيم الإسمنتي",en:"Cement"},
+  cl_ns:{fr:"Niveau statique",ar:"المنسوب الساكن",en:"Static level"},
+  cl_nd:{fr:"Niveau dynamique",ar:"المنسوب الديناميكي",en:"Dynamic level"},
+  cl_draw:{fr:"Rabattement",ar:"الهبوط",en:"Drawdown"},
+  hint:{fr:"Survole une couche de la colonne pour voir sa description.",ar:"مرّر فوق طبقة في العمود لعرض وصفها.",en:"Hover a layer in the column to see its description."}
+});
+
+/* ---- Lithologies : id, noms, couleur de fond, motif SVG ---- */
+const LITHS=[
+  {id:'sable',   fr:"Sable",     ar:"رمل",         en:"Sand",      col:"#ecd9a0", mk:"dots"},
+  {id:'limon',   fr:"Limon",     ar:"غرين",        en:"Silt",      col:"#dcd0aa", mk:"fdash"},
+  {id:'argile',  fr:"Argile",    ar:"طين",         en:"Clay",      col:"#b9a68f", mk:"hline"},
+  {id:'gres',    fr:"Grès",      ar:"حجر رملي",    en:"Sandstone", col:"#e0b877", mk:"ddots"},
+  {id:'calcaire',fr:"Calcaire",  ar:"حجر جيري",    en:"Limestone", col:"#c2d8dc", mk:"brick"},
+  {id:'marne',   fr:"Marne",     ar:"مارل",        en:"Marl",      col:"#b7c3a4", mk:"dashdot"},
+  {id:'socle',   fr:"Socle",     ar:"القاعدة الصخرية", en:"Bedrock", col:"#c4b2c0", mk:"cross"}
+];
+const LMAP={}; LITHS.forEach(l=>LMAP[l.id]=l);
+function lname(id){const l=LMAP[id]; return l?(l[I18N.lang]||l.fr):id;}
+
+/* ---- State ---- */
+let STATE=null;
+function blank(){return {header:{name:"",loc:"",lat:"",lng:"",date:"",diam:"",td:100,ns:"",nd:""},
+  layers:[], compl:{casing:0,holed:"",cemt:0,cemb:0,grvt:0,grvb:0,screens:[]}};}
+
+function demo(){return {
+  header:{name:"Sarir S1 — Nubien",loc:"Sarir Nord, SE Libye",lat:27.8634,lng:22.2351,
+    date:"2026-02-14",diam:'17½"',td:224,ns:30.2,nd:48},
+  layers:[
+    {lith:'sable', top:0,   bot:8,   desc:"Sable éolien de surface, dunes, sec"},
+    {lith:'gres',  top:8,   bot:30,  desc:"Grès nubien supérieur, non saturé (zone non saturée)"},
+    {lith:'gres',  top:30,  bot:172, desc:"Grès nubien aquifère — sables grossiers, très perméable (T≈410 m²/j)"},
+    {lith:'argile',top:172, bot:195, desc:"Argile silteuse — intercalation imperméable (aquitard)"},
+    {lith:'gres',  top:195, bot:218, desc:"Grès nubien inférieur, moins productif"},
+    {lith:'socle', top:218, bot:224, desc:"Socle cristallin — base de l'aquifère"}
+  ],
+  compl:{casing:40,holed:'12¼"',cemt:0,cemb:35,grvt:35,grvb:172,
+    screens:[{top:40,bot:100},{top:110,bot:165}]}
+};}
+
+function load(){
+  let s=null; try{s=JSON.parse(localStorage.getItem(LS));}catch(e){}
+  STATE = (s&&s.layers)? s : demo();
+  save();
+}
+function save(){try{localStorage.setItem(LS,JSON.stringify(STATE));}catch(e){}}
+function loadDemo(force){ if(force||confirm){ STATE=demo(); save(); fillForm(); renderAll(); } }
+
+/* ---- Form <-> State ---- */
+function fillForm(){
+  const h=STATE.header,c=STATE.compl;
+  $('h_name').value=h.name; $('h_loc').value=h.loc; $('h_lat').value=h.lat; $('h_lng').value=h.lng;
+  $('h_date').value=h.date; $('h_diam').value=h.diam; $('h_td').value=h.td; $('h_ns').value=h.ns; $('h_nd').value=h.nd;
+  $('c_casing').value=c.casing; $('c_holed').value=c.holed; $('c_cemt').value=c.cemt; $('c_cemb').value=c.cemb;
+  $('c_grvt').value=c.grvt; $('c_grvb').value=c.grvb;
+  renderLayers(); renderScreens();
+}
+function readHead(){
+  const h=STATE.header,c=STATE.compl;
+  h.name=$('h_name').value; h.loc=$('h_loc').value; h.lat=$('h_lat').value; h.lng=$('h_lng').value;
+  h.date=$('h_date').value; h.diam=$('h_diam').value; h.td=+$('h_td').value||0; h.ns=$('h_ns').value; h.nd=$('h_nd').value;
+  c.casing=+$('c_casing').value||0; c.holed=$('c_holed').value; c.cemt=+$('c_cemt').value||0; c.cemb=+$('c_cemb').value||0;
+  c.grvt=+$('c_grvt').value||0; c.grvb=+$('c_grvb').value||0;
+  save(); renderAll();
+}
+
+function renderLayers(){
+  const box=$('layers'); box.innerHTML='';
+  STATE.layers.forEach((L,i)=>{
+    const row=document.createElement('div'); row.className='lyr';
+    const opts=LITHS.map(l=>`<option value="${l.id}" ${l.id===L.lith?'selected':''}>${lname(l.id)}</option>`).join('');
+    row.innerHTML=
+      `<span class="sw" style="background:${LMAP[L.lith]?LMAP[L.lith].col:'#ccc'}"></span>`+
+      `<select data-i="${i}" data-f="lith">${opts}</select>`+
+      `<input type="number" data-i="${i}" data-f="top" value="${L.top}" title="${I18N.t('lf_top')}">`+
+      `<input type="number" data-i="${i}" data-f="bot" value="${L.bot}" title="${I18N.t('lf_bot')}">`+
+      `<button class="xbtn" data-del="${i}">✕</button>`;
+    box.appendChild(row);
+    const d=document.createElement('div'); d.style.margin='-2px 0 8px 26px';
+    d.innerHTML=`<input type="text" data-i="${i}" data-f="desc" value="${(L.desc||'').replace(/"/g,'&quot;')}" placeholder="${I18N.t('lf_desc')}" style="font-size:12px;padding:5px 8px;font-weight:500">`;
+    box.appendChild(d);
+  });
+  box.querySelectorAll('select,input').forEach(el=>el.addEventListener('input',e=>{
+    const i=+e.target.dataset.i,f=e.target.dataset.f;
+    STATE.layers[i][f]= (f==='top'||f==='bot')? (+e.target.value||0) : e.target.value;
+    if(f==='lith') renderLayers();
+    save(); renderColumn(); renderHead();
+  }));
+  box.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{
+    STATE.layers.splice(+b.dataset.del,1); save(); renderLayers(); renderColumn(); renderHead();
+  }));
+}
+function addLayer(){
+  const last=STATE.layers[STATE.layers.length-1];
+  const t=last?last.bot:0;
+  STATE.layers.push({lith:'gres',top:t,bot:t+20,desc:""});
+  save(); renderLayers(); renderColumn();
+}
+function renderScreens(){
+  const box=$('screens'); box.innerHTML='';
+  STATE.compl.screens.forEach((s,i)=>{
+    const row=document.createElement('div'); row.className='scr';
+    row.innerHTML=
+      `<input type="number" data-i="${i}" data-f="top" value="${s.top}" placeholder="${I18N.t('lf_top')}">`+
+      `<input type="number" data-i="${i}" data-f="bot" value="${s.bot}" placeholder="${I18N.t('lf_bot')}">`+
+      `<button class="xbtn" data-del="${i}">✕</button>`;
+    box.appendChild(row);
+  });
+  box.querySelectorAll('input').forEach(el=>el.addEventListener('input',e=>{
+    const i=+e.target.dataset.i,f=e.target.dataset.f;
+    STATE.compl.screens[i][f]=+e.target.value||0; save(); renderColumn();
+  }));
+  box.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{
+    STATE.compl.screens.splice(+b.dataset.del,1); save(); renderScreens(); renderColumn();
+  }));
+}
+function addScreen(){
+  STATE.compl.screens.push({top:40,bot:80}); save(); renderScreens(); renderColumn();
+}
+
+/* ---- SVG patterns ---- */
+function patterns(){
+  const P=[];
+  LITHS.forEach(l=>{
+    let inner='',w=10,h=10,st='#5c5040';
+    if(l.mk==='dots'){inner=`<circle cx="3" cy="3" r="1.1" fill="${st}"/><circle cx="8" cy="7.5" r="1.1" fill="${st}"/>`;}
+    else if(l.mk==='ddots'){w=7;h=7;inner=`<circle cx="2" cy="2" r="1.1" fill="#8a5a22"/><circle cx="5" cy="5" r="1.1" fill="#8a5a22"/>`;}
+    else if(l.mk==='hline'){h=6;inner=`<path d="M0 3 H10" stroke="#7d6a52" stroke-width="1"/>`;}
+    else if(l.mk==='fdash'){w=8;h=6;inner=`<path d="M0 3 H4" stroke="#9a8d5c" stroke-width="1"/>`;}
+    else if(l.mk==='brick'){w=20;h=10;inner=`<path d="M0 5 H20 M0 0 V5 M10 5 V10" stroke="#7fa0a6" stroke-width="1" fill="none"/>`;}
+    else if(l.mk==='dashdot'){w=14;h=7;inner=`<path d="M0 3.5 H6" stroke="#7d8a63" stroke-width="1"/><circle cx="10" cy="3.5" r="1" fill="#7d8a63"/>`;}
+    else if(l.mk==='cross'){inner=`<path d="M5 2 V8 M2 5 H8" stroke="#7a6675" stroke-width="1"/>`;}
+    P.push(`<pattern id="p_${l.id}" width="${w}" height="${h}" patternUnits="userSpaceOnUse">${inner}</pattern>`);
+  });
+  // gravel : bigger dots
+  P.push(`<pattern id="p_grv" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.3" fill="#7a6a45"/><circle cx="6" cy="5" r="1.3" fill="#7a6a45"/></pattern>`);
+  // cement : diagonal hatch
+  P.push(`<pattern id="p_cem" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#8a94a0" stroke-width="1"/></pattern>`);
+  return `<defs>${P.join('')}</defs>`;
+}
+
+/* ---- Draw column ---- */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderColumn(){
+  const svg=$('col'), S=STATE, h=S.header, c=S.compl;
+  const maxLayer=S.layers.reduce((m,l)=>Math.max(m,l.bot),0);
+  const TD=Math.max(h.td||0,maxLayer,1);
+  const PADT=30,PLOT=610,PADB=48;
+  const H=PADT+PLOT+PADB;
+  const sc=PLOT/TD, sy=d=>PADT+d*sc;
+  svg.setAttribute('viewBox',`0 0 300 ${H}`);
+  // columns geometry
+  const axX=46, LX=52, LW=118;                 // litho column 52..170
+  const oL=188,oR=254, cL=200,cR=244;          // borehole outer / casing inner
+  let g=patterns();
+
+  // depth grid + axis
+  const dstep = TD>300?50: TD>120?25: TD>40?10:5;
+  g+=`<line x1="${axX}" y1="${sy(0)}" x2="${axX}" y2="${sy(TD)}" stroke="#c8d3ba" stroke-width="1"/>`;
+  for(let d=0; d<=TD+0.01; d+=dstep){
+    g+=`<line x1="${axX-4}" y1="${sy(d).toFixed(1)}" x2="${axX}" y2="${sy(d).toFixed(1)}" stroke="#9aa890" stroke-width="1"/>`;
+    g+=`<text x="${axX-7}" y="${(sy(d)+3.5).toFixed(1)}" text-anchor="end" fill="#9aa890" font-size="9.5" font-family="JetBrains Mono,monospace">${Math.round(d)}</text>`;
+  }
+  g+=`<text x="${axX-7}" y="${(sy(TD)+16).toFixed(1)}" text-anchor="end" fill="#9aa890" font-size="9">m</text>`;
+
+  // lithology layers
+  S.layers.forEach((L,i)=>{
+    const y=sy(L.top), hh=(L.bot-L.top)*sc; if(hh<=0)return;
+    const col=LMAP[L.lith]?LMAP[L.lith].col:'#ccc';
+    g+=`<g class="ly" data-i="${i}" style="cursor:pointer">`;
+    g+=`<rect x="${LX}" y="${y.toFixed(1)}" width="${LW}" height="${hh.toFixed(1)}" fill="${col}" stroke="#fff" stroke-width="0.5"/>`;
+    g+=`<rect x="${LX}" y="${y.toFixed(1)}" width="${LW}" height="${hh.toFixed(1)}" fill="url(#p_${L.lith})"/>`;
+    g+=`<rect x="${LX}" y="${y.toFixed(1)}" width="${LW}" height="${hh.toFixed(1)}" fill="transparent" stroke="#a9b592" stroke-width="0.8"/>`;
+    // label inside if room
+    if(hh>15){
+      g+=`<text x="${LX+LW/2}" y="${(y+hh/2+3.5).toFixed(1)}" text-anchor="middle" fill="#3a3020" font-size="11" font-weight="700" style="paint-order:stroke;stroke:#fff;stroke-width:2.5px">${esc(lname(L.lith))}</text>`;
+    }
+    g+=`</g>`;
+    // boundary depth tick to litho
+    g+=`<line x1="${axX}" y1="${y.toFixed(1)}" x2="${LX}" y2="${y.toFixed(1)}" stroke="#e2e8d4" stroke-width="0.7"/>`;
+  });
+
+  // ---- completion (right column) ----
+  const cem=[c.cemt,c.cemb], grv=[c.grvt,c.grvb];
+  // borehole outline
+  g+=`<rect x="${oL}" y="${sy(0).toFixed(1)}" width="${oR-oL}" height="${(TD*sc).toFixed(1)}" fill="#faf7ef" stroke="#cdbfa0" stroke-width="1"/>`;
+  // cement annulus
+  if(cem[1]>cem[0]){
+    const y=sy(cem[0]),hh=(cem[1]-cem[0])*sc;
+    g+=`<rect x="${oL}" y="${y.toFixed(1)}" width="${cL-oL}" height="${hh.toFixed(1)}" fill="url(#p_cem)"/>`;
+    g+=`<rect x="${cR}" y="${y.toFixed(1)}" width="${oR-cR}" height="${hh.toFixed(1)}" fill="url(#p_cem)"/>`;
+  }
+  // gravel annulus
+  if(grv[1]>grv[0]){
+    const y=sy(grv[0]),hh=(grv[1]-grv[0])*sc;
+    g+=`<rect x="${oL}" y="${y.toFixed(1)}" width="${cL-oL}" height="${hh.toFixed(1)}" fill="url(#p_grv)"/>`;
+    g+=`<rect x="${cR}" y="${y.toFixed(1)}" width="${oR-cR}" height="${hh.toFixed(1)}" fill="url(#p_grv)"/>`;
+  }
+  // water inside casing (static level -> TD)
+  if(h.ns!==""&&!isNaN(+h.ns)){
+    const y=sy(+h.ns),hh=(TD-+h.ns)*sc;
+    g+=`<rect x="${cL}" y="${y.toFixed(1)}" width="${cR-cL}" height="${hh.toFixed(1)}" fill="#cfe6f2" opacity="0.75"/>`;
+  }
+  // casing walls (blank) solid
+  g+=`<line x1="${cL}" y1="${sy(0)}" x2="${cL}" y2="${sy(TD)}" stroke="#556" stroke-width="2"/>`;
+  g+=`<line x1="${cR}" y1="${sy(0)}" x2="${cR}" y2="${sy(TD)}" stroke="#556" stroke-width="2"/>`;
+  // screens : horizontal ticks across casing
+  c.screens.forEach(s=>{
+    if(s.bot<=s.top)return;
+    const y0=sy(s.top),y1=sy(s.bot);
+    g+=`<rect x="${cL}" y="${y0.toFixed(1)}" width="${cR-cL}" height="${(y1-y0).toFixed(1)}" fill="#eef4fb" opacity="0.5"/>`;
+    for(let yy=y0+3; yy<y1-1; yy+=5){
+      g+=`<line x1="${cL}" y1="${yy.toFixed(1)}" x2="${cR}" y2="${yy.toFixed(1)}" stroke="#2f7a3f" stroke-width="1.4"/>`;
+    }
+    g+=`<rect x="${cL}" y="${y0.toFixed(1)}" width="${cR-cL}" height="${(y1-y0).toFixed(1)}" fill="none" stroke="#2f7a3f" stroke-width="1.2"/>`;
+  });
+
+  // ---- water levels ----
+  const lab=(y,txt,col)=> `<text x="${oR+6}" y="${(y+3.5).toFixed(1)}" fill="${col}" font-size="9.5" font-weight="700" font-family="JetBrains Mono,monospace">${txt}</text>`;
+  if(h.ns!==""&&!isNaN(+h.ns)){
+    const y=sy(+h.ns);
+    g+=`<line x1="${LX}" y1="${y.toFixed(1)}" x2="${oR}" y2="${y.toFixed(1)}" stroke="#2a7fb8" stroke-width="1.4" stroke-dasharray="5 3"/>`;
+    g+=`<path d="M${oL-9} ${(y-6).toFixed(1)} h12 l-6 8 z" fill="#2a7fb8"/>`;
+    g+=lab(y,'NS '+(+h.ns).toFixed(1),'#1d6b9e');
+  }
+  if(h.nd!==""&&!isNaN(+h.nd)){
+    const y=sy(+h.nd);
+    g+=`<line x1="${cL}" y1="${y.toFixed(1)}" x2="${oR}" y2="${y.toFixed(1)}" stroke="#c67320" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+    g+=`<path d="M${oL-9} ${(y-7).toFixed(1)} h12 v4 l-6 5 l-6 -5 z" fill="#c67320"/>`;
+    g+=lab(y,'ND '+(+h.nd).toFixed(1),'#a85c14');
+    // drawdown bracket
+    if(h.ns!==""&&!isNaN(+h.ns)){
+      const y0=sy(+h.ns);
+      g+=`<line x1="${oR+2}" y1="${y0.toFixed(1)}" x2="${oR+2}" y2="${y.toFixed(1)}" stroke="#c67320" stroke-width="1"/>`;
+    }
+  }
+  // TD marker
+  g+=`<line x1="${LX}" y1="${sy(TD).toFixed(1)}" x2="${oR}" y2="${sy(TD).toFixed(1)}" stroke="#7a6675" stroke-width="1.4"/>`;
+
+  svg.innerHTML=g;
+  // hover
+  svg.querySelectorAll('.ly').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{
+      const L=S.layers[+el.dataset.i];
+      $('hover').innerHTML=`<b>${esc(lname(L.lith))}</b> · ${L.top}–${L.bot} m · <b>${(L.bot-L.top)}</b> m — ${esc(L.desc||'—')}`;
+    });
+  });
+}
+
+function renderHead(){
+  const h=STATE.header;
+  const parts=[];
+  if(h.name) parts.push(`<b>${esc(h.name)}</b>`);
+  if(h.loc) parts.push(esc(h.loc));
+  if(h.lat!==""&&h.lng!=="") parts.push(`${(+h.lat).toFixed(3)}, ${(+h.lng).toFixed(3)}`);
+  if(h.date) parts.push(esc(h.date));
+  if(h.td) parts.push(`${I18N.t('lf_td')}: <b>${h.td} m</b>`);
+  if(h.diam) parts.push(`Ø ${esc(h.diam)}`);
+  $('colhead').innerHTML=parts.join(' · ');
+}
+function renderLegends(){
+  $('legLith').innerHTML=LITHS.map(l=>
+    `<span><i style="background:${l.col}"></i>${esc(lname(l.id))}</span>`).join('');
+  $('legCompl').innerHTML=
+    `<span style="color:#556"><i style="background:#fff;border-color:#556"></i>${I18N.t('cl_casing')}</span>`+
+    `<span style="color:#2f7a3f"><i style="background:repeating-linear-gradient(#2f7a3f,#2f7a3f 1.5px,#eef4fb 1.5px,#eef4fb 4px)"></i>${I18N.t('cl_screen')}</span>`+
+    `<span style="color:#7a6a45"><i style="background:#f0e9d6" ></i>${I18N.t('cl_gravel')}</span>`+
+    `<span style="color:#8a94a0"><i style="background:#eceef1"></i>${I18N.t('cl_cement')}</span>`+
+    `<span style="color:#1d6b9e"><i class="ln" style="color:#2a7fb8"></i>${I18N.t('cl_ns')} ▽</span>`+
+    `<span style="color:#a85c14"><i class="ln" style="color:#c67320"></i>${I18N.t('cl_nd')} ▼</span>`;
+}
+function renderAll(){ renderColumn(); renderHead(); renderLegends(); }
+
+/* ---- CSV (tabulaire) : parité règle 6 — une ligne par COUCHE ----
+   En-tête + complétion sauvegardés en lignes de commentaires « # clé,valeur »
+   (crépines : « # screen,top,bot »). Table réimportable : from_m,to_m,litho,description.
+   Parser robuste (guillemets doubles + virgules dans cellules) calqué sur agrimap-draw.js. */
+function csvCell(v){ v=String(v==null?'':v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function parseCSV(text){
+  const rows=[]; let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===',') { row.push(cur); cur=''; }
+    else if(ch==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+    else if(ch!=='\r') cur+=ch;
+  }
+  if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.length && r.some(c=>c!==''));
+}
+function exportCSV(){
+  const h=STATE.header,c=STATE.compl; let out='';
+  out+='# borehole-log-v1\n';
+  [['name',h.name],['loc',h.loc],['lat',h.lat],['lng',h.lng],['date',h.date],['diam',h.diam],
+   ['td',h.td],['ns',h.ns],['nd',h.nd],['casing',c.casing],['holed',c.holed],['cemt',c.cemt],
+   ['cemb',c.cemb],['grvt',c.grvt],['grvb',c.grvb]].forEach(([k,v])=>{ out+='# '+k+','+csvCell(v)+'\n'; });
+  (c.screens||[]).forEach(s=>{ out+='# screen,'+csvCell(s.top)+','+csvCell(s.bot)+'\n'; });
+  const head=['from_m','to_m','litho','description'];
+  const rows=(STATE.layers||[]).map(L=>[L.top,L.bot,L.lith,L.desc||''].map(csvCell).join(','));
+  return out+head.join(',')+'\n'+rows.join('\n')+'\n';
+}
+function importCSV(text){
+  const meta={}, screens=[], dataLines=[];
+  text.split(/\r?\n/).forEach(ln=>{
+    if(/^\s*#/.test(ln)){
+      const cells=(parseCSV(ln.replace(/^\s*#\s?/,''))[0])||[];
+      const k=(cells[0]||'').trim().toLowerCase();
+      if(k==='screen'){ screens.push({top:+cells[1]||0,bot:+cells[2]||0}); }
+      else if(k&&k!=='borehole-log-v1') meta[k]=cells[1]!==undefined?cells[1]:'';
+    } else if(ln.trim()!=='') dataLines.push(ln);
+  });
+  const rows=parseCSV(dataLines.join('\n'));
+  const head=rows.length?rows[0].map(x=>x.trim().toLowerCase()):[], ix=n=>head.indexOf(n);
+  const iF=ix('from_m'),iT=ix('to_m'),iL=ix('litho'),iD=ix('description');
+  const layers=[];
+  for(let r=1;r<rows.length;r++){ const c=rows[r];
+    layers.push({lith:(iL>=0?c[iL]:'gres')||'gres',top:+(iF>=0?c[iF]:0)||0,
+      bot:+(iT>=0?c[iT]:0)||0,desc:iD>=0?(c[iD]||''):''}); }
+  if(!layers.length && !Object.keys(meta).length) return false;
+  STATE={
+    header:{name:meta.name||'',loc:meta.loc||'',lat:meta.lat||'',lng:meta.lng||'',
+      date:meta.date||'',diam:meta.diam||'',td:+meta.td||0,ns:meta.ns||'',nd:meta.nd||''},
+    layers:layers,
+    compl:{casing:+meta.casing||0,holed:meta.holed||'',cemt:+meta.cemt||0,cemb:+meta.cemb||0,
+      grvt:+meta.grvt||0,grvb:+meta.grvb||0,screens:screens}
+  };
+  return true;
+}
+
+/* ---- Import / Export ---- */
+function doExport(){
+  readHead();
+  const out={format:'borehole-log-v1',generated:new Date().toISOString(),
+    header:STATE.header,layers:STATE.layers,completion:STATE.compl};
+  Store.download('log_forage.json',JSON.stringify(out,null,2),'application/json');
+  Store.download('log_forage.csv',exportCSV(),'text/csv');
+}
+function doImport(){
+  Store.pickFile('.json,.csv',(txt)=>{
+    try{
+      const s=(txt||'').replace(/^﻿/,'').trimStart();
+      if(s[0]==='{'||s[0]==='['){                       // JSON / GeoJSON
+        const o=JSON.parse(txt);
+        STATE={header:o.header||blank().header,
+          layers:o.layers||[],
+          compl:o.completion||o.compl||blank().compl};
+        if(!STATE.compl.screens) STATE.compl.screens=[];
+      } else {                                          // sinon = CSV (règle 6)
+        if(!importCSV(txt)) throw new Error('CSV vide');
+      }
+      save(); fillForm(); renderAll();
+    }catch(e){ alert('Import invalide : '+e.message); }
+  });
+}
+function toggleFmt(){
+  const el=$('fmt');
+  if(el.hidden){
+    el.textContent=JSON.stringify({format:'borehole-log-v1',
+      header:{name:"S1",loc:"Sarir",lat:27.86,lng:22.23,td:224,ns:30.2,nd:48,diam:'17½"'},
+      layers:[{lith:'gres',top:30,bot:172,desc:"Grès nubien aquifère"}],
+      completion:{casing:40,cemt:0,cemb:35,grvt:35,grvb:172,screens:[{top:40,bot:100}]}
+    },null,1)
+    +'\n\n— CSV (1 ligne = 1 couche) —\n'
+    +'# name,S1\n# td,224\n# screen,40,100\nfrom_m,to_m,litho,description\n'
+    +'30,172,gres,"Grès nubien aquifère"';
+  }
+  el.hidden=!el.hidden;
+}
+
+/* ---- i18n wiring ---- */
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{ applyHTML(); fillForm(); renderAll(); });
+
+// header field listeners
+['h_name','h_loc','h_lat','h_lng','h_date','h_diam','h_td','h_ns','h_nd',
+ 'c_casing','c_holed','c_cemt','c_cemb','c_grvt','c_grvb'].forEach(id=>$(id).addEventListener('input',readHead));
+
+/* ---- boot ---- */
+load();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML(); fillForm(); renderAll();
+$('hover').innerHTML=I18N.t('hint');
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

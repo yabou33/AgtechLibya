@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulateur — Smart Agriculture & Gestion de l'eau</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../platform/public/assets/css/theme.css">
+<style>
+  /* ---- Thème clair-vert « papier » AgriTech Libye (tokens = theme.css) ---- */
+  :root{
+    --green:#7cb342; --green-d:#5a8f2c; --green-l:#a5d16e; --green-bg:#f1f7e9;
+    --ink:#2c3a24; --muted:#6f7d64; --faint:#9aa890;
+    --line:#d8e4c8; --card:#ffffff; --paper:#fbfcf8;
+    --good:#3fa66a; --warn:#b5701a; --bad:#d1584e;
+    --shadow:0 4px 18px rgba(60,80,40,.10);
+  }
+  [hidden]{display:none!important}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:16px/1.5 "Inter","Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body.ar{font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px 64px}
+
+  /* ---- header / hero (blanc) ---- */
+  header{background:#fff;color:var(--ink);border-bottom:1px solid var(--line)}
+  .hero{max-width:1080px;margin:0 auto;padding:22px 20px 20px;
+    display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+  h1{margin:0;font-size:1.5rem;font-weight:800;letter-spacing:-.01em;line-height:1.2;max-width:32ch;color:var(--green-d)}
+  .sub{margin:6px 0 0;color:var(--muted);font-size:.92rem}
+  .tag{margin:12px 0 0;color:var(--faint);font-size:.85rem}
+  .langbox{display:inline-flex;gap:6px;flex-shrink:0}
+  .langbox button{background:#fff;border:1px solid var(--line);color:var(--muted);font:inherit;font-weight:600;
+    padding:6px 14px;border-radius:8px;cursor:pointer;transition:.15s}
+  .langbox button.on{background:var(--green);color:#fff;border-color:var(--green);font-weight:700}
+  .langbox button:not(.on):hover{border-color:var(--green)}
+
+  /* ---- tabs ---- */
+  nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  .tabs{max-width:1080px;margin:0 auto;padding:0 12px;display:flex;gap:2px;overflow-x:auto}
+  .tabs button{background:transparent;border:0;border-bottom:3px solid transparent;
+    padding:14px 16px;font:inherit;font-size:.92rem;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .tabs button:hover{color:var(--ink)}
+  .tabs button.on{color:var(--green-d);border-bottom-color:var(--green);font-weight:700}
+
+  /* ---- module ---- */
+  .mtitle{margin:26px 0 4px;font-size:1.18rem;color:var(--green-d);font-weight:800}
+  .rule{height:2px;background:linear-gradient(90deg,var(--green),transparent);margin:8px 0 22px;max-width:180px}
+  .grid{display:grid;grid-template-columns:minmax(280px,1fr) minmax(300px,1.05fr);gap:22px;align-items:start}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .phead{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:700;font-size:.82rem;
+    letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  .phead .reset{background:#fff;border:1px solid var(--line);border-radius:8px;color:var(--muted);
+    padding:4px 12px;font:inherit;font-size:.78rem;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0}
+  .phead .reset:hover{border-color:var(--green);color:var(--green-d)}
+  .pbody{padding:8px 16px 16px}
+
+  .field{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .field:last-child{border-bottom:0}
+  .field label{flex:1;font-size:.92rem;color:var(--ink)}
+  .field .unit{color:var(--muted);font-size:.8rem;min-width:56px;text-align:end}
+  .field input,.field select{width:96px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;
+    font:inherit;font-size:.95rem;text-align:end;background:#fff;color:var(--ink)}
+  .field select{width:130px;text-align:start;font-weight:600}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 2px var(--green-bg)}
+
+  .rrow{display:flex;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line)}
+  .rrow:last-child{border-bottom:0}
+  .rrow .rlabel{flex:1;font-size:.9rem;color:var(--muted)}
+  .rrow .rval{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.02rem;color:var(--ink)}
+  .rrow .runit{color:var(--muted);font-size:.8rem;min-width:64px;text-align:end}
+  .rrow.big{background:var(--green-bg);margin:0 -16px;padding:12px 16px;border-bottom:1px solid var(--line);border-radius:0}
+  .rrow.big .rlabel{color:var(--green-d);font-weight:600}
+  .rrow.big .rval{color:var(--green-d);font-size:1.28rem}
+  .rrow.textrow{padding:6px 0 12px}
+  .rrow.textrow .rlabel{color:var(--ink);font-style:italic;flex:none}
+
+  .badges{display:flex;flex-direction:column;gap:8px;margin:14px 0 4px}
+  .badge{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:10px;font-size:.88rem;
+    border:1px solid;text-transform:none;letter-spacing:0;font-weight:400}
+  .badge b{font-weight:700}
+  .tone-good{background:#eef8ef;border-color:#bfe3c3;color:var(--good)}
+  .tone-warn{background:#fdf3e3;border-color:#f0d9ac;color:var(--warn)}
+  .tone-bad{background:#fbecea;border-color:#eecac5;color:var(--bad)}
+
+  .diag{margin:14px 0 0;padding:12px 14px;border-radius:10px;border:1px solid;font-size:.92rem}
+  .diag .dl{font-size:.76rem;letter-spacing:.03em;color:var(--muted);margin-bottom:3px}
+  .diag .dt{font-weight:700}
+
+  .note{margin:16px 0 0;padding:11px 14px;background:var(--green-bg);border-inline-start:3px solid var(--green);
+    border-radius:0 8px 8px 0;font-size:.85rem;color:var(--muted)}
+  .note b{color:var(--green-d)}
+
+  footer{max-width:1080px;margin:36px auto 0;padding:18px 20px 0;border-top:1px solid var(--line);
+    color:var(--muted);font-size:.82rem;text-align:center}
+
+  /* RTL */
+  html[dir="rtl"] .field .unit,html[dir="rtl"] .rrow .runit{text-align:start}
+  html[dir="rtl"] .field input,html[dir="rtl"] .field select{text-align:start}
+  html[dir="rtl"] .rule{background:linear-gradient(270deg,var(--green),transparent)}
+</style>
+</head>
+<body>
+<header>
+  <div class="hero">
+    <div>
+      <h1 id="ui-title"></h1>
+      <p class="sub" id="ui-sub"></p>
+      <p class="tag" id="ui-tag"></p>
+    </div>
+    <div class="langbox" role="group" aria-label="Language">
+      <button data-lang="fr">FR</button>
+      <button data-lang="ar">ع</button>
+      <button data-lang="en">EN</button>
+    </div>
+  </div>
+</header>
+<nav><div class="tabs" id="tabs"></div></nav>
+<main class="wrap"><div id="module"></div>
+  <footer id="ui-foot"></footer>
+</main>
+
+<script src="../platform/public/assets/js/crops.js"></script>
+<script>
+/* current language + state */
+var LANG = localStorage.getItem("tp_lang") || "fr";
+var ACTIVE = 0;
+var STATE = {}; // per-module input values
+/* ============================================================
+   TP Smart Agriculture — moteur de calcul et libellés trilingues
+   FR / AR / EN.  Toutes les formules sont recalculées en direct.
+   ============================================================ */
+
+// ---- helpers ------------------------------------------------
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const num = (v, d = 2) => (v === "" || v === null || isNaN(v) || !isFinite(v))
+  ? "—" : Number(v).toLocaleString(LANG === "ar" ? "ar-TN" : (LANG === "en" ? "en-US" : "fr-FR"),
+      { minimumFractionDigits: 0, maximumFractionDigits: d });
+
+// UI chrome strings
+const UI = {
+  fr: {
+    title: "Simulateur — Smart Agriculture & Gestion de l’eau",
+    subtitle: "Travaux pratiques EU4Skills · SKILLS4EU — modules M1 à M7",
+    inputs: "Données d’entrée", results: "Résultats", reset: "Réinitialiser",
+    diag: "Diagnostic", note: "Note", langLabel: "Langue",
+    tagline: "Modifiez une valeur : tous les calculs se mettent à jour instantanément.",
+    footer: "EZZAYRA Solutions — formules FAO-56, FAO-29 (Ayers & Westcot), Sentinel-2 MSI."
+  },
+  ar: {
+    title: "محاكي — الفلاحة الذكية وتدبير المياه",
+    subtitle: "أشغال تطبيقية EU4Skills · SKILLS4EU — الوحدات M1 إلى M7",
+    inputs: "المُعطيات المُدخَلة", results: "النتائج", reset: "إعادة الضبط",
+    diag: "التشخيص", note: "ملاحظة", langLabel: "اللغة",
+    tagline: "غيّر أي قيمة: تُحدَّث كل الحسابات فوراً.",
+    footer: "EZZAYRA Solutions — معادلات FAO-56 وFAO-29 (Ayers & Westcot) وSentinel-2 MSI."
+  },
+  en: {
+    title: "Simulator — Smart Agriculture & Water Management",
+    subtitle: "EU4Skills · SKILLS4EU hands-on labs — modules M1 to M7",
+    inputs: "Inputs", results: "Results", reset: "Reset",
+    diag: "Diagnosis", note: "Note", langLabel: "Language",
+    tagline: "Change any value — every calculation updates instantly.",
+    footer: "EZZAYRA Solutions — FAO-56, FAO-29 (Ayers & Westcot), Sentinel-2 MSI formulas."
+  }
+};
+
+const T = (o) => o[LANG] || o.fr; // pick current-language string from {fr,ar,en}
+
+/* Each module:
+   id, tab:{fr,ar,en}, title:{...},
+   inputs: [{k, label:{...}, val, step, unit:{...}, type?, options?, note?:{...}}]
+   compute(v) -> returns {rows:[{label:{...}, value, unit:{...}, fmt, key?, big?}],
+                          diag?:{label:{...}, text:{...}, tone}, note?:{...}}
+*/
+const MODULES = [
+
+// ============================== M1 — ROI =====================
+{
+  id: "m1",
+  tab: { fr: "M1 · ROI", ar: "M1 · العائد", en: "M1 · ROI" },
+  title: {
+    fr: "Modèle économique CAPEX/OPEX & règle du −20 % (50 ha d’oliviers)",
+    ar: "النموذج الاقتصادي CAPEX/OPEX وقاعدة −20٪ (50 هكتار زياتين)",
+    en: "CAPEX/OPEX economics & the −20 % rule (50 ha of olives)"
+  },
+  inputs: [
+    { k: "surface", val: 50, step: 1, label: { fr: "Surface", ar: "المساحة", en: "Area" }, unit: { fr: "ha", ar: "هك", en: "ha" } },
+    { k: "gateway", val: 4000, step: 100, label: { fr: "Passerelle IoT (×1)", ar: "بوابة IoT (×1)", en: "IoT gateway (×1)" }, unit: { fr: "DT", ar: "دت", en: "TND" } },
+    { k: "nProbe", val: 10, step: 1, label: { fr: "Nb sondes sol", ar: "عدد مجسّات التربة", en: "Soil probes" }, unit: { fr: "×", ar: "×", en: "×" } },
+    { k: "probe", val: 2800, step: 50, label: { fr: "Coût sonde FDR 60 cm", ar: "كلفة مجس FDR 60سم", en: "FDR probe 60 cm" }, unit: { fr: "DT", ar: "دت", en: "TND" } },
+    { k: "weather", val: 8500, step: 100, label: { fr: "Station météo Pro", ar: "محطة مناخية", en: "Pro weather station" }, unit: { fr: "DT", ar: "دت", en: "TND" } },
+    { k: "nValve", val: 4, step: 1, label: { fr: "Nb automates de vanne", ar: "عدد وحدات التحكم", en: "Valve controllers" }, unit: { fr: "×", ar: "×", en: "×" } },
+    { k: "valve", val: 1500, step: 50, label: { fr: "Coût automate", ar: "كلفة الوحدة", en: "Controller cost" }, unit: { fr: "DT", ar: "دت", en: "TND" } },
+    { k: "opex", val: 4000, step: 100, label: { fr: "Abonnements & logiciel (OPEX)", ar: "الاشتراكات والبرمجيات (OPEX)", en: "Subscriptions & software (OPEX)" }, unit: { fr: "DT/an", ar: "دت/سنة", en: "TND/yr" } },
+    { k: "cons", val: 4500, step: 100, label: { fr: "Conso. initiale (calendrier fixe)", ar: "الاستهلاك الأولي", en: "Initial use (fixed schedule)" }, unit: { fr: "m³/ha/an", ar: "م³/هك/سنة", en: "m³/ha/yr" } },
+    { k: "waterDT", val: 0.28, step: 0.01, label: { fr: "Coût eau + pompage", ar: "كلفة الماء + الضخّ", en: "Water + pumping cost" }, unit: { fr: "DT/m³", ar: "دت/م³", en: "TND/m³" } },
+    { k: "cut", val: 20, step: 1, label: { fr: "Réduction cible eau & énergie", ar: "نسبة التخفيض المستهدفة", en: "Target water & energy cut" }, unit: { fr: "%", ar: "٪", en: "%" } },
+    { k: "labour", val: 5000, step: 100, label: { fr: "Économie main-d’œuvre & vannes", ar: "توفير اليد العاملة", en: "Labour & manual-valve saving" }, unit: { fr: "DT/an", ar: "دت/سنة", en: "TND/yr" } }
+  ],
+  compute(v) {
+    const capex = v.gateway + v.nProbe * v.probe + v.weather + v.nValve * v.valve;
+    const totalCons = v.cons * v.surface;
+    const initCost = totalCons * v.waterDT;
+    const cutFrac = v.cut / 100;
+    const waterSaved = totalCons * cutFrac;
+    const grossSave = waterSaved * v.waterDT;
+    const netBenefit = grossSave + v.labour - v.opex;
+    const pbt = netBenefit > 0 ? capex / netBenefit : NaN;
+    const roi5 = capex > 0 ? (netBenefit * 5 - capex) / capex : 0;
+    return {
+      rows: [
+        { label: { fr: "CAPEX initial total", ar: "إجمالي CAPEX", en: "Total initial CAPEX" }, value: capex, unit: { fr: "DT", ar: "دت", en: "TND" }, fmt: 0, big: true },
+        { label: { fr: "Coût annuel eau initial", ar: "الكلفة السنوية الأولية للماء", en: "Initial annual water cost" }, value: initCost, unit: { fr: "DT/an", ar: "دت/سنة", en: "TND/yr" }, fmt: 0 },
+        { label: { fr: "Gain d’eau", ar: "توفير الماء", en: "Water saved" }, value: waterSaved, unit: { fr: "m³/an", ar: "م³/سنة", en: "m³/yr" }, fmt: 0 },
+        { label: { fr: "Économie financière brute", ar: "التوفير المالي الإجمالي", en: "Gross financial saving" }, value: grossSave, unit: { fr: "DT/an", ar: "دت/سنة", en: "TND/yr" }, fmt: 0 },
+        { label: { fr: "Bénéfice net annuel (net d’OPEX)", ar: "الربح الصافي السنوي", en: "Net annual benefit (net of OPEX)" }, value: netBenefit, unit: { fr: "DT/an", ar: "دت/سنة", en: "TND/yr" }, fmt: 0, big: true },
+        { label: { fr: "Temps de retour (PBT)", ar: "مدة استرجاع الاستثمار", en: "Payback time (PBT)" }, value: pbt, unit: { fr: "ans", ar: "سنة", en: "yr" }, fmt: 2, big: true },
+        { label: { fr: "ROI sur 5 ans", ar: "العائد على 5 سنوات", en: "5-year ROI" }, value: roi5 * 100, unit: { fr: "%", ar: "٪", en: "%" }, fmt: 1, big: true }
+      ],
+      note: { fr: "Prix indicatifs du marché tunisien (matériel importé + installation). Ajustez selon vos devis.",
+              ar: "أسعار إرشادية للسوق التونسية (معدّات مستوردة + تركيب). عدّلها حسب فواتيرك.",
+              en: "Indicative Tunisian-market prices (imported hardware + install). Adjust to your quotes." }
+    };
+  }
+},
+
+// ============================== M2 — Indices =================
+{
+  id: "m2",
+  tab: { fr: "M2 · Indices", ar: "M2 · المؤشرات", en: "M2 · Indices" },
+  title: {
+    fr: "Télédétection : indices végétatifs Sentinel-2 (NDVI / NDRE / NDWI)",
+    ar: "الاستشعار عن بُعد: مؤشرات Sentinel-2 (NDVI / NDRE / NDWI)",
+    en: "Remote sensing: Sentinel-2 vegetation indices (NDVI / NDRE / NDWI)"
+  },
+  inputs: [
+    { k: "b4", val: 0.08, step: 0.01, label: { fr: "B4 Rouge (665 nm)", ar: "B4 أحمر (665 نم)", en: "B4 Red (665 nm)" }, unit: { fr: "réflect.", ar: "انعكاس", en: "reflect." } },
+    { k: "b5", val: 0.14, step: 0.01, label: { fr: "B5 Red-Edge (705 nm)", ar: "B5 حافة حمراء (705 نم)", en: "B5 Red-Edge (705 nm)" }, unit: { fr: "réflect.", ar: "انعكاس", en: "reflect." } },
+    { k: "b8", val: 0.42, step: 0.01, label: { fr: "B8 PIR (842 nm)", ar: "B8 الأشعة القريبة (842 نم)", en: "B8 NIR (842 nm)" }, unit: { fr: "réflect.", ar: "انعكاس", en: "reflect." } },
+    { k: "b11", val: 0.30, step: 0.01, label: { fr: "B11 SWIR (1610 nm)", ar: "B11 SWIR (1610 نم)", en: "B11 SWIR (1610 nm)" }, unit: { fr: "réflect.", ar: "انعكاس", en: "reflect." } }
+  ],
+  compute(v) {
+    const sd = (a, b) => (a + b) === 0 ? NaN : (a - b) / (a + b);
+    const ndvi = sd(v.b8, v.b4), ndre = sd(v.b8, v.b5), ndwi = sd(v.b8, v.b11);
+    const interpNDVI = ndvi < 0.2 ? { fr: "Sol nu / très faible couvert", ar: "تربة عارية / غطاء ضعيف جداً", en: "Bare soil / very low cover" }
+      : ndvi < 0.4 ? { fr: "Couvert faible ou stress", ar: "غطاء ضعيف أو إجهاد", en: "Low cover or stress" }
+      : ndvi < 0.6 ? { fr: "Couvert modéré", ar: "غطاء متوسط", en: "Moderate cover" }
+      : { fr: "Végétation dense et vigoureuse", ar: "غطاء كثيف وحيوي", en: "Dense, vigorous canopy" };
+    const interpNDWI = ndwi < 0 ? { fr: "Feuilles déshydratées — stress hydrique", ar: "أوراق جافّة — إجهاد مائي", en: "Dehydrated leaves — water stress" }
+      : ndwi < 0.1 ? { fr: "Contenu en eau faible — surveiller", ar: "محتوى مائي منخفض — للمراقبة", en: "Low water content — monitor" }
+      : { fr: "Bonne turgescence foliaire", ar: "امتلاء ورقي جيّد", en: "Good leaf turgor" };
+    return {
+      rows: [
+        { label: { fr: "NDVI = (B8−B4)/(B8+B4)", ar: "NDVI = (B8−B4)/(B8+B4)", en: "NDVI = (B8−B4)/(B8+B4)" }, value: ndvi, unit: { fr: "", ar: "", en: "" }, fmt: 3, big: true },
+        { label: interpNDVI, value: null, unit: { fr: "", ar: "", en: "" }, text: true },
+        { label: { fr: "NDRE = (B8−B5)/(B8+B5)", ar: "NDRE = (B8−B5)/(B8+B5)", en: "NDRE = (B8−B5)/(B8+B5)" }, value: ndre, unit: { fr: "", ar: "", en: "" }, fmt: 3, big: true },
+        { label: { fr: "NDWI = (B8−B11)/(B8+B11)", ar: "NDWI = (B8−B11)/(B8+B11)", en: "NDWI = (B8−B11)/(B8+B11)" }, value: ndwi, unit: { fr: "", ar: "", en: "" }, fmt: 3, big: true },
+        { label: interpNDWI, value: null, unit: { fr: "", ar: "", en: "" }, text: true }
+      ],
+      note: { fr: "Le NDWI chute avant le NDVI : c’est l’indicateur précoce du stress hydrique.",
+              ar: "ينخفض NDWI قبل NDVI: فهو المؤشر المبكّر للإجهاد المائي.",
+              en: "NDWI drops before NDVI — the early indicator of water stress." }
+    };
+  }
+},
+
+// ============================== M4a — ET0 ====================
+{
+  id: "m4a",
+  tab: { fr: "M4 · ET₀", ar: "M4 · ET₀", en: "M4 · ET₀" },
+  title: {
+    fr: "ET₀ FAO-56 Penman-Monteith, pas à pas (Sidi Bouzid, 15 juillet)",
+    ar: "ET₀ حسب FAO-56 Penman-Monteith، خطوة بخطوة (سيدي بوزيد، 15 جويلية)",
+    en: "ET₀ FAO-56 Penman-Monteith, step by step (Sidi Bouzid, 15 July)"
+  },
+  inputs: [
+    { k: "tmax", val: 38, step: 0.5, label: { fr: "Température max", ar: "الحرارة القصوى", en: "Max temperature" }, unit: { fr: "°C", ar: "°م", en: "°C" } },
+    { k: "tmin", val: 22, step: 0.5, label: { fr: "Température min", ar: "الحرارة الدنيا", en: "Min temperature" }, unit: { fr: "°C", ar: "°م", en: "°C" } },
+    { k: "rhmax", val: 75, step: 1, label: { fr: "Humidité relative max", ar: "الرطوبة القصوى", en: "Max relative humidity" }, unit: { fr: "%", ar: "٪", en: "%" } },
+    { k: "rhmin", val: 25, step: 1, label: { fr: "Humidité relative min", ar: "الرطوبة الدنيا", en: "Min relative humidity" }, unit: { fr: "%", ar: "٪", en: "%" } },
+    { k: "u2", val: 3.2, step: 0.1, label: { fr: "Vent à 2 m (u₂)", ar: "الرياح على 2م (u₂)", en: "Wind at 2 m (u₂)" }, unit: { fr: "m/s", ar: "م/ث", en: "m/s" } },
+    { k: "rs", val: 26.5, step: 0.5, label: { fr: "Rayonnement solaire (Rs)", ar: "الإشعاع الشمسي (Rs)", en: "Solar radiation (Rs)" }, unit: { fr: "MJ/m²/j", ar: "MJ/م²/ي", en: "MJ/m²/d" } },
+    { k: "z", val: 350, step: 10, label: { fr: "Altitude", ar: "الارتفاع", en: "Altitude" }, unit: { fr: "m", ar: "م", en: "m" } },
+    { k: "lat", val: 35.04, step: 0.1, label: { fr: "Latitude", ar: "خط العرض", en: "Latitude" }, unit: { fr: "° N", ar: "° شمال", en: "° N" } },
+    { k: "doy", val: 196, step: 1, label: { fr: "Jour de l’année", ar: "يوم السنة", en: "Day of year" }, unit: { fr: "1–365", ar: "1–365", en: "1–365" } },
+    { k: "albedo", val: 0.23, step: 0.01, label: { fr: "Albédo (α)", ar: "البياض (α)", en: "Albedo (α)" }, unit: { fr: "", ar: "", en: "" } }
+  ],
+  compute(v) {
+    const es = t => 0.6108 * Math.exp(17.27 * t / (t + 237.3));
+    const tmean = (v.tmax + v.tmin) / 2;
+    const P = 101.3 * Math.pow((293 - 0.0065 * v.z) / 293, 5.26);
+    const gamma = 0.000665 * P;
+    const esat = (es(v.tmax) + es(v.tmin)) / 2;
+    const ea = (es(v.tmin) * v.rhmax / 100 + es(v.tmax) * v.rhmin / 100) / 2;
+    const vpd = esat - ea;
+    const delta = 4098 * es(tmean) / Math.pow(tmean + 237.3, 2);
+    const phi = v.lat * Math.PI / 180;
+    const dr = 1 + 0.033 * Math.cos(2 * Math.PI * v.doy / 365);
+    const decl = 0.409 * Math.sin(2 * Math.PI * v.doy / 365 - 1.39);
+    const ws = Math.acos(clamp(-Math.tan(phi) * Math.tan(decl), -1, 1));
+    const Ra = 24 * 60 / Math.PI * 0.082 * dr * (ws * Math.sin(phi) * Math.sin(decl) + Math.cos(phi) * Math.cos(decl) * Math.sin(ws));
+    const Rso = (0.75 + 2e-5 * v.z) * Ra;
+    const Rns = (1 - v.albedo) * v.rs;
+    const Rnl = 4.903e-9 * (Math.pow(v.tmax + 273.16, 4) + Math.pow(v.tmin + 273.16, 4)) / 2
+      * (0.34 - 0.14 * Math.sqrt(ea)) * (1.35 * Math.min(v.rs / Rso, 1) - 0.35);
+    const Rn = Rns - Rnl;
+    const denom = delta + gamma * (1 + 0.34 * v.u2);
+    const rad = 0.408 * delta * Rn / denom;
+    const adv = gamma * (900 / (tmean + 273)) * v.u2 * vpd / denom;
+    const et0 = rad + adv;
+    return {
+      rows: [
+        { label: { fr: "Pression vapeur saturante (es)", ar: "ضغط البخار المُشبع (es)", en: "Saturation vapour pressure (es)" }, value: esat, unit: { fr: "kPa", ar: "kPa", en: "kPa" }, fmt: 3 },
+        { label: { fr: "Pression vapeur actuelle (ea)", ar: "ضغط البخار الفعلي (ea)", en: "Actual vapour pressure (ea)" }, value: ea, unit: { fr: "kPa", ar: "kPa", en: "kPa" }, fmt: 3 },
+        { label: { fr: "Déficit de pression (VPD)", ar: "عجز الضغط البخاري (VPD)", en: "Vapour pressure deficit (VPD)" }, value: vpd, unit: { fr: "kPa", ar: "kPa", en: "kPa" }, fmt: 3 },
+        { label: { fr: "Pente Δ", ar: "الميل Δ", en: "Slope Δ" }, value: delta, unit: { fr: "kPa/°C", ar: "kPa/°م", en: "kPa/°C" }, fmt: 3 },
+        { label: { fr: "Constante psychrométrique γ", ar: "الثابت السيكرومتري γ", en: "Psychrometric constant γ" }, value: gamma, unit: { fr: "kPa/°C", ar: "kPa/°م", en: "kPa/°C" }, fmt: 4 },
+        { label: { fr: "Rayonnement net (Rn)", ar: "الإشعاع الصافي (Rn)", en: "Net radiation (Rn)" }, value: Rn, unit: { fr: "MJ/m²/j", ar: "MJ/م²/ي", en: "MJ/m²/d" }, fmt: 2 },
+        { label: { fr: "Terme radiatif", ar: "الحدّ الإشعاعي", en: "Radiation term" }, value: rad, unit: { fr: "mm/j", ar: "مم/ي", en: "mm/d" }, fmt: 2 },
+        { label: { fr: "Terme advectif (vent)", ar: "الحدّ الحملي (الرياح)", en: "Advective term (wind)" }, value: adv, unit: { fr: "mm/j", ar: "مم/ي", en: "mm/d" }, fmt: 2 },
+        { label: { fr: "ET₀ totale de la journée", ar: "ET₀ الإجمالية لليوم", en: "Total daily ET₀" }, value: et0, unit: { fr: "mm/jour", ar: "مم/يوم", en: "mm/day" }, fmt: 2, big: true }
+      ],
+      note: { fr: "Rn calculé intégralement (latitude, altitude, jour). Le support arrondit Rn ≈ 14,8 → ET₀ ≈ 8,49.",
+              ar: "يُحسب Rn بالكامل (خط العرض، الارتفاع، اليوم). المرجع يقرّب Rn ≈ 14.8 → ET₀ ≈ 8.49.",
+              en: "Rn fully computed (latitude, altitude, day). The handout rounds Rn ≈ 14.8 → ET₀ ≈ 8.49." }
+    };
+  }
+},
+
+// ============================== M4b — Bilan hydrique =========
+{
+  id: "m4b",
+  tab: { fr: "M4 · Bilan hydrique", ar: "M4 · الميزان المائي", en: "M4 · Water balance" },
+  title: {
+    fr: "Bilan hydrique décadaire (TP 4.1) — tomate industrielle, Kairouan",
+    ar: "الميزان المائي العشري (TP 4.1) — طماطم صناعية، القيروان",
+    en: "Ten-day water balance (Lab 4.1) — processing tomato, Kairouan"
+  },
+  inputs: [
+    { k: "crop", val: 12, step: 1, type: "select", label: { fr: "Culture", ar: "المحصول", en: "Crop" },
+      options: (window.CROPS_DB || []).map(function (c, i) { return { v: i, fr: c.fr, ar: c.ar, en: c.en }; }) },
+    { k: "stage", val: 1, step: 1, type: "select", label: { fr: "Stade", ar: "المرحلة", en: "Stage" },
+      options: [
+        { v: 0, fr: "Initial", ar: "بداية", en: "Initial" },
+        { v: 1, fr: "Médian (pleine croissance)", ar: "وسط (نمو كامل)", en: "Mid (peak)" },
+        { v: 2, fr: "Fin de cycle", ar: "نهاية الدورة", en: "Late" }
+      ] },
+    { k: "et0sum", val: 82, step: 1, label: { fr: "Σ ET₀ de la décade", ar: "مجموع ET₀ للعشرية", en: "Σ ET₀ over the decade" }, unit: { fr: "mm", ar: "مم", en: "mm" } },
+    { k: "days", val: 10, step: 1, label: { fr: "Jours de la décade", ar: "أيام العشرية", en: "Days in decade" }, unit: { fr: "j", ar: "ي", en: "d" } },
+    { k: "rain", val: 0, step: 1, label: { fr: "Pluie totale", ar: "مجموع الأمطار", en: "Total rainfall" }, unit: { fr: "mm", ar: "مم", en: "mm" } },
+    { k: "peff", val: 0.8, step: 0.05, label: { fr: "Coeff. pluie efficace", ar: "معامل المطر الفعّال", en: "Effective-rain coeff." }, unit: { fr: "", ar: "", en: "" } },
+    { k: "ei", val: 0.90, step: 0.05, label: { fr: "Efficacité irrigation (Ei)", ar: "كفاءة السقي (Ei)", en: "Irrigation efficiency (Ei)" }, unit: { fr: "", ar: "", en: "" } },
+    { k: "rfu", val: 35, step: 1, label: { fr: "Réserve facilement utilisable (RFU)", ar: "المخزون سهل الاستعمال (RFU)", en: "Readily available water (RAW)" }, unit: { fr: "mm", ar: "مم", en: "mm" } }
+  ],
+  compute(v) {
+    // Kc (initial, médian, fin) — FAO-56, valeurs pour les conditions tunisiennes
+    // Kc (initial, médian, fin) — depuis la base de cultures partagée (FAO-56)
+    const _c = (window.CROPS_DB && window.CROPS_DB[v.crop]) || (window.CROPS_DB && window.CROPS_DB[12]) || { Kc: [0.60, 1.15, 0.80] };
+    const kc = (_c.Kc[v.stage] != null ? _c.Kc[v.stage] : _c.Kc[1]);
+    const etc = v.et0sum * kc;
+    const peff = v.rain * v.peff;
+    const net = Math.max(0, etc - peff);
+    const gross = v.ei > 0 ? net / v.ei : NaN;
+    const grossVol = gross * 10;
+    const daily = v.days > 0 ? grossVol / v.days : NaN;
+    const nIrr = v.rfu > 0 ? Math.ceil(net / v.rfu) : NaN;
+    const interval = etc > 0 ? v.rfu / (etc / v.days) : NaN;
+    return {
+      rows: [
+        { label: { fr: "Coefficient cultural retenu (Kc)", ar: "المُعامل الزراعي المعتمد (Kc)", en: "Selected crop coefficient (Kc)" }, value: kc, unit: { fr: "", ar: "", en: "" }, fmt: 2 },
+        { label: { fr: "ETc = ET₀ × Kc", ar: "ETc = ET₀ × Kc", en: "ETc = ET₀ × Kc" }, value: etc, unit: { fr: "mm/décade", ar: "مم/عشرية", en: "mm/decade" }, fmt: 1 },
+        { label: { fr: "Pluie efficace", ar: "المطر الفعّال", en: "Effective rain" }, value: peff, unit: { fr: "mm", ar: "مم", en: "mm" }, fmt: 1 },
+        { label: { fr: "Besoins nets = ETc − Peff", ar: "الاحتياجات الصافية", en: "Net needs = ETc − Peff" }, value: net, unit: { fr: "mm", ar: "مم", en: "mm" }, fmt: 1 },
+        { label: { fr: "Besoins bruts = Nets / Ei", ar: "الاحتياجات الإجمالية", en: "Gross needs = Net / Ei" }, value: gross, unit: { fr: "mm/décade", ar: "مم/عشرية", en: "mm/decade" }, fmt: 1, big: true },
+        { label: { fr: "Besoins bruts en volume", ar: "الحجم الإجمالي", en: "Gross volume" }, value: grossVol, unit: { fr: "m³/ha/décade", ar: "م³/هك/عشرية", en: "m³/ha/decade" }, fmt: 1, big: true },
+        { label: { fr: "Dose journalière", ar: "الجرعة اليومية", en: "Daily dose" }, value: daily, unit: { fr: "m³/ha/jour", ar: "م³/هك/يوم", en: "m³/ha/day" }, fmt: 1, big: true },
+        { label: { fr: "Nb d’irrigations mini (dose ≤ RFU)", ar: "أدنى عدد للسقيات", en: "Min. irrigations (dose ≤ RAW)" }, value: nIrr, unit: { fr: "×", ar: "×", en: "×" }, fmt: 0 },
+        { label: { fr: "Intervalle max entre irrigations", ar: "أقصى فترة بين السقيات", en: "Max interval between irrigations" }, value: interval, unit: { fr: "jours", ar: "أيام", en: "days" }, fmt: 1 }
+      ],
+      note: { fr: "1 mm = 10 m³/ha. Kc selon FAO-56 pour les cultures tunisiennes ; le stade médian donne la demande de pointe.",
+              ar: "1 مم = 10 م³/هك. Kc حسب FAO-56 للزراعات التونسية؛ المرحلة الوسطى تعطي أعلى طلب.",
+              en: "1 mm = 10 m³/ha. Kc per FAO-56 for Tunisian crops; the mid stage gives peak demand." }
+    };
+  }
+},
+
+// ============================== M5 — Eau & sol ===============
+{
+  id: "m5",
+  tab: { fr: "M5 · Eau & sol", ar: "M5 · الماء والتربة", en: "M5 · Water & soil" },
+  title: {
+    fr: "Qualité de l’eau (ECw, SAR) & seuils de sonde capacitive",
+    ar: "جودة الماء (ECw، SAR) وعتبات المجس السعوي",
+    en: "Water quality (ECw, SAR) & capacitive-probe thresholds"
+  },
+  inputs: [
+    { k: "ecw", val: 3.2, step: 0.1, label: { fr: "Conductivité de l’eau (ECw)", ar: "ناقلية الماء (ECw)", en: "Water conductivity (ECw)" }, unit: { fr: "dS/m", ar: "dS/م", en: "dS/m" } },
+    { k: "na", val: 18, step: 0.5, label: { fr: "Na⁺", ar: "Na⁺", en: "Na⁺" }, unit: { fr: "meq/L", ar: "meq/ل", en: "meq/L" } },
+    { k: "ca", val: 6, step: 0.5, label: { fr: "Ca²⁺", ar: "Ca²⁺", en: "Ca²⁺" }, unit: { fr: "meq/L", ar: "meq/ل", en: "meq/L" } },
+    { k: "mg", val: 4, step: 0.5, label: { fr: "Mg²⁺", ar: "Mg²⁺", en: "Mg²⁺" }, unit: { fr: "meq/L", ar: "meq/ل", en: "meq/L" } },
+    { k: "ece", val: 2.7, step: 0.1, label: { fr: "ECe seuil de la culture", ar: "عتبة ECe للزراعة", en: "Crop ECe threshold" }, unit: { fr: "dS/m", ar: "dS/م", en: "dS/m" } },
+    { k: "olive", val: 12, step: 1, type: "select", label: { fr: "Culture visée", ar: "المحصول المستهدف", en: "Target crop" },
+      options: (window.CROPS_DB || []).map(function (c, i) { return { v: i, fr: c.fr, ar: c.ar, en: c.en }; }) },
+    { k: "cc", val: 40, step: 1, label: { fr: "Capacité au champ (CC)", ar: "السعة الحقلية (CC)", en: "Field capacity (FC)" }, unit: { fr: "% vol.", ar: "٪ حجم", en: "% vol." } },
+    { k: "pf", val: 10, step: 1, label: { fr: "Point de flétrissement (PF)", ar: "نقطة الذبول (PF)", en: "Wilting point (WP)" }, unit: { fr: "% vol.", ar: "٪ حجم", en: "% vol." } },
+    { k: "p", val: 0.5, step: 0.05, label: { fr: "Fraction d’épuisement (p)", ar: "نسبة النفاد (p)", en: "Depletion fraction (p)" }, unit: { fr: "", ar: "", en: "" } },
+    { k: "depth", val: 60, step: 5, label: { fr: "Profondeur racinaire", ar: "عمق الجذور", en: "Root depth" }, unit: { fr: "cm", ar: "سم", en: "cm" } },
+    { k: "meas", val: 21.5, step: 0.5, label: { fr: "Humidité mesurée (30 cm)", ar: "الرطوبة المقيسة (30سم)", en: "Measured moisture (30 cm)" }, unit: { fr: "% vol.", ar: "٪ حجم", en: "% vol." } }
+  ],
+  compute(v) {
+    const sar = (v.ca + v.mg) <= 0 ? NaN : v.na / Math.sqrt((v.ca + v.mg) / 2);
+    const tds = 640 * v.ecw;
+    const lr = v.ecw > 0 && (5 * v.ece - v.ecw) > 0 ? v.ecw / (5 * v.ece - v.ecw) : NaN;
+    const ru = v.cc - v.pf;
+    const sr = v.cc - v.p * ru;
+    const confort = sr + ru * 0.25;
+    const rfu = v.p * ru / 100 * v.depth * 10;
+    const salClass = v.ecw < 0.7 ? { fr: "Aucune restriction", ar: "دون قيود", en: "No restriction" }
+      : v.ecw <= 3 ? { fr: "Restriction légère à modérée", ar: "قيد خفيف إلى متوسط", en: "Slight to moderate restriction" }
+      : { fr: "Restriction sévère", ar: "قيد شديد", en: "Severe restriction" };
+    const _tc = (window.CROPS_DB && window.CROPS_DB[v.olive]) || { CEe: 2.7 };
+    const _cee = _tc.CEe;
+    const cropRisk = v.ecw < _cee
+      ? { fr: "Faible — culture tolérante à cette salinité", ar: "ضعيف — المحصول متحمّل لهذه الملوحة", en: "Low — crop tolerates this salinity" }
+      : v.ecw < _cee * 2
+        ? { fr: "Moyen — pertes de rendement possibles", ar: "متوسط — خسائر محتملة في المردود", en: "Medium — yield loss possible" }
+        : { fr: "Élevé — dépasse le seuil de la culture", ar: "مرتفع — يتجاوز عتبة المحصول", en: "High — exceeds crop threshold" };
+    const sodic = (sar > 9 && v.ecw < 1.5) ? { fr: "MAXIMAL — destruction de structure", ar: "أقصى — تدمير بنية التربة", en: "MAXIMUM — soil structure breakdown" }
+      : sar > 9 ? { fr: "Élevé — surveiller la structure", ar: "مرتفع — راقب البنية", en: "High — monitor structure" }
+      : sar > 3 ? { fr: "Modéré", ar: "متوسط", en: "Moderate" }
+      : { fr: "Faible", ar: "ضعيف", en: "Low" };
+    let diagTone, diag;
+    if (v.meas > v.cc) { diagTone = "bad"; diag = { fr: "SUR-IRRIGATION — drainage profond, lessivage des nitrates", ar: "سقي مفرط — تصريف عميق وغسل النترات", en: "OVER-IRRIGATION — deep drainage, nitrate leaching" }; }
+    else if (v.meas >= confort) { diagTone = "good"; diag = { fr: "Confort hydrique — pas d’apport", ar: "راحة مائية — لا حاجة للسقي", en: "Comfort zone — no irrigation" }; }
+    else if (v.meas >= sr) { diagTone = "warn"; diag = { fr: "Zone de pilotage — apport à programmer", ar: "منطقة التحكّم — برمج السقي", en: "Management zone — schedule irrigation" }; }
+    else if (v.meas > v.pf) { diagTone = "warn"; diag = { fr: "SOUS le seuil de recharge — irriguer maintenant", ar: "تحت عتبة الشحن — اسقِ الآن", en: "BELOW recharge threshold — irrigate now" }; }
+    else { diagTone = "bad"; diag = { fr: "Point de flétrissement atteint — stress sévère", ar: "بلوغ نقطة الذبول — إجهاد شديد", en: "Wilting point reached — severe stress" }; }
+    const doseConfort = Math.max(0, (confort - v.meas) / 100 * v.depth * 10);
+    return {
+      rows: [
+        { label: { fr: "SAR = Na⁺/√((Ca²⁺+Mg²⁺)/2)", ar: "SAR", en: "SAR = Na⁺/√((Ca²⁺+Mg²⁺)/2)" }, value: sar, unit: { fr: "", ar: "", en: "" }, fmt: 2, big: true },
+        { label: { fr: "Salinité totale (TDS ≈ 640·ECw)", ar: "الملوحة الكلية (TDS)", en: "Total salinity (TDS ≈ 640·ECw)" }, value: tds, unit: { fr: "mg/L", ar: "mg/ل", en: "mg/L" }, fmt: 0 },
+        { label: { fr: "Fraction de lessivage (LR)", ar: "نسبة الغسل (LR)", en: "Leaching requirement (LR)" }, value: lr, unit: { fr: "", ar: "", en: "" }, fmt: 2 },
+        { label: { fr: "Réserve utile (RU = CC−PF)", ar: "المخزون المفيد (RU)", en: "Available water (AW = FC−WP)" }, value: ru, unit: { fr: "% vol.", ar: "٪ حجم", en: "% vol." }, fmt: 0 },
+        { label: { fr: "Seuil de recharge (SR)", ar: "عتبة الشحن (SR)", en: "Recharge threshold (RT)" }, value: sr, unit: { fr: "% vol.", ar: "٪ حجم", en: "% vol." }, fmt: 1, big: true },
+        { label: { fr: "RFU en lame d’eau", ar: "RFU كطبقة مائية", en: "RAW as water depth" }, value: rfu, unit: { fr: "mm", ar: "مم", en: "mm" }, fmt: 1 },
+        { label: { fr: "Dose vers le seuil de confort", ar: "جرعة نحو عتبة الراحة", en: "Dose to comfort threshold" }, value: doseConfort, unit: { fr: "mm", ar: "مم", en: "mm" }, fmt: 1 }
+      ],
+      badges: [
+        { label: { fr: "Salinité (générale)", ar: "الملوحة (عام)", en: "Salinity (general)" }, text: salClass, tone: v.ecw <= 3 ? "warn" : "bad" },
+        { label: { fr: "Risque pour la culture", ar: "الخطر على الزراعة", en: "Crop risk" }, text: cropRisk, tone: "warn" },
+        { label: { fr: "Risque de sodicité", ar: "خطر الصودية", en: "Sodicity risk" }, text: sodic, tone: sar > 9 ? "bad" : (sar > 3 ? "warn" : "good") }
+      ],
+      diag: { label: { fr: "Lecture de la sonde (30 cm)", ar: "قراءة المجس (30سم)", en: "Probe reading (30 cm)" }, text: diag, tone: diagTone },
+      note: { fr: "Grille FAO 29 (Ayers & Westcot). Olivier tolérant jusqu’à ~5,5 dS/m.",
+              ar: "شبكة FAO 29 (Ayers & Westcot). الزيتون متحمّل حتى ~5.5 dS/م.",
+              en: "FAO 29 grid (Ayers & Westcot). Olive tolerant up to ~5.5 dS/m." }
+    };
+  }
+},
+
+// ============================== M6 — WUE =====================
+{
+  id: "m6",
+  tab: { fr: "M6 · WUE", ar: "M6 · كفاءة الماء", en: "M6 · WUE" },
+  title: {
+    fr: "FMIS : efficience d’usage de l’eau — conventionnel vs smart-farming",
+    ar: "FMIS: كفاءة استعمال الماء — تقليدي مقابل فلاحة ذكية",
+    en: "FMIS: water-use efficiency — conventional vs smart farming"
+  },
+  inputs: [
+    { k: "yA", val: 6000, step: 100, label: { fr: "Rendement — Parcelle A (conv.)", ar: "المردود — قطعة A (تقليدي)", en: "Yield — Plot A (conv.)" }, unit: { fr: "kg/ha", ar: "كغ/هك", en: "kg/ha" } },
+    { k: "wA", val: 4000, step: 100, label: { fr: "Eau — Parcelle A", ar: "الماء — قطعة A", en: "Water — Plot A" }, unit: { fr: "m³/ha", ar: "م³/هك", en: "m³/ha" } },
+    { k: "yB", val: 7800, step: 100, label: { fr: "Rendement — Parcelle B (pilote)", ar: "المردود — قطعة B (تجريبي)", en: "Yield — Plot B (pilot)" }, unit: { fr: "kg/ha", ar: "كغ/هك", en: "kg/ha" } },
+    { k: "wB", val: 2900, step: 100, label: { fr: "Eau — Parcelle B", ar: "الماء — قطعة B", en: "Water — Plot B" }, unit: { fr: "m³/ha", ar: "م³/هك", en: "m³/ha" } },
+    { k: "price", val: 1.2, step: 0.1, label: { fr: "Prix des olives", ar: "سعر الزيتون", en: "Olive price" }, unit: { fr: "DT/kg", ar: "دت/كغ", en: "TND/kg" } },
+    { k: "wcost", val: 0.28, step: 0.01, label: { fr: "Coût de l’eau", ar: "كلفة الماء", en: "Water cost" }, unit: { fr: "DT/m³", ar: "دت/م³", en: "TND/m³" } }
+  ],
+  compute(v) {
+    const wueA = v.wA > 0 ? v.yA / v.wA : NaN, wueB = v.wB > 0 ? v.yB / v.wB : NaN;
+    const marginA = v.yA * v.price - v.wA * v.wcost;
+    const marginB = v.yB * v.price - v.wB * v.wcost;
+    const gainWUE = wueA > 0 ? (wueB - wueA) / wueA : NaN;
+    const waterSave = v.wA > 0 ? (v.wA - v.wB) / v.wA : NaN;
+    const yieldGain = v.yA > 0 ? (v.yB - v.yA) / v.yA : NaN;
+    return {
+      rows: [
+        { label: { fr: "WUE — Parcelle A", ar: "WUE — قطعة A", en: "WUE — Plot A" }, value: wueA, unit: { fr: "kg/m³", ar: "كغ/م³", en: "kg/m³" }, fmt: 2 },
+        { label: { fr: "WUE — Parcelle B", ar: "WUE — قطعة B", en: "WUE — Plot B" }, value: wueB, unit: { fr: "kg/m³", ar: "كغ/م³", en: "kg/m³" }, fmt: 2, big: true },
+        { label: { fr: "Gain d’efficience WUE", ar: "مكسب الكفاءة WUE", en: "WUE efficiency gain" }, value: gainWUE * 100, unit: { fr: "%", ar: "٪", en: "%" }, fmt: 1, big: true },
+        { label: { fr: "Économie d’eau", ar: "توفير الماء", en: "Water saving" }, value: waterSave * 100, unit: { fr: "%", ar: "٪", en: "%" }, fmt: 1 },
+        { label: { fr: "Gain de rendement", ar: "مكسب المردود", en: "Yield gain" }, value: yieldGain * 100, unit: { fr: "%", ar: "٪", en: "%" }, fmt: 1 },
+        { label: { fr: "Marge — Parcelle A", ar: "الهامش — قطعة A", en: "Margin — Plot A" }, value: marginA, unit: { fr: "DT/ha", ar: "دت/هك", en: "TND/ha" }, fmt: 0 },
+        { label: { fr: "Marge — Parcelle B", ar: "الهامش — قطعة B", en: "Margin — Plot B" }, value: marginB, unit: { fr: "DT/ha", ar: "دت/هك", en: "TND/ha" }, fmt: 0 },
+        { label: { fr: "Gain de marge par ha", ar: "مكسب الهامش لكل هك", en: "Margin gain per ha" }, value: marginB - marginA, unit: { fr: "DT/ha", ar: "دت/هك", en: "TND/ha" }, fmt: 0, big: true }
+      ],
+      note: { fr: "WUE = rendement / eau apportée. Cas de référence : +79,3 % de valorisation de l’eau.",
+              ar: "WUE = المردود / الماء المُقدَّم. الحالة المرجعية: +79.3٪ من تثمين الماء.",
+              en: "WUE = yield / water applied. Reference case: +79.3 % water valorisation." }
+    };
+  }
+},
+
+// ============================== M7 — IA ======================
+{
+  id: "m7",
+  tab: { fr: "M7 · IA", ar: "M7 · الذكاء الاصطناعي", en: "M7 · AI" },
+  title: {
+    fr: "Évaluation d’un CNN — détection de l’œil de paon (Spilocaea oleagina)",
+    ar: "تقييم شبكة CNN — كشف عين الطاووس (Spilocaea oleagina)",
+    en: "CNN evaluation — peacock-spot detection (Spilocaea oleagina)"
+  },
+  inputs: [
+    { k: "tp", val: 92, step: 1, label: { fr: "TP — Saines bien classées", ar: "TP — سليمة مُصنّفة صحيحاً", en: "TP — healthy correct" }, unit: { fr: "", ar: "", en: "" } },
+    { k: "fp", val: 8, step: 1, label: { fr: "FP — Infectées vues « saines »", ar: "FP — مصابة تُرى سليمة", en: "FP — infected seen ‘healthy’" }, unit: { fr: "", ar: "", en: "" } },
+    { k: "fn", val: 5, step: 1, label: { fr: "FN — Saines vues « infectées »", ar: "FN — سليمة تُرى مصابة", en: "FN — healthy seen ‘infected’" }, unit: { fr: "", ar: "", en: "" } },
+    { k: "tn", val: 95, step: 1, label: { fr: "TN — Infectées bien classées", ar: "TN — مصابة مُصنّفة صحيحاً", en: "TN — infected correct" }, unit: { fr: "", ar: "", en: "" } },
+    { k: "trees", val: 5000, step: 100, label: { fr: "Arbres à diagnostiquer", ar: "أشجار للتشخيص", en: "Trees to diagnose" }, unit: { fr: "×", ar: "×", en: "×" } },
+    { k: "costTreat", val: 4, step: 0.5, label: { fr: "Coût traitement inutile", ar: "كلفة علاج زائد", en: "Needless-treatment cost" }, unit: { fr: "DT/arbre", ar: "دت/شجرة", en: "TND/tree" } },
+    { k: "lossMiss", val: 25, step: 1, label: { fr: "Perte arbre non traité", ar: "خسارة شجرة غير معالَجة", en: "Loss per untreated tree" }, unit: { fr: "DT/arbre", ar: "دت/شجرة", en: "TND/tree" } }
+  ],
+  compute(v) {
+    const prec = (v.tp + v.fp) ? v.tp / (v.tp + v.fp) : NaN;
+    const rec = (v.tp + v.fn) ? v.tp / (v.tp + v.fn) : NaN;
+    const f1 = (prec + rec) ? 2 * prec * rec / (prec + rec) : NaN;
+    const total = v.tp + v.fp + v.fn + v.tn;
+    const acc = total ? (v.tp + v.tn) / total : NaN;
+    const spec = (v.tn + v.fp) ? v.tn / (v.tn + v.fp) : NaN;
+    const prev = total ? (v.fn + v.tn) / total : NaN;
+    const missed = v.trees * prev * (1 - spec);
+    const wrong = v.trees * (1 - prev) * (1 - rec);
+    const errCost = missed * v.lossMiss + wrong * v.costTreat;
+    return {
+      rows: [
+        { label: { fr: "Précision = TP/(TP+FP)", ar: "الدقة = TP/(TP+FP)", en: "Precision = TP/(TP+FP)" }, value: prec * 100, unit: { fr: "%", ar: "٪", en: "%" }, fmt: 1, big: true },
+        { label: { fr: "Rappel = TP/(TP+FN)", ar: "الاسترجاع = TP/(TP+FN)", en: "Recall = TP/(TP+FN)" }, value: rec * 100, unit: { fr: "%", ar: "٪", en: "%" }, fmt: 1, big: true },
+        { label: { fr: "F1-Score", ar: "F1-Score", en: "F1-Score" }, value: f1 * 100, unit: { fr: "%", ar: "٪", en: "%" }, fmt: 1, big: true },
+        { label: { fr: "Exactitude (accuracy)", ar: "الدقة الإجمالية", en: "Accuracy" }, value: acc * 100, unit: { fr: "%", ar: "٪", en: "%" }, fmt: 1 },
+        { label: { fr: "Spécificité", ar: "النوعية", en: "Specificity" }, value: spec * 100, unit: { fr: "%", ar: "٪", en: "%" }, fmt: 1 },
+        { label: { fr: "Coût total des erreurs", ar: "الكلفة الإجمالية للأخطاء", en: "Total cost of errors" }, value: errCost, unit: { fr: "DT", ar: "دت", en: "TND" }, fmt: 0, big: true }
+      ],
+      note: { fr: "Convention du support : la classe positive est « Saine ». Pipeline : Softmax(W·f(x)+b).",
+              ar: "اصطلاح المرجع: الصنف الموجب هو «سليمة». الأنبوب: Softmax(W·f(x)+b).",
+              en: "Handout convention: the positive class is ‘Healthy’. Pipeline: Softmax(W·f(x)+b)." }
+    };
+  }
+}
+];
+
+
+function initState(){
+  MODULES.forEach(function(m){
+    STATE[m.id] = STATE[m.id] || {};
+    m.inputs.forEach(function(i){ STATE[m.id][i.k] = i.val; });
+  });
+}
+function resetModule(m){
+  m.inputs.forEach(function(i){ STATE[m.id][i.k] = i.val; });
+  renderModule();
+}
+
+function renderChrome(){
+  var u = UI[LANG];
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = (LANG === "ar") ? "rtl" : "ltr";
+  document.body.className = (LANG === "ar") ? "ar" : "";
+  document.getElementById("ui-title").textContent = u.title;
+  document.getElementById("ui-sub").textContent = u.subtitle;
+  document.getElementById("ui-tag").textContent = u.tagline;
+  document.getElementById("ui-foot").textContent = u.footer;
+  document.querySelectorAll(".langbox button").forEach(function(b){
+    b.classList.toggle("on", b.dataset.lang === LANG);
+  });
+  var tabs = document.getElementById("tabs"); tabs.innerHTML = "";
+  MODULES.forEach(function(m, idx){
+    var b = document.createElement("button");
+    b.textContent = m.tab[LANG]; b.className = (idx === ACTIVE ? "on" : "");
+    b.onclick = function(){ ACTIVE = idx; renderChrome(); renderModule(); };
+    tabs.appendChild(b);
+  });
+}
+
+function fmtVal(v, d){
+  if (v === null || v === undefined || isNaN(v) || !isFinite(v)) return "—";
+  var loc = LANG === "ar" ? "ar-TN" : (LANG === "en" ? "en-US" : "fr-FR");
+  return Number(v).toLocaleString(loc, { minimumFractionDigits: 0, maximumFractionDigits: d });
+}
+
+function renderModule(){
+  var m = MODULES[ACTIVE], u = UI[LANG];
+  var host = document.getElementById("module");
+  var res = m.compute(STATE[m.id]);
+
+  var html = '<h2 class="mtitle">' + m.title[LANG] + '</h2><div class="rule"></div>';
+  html += '<div class="grid">';
+
+  /* inputs panel */
+  html += '<section class="panel"><div class="phead"><span>' + u.inputs +
+    '</span><button class="reset" id="resetBtn">' + u.reset + '</button></div><div class="pbody">';
+  m.inputs.forEach(function(i){
+    var val = STATE[m.id][i.k];
+    html += '<div class="field"><label for="f_' + i.k + '">' + i.label[LANG] + '</label>';
+    if (i.type === "select"){
+      html += '<select id="f_' + i.k + '" data-k="' + i.k + '">';
+      i.options.forEach(function(o){
+        html += '<option value="' + o.v + '"' + (o.v == val ? ' selected' : '') + '>' + o[LANG] + '</option>';
+      });
+      html += '</select><span class="unit"></span>';
+    } else {
+      html += '<input id="f_' + i.k + '" data-k="' + i.k + '" type="number" step="' + (i.step || "any") +
+        '" value="' + val + '"><span class="unit">' + i.unit[LANG] + '</span>';
+    }
+    html += '</div>';
+  });
+  html += '</div></section>';
+
+  /* results panel */
+  html += '<section class="panel"><div class="phead"><span>' + u.results + '</span></div><div class="pbody">';
+  res.rows.forEach(function(r){
+    if (r.text){
+      html += '<div class="rrow textrow"><span class="rlabel">▸ ' + r.label[LANG] + '</span></div>';
+    } else {
+      html += '<div class="rrow' + (r.big ? ' big' : '') + '"><span class="rlabel">' + r.label[LANG] +
+        '</span><span class="rval">' + fmtVal(r.value, r.fmt) + '</span><span class="runit">' +
+        r.unit[LANG] + '</span></div>';
+    }
+  });
+  if (res.badges){
+    html += '<div class="badges">';
+    res.badges.forEach(function(bd){
+      html += '<div class="badge tone-' + bd.tone + '"><span>' + bd.label[LANG] +
+        '</span><b>' + bd.text[LANG] + '</b></div>';
+    });
+    html += '</div>';
+  }
+  if (res.diag){
+    html += '<div class="diag tone-' + res.diag.tone + '"><div class="dl">' + res.diag.label[LANG] +
+      '</div><div class="dt">' + res.diag.text[LANG] + '</div></div>';
+  }
+  html += '</div></section>';
+  html += '</div>'; // grid
+
+  if (res.note){
+    html += '<div class="note"><b>' + u.note + '.</b> ' + res.note[LANG] + '</div>';
+  }
+  host.innerHTML = html;
+
+  /* wire inputs */
+  host.querySelectorAll("input[data-k],select[data-k]").forEach(function(el){
+    var ev = el.tagName === "SELECT" ? "change" : "input";
+    el.addEventListener(ev, function(){
+      var val = parseFloat(el.value);
+      STATE[m.id][el.dataset.k] = isNaN(val) ? 0 : val;
+      // recompute results only (keep focus on the field being edited)
+      var r2 = m.compute(STATE[m.id]);
+      updateResults(r2);
+    });
+  });
+  document.getElementById("resetBtn").onclick = function(){ resetModule(m); };
+}
+
+function updateResults(res){
+  var host = document.getElementById("module");
+  var vals = host.querySelectorAll(".rrow .rval");
+  var i = 0;
+  var m = MODULES[ACTIVE];
+  // rebuild results HTML in place without touching inputs (simplest: re-render results panel)
+  var panels = host.querySelectorAll(".panel");
+  var rp = panels[1].querySelector(".pbody");
+  var u = UI[LANG];
+  var html = "";
+  res.rows.forEach(function(r){
+    if (r.text){
+      html += '<div class="rrow textrow"><span class="rlabel">▸ ' + r.label[LANG] + '</span></div>';
+    } else {
+      html += '<div class="rrow' + (r.big ? ' big' : '') + '"><span class="rlabel">' + r.label[LANG] +
+        '</span><span class="rval">' + fmtVal(r.value, r.fmt) + '</span><span class="runit">' +
+        r.unit[LANG] + '</span></div>';
+    }
+  });
+  if (res.badges){
+    html += '<div class="badges">';
+    res.badges.forEach(function(bd){
+      html += '<div class="badge tone-' + bd.tone + '"><span>' + bd.label[LANG] +
+        '</span><b>' + bd.text[LANG] + '</b></div>';
+    });
+    html += '</div>';
+  }
+  if (res.diag){
+    html += '<div class="diag tone-' + res.diag.tone + '"><div class="dl">' + res.diag.label[LANG] +
+      '</div><div class="dt">' + res.diag.text[LANG] + '</div></div>';
+  }
+  rp.innerHTML = html;
+}
+
+document.querySelectorAll(".langbox button").forEach(function(b){
+  b.addEventListener("click", function(){
+    LANG = b.dataset.lang; localStorage.setItem("tp_lang", LANG);
+    renderChrome(); renderModule();
+  });
+});
+
+initState();
+renderChrome();
+renderModule();
+</script>
+</body>
+</html>

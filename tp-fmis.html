@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TP guidé — Gestion de ferme (FMIS) · M6</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .wrap{max-width:940px}
+  .lead{color:var(--muted);max-width:900px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  /* hero */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#5a8f2c,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:var(--shadow)}
+  .hero h1{font-size:23px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  /* progress */
+  .progwrap{position:sticky;top:63px;z-index:900;background:var(--paper);padding:10px 0 4px;margin-bottom:4px}
+  .progbar{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:12px 18px}
+  .progtrack{flex:1;height:12px;border-radius:8px;background:var(--green-bg);overflow:hidden;border:1px solid var(--line)}
+  .progfill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--impact));transition:width .35s}
+  .progtxt{font-weight:800;font-size:13.5px;color:var(--green-d);white-space:nowrap;font-variant-numeric:tabular-nums;direction:ltr}
+  .progsteps{display:flex;gap:6px}
+  .dot{width:13px;height:13px;border-radius:50%;background:var(--green-bg);border:1.5px solid var(--line)}
+  .dot.done{background:var(--green);border-color:var(--green-d)}
+  @media(max-width:620px){.progsteps{display:none}}
+  /* step card */
+  .step{border-inline-start:4px solid var(--sc,var(--green))}
+  body[dir="rtl"] .step{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--sc,var(--green))}
+  .step .head{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .step .n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--sc,var(--green));
+    color:#fff;font-size:16px;font-weight:800;flex:none}
+  .step h2{font-size:16.5px;margin:0}
+  .step .app-of{font-size:11.5px;color:var(--muted);font-weight:600}
+  .consigne{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 15px;margin:10px 0;
+    font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .consigne b{color:var(--green-d)}
+  .openbtn{margin:8px 0 4px}
+  .qblock{margin-top:14px}
+  .qlabel{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:7px;display:block}
+  .qlabel .u{font-weight:600;color:var(--muted);font-size:12px}
+  input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;
+    font:inherit;color:var(--ink);background:#fff}
+  input:focus,textarea:focus{outline:none;border-color:var(--green)}
+  textarea{min-height:66px;resize:vertical}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;
+    font-size:13.5px;background:#fff;transition:.14s}
+  .opt:hover{border-color:var(--green)}
+  .opt input{accent-color:var(--green);width:16px;height:16px;flex:none}
+  .opt.sel{background:var(--green-bg);border-color:var(--green)}
+  .opt.good{background:#eef8ef;border-color:#8ecb96}
+  .opt.bad{background:#fbecea;border-color:#e3a8a1}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:560px){.row2,.row3{grid-template-columns:1fr}}
+  .fb{margin-top:10px;font-size:13px;border-radius:10px;padding:10px 14px;line-height:1.55;display:none}
+  .fb.show{display:block}
+  .fb.ok{background:#eef8ef;border:1px solid #bfe3c3;color:#2f7d3a}
+  .fb.no{background:#fbecea;border:1px solid #eecac5;color:#b23b30}
+  .fb.info{background:#eaf3fa;border:1px solid #bcd9ec;color:#25607f}
+  .stepfoot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+  .chk{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer}
+  .chk input{width:19px;height:19px;accent-color:var(--green)}
+  /* score */
+  .scorebox{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:linear-gradient(120deg,#eef8ef,#f6fbf0);
+    border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px;margin-top:8px}
+  .scoredial{width:82px;height:82px;border-radius:50%;flex:none;display:grid;place-items:center;
+    background:conic-gradient(var(--impact) var(--p,0deg),#e3efd8 0);position:relative}
+  .scoredial::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+  .scoredial b{position:relative;z-index:1;font-size:18px;font-weight:800;color:var(--green-d)}
+  .scoreinfo .st{font-weight:800;font-size:15px;color:var(--ink)}
+  .scoreinfo .sd{font-size:13px;color:var(--muted);margin-top:2px}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:4px}
+  .modebadge{font-size:11.5px;color:var(--muted)}
+  .modebadge b{color:var(--green-d)}
+  .backlink{font-size:13px;font-weight:700;color:var(--green-d)}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:20px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">M6</span> <b data-i18n="t_brand">TP Gestion de ferme</b> <span data-i18n="t_brand2">FMIS</span></div>
+  <div class="sub" data-i18n="t_sub">Travaux pratiques guidés · 6 étapes manipulées</div>
+  <div class="right">
+    <span class="chip">M6 · <span data-i18n="t_lab_chip">TP</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="g0">M6</div>
+    <div>
+      <h1 data-i18n="t_title">TP guidé — Gestion de ferme (FMIS)</h1>
+      <div class="tag" data-i18n="t_tag">Manipulez le cockpit de l'exploitation, étape par étape</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="t_intro"></p>
+  <a class="backlink" href="cours-fmis.html">← <span data-i18n="t_back">Revoir le cours</span></a>
+
+  <!-- PROGRESS -->
+  <div class="progwrap">
+    <div class="progbar">
+      <span class="progtxt" id="ptxt">0 / 6</span>
+      <div class="progtrack"><div class="progfill" id="pfill"></div></div>
+      <div class="progsteps" id="pdots"></div>
+    </div>
+  </div>
+
+  <!-- ETAPE 1 -->
+  <div class="card step" style="--sc:#3fa66a">
+    <div class="head"><span class="n">1</span>
+      <div><h2 data-i18n="t_s1_h">Découvrir le cockpit</h2><div class="app-of" data-i18n="t_s1_app">App · AgriManager</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s1_c"></div>
+    <a class="btn primary openbtn" href="J4/agrimanager-v1.6.html" target="_blank" rel="noopener">🗂️ <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s1_q1">Nombre de parcelles repérées <span class="u">(à saisir)</span></label><input type="number" data-f="s1_parcels" placeholder="ex. 5"></div>
+        <div><label class="qlabel" data-i18n="t_s1_q2">Nombre d'opérations visibles</label><input type="number" data-f="s1_ops" placeholder="ex. 12"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s1_q3">Dans AgriManager, qu'est-ce qui donne une valeur économique à chaque opération ?</label>
+      <div class="opts" data-q="s1a">
+        <label class="opt"><input type="radio" name="s1a" value="0"><span data-i18n="t_s1_o1">Son rattachement à une parcelle et à un coût</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="1"><span data-i18n="t_s1_o2">La couleur de la parcelle sur la carte</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="2"><span data-i18n="t_s1_o3">Rien — l'opération est purement décorative</span></label>
+      </div>
+      <div class="fb" data-fb="s1a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="1"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 2 -->
+  <div class="card step" style="--sc:#e0912b">
+    <div class="head"><span class="n">2</span>
+      <div><h2 data-i18n="t_s2_h">Coût de production d'une parcelle</h2><div class="app-of" data-i18n="t_s2_app">App · AgriManager · coûts</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s2_c"></div>
+    <a class="btn primary openbtn" href="J4/agrimanager-v1.6.html" target="_blank" rel="noopener">💰 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s2_q1">Coût/ha relevé <span class="u">DT/ha</span></label><input type="number" data-f="s2_cost" placeholder="ex. 3200"></div>
+        <div><label class="qlabel" data-i18n="t_s2_q2">Poste de coût le plus lourd</label><input type="text" data-f="s2_top" placeholder="ex. eau / énergie"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s2_q3">Comment obtient-on le coût/kg à partir du coût/ha ?</label>
+      <div class="opts" data-q="s2a">
+        <label class="opt"><input type="radio" name="s2a" value="0"><span data-i18n="t_s2_o1">Coût/ha × rendement</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="1"><span data-i18n="t_s2_o2">Coût/ha ÷ rendement</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="2"><span data-i18n="t_s2_o3">Recette − coût</span></label>
+      </div>
+      <div class="fb" data-fb="s2a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="2"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 3 -->
+  <div class="card step" style="--sc:#d1584e">
+    <div class="head"><span class="n">3</span>
+      <div><h2 data-i18n="t_s3_h">Repérer une culture déficitaire</h2><div class="app-of" data-i18n="t_s3_app">App · AgriManager · marges</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s3_c"></div>
+    <a class="btn primary openbtn" href="J4/agrimanager-v1.6.html" target="_blank" rel="noopener">📉 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s3_q1">Culture déficitaire identifiée <span class="u">(nom)</span></label><input type="text" data-f="s3_crop" placeholder="ex. Culture X"></div>
+        <div><label class="qlabel" data-i18n="t_s3_q2">Sa marge/ha relevée <span class="u">DT/ha</span></label><input type="number" data-f="s3_margin" placeholder="ex. -450"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s3_q3">Une culture est déficitaire quand…</label>
+      <div class="opts" data-q="s3a">
+        <label class="opt"><input type="radio" name="s3a" value="0"><span data-i18n="t_s3_o1">Son rendement est le plus faible de la ferme</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="1"><span data-i18n="t_s3_o2">Sa marge (recette − coût) devient négative</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="2"><span data-i18n="t_s3_o3">Sa parcelle est la plus petite</span></label>
+      </div>
+      <div class="fb" data-fb="s3a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="3"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 4 -->
+  <div class="card step" style="--sc:#8e6fc7">
+    <div class="head"><span class="n">4</span>
+      <div><h2 data-i18n="t_s4_h">AgriScore & traçabilité d'un lot</h2><div class="app-of" data-i18n="t_s4_app">App · AgriManager · AgriScore</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s4_c"></div>
+    <a class="btn primary openbtn" href="J4/agrimanager-v1.6.html" target="_blank" rel="noopener">📦 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s4_q1">AgriScore lu <span class="u">/100</span></label><input type="number" data-f="s4_score" placeholder="ex. 78"></div>
+        <div><label class="qlabel" data-i18n="t_s4_q2">Identifiant du lot tracé</label><input type="text" data-f="s4_lot" placeholder="ex. #LB-2207"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s4_q3">L'AgriScore est avant tout…</label>
+      <div class="opts" data-q="s4a">
+        <label class="opt"><input type="radio" name="s4a" value="0"><span data-i18n="t_s4_o1">Le prix de vente du lot à l'export</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="1"><span data-i18n="t_s4_o2">Un indice synthétique (NDVI, eau, planning, marge, traçabilité)</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="2"><span data-i18n="t_s4_o3">La profondeur du forage de la parcelle</span></label>
+      </div>
+      <div class="fb" data-fb="s4a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="4"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 5 -->
+  <div class="card step" style="--sc:#3a9bd0">
+    <div class="head"><span class="n">5</span>
+      <div><h2 data-i18n="t_s5_h">ROI d'un investissement (PBT)</h2><div class="app-of" data-i18n="t_s5_app">App · Simulateur Smart Agri</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s5_c"></div>
+    <a class="btn primary openbtn" href="J2/Simulateur_Smart_Agriculture.html" target="_blank" rel="noopener">📈 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row3">
+        <div><label class="qlabel" data-i18n="t_s5_q1">CAPEX <span class="u">DT</span></label><input type="number" data-f="s5_capex" placeholder="ex. 8000"></div>
+        <div><label class="qlabel" data-i18n="t_s5_q2">Économies/an <span class="u">DT/an</span></label><input type="number" data-f="s5_save" placeholder="ex. 3200"></div>
+        <div><label class="qlabel" data-i18n="t_s5_q3">PBT relevé <span class="u">années</span></label><input type="number" data-f="s5_pbt" placeholder="ex. 2.5"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s5_q4">Le temps de retour (PBT) représente…</label>
+      <div class="opts" data-q="s5a">
+        <label class="opt"><input type="radio" name="s5a" value="0"><span data-i18n="t_s5_o1">La durée où les économies cumulées remboursent le CAPEX</span></label>
+        <label class="opt"><input type="radio" name="s5a" value="1"><span data-i18n="t_s5_o2">Le prix d'achat du matériel</span></label>
+        <label class="opt"><input type="radio" name="s5a" value="2"><span data-i18n="t_s5_o3">Le rendement à l'hectare</span></label>
+      </div>
+      <div class="fb" data-fb="s5a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="5"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 6 : SYNTHESE -->
+  <div class="card step" style="--sc:#5a8f2c">
+    <div class="head"><span class="n">6</span>
+      <div><h2 data-i18n="t_s6_h">Synthèse — QCM auto-corrigé</h2><div class="app-of" data-i18n="t_s6_app">Évaluation · score /5</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s6_c"></div>
+    <div id="quiz"></div>
+    <label class="qlabel" style="margin-top:8px" data-i18n="t_s6_free">Ce que vous retenez de ce TP <span class="u">(champ libre)</span></label>
+    <textarea data-f="s6_takeaway" placeholder="…"></textarea>
+    <div class="btns"><button class="btn primary" id="correctBtn">✅ <span data-i18n="t_correct">Corriger le QCM</span></button></div>
+    <div class="scorebox" id="scorebox" hidden>
+      <div class="scoredial" id="dial"><b id="scoreval">0/5</b></div>
+      <div class="scoreinfo"><div class="st" id="scoretitle"></div><div class="sd" id="scoredesc"></div></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="6"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- OUTILS -->
+  <div class="card">
+    <div class="tools">
+      <div class="modebadge" data-i18n="t_mode">Mode local (localStorage) — progression sauvegardée automatiquement.</div>
+      <div class="btns" style="margin:0">
+        <button class="btn ghost" id="exportBtn">📤 <span data-i18n="t_export">Exporter le compte-rendu (JSON)</span></button>
+        <button class="btn ghost" id="resetBtn">♻️ <span data-i18n="t_reset">Réinitialiser</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="t_foot">Plateforme AgriTech Libye · EU4Skills — Module M6 · travaux pratiques</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  t_brand:{fr:"TP Gestion de ferme",ar:"عمل تطبيقي إدارة المزرعة",en:"Farm Mgmt Lab"},
+  t_brand2:{fr:"FMIS",ar:"FMIS",en:"FMIS"},
+  t_sub:{fr:"Travaux pratiques guidés · 6 étapes manipulées",ar:"عمل تطبيقي موجّه · 6 خطوات",en:"Guided lab · 6 hands-on steps"},
+  t_lab_chip:{fr:"TP",ar:"تطبيقي",en:"Lab"},
+  t_title:{fr:"TP guidé — Gestion de ferme (FMIS)",ar:"عمل تطبيقي موجّه — إدارة المزرعة (FMIS)",en:"Guided lab — Farm management (FMIS)"},
+  t_tag:{fr:"Manipulez le cockpit de l'exploitation, étape par étape",ar:"استعمل قمرة قيادة المزرعة خطوة بخطوة",en:"Work through the farm cockpit, step by step"},
+  t_intro:{fr:"Ce TP vous fait <b>manipuler</b> le FMIS du module M6. À chaque étape : une consigne, un bouton pour <b>ouvrir l'app</b> dans un nouvel onglet, une ou deux réponses à saisir, puis une case « étape terminée ». Votre progression et vos réponses sont <b>sauvegardées automatiquement</b> ; à la fin, exportez votre compte-rendu.",
+    ar:"يجعلك هذا العمل التطبيقي <b>تستعمل</b> نظام FMIS للوحدة M6. في كل خطوة: تعليمة، وزرّ <b>لفتح التطبيق</b> في تبويب جديد، وإجابة أو إجابتان، ثم خانة «تمّت الخطوة». تُحفظ تقدّمك وإجاباتك <b>تلقائياً</b>؛ وفي النهاية صدّر تقريرك.",
+    en:"This lab makes you <b>use</b> the M6 module's FMIS. At each step: an instruction, a button to <b>open the app</b> in a new tab, one or two answers to enter, then a \"step done\" box. Your progress and answers are <b>saved automatically</b>; at the end, export your report."},
+  t_back:{fr:"Revoir le cours",ar:"مراجعة الدرس",en:"Back to course"},
+  t_open:{fr:"Ouvrir l'app",ar:"فتح التطبيق",en:"Open the app"},
+  t_done:{fr:"Étape terminée",ar:"تمّت الخطوة",en:"Step done"},
+
+  // Step 1
+  t_s1_h:{fr:"Découvrir le cockpit",ar:"اكتشاف قمرة القيادة",en:"Discover the cockpit"},
+  t_s1_app:{fr:"App · AgriManager",ar:"تطبيق · AgriManager",en:"App · AgriManager"},
+  t_s1_c:{fr:"Ouvrez <b>AgriManager</b>, le cockpit de l'exploitation. Repérez la liste des <b>parcelles</b> et le journal des <b>opérations culturales</b> (semis, irrigation, traitements, récolte). Comptez-les rapidement.",
+    ar:"افتح <b>AgriManager</b>، قمرة قيادة المزرعة. حدّد قائمة <b>القطع</b> وسجلّ <b>العمليات الزراعية</b> (البذر، الري، المعالجات، الحصاد). عُدّها بسرعة.",
+    en:"Open <b>AgriManager</b>, the farm cockpit. Spot the list of <b>parcels</b> and the log of <b>field operations</b> (sowing, irrigation, spraying, harvest). Count them quickly."},
+  t_s1_q1:{fr:"Nombre de parcelles repérées",ar:"عدد القطع الملاحَظة",en:"Parcels spotted"},
+  t_s1_q2:{fr:"Nombre d'opérations visibles",ar:"عدد العمليات الظاهرة",en:"Visible operations"},
+  t_s1_q3:{fr:"Dans AgriManager, qu'est-ce qui donne une valeur économique à chaque opération ?",ar:"في AgriManager، ما الذي يمنح كل عملية قيمةً اقتصادية؟",en:"In AgriManager, what gives each operation an economic value?"},
+  t_s1_o1:{fr:"Son rattachement à une parcelle et à un coût",ar:"ربطها بقطعة وبتكلفة",en:"Its link to a parcel and a cost"},
+  t_s1_o2:{fr:"La couleur de la parcelle sur la carte",ar:"لون القطعة على الخريطة",en:"The parcel's colour on the map"},
+  t_s1_o3:{fr:"Rien — l'opération est purement décorative",ar:"لا شيء — العملية زخرفية فقط",en:"Nothing — the operation is purely decorative"},
+  t_s1_fb_ok:{fr:"Exact : le FMIS relie chaque opération à une parcelle et à un coût — c'est ce lien qui crée la valeur économique.",ar:"صحيح: يربط FMIS كل عملية بقطعة وبتكلفة — هذا الرابط هو ما يخلق القيمة الاقتصادية.",en:"Correct: the FMIS ties each operation to a parcel and a cost — that link is what creates economic value."},
+  t_s1_fb_no:{fr:"Non : la valeur naît du rattachement de l'opération à une parcelle et à un coût, pas de son apparence.",ar:"لا: القيمة تنشأ من ربط العملية بقطعة وبتكلفة، لا من مظهرها.",en:"No: value comes from tying the operation to a parcel and a cost, not from its appearance."},
+
+  // Step 2
+  t_s2_h:{fr:"Coût de production d'une parcelle",ar:"تكلفة إنتاج قطعة",en:"A parcel's production cost"},
+  t_s2_app:{fr:"App · AgriManager · coûts",ar:"تطبيق · AgriManager · التكاليف",en:"App · AgriManager · costs"},
+  t_s2_c:{fr:"Choisissez une parcelle et ouvrez sa <b>fiche de coûts</b>. Additionnez les quatre postes — <b>intrants</b>, <b>eau/énergie</b>, <b>main-d'œuvre</b>, <b>amortissement</b> — puis relevez le <b>coût/ha</b> et le poste le plus lourd.",
+    ar:"اختر قطعة وافتح <b>بطاقة تكاليفها</b>. اجمع البنود الأربعة — <b>المدخلات</b>، <b>الماء/الطاقة</b>، <b>اليد العاملة</b>، <b>الإهلاك</b> — ثم سجّل <b>التكلفة/هكتار</b> والبند الأثقل.",
+    en:"Pick a parcel and open its <b>cost sheet</b>. Add the four items — <b>inputs</b>, <b>water/energy</b>, <b>labour</b>, <b>depreciation</b> — then note the <b>cost/ha</b> and the heaviest item."},
+  t_s2_q1:{fr:"Coût/ha relevé",ar:"التكلفة/هكتار المسجَّلة",en:"Cost/ha noted"},
+  t_s2_q2:{fr:"Poste de coût le plus lourd",ar:"البند الأثقل في التكلفة",en:"Heaviest cost item"},
+  t_s2_q3:{fr:"Comment obtient-on le coût/kg à partir du coût/ha ?",ar:"كيف نحصل على التكلفة/كغ انطلاقاً من التكلفة/هكتار؟",en:"How do you obtain the cost/kg from the cost/ha?"},
+  t_s2_o1:{fr:"Coût/ha × rendement",ar:"التكلفة/هكتار × المردود",en:"Cost/ha × yield"},
+  t_s2_o2:{fr:"Coût/ha ÷ rendement",ar:"التكلفة/هكتار ÷ المردود",en:"Cost/ha ÷ yield"},
+  t_s2_o3:{fr:"Recette − coût",ar:"الإيراد − التكلفة",en:"Revenue − cost"},
+  t_s2_fb_ok:{fr:"Exact : coût/kg = coût/ha ÷ rendement. « Recette − coût » donne la marge, pas le coût/kg.",ar:"صحيح: التكلفة/كغ = التكلفة/هكتار ÷ المردود. «الإيراد − التكلفة» يعطي الهامش لا التكلفة/كغ.",en:"Correct: cost/kg = cost/ha ÷ yield. \"Revenue − cost\" gives the margin, not the cost/kg."},
+  t_s2_fb_no:{fr:"Non : on divise le coût/ha par le rendement pour obtenir le coût/kg.",ar:"لا: نقسم التكلفة/هكتار على المردود للحصول على التكلفة/كغ.",en:"No: divide the cost/ha by the yield to get the cost/kg."},
+
+  // Step 3
+  t_s3_h:{fr:"Repérer une culture déficitaire",ar:"كشف محصول خاسر",en:"Spot a loss-making crop"},
+  t_s3_app:{fr:"App · AgriManager · marges",ar:"تطبيق · AgriManager · الهوامش",en:"App · AgriManager · margins"},
+  t_s3_c:{fr:"Triez les parcelles par <b>marge/ha</b> et regardez le <b>bas du classement</b>. Identifiez la culture dont la <b>marge est négative</b> : elle coûte plus qu'elle ne rapporte. Notez son nom et sa marge.",
+    ar:"رتّب القطع حسب <b>الهامش/هكتار</b> وانظر إلى <b>أسفل الترتيب</b>. حدّد المحصول ذا <b>الهامش السالب</b>: يكلّف أكثر مما يدرّ. سجّل اسمه وهامشه.",
+    en:"Sort parcels by <b>margin/ha</b> and look at the <b>bottom of the ranking</b>. Identify the crop whose <b>margin is negative</b>: it costs more than it earns. Note its name and margin."},
+  t_s3_q1:{fr:"Culture déficitaire identifiée",ar:"المحصول الخاسر المحدَّد",en:"Loss-making crop identified"},
+  t_s3_q2:{fr:"Sa marge/ha relevée",ar:"هامشه/هكتار المسجَّل",en:"Its margin/ha noted"},
+  t_s3_q3:{fr:"Une culture est déficitaire quand…",ar:"يكون المحصول خاسراً عندما…",en:"A crop is loss-making when…"},
+  t_s3_o1:{fr:"Son rendement est le plus faible de la ferme",ar:"يكون مردوده الأضعف في المزرعة",en:"Its yield is the lowest on the farm"},
+  t_s3_o2:{fr:"Sa marge (recette − coût) devient négative",ar:"يصبح هامشه (الإيراد − التكلفة) سالباً",en:"Its margin (revenue − cost) turns negative"},
+  t_s3_o3:{fr:"Sa parcelle est la plus petite",ar:"تكون قطعته الأصغر",en:"Its parcel is the smallest"},
+  t_s3_fb_ok:{fr:"Exact : déficitaire = marge négative (recette < coût). Un faible rendement ou une petite parcelle ne suffisent pas à le dire.",ar:"صحيح: خاسر = هامش سالب (الإيراد < التكلفة). المردود الضعيف أو القطعة الصغيرة لا يكفيان للحكم.",en:"Correct: loss-making = negative margin (revenue < cost). Low yield or small parcel alone doesn't prove it."},
+  t_s3_fb_no:{fr:"Non : ce qui compte est le signe de la marge (recette − coût), pas seulement le rendement ni la taille.",ar:"لا: المهمّ هو إشارة الهامش (الإيراد − التكلفة)، لا المردود أو الحجم وحدهما.",en:"No: what matters is the sign of the margin (revenue − cost), not yield or size alone."},
+
+  // Step 4
+  t_s4_h:{fr:"AgriScore & traçabilité d'un lot",ar:"AgriScore وتتبّع الدفعة",en:"AgriScore & lot traceability"},
+  t_s4_app:{fr:"App · AgriManager · AgriScore",ar:"تطبيق · AgriManager · AgriScore",en:"App · AgriManager · AgriScore"},
+  t_s4_c:{fr:"Ouvrez la vue <b>AgriScore</b> d'une parcelle et relevez sa note (/100). Puis ouvrez un <b>lot</b> et vérifiez qu'on peut <b>remonter</b> jusqu'à sa parcelle d'origine. Notez l'identifiant du lot.",
+    ar:"افتح عرض <b>AgriScore</b> لقطعة وسجّل نتيجتها (/100). ثم افتح <b>دفعة</b> وتحقّق أنه يمكن <b>التتبّع رجوعاً</b> إلى قطعتها الأصلية. سجّل معرّف الدفعة.",
+    en:"Open a parcel's <b>AgriScore</b> view and note its score (/100). Then open a <b>lot</b> and check you can <b>trace back</b> to its origin parcel. Note the lot identifier."},
+  t_s4_q1:{fr:"AgriScore lu",ar:"AgriScore المقروء",en:"AgriScore read"},
+  t_s4_q2:{fr:"Identifiant du lot tracé",ar:"معرّف الدفعة المتتبَّعة",en:"Traced lot identifier"},
+  t_s4_q3:{fr:"L'AgriScore est avant tout…",ar:"AgriScore هو قبل كل شيء…",en:"The AgriScore is above all…"},
+  t_s4_o1:{fr:"Le prix de vente du lot à l'export",ar:"سعر بيع الدفعة عند التصدير",en:"The lot's export sale price"},
+  t_s4_o2:{fr:"Un indice synthétique (NDVI, eau, planning, marge, traçabilité)",ar:"مؤشّر تركيبي (NDVI، الماء، الجدولة، الهامش، التتبّع)",en:"A composite index (NDVI, water, schedule, margin, traceability)"},
+  t_s4_o3:{fr:"La profondeur du forage de la parcelle",ar:"عمق بئر القطعة",en:"The parcel borehole's depth"},
+  t_s4_fb_ok:{fr:"Exact : l'AgriScore résume plusieurs axes en un seul chiffre ; la traçabilité permet de remonter du lot exporté à la parcelle B-14.",ar:"صحيح: يلخّص AgriScore عدة محاور في رقم واحد؛ ويتيح التتبّع العودة من الدفعة المصدَّرة إلى القطعة B-14.",en:"Correct: the AgriScore sums several axes into one number; traceability lets you trace the exported lot back to parcel B-14."},
+  t_s4_fb_no:{fr:"Non : l'AgriScore est un indice synthétique de performance (/100), pas un prix ni une profondeur.",ar:"لا: AgriScore مؤشّر تركيبي للأداء (/100)، لا سعر ولا عمق.",en:"No: the AgriScore is a composite performance index (/100), not a price or a depth."},
+
+  // Step 5
+  t_s5_h:{fr:"ROI d'un investissement (PBT)",ar:"عائد الاستثمار (PBT)",en:"Investment ROI (PBT)"},
+  t_s5_app:{fr:"App · Simulateur Smart Agri",ar:"تطبيق · محاكي الزراعة الذكية",en:"App · Smart Agri Simulator"},
+  t_s5_c:{fr:"Ouvrez le <b>Simulateur Smart Agri</b>. Saisissez le <b>CAPEX</b> d'un pack IoT et les <b>économies annuelles</b> attendues, puis lisez le <b>temps de retour (PBT)</b> — le nombre d'années pour rembourser l'investissement.",
+    ar:"افتح <b>محاكي الزراعة الذكية</b>. أدخِل <b>التكلفة الرأسمالية</b> لحزمة IoT و<b>التوفير السنوي</b> المتوقّع، ثم اقرأ <b>مدة الاسترجاع (PBT)</b> — عدد السنوات لتسديد الاستثمار.",
+    en:"Open the <b>Smart Agri Simulator</b>. Enter an IoT pack's <b>CAPEX</b> and the expected <b>annual savings</b>, then read the <b>payback time (PBT)</b> — the number of years to repay the investment."},
+  t_s5_q1:{fr:"CAPEX",ar:"التكلفة الرأسمالية",en:"CAPEX"},
+  t_s5_q2:{fr:"Économies/an",ar:"التوفير/سنة",en:"Savings/yr"},
+  t_s5_q3:{fr:"PBT relevé",ar:"PBT المسجَّل",en:"PBT noted"},
+  t_s5_q4:{fr:"Le temps de retour (PBT) représente…",ar:"مدة الاسترجاع (PBT) تمثّل…",en:"The payback time (PBT) represents…"},
+  t_s5_o1:{fr:"La durée où les économies cumulées remboursent le CAPEX",ar:"المدة التي يسدّد فيها التوفير المتراكم التكلفة الرأسمالية",en:"The time for cumulative savings to repay the CAPEX"},
+  t_s5_o2:{fr:"Le prix d'achat du matériel",ar:"ثمن شراء المعدّات",en:"The equipment purchase price"},
+  t_s5_o3:{fr:"Le rendement à l'hectare",ar:"المردود بالهكتار",en:"The yield per hectare"},
+  t_s5_fb_ok:{fr:"Exact : PBT ≈ CAPEX ÷ économies annuelles. Plus le PBT est court, plus l'investissement est rentable.",ar:"صحيح: PBT ≈ التكلفة الرأسمالية ÷ التوفير السنوي. كلما قصر PBT زادت ربحية الاستثمار.",en:"Correct: PBT ≈ CAPEX ÷ annual savings. The shorter the PBT, the more profitable the investment."},
+  t_s5_fb_no:{fr:"Non : le PBT est une durée (CAPEX ÷ économies/an), pas un prix ni un rendement.",ar:"لا: PBT مدة (التكلفة الرأسمالية ÷ التوفير/سنة)، لا ثمن ولا مردود.",en:"No: the PBT is a duration (CAPEX ÷ savings/yr), not a price or a yield."},
+  t_s5_fb_range:{fr:" Vérifiez : PBT ≈ CAPEX ÷ économies/an — vos trois valeurs semblent incohérentes.",ar:" تحقّق: PBT ≈ التكلفة الرأسمالية ÷ التوفير/سنة — القيم الثلاث تبدو غير متّسقة.",en:" Check: PBT ≈ CAPEX ÷ savings/yr — your three values look inconsistent."},
+
+  // Step 6 quiz
+  t_s6_h:{fr:"Synthèse — QCM auto-corrigé",ar:"التركيب — اختبار ذاتي التصحيح",en:"Synthesis — self-marked quiz"},
+  t_s6_app:{fr:"Évaluation · score /5",ar:"تقييم · النتيجة /5",en:"Assessment · score /5"},
+  t_s6_c:{fr:"Répondez aux cinq questions puis cliquez sur <b>Corriger</b>. Votre score et vos réponses sont enregistrés.",ar:"أجب عن الأسئلة الخمسة ثم اضغط <b>تصحيح</b>. تُحفظ نتيجتك وإجاباتك.",en:"Answer the five questions then click <b>Correct</b>. Your score and answers are saved."},
+  t_s6_free:{fr:"Ce que vous retenez de ce TP",ar:"ما تحتفظ به من هذا العمل التطبيقي",en:"Your takeaway from this lab"},
+  t_correct:{fr:"Corriger le QCM",ar:"تصحيح الاختبار",en:"Correct the quiz"},
+
+  q1:{fr:"Que fait le FMIS des données mesurées par les autres domaines ?",ar:"ماذا يفعل FMIS بالبيانات المقيسة من المجالات الأخرى؟",en:"What does the FMIS do with data measured by other domains?"},
+  q1a:{fr:"Il les consolide et les rattache à une parcelle et à un coût",ar:"يوحّدها ويربطها بقطعة وبتكلفة",en:"It consolidates them and ties them to a parcel and a cost"},
+  q1b:{fr:"Il les efface une fois la mesure faite",ar:"يمحوها بعد إجراء القياس",en:"It erases them once measured"},
+  q1c:{fr:"Il les mesure lui-même à la place des capteurs",ar:"يقيسها بنفسه بدل المجسّات",en:"It measures them itself instead of the sensors"},
+  q2:{fr:"Quels sont les quatre postes du coût de production ?",ar:"ما البنود الأربعة لتكلفة الإنتاج؟",en:"What are the four items of the production cost?"},
+  q2a:{fr:"Intrants, eau/énergie, main-d'œuvre, amortissement",ar:"المدخلات، الماء/الطاقة، اليد العاملة، الإهلاك",en:"Inputs, water/energy, labour, depreciation"},
+  q2b:{fr:"NDVI, ET₀, pluie, vent",ar:"NDVI، ET₀، المطر، الرياح",en:"NDVI, ET₀, rain, wind"},
+  q2c:{fr:"Export, import, TVA, douane",ar:"التصدير، الاستيراد، الضريبة، الجمارك",en:"Export, import, VAT, customs"},
+  q3:{fr:"Quel est le premier réflexe pour repérer une parcelle déficitaire ?",ar:"ما أول ردّ فعل لكشف قطعة خاسرة؟",en:"What is the first reflex to spot a loss-making parcel?"},
+  q3a:{fr:"Trier les parcelles par marge/ha et regarder le bas du classement",ar:"ترتيب القطع حسب الهامش/هكتار والنظر إلى أسفل الترتيب",en:"Sort parcels by margin/ha and look at the bottom of the ranking"},
+  q3b:{fr:"Regarder uniquement la plus grande parcelle",ar:"النظر فقط إلى أكبر قطعة",en:"Look only at the largest parcel"},
+  q3c:{fr:"Choisir une parcelle au hasard",ar:"اختيار قطعة عشوائياً",en:"Pick a parcel at random"},
+  q4:{fr:"Qu'est-ce que l'AgriScore ?",ar:"ما هو AgriScore؟",en:"What is the AgriScore?"},
+  q4a:{fr:"Un type de forage profond",ar:"نوع من الآبار العميقة",en:"A kind of deep borehole"},
+  q4b:{fr:"Un indice synthétique de performance (souvent /100)",ar:"مؤشّر تركيبي للأداء (غالباً /100)",en:"A composite performance index (often /100)"},
+  q4c:{fr:"Une unité de rendement en kg/ha",ar:"وحدة مردود بالكغ/هكتار",en:"A yield unit in kg/ha"},
+  q5:{fr:"À quoi sert la traçabilité d'un lot exporté ?",ar:"فيمَ يفيد تتبّع دفعة مصدَّرة؟",en:"What is the traceability of an exported lot for?"},
+  q5a:{fr:"À augmenter le rendement de la parcelle",ar:"لزيادة مردود القطعة",en:"To increase the parcel's yield"},
+  q5b:{fr:"À réduire l'ET₀ de la culture",ar:"لتقليل ET₀ للمحصول",en:"To reduce the crop's ET₀"},
+  q5c:{fr:"À remonter du lot exporté jusqu'à la parcelle d'origine",ar:"للعودة من الدفعة المصدَّرة إلى القطعة الأصلية",en:"To trace the exported lot back to its origin parcel"},
+
+  t_score_ex:{fr:"Excellent — concepts maîtrisés !",ar:"ممتاز — المفاهيم متمكَّنة!",en:"Excellent — concepts mastered!"},
+  t_score_ok:{fr:"Bien — quelques points à revoir.",ar:"جيّد — بعض النقاط للمراجعة.",en:"Good — a few points to revisit."},
+  t_score_lo:{fr:"À revoir — relisez le cours puis recommencez.",ar:"يحتاج مراجعة — أعد قراءة الدرس ثم أعد المحاولة.",en:"Needs work — reread the course then retry."},
+  t_score_desc:{fr:"Réponses correctes sur 5 questions de synthèse.",ar:"إجابات صحيحة من 5 أسئلة تركيبية.",en:"Correct answers out of 5 synthesis questions."},
+
+  t_mode:{fr:"Mode local (localStorage) — progression sauvegardée automatiquement.",ar:"وضع محلي (localStorage) — التقدّم محفوظ تلقائياً.",en:"Local mode (localStorage) — progress saved automatically."},
+  t_export:{fr:"Exporter le compte-rendu (JSON)",ar:"تصدير التقرير (JSON)",en:"Export report (JSON)"},
+  t_reset:{fr:"Réinitialiser",ar:"إعادة الضبط",en:"Reset"},
+  t_reset_confirm:{fr:"Effacer toutes vos réponses et repartir de zéro ?",ar:"مسح جميع إجاباتك والبدء من جديد؟",en:"Erase all your answers and start over?"},
+  t_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Module M6 · travaux pratiques",ar:"منصّة أجريتك ليبيا · EU4Skills — الوحدة M6 · عمل تطبيقي",en:"AgriTech Libya Platform · EU4Skills — Module M6 · practical work"}
+});
+
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const LKEY="tp_fmis_v1";
+const STEPS=[1,2,3,4,5,6];
+const QUIZ=[
+  {id:"q1",correct:0,opts:["q1a","q1b","q1c"]},
+  {id:"q2",correct:0,opts:["q2a","q2b","q2c"]},
+  {id:"q3",correct:0,opts:["q3a","q3b","q3c"]},
+  {id:"q4",correct:1,opts:["q4a","q4b","q4c"]},
+  {id:"q5",correct:2,opts:["q5a","q5b","q5c"]}
+];
+// correct radio answers for step MCQs
+const STEPQ={s1a:0,s2a:1,s3a:1,s4a:1,s5a:0};
+const STEPKEYS=["s1a","s2a","s3a","s4a","s5a"];
+
+let STATE=load();
+function load(){try{return JSON.parse(localStorage.getItem(LKEY))||blank();}catch(e){return blank();}}
+function blank(){return{radios:{},fields:{},done:{},quiz:{},score:null,corrected:false};}
+function save(){STATE.updatedAt=new Date().toISOString();localStorage.setItem(LKEY,JSON.stringify(STATE));}
+
+/* ---- build quiz ---- */
+function buildQuiz(){
+  const box=$('#quiz');box.innerHTML='';
+  QUIZ.forEach((q,qi)=>{
+    const blk=document.createElement('div');blk.className='qblock';
+    const lab=document.createElement('label');lab.className='qlabel';
+    lab.textContent=(qi+1)+'. '+I18N.t(q.id);blk.appendChild(lab);
+    const opts=document.createElement('div');opts.className='opts';opts.dataset.quiz=q.id;
+    q.opts.forEach((ok,oi)=>{
+      const l=document.createElement('label');l.className='opt';
+      const inp=document.createElement('input');inp.type='radio';inp.name='qz_'+q.id;inp.value=oi;
+      if(STATE.quiz[q.id]===oi){inp.checked=true;l.classList.add('sel');}
+      inp.addEventListener('change',()=>{STATE.quiz[q.id]=oi;opts.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));l.classList.add('sel');save();});
+      const sp=document.createElement('span');sp.textContent=I18N.t(ok);
+      l.appendChild(inp);l.appendChild(sp);opts.appendChild(l);
+    });
+    blk.appendChild(opts);box.appendChild(blk);
+  });
+}
+
+/* ---- restore inputs ---- */
+function restore(){
+  // radios (steps)
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q, val=STATE.radios[name];
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.checked=(String(val)===r.value);
+      r.closest('.opt').classList.toggle('sel',r.checked);
+    });
+  });
+  // text/number/textarea fields
+  $$('[data-f]').forEach(f=>{if(STATE.fields[f.dataset.f]!=null)f.value=STATE.fields[f.dataset.f];});
+  // done checkboxes
+  $$('[data-done]').forEach(c=>{c.checked=!!STATE.done[c.dataset.done];});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+}
+
+/* ---- wire inputs ---- */
+function wire(){
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q;
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.addEventListener('change',()=>{
+        STATE.radios[name]=+r.value;
+        g.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+        r.closest('.opt').classList.add('sel');
+        feedbackStep(name);save();
+      });
+    });
+  });
+  $$('[data-f]').forEach(f=>f.addEventListener('input',()=>{STATE.fields[f.dataset.f]=f.value;save();}));
+  $$('[data-done]').forEach(c=>c.addEventListener('change',()=>{STATE.done[c.dataset.done]=c.checked;save();updateProgress();}));
+}
+
+/* ---- per-step feedback ---- */
+function feedbackStep(name){
+  const fb=$('.fb[data-fb="'+name+'"]');if(!fb)return;
+  const val=STATE.radios[name], ok=(val===STEPQ[name]);
+  let key='t_'+name.replace(/a$/,'')+(ok?'_fb_ok':'_fb_no'); // s1a -> t_s1_fb_ok
+  let msg=I18N.t(key);
+  // step 5 extra coherence check on PBT ~ CAPEX / savings
+  if(name==='s5a'&&ok){
+    const capex=parseFloat(STATE.fields.s5_capex),save=parseFloat(STATE.fields.s5_save),pbt=parseFloat(STATE.fields.s5_pbt);
+    if(!isNaN(capex)&&!isNaN(save)&&!isNaN(pbt)&&save>0){
+      const est=capex/save;
+      if(Math.abs(est-pbt)>Math.max(0.6,0.4*est))msg+=I18N.t('t_s5_fb_range');
+    }
+  }
+  fb.textContent=msg;
+  fb.className='fb show '+(ok?'ok':'no');
+}
+
+/* ---- progress ---- */
+function updateProgress(){
+  const done=STEPS.filter(i=>STATE.done[i]).length;
+  $('#pfill').style.width=(done/STEPS.length*100)+'%';
+  $('#ptxt').textContent=done+' / '+STEPS.length;
+  const dots=$('#pdots');dots.innerHTML='';
+  STEPS.forEach(i=>{const d=document.createElement('div');d.className='dot'+(STATE.done[i]?' done':'');dots.appendChild(d);});
+}
+
+/* ---- correct quiz ---- */
+function correctQuiz(){
+  let score=0;
+  QUIZ.forEach(q=>{
+    const g=$('.opts[data-quiz="'+q.id+'"]');
+    const ans=STATE.quiz[q.id];
+    g.querySelectorAll('.opt').forEach((l,oi)=>{
+      l.classList.remove('good','bad');
+      if(oi===q.correct)l.classList.add('good');
+      else if(oi===ans)l.classList.add('bad');
+    });
+    if(ans===q.correct)score++;
+  });
+  STATE.score=score;STATE.corrected=true;save();
+  showScore(score,true);
+}
+function showScore(score,scroll){
+  const box=$('#scorebox');box.hidden=false;
+  $('#scoreval').textContent=score+'/5';
+  $('#dial').style.setProperty('--p',(score/5*360)+'deg');
+  const tk=score>=5?'t_score_ex':score>=3?'t_score_ok':'t_score_lo';
+  $('#scoretitle').textContent=I18N.t(tk);
+  $('#scoredesc').textContent=score+' / 5 — '+I18N.t('t_score_desc');
+  if(scroll)box.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ---- export ---- */
+function doExport(){
+  const rep={
+    format:"agritech-tp-report",module:"M6",tp:"fmis",version:"tp_fmis_v1",
+    lang:I18N.lang,exportedAt:new Date().toISOString(),
+    stepsCompleted:STEPS.filter(i=>STATE.done[i]),
+    answers:{
+      step1:{parcels:STATE.fields.s1_parcels||"",operations:STATE.fields.s1_ops||"",value_link_choice:STATE.radios.s1a},
+      step2:{cost_ha_DT:STATE.fields.s2_cost||"",top_item:STATE.fields.s2_top||"",cost_kg_choice:STATE.radios.s2a},
+      step3:{deficit_crop:STATE.fields.s3_crop||"",margin_ha_DT:STATE.fields.s3_margin||"",deficit_def_choice:STATE.radios.s3a},
+      step4:{agriscore:STATE.fields.s4_score||"",lot_id:STATE.fields.s4_lot||"",agriscore_choice:STATE.radios.s4a},
+      step5:{capex_DT:STATE.fields.s5_capex||"",savings_year_DT:STATE.fields.s5_save||"",pbt_years:STATE.fields.s5_pbt||"",pbt_choice:STATE.radios.s5a},
+      step6:{quiz:STATE.quiz,takeaway:STATE.fields.s6_takeaway||""}
+    },
+    quizScore:STATE.score,quizMax:5
+  };
+  const name="tp_fmis_"+(new Date().toISOString().slice(0,10))+".json";
+  if(window.Store&&Store.download)Store.download(name,JSON.stringify(rep,null,2),'application/json');
+  else{const a=document.createElement('a');a.href='data:application/json,'+encodeURIComponent(JSON.stringify(rep,null,2));a.download=name;a.click();}
+}
+
+/* ---- reset ---- */
+function doReset(){
+  if(!confirm(I18N.t('t_reset_confirm')))return;
+  STATE=blank();localStorage.removeItem(LKEY);
+  $$('.fb').forEach(f=>f.className='fb');
+  $('#scorebox').hidden=true;
+  buildQuiz();restore();
+}
+
+/* ---- i18n re-render ---- */
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{
+  applyHTML();buildQuiz();
+  STEPKEYS.forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+});
+
+$('#correctBtn').addEventListener('click',correctQuiz);
+$('#exportBtn').addEventListener('click',doExport);
+$('#resetBtn').addEventListener('click',doReset);
+
+buildQuiz();wire();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();restore();
+STEPKEYS.forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

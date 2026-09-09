@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriMap Formation — Indices satellites réels · SKILLS4EU</title>
+<!-- Polices + thème papier clair-vert de la plateforme (AVANT le style inline) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<style>
+  :root{
+    /* Thème papier clair-vert (aligné sur platform/public/assets/css/theme.css) */
+    --bg:#fbfcf8; --card:#ffffff; --ink:#2c3a24; --sub:#6f7d64; --line:#d8e4c8;
+    /* --blue / --blue2 conservent leur NOM (utilisés partout dans l'app) mais deviennent VERTS */
+    --blue:#7cb342; --blue2:#5a8f2c; --orange:#e0912b; --green:#3fa66a; --red:#d1584e; --amber:#e0912b;
+    --green-bg:#f1f7e9;
+    --chip:#f1f7e9; --shadow:0 4px 18px rgba(60,80,40,.10);
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  [hidden]{display:none!important}
+  body{background:var(--bg); color:var(--ink); font:14px/1.5 "Inter","Segoe UI",system-ui,sans-serif; padding-bottom:40px}
+  body[dir="rtl"]{font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif; direction:rtl}
+  header{background:#fff; box-shadow:none; border-bottom:1px solid var(--line); padding:12px 26px; display:flex; align-items:center; gap:14px; position:sticky; top:0; z-index:1100}
+  header .logo{font-size:20px; font-weight:800}
+  header .logo b{color:var(--blue2)} header .logo span{color:var(--blue)}
+  header .sub{color:var(--sub); font-size:12.5px}
+  header .right{margin-inline-start:auto; color:var(--sub); font-size:12.5px; display:flex; align-items:center; gap:12px}
+  header .right b{color:var(--ink)}
+  /* Sélecteur de langue standard */
+  .langbox{display:inline-flex; gap:6px}
+  .langbox button{border:1px solid var(--line); background:#fff; color:var(--sub); font:inherit; font-weight:600;
+    padding:5px 12px; border-radius:8px; cursor:pointer; transition:.15s}
+  .langbox button:hover{border-color:var(--blue)}
+  .langbox button.on{background:var(--blue); color:#fff; border-color:var(--blue)}
+  .wrap{max-width:1240px; margin:18px auto; padding:0 18px; display:flex; flex-direction:column; gap:16px}
+  .card{background:var(--card); border-radius:14px; box-shadow:var(--shadow); padding:18px 20px}
+  .card h2{font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px; margin-bottom:12px}
+  .card h2 .ico{color:var(--blue)}
+  .card h2 .meta{color:var(--sub); font-weight:600; font-size:12.5px; margin-left:6px}
+  .card h2 .end{margin-left:auto}
+
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end}
+  .field{display:flex; flex-direction:column; gap:4px}
+  .field label{color:var(--sub); font-size:12px; font-weight:700}
+  .field input, .field select{border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; color:var(--ink); background:#fff; min-width:150px}
+  .btn{border:none; border-radius:8px; padding:9px 18px; font:inherit; font-weight:700; cursor:pointer}
+  .btn.primary{background:var(--blue); color:#fff}
+  .btn.primary:hover{background:var(--blue2)}
+  .btn.ghost{background:var(--chip); color:var(--ink); border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--blue)}
+  .btn.dark{background:var(--blue2); color:#fff; width:100%; letter-spacing:.5px}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  :is(.btn,.chip):focus-visible{outline:2px solid var(--blue); outline-offset:1px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .chip{background:var(--chip); border:1px solid var(--line); border-radius:18px; padding:5px 12px; font-size:12.5px;
+    font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; color:var(--ink)}
+  .chip small{color:var(--sub); font-weight:700}
+  .chip .cc{color:var(--amber)}
+  .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+  .chip.on small,.chip.on .cc{color:#eaf1ff}
+  .chip .s2{background:var(--green-bg); color:var(--blue2); border-radius:6px; padding:0 5px; font-size:10.5px}
+  .chip.on .s2{background:rgba(255,255,255,.25); color:#fff}
+
+  .catlab{color:var(--sub); font-size:11px; font-weight:800; letter-spacing:1px; margin:12px 0 6px}
+  .idxgrid{display:flex; flex-wrap:wrap; gap:8px}
+  .idx{background:#fff; border:1px solid var(--line); border-radius:10px; padding:7px 14px; cursor:pointer; text-align:center; min-width:96px}
+  .idx b{display:block; font-size:13px}
+  .idx small{color:var(--sub); font-size:10.5px; line-height:1.2; display:block}
+  .idx.on{background:var(--blue); border-color:var(--blue)}
+  .idx.on b,.idx.on small{color:#fff}
+  .idx.off{opacity:.45; cursor:not-allowed}
+  .ramp{height:12px; border-radius:6px; margin-top:14px}
+  .rampmm{display:flex; justify-content:space-between; color:var(--sub); font-size:11.5px; margin-top:3px}
+  .rampdesc{color:var(--sub); font-size:12px; font-style:italic; margin-top:4px}
+
+  #map{height:520px; border-radius:10px; z-index:1}
+  .mapfoot{display:flex; align-items:center; gap:12px; margin-top:10px}
+  .mapfoot input[type=range]{flex:1; accent-color:var(--blue)}
+  .maptools{display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; align-items:center}
+  .status{color:var(--sub); font-size:12.5px; margin-left:auto}
+  .status.err{color:var(--red); font-weight:700}
+  .status.ok{color:var(--green); font-weight:700}
+
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:14px}
+  .tile{background:var(--chip); border-radius:10px; padding:10px 12px; text-align:center}
+  .tile .k{color:var(--sub); font-size:11.5px; font-weight:700}
+  .tile .v{font-size:17px; font-weight:800; margin-top:2px}
+  canvas.chartc{width:100%; background:#f7faf1; border:1px solid var(--line); border-radius:10px}
+  .legendline{display:flex; gap:16px; font-size:12px; color:var(--sub); margin-top:6px}
+  .dotl{display:inline-block; width:9px; height:9px; border-radius:5px; margin-right:5px; vertical-align:middle}
+  .note{color:var(--sub); font-size:12px; font-style:italic; margin-top:8px}
+  .warnbox{background:#fff7ec; border:1px solid #f2d9ae; color:#8a6320; border-radius:10px; padding:10px 14px; font-size:12.5px; margin-top:10px}
+
+  /* --- Barre de dessin STANDARD (moteur leaflet-draw, style plateforme) --- */
+  .shbar{position:absolute; top:12px; inset-inline-start:12px; z-index:600; display:flex; flex-direction:column;
+    gap:3px; background:#fff; border:1px solid var(--line); border-radius:11px; padding:5px; box-shadow:var(--shadow)}
+  .shbar .tool{width:38px; height:38px; border:none; background:transparent; color:var(--sub); border-radius:8px;
+    cursor:pointer; display:grid; place-items:center; position:relative; transition:.15s}
+  .shbar .tool svg{width:20px; height:20px}
+  .shbar .tool:hover{background:var(--green-bg); color:var(--blue2)}
+  .shbar .tool.on{background:var(--blue); color:#fff}
+  .shbar .sep{height:1px; background:var(--line); margin:3px 4px}
+  .shbar .tool .tip{position:absolute; inset-inline-start:46px; top:50%; transform:translateY(-50%);
+    background:var(--ink); color:#fff; font:600 12px/1 "Inter",system-ui; white-space:nowrap; padding:6px 9px;
+    border-radius:6px; opacity:0; pointer-events:none; transition:.12s}
+  .shbar .tool:hover .tip{opacity:1}
+  body[dir="rtl"] .shbar .tool .tip{inset-inline-start:auto; inset-inline-end:46px}
+  .leaflet-draw-tooltip{font-family:"Inter",system-ui,sans-serif}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><b>Agri</b><span>Map</span></div>
+  <div class="sub" data-i18n="hdr_sub">Formation SKILLS4EU · Sentinel-2 L2A en direct (Sentinel Hub)</div>
+  <div class="right">
+    <span><span data-i18n="hdr_parcel">Parcelle démo</span> : <b id="hdrParcel">dessinez sur la carte</b></span>
+    <div class="langbox" id="langbox">
+      <button data-lang="fr">FR</button><button data-lang="ar">ع</button><button data-lang="en">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ Recherche d'images ============ -->
+  <section class="card">
+    <h2><span class="ico">🛰</span> <span data-i18n="c_search">Recherche d'images satellites</span></h2>
+    <div class="row">
+      <div class="field"><label data-i18n="f_from">Du</label><input type="date" id="dFrom"></div>
+      <div class="field"><label data-i18n="f_to">Au</label><input type="date" id="dTo"></div>
+      <div class="field"><label data-i18n="f_cloud">Nuages ≤</label>
+        <select id="cloud"><option>10</option><option selected>30</option><option>60</option><option>100</option></select></div>
+      <div class="field"><label data-i18n="f_source">Source satellite</label>
+        <select id="source"><option value="sentinel-2-l2a" selected>Sentinel-2 L2A (10 m)</option></select></div>
+      <button class="btn primary" id="btnSearch">🔍 <span data-i18n="b_search">Rechercher</span></button>
+      <span class="status" id="searchStatus"></span>
+    </div>
+    <div class="chips" id="dateChips"><span class="note" data-i18n="hint_search">Dessinez d'abord une parcelle, puis lancez la recherche — les dates disponibles s'afficheront ici.</span></div>
+  </section>
+
+  <!-- ============ Indice spectral ============ -->
+  <section class="card">
+    <h2><span class="ico">🗂</span> <span data-i18n="c_index">Indice spectral</span> <span class="meta" id="curIdxLab">NDVI</span></h2>
+    <div id="idxZone"></div>
+    <div class="ramp" id="rampBar"></div>
+    <div class="rampmm"><span id="rampMin"></span><span id="rampMid" style="font-weight:700;color:var(--ink)"></span><span id="rampMax"></span></div>
+    <div class="rampdesc" id="rampDesc"></div>
+  </section>
+
+  <!-- ============ Carte ============ -->
+  <section class="card">
+    <h2><span class="ico">🗺</span> <span data-i18n="c_map">Carte raster</span> <span class="meta" id="rasterMeta">—</span>
+      <span class="end status" id="mapStatus"></span></h2>
+    <div class="maptools">
+      <button class="btn ghost" id="btnDraw" hidden>✏ Dessiner parcelle</button>
+      <button class="btn ghost" id="btnClear" hidden>🗑 Effacer</button>
+      <button class="btn ghost" id="btnExportGeo">⬇ <span data-i18n="b_export_geo">Export GeoJSON</span></button>
+      <button class="btn ghost" id="btnExportCSV">⬇ <span data-i18n="b_export_csv">Export CSV</span></button>
+      <button class="btn ghost" id="btnImport">⬆ <span data-i18n="b_import">Importer parcelle</span></button>
+      <span class="note" data-i18n="map_hint">Barre d'outils à gauche de la carte : Sélection · Parcelle · Pivot · Rectangle · Repère · Effacer.</span>
+    </div>
+    <div id="map"></div>
+    <div class="mapfoot">
+      <span style="color:var(--sub);font-size:12.5px" data-i18n="opacity">Opacité</span>
+      <input type="range" id="opacity" min="0" max="100" value="100">
+      <span id="opv" style="font-size:12.5px;color:var(--sub)">100%</span>
+    </div>
+  </section>
+
+  <!-- ============ Statistiques ============ -->
+  <section class="card">
+    <h2><span class="ico">📊</span> <span data-i18n="c_stats">Statistiques</span> — <span id="statIdx">NDVI</span> <span class="meta" id="statMeta"></span></h2>
+    <div class="tiles">
+      <div class="tile"><div class="k" data-i18n="s_mean">Moyenne</div><div class="v" style="color:var(--blue)" id="stMean">—</div></div>
+      <div class="tile"><div class="k" data-i18n="s_med">Médiane</div><div class="v" id="stMed">—</div></div>
+      <div class="tile"><div class="k">Min</div><div class="v" style="color:#2a8fa0" id="stMin">—</div></div>
+      <div class="tile"><div class="k">Max</div><div class="v" style="color:var(--red)" id="stMax">—</div></div>
+      <div class="tile"><div class="k">σ</div><div class="v" style="color:var(--amber)" id="stStd">—</div></div>
+      <div class="tile"><div class="k">P10/P90</div><div class="v" id="stP">—</div></div>
+    </div>
+    <canvas class="chartc" id="histo" width="1100" height="180"></canvas>
+    <div class="note" id="histNote" data-i18n="hist_note">Histogramme de la parcelle sur l'image sélectionnée.</div>
+  </section>
+
+  <!-- ============ Évolution temporelle ============ -->
+  <section class="card">
+    <h2><span class="ico">📈</span> <span data-i18n="c_serie">Évolution temporelle</span> — <span id="serIdx">NDVI</span> <span class="meta" id="serMeta"></span></h2>
+    <canvas class="chartc" id="serie" width="1100" height="260"></canvas>
+    <div class="legendline"><span><span class="dotl" style="background:var(--green)"></span><span data-i18n="leg_index">Indice (moyenne parcelle)</span></span>
+      <span><span class="dotl" style="background:var(--orange)"></span><span data-i18n="leg_acq">Acquisitions</span></span></div>
+    <button class="btn dark" id="btnSerie" style="margin-top:12px" data-i18n="b_serie">⟳ CALCULER SÉRIE</button>
+  </section>
+
+  <div class="warnbox">🔐 <b data-i18n="warn_title">Authentification via proxy serveur</b> — <span data-i18n="warn_body">le client secret est dans <code>sh_token.php</code> (même dossier), jamais dans cette page. Toute personne disposant de cette URL peut néanmoins consommer vos unités de traitement : gardez la page sur le serveur de formation et régénérez le secret après la session.</span></div>
+</div>
+
+<!-- i18n partagé + recherche géo partagée (APRÈS Leaflet) -->
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/geo-search.js"></script>
+<script>
+/* =====================================================================
+   AgriMap Formation — Sentinel Hub temps réel (OAuth + Catalog + Process + Statistical)
+   ===================================================================== */
+const SH = {
+  tokenProxy: "sh_token.php",   // proxy same-origin : le client secret reste sur le serveur
+  process: "https://services.sentinel-hub.com/api/v1/process",
+  catalog: "https://services.sentinel-hub.com/api/v1/catalog/1.0.0/search",
+  stats: "https://services.sentinel-hub.com/api/v1/statistics"
+};
+
+/* ---------------- Indices (style AgriManager) ---------------- */
+const RAMPS = {
+  veg:[[0,'#a50f15'],[0.25,'#f46d43'],[0.5,'#fee08b'],[0.75,'#a6d96a'],[1,'#006837']],
+  water:[[0,'#8a5a2b'],[0.5,'#e8e6d4'],[1,'#1a49b8']],
+  stress:[[0,'#1a9850'],[0.5,'#fee08b'],[1,'#a50f15']],
+  soil:[[0,'#2f8f4e'],[0.5,'#e3ddc4'],[1,'#b07a3c']],
+  sal:[[0,'#3c82b4'],[0.5,'#efe6a0'],[1,'#b01f1f']]
+};
+const INDICES = [
+ {id:'NDVI', cat:'VÉGÉTATION', lab:'Vigueur végétative', bands:['B04','B08'], min:-0.2, max:0.9, ramp:'veg',
+  f:'(B08 - B04) / (B08 + B04)', desc:'Biomasse / chlorophylle. Tomate saine en pleine vég. : 0.6–0.85.'},
+ {id:'GNDVI', cat:'VÉGÉTATION', lab:'Détection précoce maladies', bands:['B03','B08'], min:0, max:0.9, ramp:'veg',
+  f:'(B08 - B03) / (B08 + B03)', desc:'Sensible à la chlorophylle via le vert — décroche souvent avant le NDVI.'},
+ {id:'EVI', cat:'VÉGÉTATION', lab:'Biomasse · pic vég.', bands:['B02','B04','B08'], min:0, max:1, ramp:'veg',
+  f:'2.5 * (B08 - B04) / (B08 + 6.0*B04 - 7.5*B02 + 1.0)', desc:'Moins saturé que le NDVI sur couverts denses ; corrige l’effet atmosphère/sol.'},
+ {id:'MSAVI2', cat:'VÉGÉTATION', lab:'Vég. avec sol nu (début cycle)', bands:['B04','B08'], min:0, max:1, ramp:'veg',
+  f:'(2.0*B08 + 1.0 - Math.sqrt((2.0*B08+1.0)*(2.0*B08+1.0) - 8.0*(B08-B04))) / 2.0', desc:'Minimise l’influence du sol — idéal en début de cycle.'},
+ {id:'NDRE', cat:'RED EDGE · NUTRITION', lab:'Stress azoté · vég. dense', bands:['B05','B08'], min:0, max:0.6, ramp:'veg',
+  f:'(B08 - B05) / (B08 + B05)', desc:'Red edge : discrimine quand le NDVI sature ; statut azoté mi/fin de saison.'},
+ {id:'CIRE', cat:'RED EDGE · NUTRITION', lab:'Chlorophylle Red Edge', bands:['B05','B07'], min:0, max:6, ramp:'veg',
+  f:'B07 / B05 - 1.0', desc:'Chlorophyll Index red-edge — proportionnel au contenu chlorophyllien.'},
+ {id:'MTCI', cat:'RED EDGE · NUTRITION', lab:'Chlorophylle red-edge fine', bands:['B04','B05','B06'], min:0, max:6, ramp:'veg',
+  f:'(B06 - B05) / Math.max(0.0001, (B05 - B04))', desc:'MERIS Terrestrial Chlorophyll Index adapté S2.'},
+ {id:'REIP', cat:'RED EDGE · NUTRITION', lab:'Stade phénologique · chlorophylle', bands:['B04','B05','B06','B07'], min:700, max:740, ramp:'veg',
+  f:'700.0 + 40.0 * (((B04 + B07)/2.0 - B05) / Math.max(0.0001,(B06 - B05)))', desc:'Position du point d’inflexion red-edge (nm) — glisse vers le rouge quand la chlorophylle monte.', fmt:0},
+ {id:'NDMI', cat:'EAU / HYDRIQUE', lab:'Humidité · stress hydrique', bands:['B08','B11'], min:-0.5, max:0.5, ramp:'water',
+  f:'(B08 - B11) / (B08 + B11)', desc:'Contenu en eau du couvert (NIR/SWIR) — décroche souvent avant le NDVI en cas de stress.'},
+ {id:'CWSI', cat:'EAU / HYDRIQUE', lab:'Stress hydrique canopée (proxy S2)', bands:['B08','B11'], min:0, max:1, ramp:'stress',
+  f:'((B11 - B08) / (B11 + B08) + 1.0) / 2.0', desc:'Proxy optique du Crop Water Stress Index : 0 = couvert hydraté, 1 = stress fort. (Le vrai CWSI est thermique.)'},
+ {id:'NDWI', cat:'EAU / HYDRIQUE', lab:'Eau libre / irrigation', bands:['B03','B08'], min:-0.5, max:0.5, ramp:'water',
+  f:'(B03 - B08) / (B03 + B08)', desc:'McFeeters (vert/NIR) : détecte l’eau LIBRE (bassins, canaux). ≠ NDWI de Gao (eau du couvert).'},
+ {id:'PSRI', cat:'SÉNESCENCE · RÉCOLTE', lab:'Sénescence · maturation', bands:['B03','B04','B06'], min:-0.2, max:0.6, ramp:'stress',
+  f:'(B04 - B03) / Math.max(0.0001, B06)', desc:'Plant Senescence Reflectance Index — monte avec caroténoïdes/chlorophylle ↓ (maturation).'},
+ {id:'GCI', cat:'CHLOROPHYLLE', lab:'Chlorophylle totale · indice vert', bands:['B03','B08'], min:0, max:6, ramp:'veg',
+  f:'B08 / B03 - 1.0', desc:'Green Chlorophyll Index — chlorophylle totale de la canopée.'},
+ {id:'BSI', cat:'SOL', lab:'Sol nu · début cycle', bands:['B02','B04','B08','B11'], min:-0.5, max:0.5, ramp:'soil',
+  f:'((B11 + B04) - (B08 + B02)) / ((B11 + B04) + (B08 + B02))', desc:'Bare Soil Index — positif = sol nu dominant.'},
+ {id:'SI', cat:'SOL', lab:'Salinité (approx. Tunisie)', bands:['B02','B04'], min:0, max:0.5, ramp:'sal',
+  f:'Math.sqrt(B02 * B04)', desc:'Indice de salinité SI1 = √(Bleu×Rouge) — approximation optique, à calibrer avec des EC terrain.'},
+ {id:'LST', cat:'THERMIQUE', lab:'Température surface (°C)', off:true, desc:'Non disponible en Sentinel-2 (nécessite Landsat/S3 thermique).'}
+];
+
+/* ---------------- État global ---------------- */
+let curIdx = INDICES[0];
+let parcelPts = [];        // [[lat,lng],...]
+let parcelLayer = null, drawMode = false, drawPts = [], drawTemp = [];
+let rasterOverlay = null;
+let curDate = null, scenes = [];
+let token = null, tokenExp = 0;
+let lastStats = null, lastSerie = [];   // dernières stats zonales + série temporelle (pour export CSV/GeoJSON)
+
+/* ---------------- OAuth ---------------- */
+async function getToken(){
+  if(token && Date.now() < tokenExp - 60000) return token;
+  const r = await fetch(SH.tokenProxy, {cache:"no-store"});
+  if(!r.ok) throw new Error("Proxy jeton injoignable ("+r.status+") — sh_token.php est-il déposé à côté de cette page ?");
+  const j = await r.json();
+  if(!j.access_token) throw new Error("Proxy jeton : "+(j.error||"réponse invalide"));
+  token = j.access_token; tokenExp = Date.now() + (j.expires_in||3500)*1000;
+  return token;
+}
+async function shFetch(url, payload, expect="json"){
+  const tk = await getToken();
+  const r = await fetch(url, {method:"POST",
+    headers:{"Content-Type":"application/json", "Authorization":"Bearer "+tk, "Accept": expect==="blob"?"image/png":"application/json"},
+    body: JSON.stringify(payload)});
+  if(!r.ok){ const txt = await r.text(); throw new Error("API "+r.status+" — "+txt.slice(0,180)); }
+  return expect==="blob" ? r.blob() : r.json();
+}
+
+/* ---------------- Géométrie ---------------- */
+function parcelGeoJSON(){ // lon,lat + anneau fermé
+  const ring = parcelPts.map(p=>[p[1],p[0]]);
+  ring.push(ring[0]);
+  return {type:"Polygon", coordinates:[ring]};
+}
+function parcelBBox(){
+  const lats=parcelPts.map(p=>p[0]), lngs=parcelPts.map(p=>p[1]);
+  return [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)]; // W S E N
+}
+function bboxDims(bb, maxPx=768){ // ~10 m/pixel, plafonné
+  const mPerDegX = 111320*Math.cos((bb[1]+bb[3])/2*Math.PI/180), mPerDegY = 110540;
+  const wM=(bb[2]-bb[0])*mPerDegX, hM=(bb[3]-bb[1])*mPerDegY;
+  let w=Math.max(32, Math.round(wM/10)), h=Math.max(32, Math.round(hM/10));
+  const k=Math.max(w,h)/maxPx; if(k>1){ w=Math.round(w/k); h=Math.round(h/k); }
+  return {w,h};
+}
+
+/* ---------------- Evalscripts ---------------- */
+function rampStops(name, lo, hi){
+  return RAMPS[name].map(([t,hex])=>{
+    const n=parseInt(hex.slice(1),16);
+    return `[${(lo+t*(hi-lo)).toFixed(4)}, [${(n>>16)&255}, ${(n>>8)&255}, ${n&255}]]`;
+  }).join(",");
+}
+function vizEvalscript(ix){
+  return `//VERSION=3
+function setup(){ return { input:[{bands:[${ix.bands.map(b=>`"${b}"`).join(",")},"dataMask"]}],
+  output:{bands:4} }; }
+const stops=[${rampStops(ix.ramp, ix.min, ix.max)}];
+function colorOf(v){
+  if(v<=stops[0][0]) return stops[0][1];
+  for(let i=1;i<stops.length;i++){
+    if(v<=stops[i][0]){
+      const f=(v-stops[i-1][0])/(stops[i][0]-stops[i-1][0]), a=stops[i-1][1], b=stops[i][1];
+      return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f];
+    }
+  }
+  return stops[stops.length-1][1];
+}
+function evaluatePixel(s){
+  const B02=s.B02||0,B03=s.B03||0,B04=s.B04||0,B05=s.B05||0,B06=s.B06||0,B07=s.B07||0,B08=s.B08||0,B11=s.B11||0;
+  const v = ${ix.f};
+  const c = colorOf(v);
+  return [c[0]/255, c[1]/255, c[2]/255, s.dataMask];
+}`;
+}
+function statEvalscript(ix){
+  return `//VERSION=3
+function setup(){ return { input:[{bands:[${ix.bands.map(b=>`"${b}"`).join(",")},"dataMask"]}],
+  output:[{id:"data",bands:1,sampleType:"FLOAT32"},{id:"dataMask",bands:1}] }; }
+function evaluatePixel(s){
+  const B02=s.B02||0,B03=s.B03||0,B04=s.B04||0,B05=s.B05||0,B06=s.B06||0,B07=s.B07||0,B08=s.B08||0,B11=s.B11||0;
+  return { data:[${ix.f}], dataMask:[s.dataMask] };
+}`;
+}
+
+/* ---------------- Carte Leaflet ---------------- */
+const mapEl = L.map("map", {doubleClickZoom:false}).setView([34.5493, 8.6833], 15); // Gafsa — parcelle démo
+const basePlan = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:19, attribution:"© OpenStreetMap"});
+const baseSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  {maxZoom:19, attribution:"Esri World Imagery"});
+baseSat.addTo(mapEl);
+L.control.layers({"Plan":basePlan, "Satellite":baseSat}, null, {position:"bottomleft"}).addTo(mapEl);
+mapEl.zoomControl.setPosition("bottomright"); // libère le coin haut-gauche pour la barre de dessin standard
+
+const drawGroup = L.layerGroup().addTo(mapEl);
+const markerGroup = L.layerGroup().addTo(mapEl); // repères libres (outil « Marqueur »)
+function setStatus(el, msg, cls){ const e=document.getElementById(el); e.textContent=msg||""; e.className="status"+(cls?" "+cls:""); if(el==="mapStatus") e.classList.add("end"); }
+
+document.getElementById("btnDraw").onclick = ()=>{
+  drawMode=!drawMode; drawPts=[]; refreshDraw();
+  document.getElementById("btnDraw").classList.toggle("primary", drawMode);
+  mapEl.getContainer().style.cursor = drawMode ? "crosshair" : "";
+};
+document.getElementById("btnClear").onclick = ()=>{ clearParcel(); };
+function clearParcel(){
+  parcelPts=[]; drawPts=[]; drawMode=false;
+  if(parcelLayer){ mapEl.removeLayer(parcelLayer); parcelLayer=null; }
+  if(rasterOverlay){ mapEl.removeLayer(rasterOverlay); rasterOverlay=null; }
+  drawGroup.clearLayers(); if(typeof markerGroup!=="undefined") markerGroup.clearLayers();
+  document.getElementById("hdrParcel").textContent=(window.I18N?I18N.t("hdr_draw_hint"):"dessinez sur la carte");
+  document.getElementById("btnDraw").classList.remove("primary");
+  mapEl.getContainer().style.cursor="";
+}
+function refreshDraw(){
+  drawGroup.clearLayers();
+  drawPts.forEach(p=>L.circleMarker(p,{radius:4,color:"#f28c28",fillColor:"#f28c28",fillOpacity:1}).addTo(drawGroup));
+  if(drawPts.length>1) L.polyline(drawPts,{color:"#f28c28",dashArray:"6 4",weight:2}).addTo(drawGroup);
+}
+mapEl.on("click", e=>{ if(!drawMode) return; drawPts.push([e.latlng.lat, e.latlng.lng]); refreshDraw(); });
+mapEl.on("dblclick", ()=>{ if(drawMode) closeParcel(); });
+window.addEventListener("keydown", e=>{
+  if(e.key==="Escape" && drawMode){ drawMode=false; drawPts=[]; refreshDraw(); document.getElementById("btnDraw").classList.remove("primary"); mapEl.getContainer().style.cursor=""; }
+  if(e.key==="Enter" && drawMode) closeParcel();
+});
+function closeParcel(){
+  if(drawPts.length<3) return;
+  parcelPts=drawPts.slice(); drawPts=[]; drawMode=false; drawGroup.clearLayers();
+  document.getElementById("btnDraw").classList.remove("primary");
+  mapEl.getContainer().style.cursor="";
+  if(parcelLayer) mapEl.removeLayer(parcelLayer);
+  parcelLayer=L.polygon(parcelPts,{color:"#f28c28",weight:3,fillColor:"#f28c28",fillOpacity:0.28}).addTo(mapEl);
+  mapEl.fitBounds(parcelLayer.getBounds().pad(0.6));
+  const a=areaHa(); document.getElementById("hdrParcel").textContent = a.toFixed(2)+" ha · "+parcelPts.length+" sommets";
+  if(curDate) loadRaster();
+}
+function areaHa(){ // formule du lacet en coordonnées projetées approx.
+  const R=6371000, lat0=parcelPts[0][0]*Math.PI/180;
+  const pts=parcelPts.map(p=>[(p[1]*Math.PI/180)*R*Math.cos(lat0), (p[0]*Math.PI/180)*R]);
+  let s=0; for(let i=0;i<pts.length;i++){ const j=(i+1)%pts.length; s+=pts[i][0]*pts[j][1]-pts[j][0]*pts[i][1]; }
+  return Math.abs(s)/2/10000;
+}
+
+/* ---------------- Barre de dessin STANDARD (moteur partagé leaflet-draw) ----------------
+   Le dessin natif (bouton « Dessiner », clic/dblclic) est NEUTRALISÉ (boutons masqués).
+   On monte leaflet-draw — le même moteur que J3/pilotage-irrigation.html & agrimap-draw.js —
+   sur LA MÊME carte Leaflet que Sentinel Hub, puis on PONTE la forme dessinée vers
+   parcelPts → loadRaster()/loadStats(), sans toucher au pipeline Sentinel Hub (images/indices/export). */
+const SHBAR_TOOLS=[{id:'select'},{sep:1},{id:'parcel'},{id:'pivot'},{id:'rect'},{sep:1},{id:'marker'},{id:'clear'}];
+const SHBAR_ICONS={
+  select:'<path d="M4 3l7 17 2-7 7-2z"/>',
+  parcel:'<path d="M4 6l7-3 9 4-2 12-9 2-5-3z" fill="none"/>',
+  pivot:'<circle cx="12" cy="12" r="8" fill="none" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="1.5"/>',
+  rect:'<rect x="4" y="6" width="16" height="12" rx="1" fill="none"/>',
+  marker:'<path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z" fill="none"/><circle cx="12" cy="9" r="2.5"/>',
+  clear:'<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" fill="none"/>'
+};
+const SHBAR_TIPS={
+  select:{fr:'Sélection',en:'Select',ar:'تحديد'},
+  parcel:{fr:'Parcelle (polygone)',en:'Parcel (polygon)',ar:'قطعة (مضلّع)'},
+  pivot:{fr:'Pivot (cercle)',en:'Pivot (circle)',ar:'محور ريّ (دائرة)'},
+  rect:{fr:'Rectangle',en:'Rectangle',ar:'مستطيل'},
+  marker:{fr:'Repère',en:'Marker',ar:'علامة'},
+  clear:{fr:'Effacer',en:'Clear',ar:'مسح'}
+};
+function shLang(){ return (window.I18N && window.I18N.lang) || 'fr'; }
+function shSvg(id){ return '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6">'+(SHBAR_ICONS[id]||'')+'</svg>'; }
+const shBar=document.createElement('div'); shBar.className='shbar';
+mapEl.getContainer().appendChild(shBar);
+let shActive='select', shDraw=null;
+function shRenderBar(){
+  shBar.innerHTML='';
+  SHBAR_TOOLS.forEach(t=>{
+    if(t.sep){ const d=document.createElement('div'); d.className='sep'; shBar.appendChild(d); return; }
+    const b=document.createElement('button'); b.type='button'; b.className='tool'+(shActive===t.id?' on':'');
+    const tip=SHBAR_TIPS[t.id]||{};
+    b.innerHTML=shSvg(t.id)+'<span class="tip">'+(tip[shLang()]||tip.fr||t.id)+'</span>';
+    b.onclick=()=>shSelectTool(t.id); shBar.appendChild(b);
+  });
+}
+function shStopDraw(){ if(shDraw){ try{shDraw.disable();}catch(e){} shDraw=null; } mapEl.off('click', shPlaceMarker); mapEl.getContainer().style.cursor=''; }
+function shSelectTool(id){
+  if(id==='clear'){ clearParcel(); shActive='select'; shStopDraw(); shRenderBar(); return; }
+  shActive=id; shStopDraw(); shRenderBar();
+  const opt={color:'#e0912b',weight:2};
+  if(id==='parcel'){ shDraw=new L.Draw.Polygon(mapEl,{shapeOptions:opt,allowIntersection:false}); shDraw.enable(); }
+  else if(id==='rect'){ shDraw=new L.Draw.Rectangle(mapEl,{shapeOptions:opt}); shDraw.enable(); }
+  else if(id==='pivot'){ shDraw=new L.Draw.Circle(mapEl,{shapeOptions:{color:'#e0912b',weight:2,dashArray:'5 5'}}); shDraw.enable(); }
+  else if(id==='marker'){ mapEl.on('click', shPlaceMarker); mapEl.getContainer().style.cursor='crosshair'; }
+}
+function shPlaceMarker(e){
+  L.marker(e.latlng).addTo(markerGroup).bindTooltip(e.latlng.lat.toFixed(4)+', '+e.latlng.lng.toFixed(4));
+}
+function shCommitParcel(latlngs){ // PONT : forme dessinée -> pipeline Sentinel Hub
+  parcelPts=latlngs.map(ll=>[ll.lat, ll.lng]);
+  drawPts=[]; drawMode=false; drawGroup.clearLayers();
+  if(parcelLayer) mapEl.removeLayer(parcelLayer);
+  parcelLayer=L.polygon(parcelPts,{color:'#e0912b',weight:3,fillColor:'#e0912b',fillOpacity:0.28}).addTo(mapEl);
+  mapEl.fitBounds(parcelLayer.getBounds().pad(0.6));
+  const a=areaHa(), lbl=(window.I18N&&I18N.DICT&&I18N.DICT.vertices?I18N.t('vertices'):'sommets');
+  document.getElementById('hdrParcel').textContent=a.toFixed(2)+' ha · '+parcelPts.length+' '+lbl;
+  if(curDate) loadRaster();
+}
+mapEl.on(L.Draw.Event.CREATED, e=>{
+  const layer=e.layer, type=e.layerType;
+  if(type==='polygon'||type==='rectangle'){ shCommitParcel(layer.getLatLngs()[0]); }
+  else if(type==='circle'){ // pivot cercle -> anneau 40 pts pour parcelPts
+    const c=layer.getLatLng(), r=layer.getRadius(), R=6378137, la=c.lat*Math.PI/180, ring=[];
+    for(let i=0;i<40;i++){ const th=i/40*2*Math.PI;
+      ring.push(L.latLng(c.lat+(r*Math.cos(th))/R*180/Math.PI, c.lng+(r*Math.sin(th))/(R*Math.cos(la))*180/Math.PI)); }
+    shCommitParcel(ring);
+  }
+  shActive='select'; shStopDraw(); shRenderBar();
+});
+shRenderBar();
+
+/* ---------------- Recherche Catalog ---------------- */
+document.getElementById("btnSearch").onclick = searchScenes;
+async function searchScenes(){
+  if(parcelPts.length<3){ setStatus("searchStatus","Dessinez d'abord une parcelle.","err"); return; }
+  setStatus("searchStatus","Recherche en cours…");
+  const bb=parcelBBox();
+  try{
+    const j=await shFetch(SH.catalog,{
+      collections:[document.getElementById("source").value],
+      bbox:bb,
+      datetime:document.getElementById("dFrom").value+"T00:00:00Z/"+document.getElementById("dTo").value+"T23:59:59Z",
+      limit:60,
+      filter:{op:"<=",args:[{property:"eo:cloud_cover"},+document.getElementById("cloud").value]},
+      "filter-lang":"cql2-json",
+      fields:{include:["properties.datetime","properties.eo:cloud_cover"],exclude:["assets","links"]}
+    });
+    const byDay={};
+    j.features.forEach(f=>{
+      const d=f.properties.datetime.slice(0,10);
+      const cc=Math.round(f.properties["eo:cloud_cover"]??0);
+      if(!(d in byDay)||cc<byDay[d]) byDay[d]=cc;
+    });
+    scenes=Object.entries(byDay).map(([d,cc])=>({d,cc})).sort((a,b)=>b.d.localeCompare(a.d));
+    const zone=document.getElementById("dateChips"); zone.innerHTML="";
+    if(!scenes.length){ zone.innerHTML='<span class="note">Aucune image pour ces critères — élargissez la période ou le seuil de nuages.</span>'; setStatus("searchStatus","0 image",""); return; }
+    setStatus("searchStatus", scenes.length+" images trouvées — cliquer pour analyser :","ok");
+    scenes.forEach(sc=>{
+      const c=document.createElement("button"); c.className="chip";
+      c.innerHTML=`<span class="s2">S2</span> ${sc.d} <small>☁</small> <span class="cc">${sc.cc}%</span>`;
+      c.onclick=()=>{ curDate=sc.d; [...zone.children].forEach(x=>x.classList.remove("on")); c.classList.add("on"); loadRaster(); };
+      zone.appendChild(c);
+    });
+  }catch(err){ setStatus("searchStatus", err.message, "err"); }
+}
+
+/* ---------------- Raster Process API ---------------- */
+async function loadRaster(){
+  if(parcelPts.length<3 || !curDate) return;
+  setStatus("mapStatus","Chargement du raster…");
+  const bb=parcelBBox(), dim=bboxDims(bb);
+  try{
+    const blob=await shFetch(SH.process,{
+      input:{
+        bounds:{ geometry: parcelGeoJSON(), properties:{crs:"http://www.opengis.net/def/crs/OGC/1.3/CRS84"} },
+        data:[{ type:"sentinel-2-l2a",
+          dataFilter:{ timeRange:{from:curDate+"T00:00:00Z", to:curDate+"T23:59:59Z"},
+                       maxCloudCoverage:100, mosaickingOrder:"leastCC" } }]
+      },
+      output:{ width:dim.w, height:dim.h, responses:[{identifier:"default", format:{type:"image/png"}}] },
+      evalscript: vizEvalscript(curIdx)
+    },"blob");
+    if(rasterOverlay) mapEl.removeLayer(rasterOverlay);
+    const url=URL.createObjectURL(blob);
+    rasterOverlay=L.imageOverlay(url,[[bb[1],bb[0]],[bb[3],bb[2]]],
+      {opacity:+document.getElementById("opacity").value/100, interactive:false}).addTo(mapEl);
+    document.getElementById("rasterMeta").textContent="S2 · "+curDate+" · "+curIdx.id;
+    setStatus("mapStatus","Raster "+curIdx.id+" affiché ("+dim.w+"×"+dim.h+")","ok");
+    loadStats();
+  }catch(err){ setStatus("mapStatus", err.message, "err"); }
+}
+document.getElementById("opacity").oninput=function(){
+  document.getElementById("opv").textContent=this.value+"%";
+  if(rasterOverlay) rasterOverlay.setOpacity(this.value/100);
+};
+
+/* ---------------- Statistical API ---------------- */
+function statPayload(from,to,interval){
+  const bb=parcelBBox(), dim=bboxDims(bb,256);
+  return {
+    input:{
+      bounds:{ geometry:parcelGeoJSON(), properties:{crs:"http://www.opengis.net/def/crs/OGC/1.3/CRS84"} },
+      data:[{ type:"sentinel-2-l2a", dataFilter:{ maxCloudCoverage:+document.getElementById("cloud").value, mosaickingOrder:"leastCC" } }]
+    },
+    aggregation:{
+      timeRange:{from,to}, aggregationInterval:{of:interval},
+      width:dim.w, height:dim.h, evalscript: statEvalscript(curIdx)
+    },
+    calculations:{ default:{
+      histograms:{ default:{ nBins:12 } },
+      statistics:{ default:{ percentiles:{ k:[10,50,90], interpolation:"higher" } } }
+    } }
+  };
+}
+async function loadStats(){
+  if(parcelPts.length<3||!curDate) return;
+  document.getElementById("statIdx").textContent=curIdx.id;
+  document.getElementById("statMeta").textContent="S2 · "+curDate;
+  try{
+    const j=await shFetch(SH.stats, statPayload(curDate+"T00:00:00Z", curDate+"T23:59:59Z", "P1D"));
+    const it=j.data && j.data[0];
+    if(!it){ setTiles(null); return; }
+    const st=it.outputs.data.bands.B0.stats, hg=it.outputs.data.bands.B0.histogram;
+    setTiles(st); drawHisto(hg, st);
+  }catch(err){ setTiles(null); document.getElementById("histNote").textContent="Statistiques indisponibles : "+err.message; }
+}
+const fmtV=v=>{ if(v===null||v===undefined||isNaN(v)) return "—"; const d=curIdx.fmt!==undefined?curIdx.fmt:3; return (+v).toFixed(d).replace(".",","); };
+function setTiles(st){
+  lastStats = st || null;   // mémorisé pour l'export CSV/GeoJSON
+  document.getElementById("stMean").textContent=fmtV(st?.mean);
+  document.getElementById("stMed").textContent=fmtV(st?.percentiles?.["50.0"]);
+  document.getElementById("stMin").textContent=fmtV(st?.min);
+  document.getElementById("stMax").textContent=fmtV(st?.max);
+  document.getElementById("stStd").textContent=fmtV(st?.stDev);
+  const p10=st?.percentiles?.["10.0"], p90=st?.percentiles?.["90.0"];
+  document.getElementById("stP").textContent=(p10!==undefined)?(fmtV(p10)+" / "+fmtV(p90)):"—";
+}
+function drawHisto(hg, st){
+  const c=document.getElementById("histo"), x=c.getContext("2d");
+  x.clearRect(0,0,c.width,c.height);
+  if(!hg||!hg.bins||!hg.bins.length){ return; }
+  const bins=hg.bins, maxC=Math.max(...bins.map(b=>b.count))||1;
+  const L={l:20,r:20,t:14,b:26}, W=c.width-L.l-L.r, H=c.height-L.t-L.b;
+  const bw=W/bins.length;
+  bins.forEach((b,i)=>{
+    const h=b.count/maxC*H;
+    x.fillStyle = i%2? "#f9a03f" : "#f28c28";
+    x.fillRect(L.l+i*bw+2, L.t+H-h, bw-4, h);
+  });
+  x.fillStyle="#6f7d64"; x.font="12px Inter, Segoe UI";
+  x.fillText(fmtV(bins[0].lowEdge), L.l, c.height-8);
+  const lastEdge=bins[bins.length-1].highEdge ?? bins[bins.length-1].lowEdge;
+  x.textAlign="right"; x.fillText(fmtV(lastEdge), c.width-L.r, c.height-8);
+  x.textAlign="center"; x.fillStyle="#2c3a24"; x.font="bold 12px Inter, Segoe UI";
+  x.fillText("moy "+fmtV(st?.mean), c.width/2, c.height-8);
+  x.textAlign="left";
+  document.getElementById("histNote").textContent=curIdx.desc;
+}
+
+/* ---------------- Série temporelle ---------------- */
+document.getElementById("btnSerie").onclick=loadSerie;
+async function loadSerie(){
+  if(parcelPts.length<3){ setStatus("mapStatus","Dessinez d'abord une parcelle.","err"); return; }
+  const from=document.getElementById("dFrom").value+"T00:00:00Z", to=document.getElementById("dTo").value+"T23:59:59Z";
+  document.getElementById("serIdx").textContent=curIdx.id;
+  document.getElementById("serMeta").textContent="calcul…";
+  try{
+    const j=await shFetch(SH.stats, statPayload(from,to,"P1D"));
+    const pts=(j.data||[]).map(it=>({d:it.interval.from.slice(0,10), v:it.outputs?.data?.bands?.B0?.stats?.mean}))
+      .filter(p=>p.v!==undefined && p.v!==null && !isNaN(p.v));
+    lastSerie = pts;   // mémorisé pour l'export CSV
+    document.getElementById("serMeta").textContent=pts.length+" points · "+document.getElementById("dFrom").value+" → "+document.getElementById("dTo").value;
+    drawSerie(pts);
+  }catch(err){ document.getElementById("serMeta").textContent="erreur : "+err.message; }
+}
+function drawSerie(pts){
+  const c=document.getElementById("serie"), x=c.getContext("2d");
+  x.clearRect(0,0,c.width,c.height);
+  const L={l:56,r:16,t:16,b:34}, W=c.width-L.l-L.r, H=c.height-L.t-L.b;
+  const lo=curIdx.min, hi=curIdx.max;
+  x.strokeStyle="#d8e4c8"; x.fillStyle="#6f7d64"; x.font="11px Inter, Segoe UI";
+  for(let g=0;g<=4;g++){
+    const yy=L.t+H-g/4*H, val=lo+(hi-lo)*g/4;
+    x.beginPath(); x.moveTo(L.l,yy); x.lineTo(L.l+W,yy); x.stroke();
+    x.fillText(fmtV(val), 8, yy+4);
+  }
+  if(!pts.length){ x.fillText("Aucune donnée sur la période.", L.l+10, L.t+20); return; }
+  const t0=new Date(pts[0].d).getTime(), t1=new Date(pts[pts.length-1].d).getTime()||t0+1;
+  const X=p=>L.l + (new Date(p.d).getTime()-t0)/Math.max(1,(t1-t0))*W;
+  const Y=p=>L.t+H - Math.max(0,Math.min(1,(p.v-lo)/(hi-lo)))*H;
+  x.strokeStyle="#3fa66a"; x.lineWidth=2; x.beginPath();
+  pts.forEach((p,i)=> i?x.lineTo(X(p),Y(p)):x.moveTo(X(p),Y(p)));
+  x.stroke();
+  pts.forEach(p=>{ x.beginPath(); x.arc(X(p),Y(p),3.5,0,7); x.fillStyle="#e0912b"; x.fill(); });
+  const n=Math.min(6,pts.length);
+  x.fillStyle="#6f7d64";
+  for(let k=0;k<n;k++){ const p=pts[Math.floor(k*(pts.length-1)/Math.max(1,n-1))];
+    x.fillText(p.d.slice(5), X(p)-14, c.height-10); }
+}
+
+/* ---------------- Import / Export universel (parité règle 6 : GeoJSON + CSV) ----------------
+   Store.js n'est pas chargé sur cette page → helpers de téléchargement/upload inline
+   (mêmes signatures que Store.download / Store.pickFile). Le CSV porte la géométrie de la
+   parcelle en WKT POLYGON((lng lat, …)) + les stats zonales, et se réimporte comme le GeoJSON. */
+function ioDownload(name, content, mime){
+  if(window.Store && Store.download) return Store.download(name, content, mime);
+  const blob=new Blob([content],{type:mime||"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+function ioPickFile(accept, cb){
+  if(window.Store && Store.pickFile) return Store.pickFile(accept, cb);
+  const inp=document.createElement("input"); inp.type="file"; inp.accept=accept||".json,.geojson,.csv";
+  inp.onchange=e=>{ const f=e.target.files[0]; if(!f) return;
+    const rd=new FileReader(); rd.onload=()=>cb(rd.result, f.name); rd.readAsText(f); };
+  inp.click();
+}
+function ioT(k){ return (window.I18N && I18N.t) ? I18N.t(k) : k; }
+const PARCEL_NAME = ()=> ioT("hdr_parcel"); // libellé générique trilingue
+
+/* --- CSV : échappement + WKT + parseur robuste (copie du modèle agrimap-draw.js) --- */
+function csvCell(v){ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function parcelWKT(){ // anneau fermé en [lng lat]
+  if(parcelPts.length<3) return "";
+  const ring=parcelPts.map(p=>[p[1],p[0]]); ring.push(ring[0]);
+  return "POLYGON(("+ring.map(c=>(+c[0]).toFixed(6)+" "+(+c[1]).toFixed(6)).join(", ")+"))";
+}
+function parseCSV(text){
+  const rows=[]; let row=[],cur="",q=false;
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===',') { row.push(cur); cur=""; }
+    else if(ch==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
+    else if(ch!=="\r") cur+=ch;
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.length && r.some(c=>c!==""));
+}
+function ringFromWKT(wkt){ // -> [[lat,lng],…] (anneau ouvert)
+  const m=/POLYGON\s*\(\(([^)]+)\)\)/i.exec(wkt||""); if(!m) return null;
+  const ring=m[1].split(",").map(pr=>{ const s=pr.trim().split(/\s+/).map(Number); return [s[1], s[0]]; });
+  if(ring.length>1 && ring[0][0]===ring[ring.length-1][0] && ring[0][1]===ring[ring.length-1][1]) ring.pop();
+  return ring.length>=3 ? ring : null;
+}
+
+/* --- Export GeoJSON (côté JSON de la règle 6) --- */
+function buildGeoJSON(){
+  const st=lastStats;
+  return { type:"FeatureCollection",
+    crs:{type:"name",properties:{name:"urn:ogc:def:crs:OGC:1.3:CRS84"}},
+    features:[{ type:"Feature",
+      properties:{ name:PARCEL_NAME(), index:curIdx.id, date:curDate||"", area_ha:+areaHa().toFixed(4),
+        mean:st?.mean??null, median:st?.percentiles?.["50.0"]??null, min:st?.min??null, max:st?.max??null,
+        std:st?.stDev??null, p10:st?.percentiles?.["10.0"]??null, p90:st?.percentiles?.["90.0"]??null },
+      geometry: parcelGeoJSON() }] };
+}
+/* --- Export CSV : stats zonales par (parcelle,date,indice) + géométrie WKT réimportable --- */
+function buildCSV(){
+  const head=["parcel","date","index","area_ha","mean","median","min","max","std","p10","p90","wkt"];
+  const wkt=parcelWKT(), name=PARCEL_NAME(), area=areaHa().toFixed(4), st=lastStats;
+  const num=v=>(v==null||isNaN(v))?"":(+v);
+  const rows=[];
+  // ligne « image courante » avec stats complètes
+  rows.push([name, curDate||"", curIdx.id, area, num(st?.mean), num(st?.percentiles?.["50.0"]),
+    num(st?.min), num(st?.max), num(st?.stDev), num(st?.percentiles?.["10.0"]), num(st?.percentiles?.["90.0"]), wkt]);
+  // lignes série temporelle (moyenne par date) — même schéma, autres stats vides
+  (lastSerie||[]).forEach(p=>{ if(p.d===curDate) return;
+    rows.push([name, p.d, curIdx.id, area, num(p.v), "","","","","","", wkt]); });
+  return head.join(",")+"\n"+rows.map(r=>r.map(csvCell).join(",")).join("\n")+"\n";
+}
+
+/* --- Import unifié : détection CSV vs JSON (ne commence pas par { ou [ = CSV) --- */
+function applyImportedRing(ring, label){
+  if(!ring || ring.length<3){ setStatus("mapStatus", ioT("io_badfile"), "err"); return; }
+  shCommitParcel(ring.map(c=>L.latLng(c[0], c[1]))); // PONT vers le pipeline Sentinel Hub
+  setStatus("mapStatus", ioT("io_imported")+(label?" ("+label+")":""), "ok");
+}
+function importData(text){
+  const t=(text||"").trim();
+  try{
+    if(t[0]==="{" || t[0]==="["){ // ---- JSON / GeoJSON ----
+      const j=JSON.parse(t);
+      const feats = j.type==="FeatureCollection" ? (j.features||[])
+        : j.type==="Feature" ? [j] : (Array.isArray(j)?j:[]);
+      const f=feats.find(x=>x&&x.geometry&&x.geometry.type==="Polygon");
+      if(!f){ setStatus("mapStatus", ioT("io_badfile"), "err"); return; }
+      let ring=f.geometry.coordinates[0].map(c=>[c[1],c[0]]); // [lat,lng]
+      if(ring.length>1 && ring[0][0]===ring[ring.length-1][0] && ring[0][1]===ring[ring.length-1][1]) ring.pop();
+      applyImportedRing(ring, "GeoJSON");
+    } else { // ---- CSV ----
+      const rows=parseCSV(t); if(rows.length<2){ setStatus("mapStatus", ioT("io_badfile"), "err"); return; }
+      const head=rows[0].map(h=>h.trim().toLowerCase()), iW=head.indexOf("wkt");
+      if(iW<0){ setStatus("mapStatus", ioT("io_badfile"), "err"); return; }
+      let ring=null;
+      for(let r=1;r<rows.length && !ring;r++){ ring=ringFromWKT(rows[r][iW]); }
+      applyImportedRing(ring, "CSV");
+    }
+  }catch(err){ setStatus("mapStatus", ioT("io_badfile")+" — "+err.message, "err"); }
+}
+
+document.getElementById("btnExportGeo").onclick=()=>{
+  if(parcelPts.length<3){ setStatus("mapStatus", ioT("io_nodata"), "err"); return; }
+  ioDownload("agrimap_parcelle_"+(curDate||"scene")+".geojson", JSON.stringify(buildGeoJSON(),null,2), "application/geo+json");
+};
+document.getElementById("btnExportCSV").onclick=()=>{
+  if(parcelPts.length<3){ setStatus("mapStatus", ioT("io_nodata"), "err"); return; }
+  ioDownload("agrimap_stats_"+curIdx.id+"_"+(curDate||"scene")+".csv", buildCSV(), "text/csv");
+};
+document.getElementById("btnImport").onclick=()=>{ ioPickFile(".csv,.json,.geojson", txt=>importData(txt)); };
+
+/* ---------------- Sélecteur d'indices ---------------- */
+function buildIdxZone(){
+  const zone=document.getElementById("idxZone"); zone.innerHTML="";
+  const cats=[...new Set(INDICES.map(i=>i.cat))];
+  cats.forEach(cat=>{
+    const lab=document.createElement("div"); lab.className="catlab"; lab.textContent=cat; zone.appendChild(lab);
+    const g=document.createElement("div"); g.className="idxgrid";
+    INDICES.filter(i=>i.cat===cat).forEach(ix=>{
+      const b=document.createElement("button"); b.className="idx"+(ix.off?" off":"")+(ix===curIdx?" on":"");
+      b.innerHTML=`<b>${ix.id}</b><small>${ix.lab}</small>`;
+      if(!ix.off) b.onclick=()=>{ curIdx=ix; buildIdxZone(); updateRamp();
+        document.getElementById("curIdxLab").textContent=ix.id;
+        if(curDate) loadRaster(); };
+      else b.title=ix.desc;
+      g.appendChild(b);
+    });
+    zone.appendChild(g);
+  });
+}
+function updateRamp(){
+  const g="linear-gradient(90deg,"+RAMPS[curIdx.ramp].map(([t,c])=>c+" "+(t*100)+"%").join(",")+")";
+  document.getElementById("rampBar").style.background=g;
+  document.getElementById("rampMin").textContent=fmtV(curIdx.min);
+  document.getElementById("rampMax").textContent=fmtV(curIdx.max);
+  document.getElementById("rampMid").textContent=curIdx.id+" · "+curIdx.lab;
+  document.getElementById("rampDesc").textContent=curIdx.desc;
+}
+
+/* ---------------- Init ---------------- */
+(function(){
+  const today=new Date(), from=new Date(today-120*864e5); // 4 mois par défaut — modifiable via Du/Au
+  document.getElementById("dTo").value=today.toISOString().slice(0,10);
+  document.getElementById("dFrom").value=from.toISOString().slice(0,10);
+  buildIdxZone(); updateRamp();
+})();
+
+/* ---------------- Trilingue FR / ع / EN + recherche géo ---------------- */
+Object.assign(I18N.DICT, {
+  hdr_sub:{fr:"Formation SKILLS4EU · Sentinel-2 L2A en direct (Sentinel Hub)",en:"SKILLS4EU training · live Sentinel-2 L2A (Sentinel Hub)",ar:"تكوين SKILLS4EU · سنتينل-2 مباشر (Sentinel Hub)"},
+  hdr_parcel:{fr:"Parcelle démo",en:"Demo parcel",ar:"قطعة تجريبية"},
+  hdr_draw_hint:{fr:"dessinez sur la carte",en:"draw on the map",ar:"ارسم على الخريطة"},
+  vertices:{fr:"sommets",en:"vertices",ar:"رؤوس"},
+  c_search:{fr:"Recherche d'images satellites",en:"Satellite image search",ar:"البحث عن صور الأقمار"},
+  f_from:{fr:"Du",en:"From",ar:"من"}, f_to:{fr:"Au",en:"To",ar:"إلى"},
+  f_cloud:{fr:"Nuages ≤",en:"Clouds ≤",ar:"الغيوم ≤"}, f_source:{fr:"Source satellite",en:"Satellite source",ar:"مصدر القمر"},
+  b_search:{fr:"Rechercher",en:"Search",ar:"بحث"},
+  hint_search:{fr:"Dessinez d'abord une parcelle, puis lancez la recherche — les dates disponibles s'afficheront ici.",en:"Draw a parcel first, then search — available dates will appear here.",ar:"ارسم قطعة أولاً ثم ابدأ البحث — ستظهر التواريخ المتاحة هنا."},
+  c_index:{fr:"Indice spectral",en:"Spectral index",ar:"المؤشر الطيفي"},
+  c_map:{fr:"Carte raster",en:"Raster map",ar:"خريطة نقطية"},
+  map_hint:{fr:"Barre d'outils à gauche de la carte : Sélection · Parcelle · Pivot · Rectangle · Repère · Effacer.",en:"Toolbar on the left of the map: Select · Parcel · Pivot · Rectangle · Marker · Clear.",ar:"شريط الأدوات على يسار الخريطة: تحديد · قطعة · محور · مستطيل · علامة · مسح."},
+  opacity:{fr:"Opacité",en:"Opacity",ar:"العتامة"},
+  b_export_geo:{fr:"Export GeoJSON",en:"Export GeoJSON",ar:"تصدير GeoJSON"},
+  b_export_csv:{fr:"Export CSV",en:"Export CSV",ar:"تصدير CSV"},
+  b_import:{fr:"Importer parcelle",en:"Import parcel",ar:"استيراد قطعة"},
+  io_nodata:{fr:"Dessinez d'abord une parcelle à exporter.",en:"Draw a parcel to export first.",ar:"ارسم قطعة للتصدير أولاً."},
+  io_imported:{fr:"Parcelle importée.",en:"Parcel imported.",ar:"تم استيراد القطعة."},
+  io_badfile:{fr:"Fichier illisible ou sans polygone/WKT.",en:"Unreadable file or missing polygon/WKT.",ar:"ملف غير صالح أو بدون مضلّع/WKT."},
+  c_stats:{fr:"Statistiques",en:"Statistics",ar:"إحصاءات"},
+  s_mean:{fr:"Moyenne",en:"Mean",ar:"المتوسط"}, s_med:{fr:"Médiane",en:"Median",ar:"الوسيط"},
+  hist_note:{fr:"Histogramme de la parcelle sur l'image sélectionnée.",en:"Parcel histogram for the selected image.",ar:"مدرّج القطعة للصورة المختارة."},
+  c_serie:{fr:"Évolution temporelle",en:"Time series",ar:"التطور الزمني"},
+  leg_index:{fr:"Indice (moyenne parcelle)",en:"Index (parcel mean)",ar:"المؤشر (متوسط القطعة)"},
+  leg_acq:{fr:"Acquisitions",en:"Acquisitions",ar:"عمليات الالتقاط"},
+  b_serie:{fr:"⟳ CALCULER SÉRIE",en:"⟳ COMPUTE SERIES",ar:"⟳ حساب السلسلة"},
+  warn_title:{fr:"Authentification via proxy serveur",en:"Authentication via server proxy",ar:"المصادقة عبر وسيط الخادم"},
+  warn_body:{fr:"le client secret est dans sh_token.php (même dossier), jamais dans cette page. Toute personne disposant de cette URL peut néanmoins consommer vos unités de traitement : gardez la page sur le serveur de formation et régénérez le secret après la session.",en:"the client secret lives in sh_token.php (same folder), never in this page. Anyone with this URL can still consume your processing units: keep the page on the training server and regenerate the secret after the session.",ar:"السرّ موجود في sh_token.php (نفس المجلد) وليس في هذه الصفحة. يمكن لأي شخص لديه هذا الرابط استهلاك وحدات المعالجة: احتفظ بالصفحة على خادم التكوين وأعد توليد السرّ بعد الجلسة."}
+});
+
+// ?lang= prioritaire, sinon préférence mémorisée (localStorage)
+const _lang=new URLSearchParams(location.search).get('lang');
+if(_lang && ['fr','en','ar'].includes(_lang)) localStorage.setItem('agri_lang', _lang);
+
+let geoCtl=null;
+function applyLangUI(){
+  const lang=I18N.lang;
+  if(geoCtl && geoCtl.setLang) geoCtl.setLang(lang);
+  shRenderBar();                                   // ré-étiquette les tooltips de la barre de dessin
+  document.body.setAttribute('dir', lang==='ar'?'rtl':'ltr');
+  setTimeout(()=>mapEl.invalidateSize(), 60);
+}
+document.getElementById('langbox').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  I18N.set(b.dataset.lang); applyLangUI();
+});
+
+// Recherche géo partagée (localités libyennes FR/EN/AR + coordonnées) sur la carte Sentinel Hub
+geoCtl = GeoSearch.add(mapEl, { lang:I18N.lang, showLocalities:false });
+
+I18N.set(I18N.lang);   // applique data-i18n + langbox actif + dir
+applyLangUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriManager · Météo &amp; Irrigation</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+<style>
+  :root{
+    --ink:#e8eef2;--ink2:#8fa3b0;--paper:#0d1b22;--card:#14262f;--line:#24404b;--line2:#1c333c;
+    --water:#2bb3be;--water-d:#1a8892;--soil:#d59a4e;--deficit:#e0604a;--surplus:#4d92d8;
+    --ok:#54b365;--amber:#e0a92a;--mono:ui-monospace,"DejaVu Sans Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --card2:#193039;--head:#0a161c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);font-size:14px}
+  header{background:var(--head);color:#eaf2ee;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:3px solid var(--water)}
+  header h1{font-size:16px;margin:0;font-weight:650}
+  header .sub{font-size:12px;color:#7fa0ab}
+  header .status{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:#7fa0ab;display:flex;align-items:center;gap:6px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#5a7a76;display:inline-block}
+  .dot.on{background:#5fd0a0}.dot.busy{background:var(--amber);animation:p 1s infinite}.dot.err{background:#e06b52}
+  @keyframes p{50%{opacity:.3}}
+  .toolbar{background:var(--card);border-bottom:1px solid var(--line);padding:10px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{background:var(--water);color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+  .btn:hover{background:var(--water-d)}.btn:disabled{opacity:.5;cursor:default}
+  .btn.ghost{background:none;color:var(--water);border:1px solid var(--water)}
+  .btn.soil{background:var(--soil)}.btn.soil:hover{background:#8a561f}
+  .pill{font-family:var(--mono);font-size:11px;background:var(--card2);padding:4px 9px;border-radius:20px;color:var(--ink2)}
+  select,input[type=date]{padding:6px 8px;border:1px solid var(--line);border-radius:5px;font-family:var(--mono);font-size:12px;background:#0d1b22;color:var(--ink)}
+  input[type=text],input[type=number]{padding:6px 8px;border:1px solid var(--line);border-radius:5px;font-family:var(--mono);font-size:12px;background:#0d1b22;color:var(--ink)}
+  input::placeholder{color:#5a7280}
+  option{background:#14262f;color:var(--ink)}
+  .kpi{display:flex;gap:10px;padding:12px 20px;flex-wrap:wrap;background:var(--paper)}
+  .kpi .b{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 14px;min-width:110px}
+  .kpi .b .v{font-family:var(--mono);font-size:19px;font-weight:600}
+  .kpi .b .l{font-size:10.5px;color:var(--ink2);margin-top:1px}
+  .layout{display:grid;grid-template-columns:1fr 1fr;gap:0;height:calc(100vh - 172px);min-height:460px}
+  @media(max-width:900px){.layout{grid-template-columns:1fr;height:auto}#map{height:360px}}
+  #map{height:100%;background:#0a161c}
+  .tablewrap{overflow:auto;background:var(--card);border-left:1px solid var(--line)}
+  table{border-collapse:collapse;width:100%;font-size:12px}
+  th,td{padding:6px 9px;text-align:right;border-bottom:1px solid var(--line2);white-space:nowrap}
+  th{position:sticky;top:0;background:var(--head);font-weight:600;color:var(--ink2);z-index:2;cursor:pointer;user-select:none}
+  th:first-child,td:first-child{text-align:left}
+  td.mono,th.mono{font-family:var(--mono)}
+  tr.row{cursor:pointer}tr.row:hover{background:var(--card2)}
+  tr.sel{background:#1e3d47!important;box-shadow:inset 3px 0 0 var(--water)}
+  .tag{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:20px;font-family:var(--mono)}
+  .tag.irr{background:#d3ecec;color:var(--water-d)}.tag.spray{background:#f7ddd6;color:var(--deficit)}
+  .tag.ok{background:#dcefdd;color:var(--ok)}.tag.wait{background:#eef1ec;color:var(--ink2)}
+  .drop{border:2px dashed var(--line);border-radius:10px;padding:40px;text-align:center;color:var(--ink2);margin:40px auto;max-width:560px;background:var(--card)}
+  .drop.hl{border-color:var(--water);background:var(--card2)}
+  .muted{color:var(--ink2);font-size:12px}
+  .leaflet-popup-content{font-family:var(--sans);font-size:12.5px;margin:10px 12px}
+  .leaflet-popup-content b{color:var(--water-d)}
+  .pop-row{display:flex;justify-content:space-between;gap:14px;padding:2px 0}
+  .pop-row .v{font-family:var(--mono);font-weight:600}
+  .legend-map{background:var(--card);color:var(--ink);padding:8px 10px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.2);font-size:11.5px;line-height:1.7}
+  .legend-map i{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
+  .err{color:var(--deficit);font-size:12px}
+  progress{width:160px;height:10px}
+  /* --- onglets & vue exploitation --- */
+  .tabbar{display:flex;gap:2px;background:var(--ink);padding:0 20px;border-bottom:1px solid #0a2027}
+  .tabbtn{background:none;border:none;color:#9fc0bd;font-family:var(--sans);font-size:13.5px;font-weight:600;padding:11px 18px;cursor:pointer;border-bottom:3px solid transparent}
+  .tabbtn:hover{color:#fff}
+  .tabbtn.active{color:#fff;border-bottom-color:var(--water);background:var(--card)}
+  .chartcard{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+  .chartcard h3{margin:0 0 8px;font-size:12px;font-weight:600}
+  .split2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:820px){.split2{grid-template-columns:1fr}}
+  .axlbl{font-size:7px;fill:var(--ink2);font-family:var(--mono);opacity:.8}
+  .glbl{font-size:7px;fill:var(--ink2);opacity:.8}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style id="platform-skin">
+/* ===== Harmonisation thème plateforme (accueil vert clair) — surcharge agrimanager ===== */
+:root{
+  --ink:#2c3a24!important;--ink2:#6f7d64!important;--paper:#fbfcf8!important;--card:#ffffff!important;
+  --line:#d8e4c8!important;--line2:#e3ecd6!important;--water:#5a8f2c!important;--card2:#f1f7e9!important;--head:#ffffff!important;
+}
+body{font-family:"Inter","Segoe UI",system-ui,sans-serif}
+body[dir=rtl]{font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif}
+header{color:#2c3a24!important;border-bottom:3px solid #7cb342!important;box-shadow:0 2px 10px rgba(60,80,40,.06)}
+header .status{color:#8a9a86!important}
+.toolbar{background:#fff!important;border-bottom-color:#d8e4c8!important}
+.btn{background:#7cb342!important;color:#fff!important}
+.btn:disabled{opacity:.5}
+select,input[type=date],input[type=text],input[type=number]{background:#fff!important;color:#2c3a24!important;border-color:#d8e4c8!important}
+option{background:#fff!important;color:#2c3a24!important}
+.kpi{background:#fbfcf8!important}
+.kpi .b,.card{background:#fff!important;border-color:#d8e4c8!important}
+#map,#farmMap{background:#e9eef0!important}
+.tabbar{background:#f1f7e9!important;border-bottom:1px solid #d8e4c8!important}
+.tabbtn{color:#6f7d64!important}
+.tabbtn.on,.tabbtn:hover{color:#5a8f2c!important}
+tr.sel{background:#eef7e6!important;box-shadow:inset 3px 0 0 #7cb342!important}
+.pill{background:#f1f7e9!important;color:#5a8f2c!important}
+#langBtn{background:#f1f7e9!important;color:#5a8f2c!important;border-color:#7cb342!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#fff!important;color:#2c3a24!important}
+.leaflet-control-layers,.leaflet-bar a,.leaflet-bar{background:#fff!important;color:#2c3a24!important;border-color:#d8e4c8!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>AgriManager · Météo &amp; Irrigation <span style="font-family:var(--mono);font-size:11px;color:var(--water);font-weight:400;background:var(--card2);padding:2px 7px;border-radius:10px;margin-left:6px">v2.9</span></h1>
+  <span class="sub">SICAM · bilan hydrique FAO-56 · stations &amp; API temps réel</span>
+  <span class="status"><span class="dot" id="statDot"></span><span id="statTxt">en attente d'un fichier</span></span>
+  <button id="langBtn" style="background:var(--card2);color:var(--water);border:1px solid var(--water);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--mono);margin-left:10px">EN</button>
+</header>
+
+<div class="tabbar" id="tabbar">
+  <button class="tabbtn active" data-view="portef">Portefeuille — 2 500 parcelles</button>
+  <button class="tabbtn" data-view="expl">Exploitation — station &amp; contours</button>
+  <button class="tabbtn" data-view="live">Station live (Ecowitt)</button>
+</div>
+
+<div class="view" id="view-portef">
+<div class="toolbar">
+  <label class="btn soil" style="cursor:pointer">Importer les parcelles (Excel / CSV)<input type="file" id="csv" accept=".xlsx,.xls,.csv,.txt" style="display:none"></label>
+  <button class="btn" id="btnMeteo" disabled>Calculer ET0 temps réel (Open-Meteo)</button>
+  <button class="btn" id="btnCycle" disabled style="background:#1a6b57">Collecter la météo du cycle (plantation → récolte)</button>
+  <button class="btn ghost" id="btnExport" disabled>Exporter le fichier consolidé</button>
+  <button class="btn ghost" id="btnDemo">Charger l'échantillon (2 parcelles)</button>
+  <span style="width:1px;height:24px;background:var(--line)"></span>
+  <label class="muted">Date bilan</label><input type="date" id="refDate">
+  <label class="muted">Filtre</label>
+  <select id="filter">
+    <option value="all">toutes</option>
+    <option value="irr">à irriguer</option>
+    <option value="spray">alerte traitement</option>
+    <option value="stress">en stress</option>
+  </select>
+  <span class="pill" id="srcPill">aucune donnée</span>
+  <progress id="prog" max="100" value="0" style="display:none"></progress>
+</div>
+
+<div class="kpi" id="kpi" style="display:none"></div>
+
+<div id="empty">
+  <div class="drop" id="drop">
+    <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Déposez l'export AgriManager ici</div>
+    <div class="muted">CSV avec vos 35 colonnes (séparateur <b>;</b> ou <b>,</b>, décimales à virgule).<br>
+    L'appli lit <b>position Ferme</b> (lat, lon), <b>Culture</b>, <b>Date début plantation</b> et <b>Date récolte prévue</b> — le reste (ET0, Kc, stade, bilan, DSV) est calculé.</div>
+    <div style="margin-top:14px"><button class="btn ghost" id="btnDemo2">ou charger l'échantillon</button></div>
+  </div>
+</div>
+
+<div class="layout" id="layout" style="display:none">
+  <div id="map"></div>
+  <div class="tablewrap"><table id="tbl"></table></div>
+</div>
+</div><!-- /view-portef -->
+
+<div class="view" id="view-expl" style="display:none">
+  <div class="toolbar">
+    <label class="btn soil" style="cursor:pointer">Importer station météo (CSV)<input type="file" id="stationCsv" accept=".csv,.txt" style="display:none"></label>
+    <label class="btn ghost" style="cursor:pointer">Contours de ferme (GeoJSON)<input type="file" id="geojson" accept=".json,.geojson" style="display:none"></label>
+    <label class="btn ghost" style="cursor:pointer">Importer sondes sol (CSV/JSON)<input type="file" id="soilFile" accept=".csv,.json,.txt" style="display:none"></label>
+    <progress id="soilProg" max="100" value="0" style="display:none;width:150px;height:10px"></progress>
+    <button class="btn ghost" id="btnStationDemo">Charger l'échantillon station</button>
+    <span style="width:1px;height:24px;background:var(--line)"></span>
+    <label class="muted">Année</label><select id="fYear"><option value="all">toutes</option></select>
+    <label class="muted">Mois</label><select id="fMonth">
+      <option value="all">tous</option><option value="1">janv</option><option value="2">févr</option><option value="3">mars</option>
+      <option value="4">avr</option><option value="5">mai</option><option value="6">juin</option><option value="7">juil</option>
+      <option value="8">août</option><option value="9">sept</option><option value="10">oct</option><option value="11">nov</option><option value="12">déc</option>
+    </select>
+    <label class="muted">Du</label><input type="date" id="fFrom" style="width:140px">
+    <label class="muted">Au</label><input type="date" id="fTo" style="width:140px">
+    <button class="btn ghost" id="fReset" style="padding:6px 10px">↺</button>
+    <span style="width:1px;height:24px;background:var(--line)"></span>
+    <span class="pill" id="stationPill">aucune donnée station</span>
+  </div>
+
+  <div id="explEmpty">
+    <div class="drop" id="dropStation">
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Station météo d'exploitation</div>
+      <div class="muted">Déposez le <b>CSV de la station</b> (Date/Heure, WS1, WS2, HR1, T1, Volt, R1, B, WD1, B1) et, si vous l'avez, le <b>GeoJSON des contours</b> de la ferme.<br>
+      L'appli agrège le pas de temps fin en journalier et recalcule ET0 (Hargreaves), GDD, DSV sur vos vraies mesures.</div>
+      <div style="margin-top:14px"><button class="btn ghost" id="btnStationDemo2">ou charger l'échantillon</button></div>
+    </div>
+  </div>
+
+  <div id="explBody" style="display:none">
+    <div class="kpi" id="explKpi"></div>
+
+    <div style="display:grid;grid-template-columns:360px 1fr;gap:0;height:300px;min-height:260px">
+      <div id="farmMap" style="height:100%;background:#0a161c"></div>
+      <div class="tablewrap" style="padding:0 14px">
+        <h3 style="margin:10px 0 6px;font-size:12px">Rose des vents</h3>
+        <div id="windrose" style="display:flex;justify-content:center;padding:6px"></div>
+      </div>
+    </div>
+
+    <div style="padding:14px 20px;display:grid;gap:16px">
+      <div class="chartcard"><h3 id="tTitle">Température &amp; amplitude journalière</h3><div id="chTemp"></div></div>
+      <div class="chartcard"><h3>Pluie journalière &amp; cumul</h3><div id="chRain"></div></div>
+      <div class="chartcard"><h3>ET0 journalière (Hargreaves) &amp; cumul — besoin en eau</h3><div id="chEt0"></div></div>
+      <div class="chartcard"><h3>Thermo-hygrogramme — T° vs humidité relative</h3><div id="chTH"></div></div>
+      <div class="chartcard"><h3>Pression barométrique &amp; tendance</h3><div id="chBaro"></div></div>
+      <div class="chartcard"><h3>Diagnostic station — tension batterie &amp; continuité des mesures</h3><div id="chDiag"></div></div>
+      <div class="chartcard">
+        <h3>Degrés-jours &amp; DSV maladie — sur données station réelles</h3>
+        <div class="split2">
+          <div><div class="muted" style="margin-bottom:6px">GDD cumulés (base <input type="number" id="tbaseStation" value="10" style="width:52px;padding:2px 4px" onchange="renderStation()"> °C)</div><div id="chGdd"></div></div>
+          <div><div class="muted" style="margin-bottom:6px">DSV TomCast (heures d'humectation = RH ≥ 90%)</div><div id="chDsv"></div></div>
+        </div>
+      </div>
+      <div class="chartcard" id="soilCard" style="display:none">
+        <h3>Sondes de sol — humidité / salinité / température par profondeur</h3>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <label class="muted">Sonde</label><select id="soilProbe" onchange="renderSoil()"></select>
+          <label class="muted">Grandeur</label>
+          <select id="soilMetric" onchange="renderSoil()">
+            <option value="moisture">Humidité (%VWC)</option>
+            <option value="salinity">Salinité (µS/cm)</option>
+            <option value="temperature">Température (°C)</option>
+          </select>
+          <span class="pill" id="soilPill">—</span>
+          <button class="btn ghost" id="soilExport" style="padding:5px 10px">Exporter Sondes 1-10 (CSV+JSON)</button>
+        </div>
+        <div id="chSoil"></div>
+        <div class="legend" id="soilLegend" style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink2);margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+</div><!-- /view-expl -->
+
+<div class="view" id="view-live" style="display:none">
+  <div class="toolbar" style="flex-wrap:wrap">
+    <span class="pill" style="background:var(--card2);color:#cfe7e4">Ecowitt Cloud API v3</span>
+    <label class="muted">App Key</label><input type="text" id="ecoApp" style="width:230px" placeholder="Application Key">
+    <label class="muted">API Key</label><input type="text" id="ecoApi" style="width:230px" placeholder="API Key">
+    <button class="btn soil" id="ecoList">Lister mes stations</button>
+    <label class="muted">Station</label><select id="ecoDev" style="min-width:180px"><option value="">—</option></select>
+    <button class="btn" id="ecoLive" disabled>Temps réel</button>
+    <label class="muted"><input type="checkbox" id="ecoAuto" style="width:auto"> auto</label>
+    <span class="pill" id="ecoStatus">clés à renseigner</span>
+  </div>
+
+  <div id="liveEmpty">
+    <div class="drop">
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Connexion directe à ta station Ecowitt</div>
+      <div class="muted">Renseigne l'Application Key et l'API Key, puis <b>Lister mes stations</b> pour récupérer tes appareils.<br>
+      Ensuite : <b>Temps réel</b> pour l'instantané, ou choisis une plage de dates plus bas pour l'<b>historique</b> (avec ET0 Penman-Monteith, car Ecowitt fournit le rayonnement solaire).</div>
+    </div>
+  </div>
+
+  <div id="liveBody" style="display:none">
+    <div class="kpi" id="ecoNow"></div>
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:0;height:280px;min-height:240px">
+      <div class="chartcard" style="border-radius:0;border-left:none;border-right:none">
+        <h3 id="ecoNowTitle">Instantané</h3>
+        <div id="ecoNowDetail" style="font-size:13px;color:var(--ink2)"></div>
+      </div>
+      <div class="tablewrap" style="padding:0 12px"><h3 style="margin:10px 0 6px;font-size:12px">Vent temps réel</h3><div id="ecoWind" style="display:flex;justify-content:center"></div></div>
+    </div>
+
+    <div class="toolbar" style="border-top:1px solid var(--line)">
+      <span class="pill" style="background:var(--card2)">Historique</span>
+      <label class="muted">Du</label><input type="date" id="ecoFrom" style="width:140px">
+      <label class="muted">Au</label><input type="date" id="ecoTo" style="width:140px">
+      <label class="muted">Résolution</label>
+      <select id="ecoCycle"><option value="auto">auto</option><option value="5min">5 min</option><option value="30min">30 min</option><option value="4hour">4 h</option><option value="1day">jour</option></select>
+      <button class="btn" id="ecoHist">Charger l'historique</button>
+      <button class="btn ghost" id="ecoExport" disabled>Exporter (CSV/XLSX)</button>
+      <progress id="ecoProg" max="100" value="0" style="display:none"></progress>
+    </div>
+
+    <div id="ecoHistBody" style="display:none;padding:14px 20px;display:grid;gap:16px">
+      <div class="kpi" id="ecoHistKpi"></div>
+      <div class="chartcard"><h3 id="ecoTTitle">Température &amp; amplitude</h3><div id="ecoChTemp"></div></div>
+      <div class="chartcard"><h3>Pluie journalière &amp; cumul</h3><div id="ecoChRain"></div></div>
+      <div class="chartcard"><h3>ET0 (Penman-Monteith, avec rayonnement) &amp; cumul</h3><div id="ecoChEt0"></div></div>
+      <div class="chartcard"><h3>Rayonnement solaire &amp; UV</h3><div id="ecoChSolar"></div></div>
+      <div class="chartcard"><h3>Thermo-hygrogramme — T° vs humidité</h3><div id="ecoChTH"></div></div>
+      <div class="chartcard"><div class="split2">
+        <div><div class="muted" style="margin-bottom:6px">GDD cumulés (base <input type="number" id="ecoTbase" value="10" style="width:52px;padding:2px 4px" onchange="ecoRenderHist()"> °C)</div><div id="ecoChGdd"></div></div>
+        <div><div class="muted" style="margin-bottom:6px">DSV maladie cumulé</div><div id="ecoChDsv"></div></div>
+      </div></div>
+    </div>
+  </div>
+</div><!-- /view-live -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Moteur de dessin PARTAGÉ de la plateforme -->
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="../platform/public/assets/js/agrimap-draw.js"></script>
+<script src="../platform/public/assets/js/geo-search.js"></script>
+<!-- Base de cultures PARTAGÉE (FAO-56, Tunisie & Libye) — window.CROPS / window.CROPS_DB -->
+<script src="../platform/public/assets/js/crops.js"></script>
+<script>
+/* ---------------- helpers ---------------- */
+const $=id=>document.getElementById(id);
+function setStat(t,cls){$('statTxt').textContent=t;$('statDot').className='dot'+(cls?' '+cls:'');}
+function num(x){if(x==null)return NaN;return parseFloat(String(x).replace(',','.').replace(/[^\d.\-]/g,''));}
+function parseDate(s){if(!s)return null;const m=String(s).trim().match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);if(!m)return null;return new Date(+m[3],+m[2]-1,+m[1]);}
+function doy(d){return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);}
+function fmtD(d){return d?d.toLocaleDateString('fr-FR'):'—';}
+
+/* ---------------- CSV parse (tolérant ; et ,) ---------------- */
+function detectSep(line){const c=(line.match(/;/g)||[]).length,v=(line.match(/,/g)||[]).length;return c>=v?';':',';}
+function splitCSV(line,sep){const out=[];let cur='',q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){q=!q;}else if(ch===sep&&!q){out.push(cur);cur='';}else cur+=ch;}out.push(cur);return out.map(s=>s.trim().replace(/^"|"$/g,''));}
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim().length);
+  if(!lines.length)return[];
+  const sep=detectSep(lines[0]);
+  const head=splitCSV(lines[0],sep).map(h=>h.trim());
+  return lines.slice(1).map(l=>{const c=splitCSV(l,sep);const o={};head.forEach((h,i)=>o[h]=c[i]);return o;});
+}
+// trouve une colonne par mots-clés (robuste aux accents/casse)
+function col(obj,keys){const H=Object.keys(obj);for(const k of keys){const f=H.find(h=>h.toLowerCase().replace(/[éè]/g,'e').includes(k));if(f)return obj[f];}return '';}
+
+/* ---------------- agronomie ---------------- */
+// Kc FAO-56 par phases pour cultures SICAM
+const KC={
+  tomate:{ini:0.6,mid:1.15,end:0.80,f:[0.20,0.30,0.35,0.15]},
+  piment:{ini:0.6,mid:1.05,end:0.90,f:[0.25,0.30,0.30,0.15]},
+  'pomme de terre':{ini:0.5,mid:1.15,end:0.75,f:[0.20,0.30,0.30,0.20]},
+  ble:{ini:0.4,mid:1.15,end:0.35,f:[0.20,0.35,0.30,0.15]},
+  olivier:{ini:0.65,mid:0.70,end:0.65,f:[0.30,0.20,0.30,0.20]},
+  default:{ini:0.6,mid:1.05,end:0.75,f:[0.22,0.30,0.32,0.16]}
+};
+/* ---- Pont vers la BASE PARTAGÉE crops.js (window.CROPS) ---------------------
+   La page recevait autrefois des noms de culture en texte libre (Tomate,
+   Olivier…) mappés sur une petite table KC codée en dur. On les résout
+   désormais vers un identifiant stable de CROPS_DB (~47 cultures) et on lit
+   Kc = byId(id).Kc [ini,mid,end], durées L, profondeur racinaire Zr. La table
+   KC ci-dessus reste un filet de sécurité pour toute culture inconnue.        */
+const HAS_CROPS = (typeof CROPS!=='undefined' && CROPS && typeof CROPS.byId==='function');
+function stripA(s){return (s==null?'':String(s)).toLowerCase()
+  .replace(/[éèêë]/g,'e').replace(/[àâä]/g,'a').replace(/[îï]/g,'i')
+  .replace(/[ôö]/g,'o').replace(/[ûü]/g,'u').replace(/[ç]/g,'c').trim();}
+// synonymes texte-libre (FR usuels + variantes) → id CROPS_DB
+const CROP_SYN={
+  'ble':'durum','ble dur':'durum','ble tendre':'wheat','froment':'wheat','orge':'barley',
+  'mais':'maize','mais grain':'maize','mais doux':'sweetcorn','sorgho':'sorghum','avoine':'oat',
+  'feve':'faba','pois chiche':'chickpea','lentille':'lentil','haricot':'greenbean','haricot vert':'greenbean','petit pois':'pea','pois':'pea',
+  'tomate':'tomato','pomme de terre':'potato','patate':'potato','oignon':'onion','ail':'garlic',
+  'piment':'pepper','poivron':'pepper','aubergine':'eggplant','courgette':'zucchini','concombre':'cucumber',
+  'pasteque':'watermelon','melon':'melon','carotte':'carrot','chou':'cabbage','laitue':'lettuce','salade':'lettuce','artichaut':'artichoke','gombo':'okra',
+  'olivier':'olive','olive':'olive','palmier':'date','palmier-dattier':'date','datte':'date','dattier':'date',
+  'oranger':'citrus','orange':'citrus','agrume':'citrus','agrumes':'citrus','citronnier':'lemon','citron':'lemon',
+  'amandier':'almond','amande':'almond','vigne':'grape','raisin':'grape','figuier':'fig','figue':'fig',
+  'grenadier':'pomegranate','grenade':'pomegranate','abricotier':'apricot','abricot':'apricot','pecher':'peach','peche':'peach',
+  'pommier':'apple','pomme':'apple','poirier':'pear','poire':'pear','pistachier':'pistachio','pistache':'pistachio',
+  'tournesol':'sunflower','arachide':'groundnut','sesame':'sesame','coton':'cotton','betterave':'sugarbeet','betterave sucriere':'sugarbeet',
+  'luzerne':'alfalfa','bersim':'clover','trefle':'clover','ray-grass':'ryegrass','raygrass':'ryegrass','sorgho fourrager':'foddersorghum'
+};
+// résout un texte libre OU un id vers un id CROPS_DB (ou null)
+function cropIdOf(raw){
+  if(!HAS_CROPS) return null;
+  const s=stripA(raw); if(!s) return null;
+  if(CROPS.byId(s)) return s;                 // déjà un id
+  if(CROP_SYN[s]) return CROP_SYN[s];         // synonyme exact
+  for(const k in CROP_SYN){ if(s.includes(k)) return CROP_SYN[k]; } // synonyme partiel
+  const hit=CROPS_DB.find(c=>{                 // par nom trilingue
+    const n=[c.fr,c.en,c.ar].map(stripA);
+    return n.some(x=>x && (x===s || s.includes(x) || x.includes(s)));
+  });
+  return hit?hit.id:null;
+}
+// nom d'affichage trilingue selon la langue courante (repli sur le texte brut)
+function cropName(p){
+  const id=(p&&p.cropId)||cropIdOf(p&&p.crop);
+  if(HAS_CROPS && id) return CROPS.name(id,(typeof LANG!=='undefined'?LANG:'fr'));
+  return (p&&p.crop)||'—';
+}
+// profondeur racinaire (m) depuis .Zr de la base partagée, sinon défaut 0.6
+function zrOf(p){
+  const id=(p&&p.cropId)||cropIdOf(p&&p.crop);
+  const c=(HAS_CROPS&&id)?CROPS.byId(id):null;
+  return c&&c.Zr?c.Zr:0.6;
+}
+// courbe Kc FAO-56 par phases construite depuis byId(id).Kc [ini,mid,end] + durées L
+function kcCurveDB(id,frac){
+  const c=(HAS_CROPS&&id)?CROPS.byId(id):null; if(!c) return null;
+  const L=c.L||[], K=c.Kc||[]; if(K.length<3) return null;
+  const tot=L.reduce((a,b)=>a+b,0)||1;
+  const fi=L[0]/tot, fd=L[1]/tot, fm=L[2]/tot, ff=Math.max(1e-6,1-(fi+fd+fm));
+  if(frac<=0) return K[0]; if(frac>=1) return K[2];
+  if(frac<fi) return K[0];
+  if(frac<fi+fd) return K[0]+(K[1]-K[0])*((frac-fi)/fd);
+  if(frac<fi+fd+fm) return K[1];
+  return K[1]+(K[2]-K[1])*((frac-fi-fd-fm)/ff);
+}
+function kcFor(cropRaw,frac){
+  const id=cropIdOf(cropRaw);
+  if(id){ const v=kcCurveDB(id,frac); if(v!=null) return v; }
+  // --- filet de sécurité : ancienne table KC pour culture inconnue ---
+  const c=(cropRaw||'').toLowerCase();
+  const key=Object.keys(KC).find(k=>k!=='default'&&c.includes(k))||'default';
+  const k=KC[key];const[fi,fd,fm,ff]=k.f;
+  if(frac<=0)return k.ini;if(frac>=1)return k.end;
+  if(frac<fi)return k.ini;
+  if(frac<fi+fd)return k.ini+(k.mid-k.ini)*((frac-fi)/fd);
+  if(frac<fi+fd+fm)return k.mid;
+  return k.mid+(k.end-k.mid)*((frac-fi-fd-fm)/ff);
+}
+function stageName(frac){if(frac<=0)return t('avant plantation');if(frac>=1)return t('récolté');if(frac<0.22)return t('initiale');if(frac<0.52)return t('développement');if(frac<0.84)return t('mi-saison');return t('arrière-saison');}
+// RU/RFU par nature de sol (mm/m)
+function ruFor(sol){const s=(sol||'').toLowerCase();if(s.includes('sabl'))return 90;if(s.includes('argil'))return 170;if(s.includes('limon'))return 150;return 140;/*mixte*/}
+// ET0 fallback décadaire (Béja/Zaghouan) si pas de météo
+const ET0_DEC=[1.3,1.4,1.6,1.9,2.2,2.5,2.8,3.2,3.6,4.0,4.4,4.8,5.2,5.6,6.0,6.4,6.8,7.1,7.4,7.6,7.7,7.6,7.3,6.9,6.3,5.7,5.0,4.3,3.7,3.1,2.6,2.2,1.9,1.6,1.4,1.3];
+function et0Norm(d){const dec=Math.min(35,Math.floor((doy(d)-1)/10.14));return ET0_DEC[dec];}
+function peff(P){return P<=0?0:Math.max(0,P*(125-0.2*P)/125);}
+
+/* ---------------- état ---------------- */
+let PARCELS=[], map, markers={}, selId=null, sortKey='besoin', sortDir=-1;
+
+/* ---------------- ingestion (détecte parcelles brutes OU consolidé) ---------------- */
+function isConsolidated(rows){
+  if(!rows.length)return false;
+  const H=Object.keys(rows[0]).map(h=>h.toLowerCase());
+  return H.some(h=>h.includes('gdd cumul'))||H.some(h=>h.includes('et0 cumul'));
+}
+function ingest(rows){
+  if(isConsolidated(rows)){return ingestConsolidated(rows);}
+  const ref=$('refDate').value?new Date($('refDate').value):new Date();
+  PARCELS=rows.map((r,i)=>{
+    const pos=col(r,['position']);
+    let lat=NaN,lon=NaN;
+    if(pos){const m=pos.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);if(m){lat=+m[1];lon=+m[2];}}
+    const crop=col(r,['cultu']);
+    const dPlant=parseDate(col(r,['date debut plant','debut plant','date début']));
+    const dHarv=parseDate(col(r,['date recolte prev','récolte prév','recolte prev']));
+    const sup=num(col(r,['surface plant','superf']))||NaN;
+    const sol=col(r,['nature du sol','nature sol']);
+    let frac=0;
+    if(dPlant&&dHarv&&dHarv>dPlant){frac=(ref-dPlant)/(dHarv-dPlant);}
+    else if(dPlant){frac=Math.min(1,Math.max(0,(ref-dPlant)/(120*864e5)));}
+    frac=Math.max(0,Math.min(1,frac));
+    return{
+      i,id:col(r,['id parcelle agrim','id parcelle'])||col(r,['parcelle']),
+      nom:col(r,['agriculteur','nom']),region:col(r,['region','région']),
+      ing:col(r,['ingenieur','ingénieur']),parcelle:col(r,['parcelle']),
+      crop,lat,lon,sup,sol,dPlant,dHarv,frac,
+      et0:null,pluie:null,src:'—'
+    };
+  }).filter(p=>!isNaN(p.lat)&&!isNaN(p.lon));
+  computeAll(ref);
+  afterIngest();
+  $('btnExport').disabled=true;
+  setStat(PARCELS.length+' '+t('parcelles chargées'),'on');
+}
+// recharge un fichier consolidé : les agrégats météo sont lus, PAS recalculés via l'API
+function ingestConsolidated(rows){
+  const ref=$('refDate').value?new Date($('refDate').value):new Date();
+  PARCELS=rows.map((r,i)=>{
+    const lat=num(col(r,['latitude'])),lon=num(col(r,['longitude']));
+    const crop=col(r,['culture','cultu']);
+    const dPlant=parseDate(col(r,['date plantation','date plant']));
+    const dHarv=parseDate(col(r,['date recolte prev','recolte prev','récolte prév']));
+    const sup=num(col(r,['superficie','surface']))||NaN;
+    const sol=col(r,['nature sol','nature du sol']);
+    let frac=0;
+    if(dPlant&&dHarv&&dHarv>dPlant){frac=Math.max(0,Math.min(1,(ref-dPlant)/(dHarv-dPlant)));}
+    // reconstruit l'objet cycle depuis les colonnes du consolidé
+    const cycle={
+      nDays:num(col(r,['jours cycle'])),gdd:num(col(r,['gdd cumul'])),
+      pluie:num(col(r,['pluie cumul'])),et0c:num(col(r,['et0 cumul'])),
+      etc:num(col(r,['etc cumul'])),deficit:num(col(r,['deficit'])),
+      stressHot:num(col(r,['stress chaud','jours stress'])),dsv:num(col(r,['dsv maladie','dsv cumul'])),
+      radMoy:num(col(r,['rayonnement'])),windMax:num(col(r,['vent max'])),
+      smMoy:num(col(r,['humidite sol','humidité sol'])),rhMoy:num(col(r,['hr max'])),
+      collectedAt:col(r,['collecte le'])
+    };
+    const nD=cycle.nDays||1;
+    return{
+      i,id:col(r,['id parcelle','id']),nom:col(r,['agriculteur','nom']),
+      region:col(r,['region','région']),ing:col(r,['ingenieur','ingénieur']),
+      parcelle:col(r,['parcelle']),crop,lat,lon,sup,sol,dPlant,dHarv,frac,
+      cycle, et0:cycle.et0c/nD, pluie:cycle.pluie/nD,
+      dsvCalc:Math.min(30,cycle.dsv/(nD/14)), src:'consolidé'
+    };
+  }).filter(p=>!isNaN(p.lat)&&!isNaN(p.lon));
+  computeAll(ref);
+  afterIngest();
+  $('btnExport').disabled=false; // déjà collecté → réexportable
+  setStat(PARCELS.length+' '+t('parcelles rechargées depuis le consolidé (sans API)'),'on');
+}
+function afterIngest(){
+  $('empty').style.display='none';$('layout').style.display='grid';$('kpi').style.display='flex';
+  $('btnMeteo').disabled=false;$('btnCycle').disabled=false;
+  $('srcPill').textContent=PARCELS.length+' '+t('parcelles géolocalisées');
+  initMap();render();
+}
+
+// bilan simple à la date de référence (une décade) — état de la réserve
+function computeAll(ref){
+  PARCELS.forEach(p=>{
+    const et0=(p.et0!=null)?p.et0:et0Norm(ref);
+    const kc=kcFor(p.crop,p.frac);
+    const etcDay=kc*et0;
+    const RU=ruFor(p.sol)*0.6, RFU=0.5*RU; // Zr~0.6m tomate
+    // proxy de réserve : pluie efficace récente vs demande sur la décade
+    const peDec=peff((p.pluie!=null)?p.pluie:6);
+    const etcDec=etcDay*10;
+    const deficitDec=Math.max(0,etcDec-peDec);
+    const besoinNet=Math.max(0,deficitDec-RFU*0.4); // mm à apporter cette décade
+    // DSV proxy à partir de T/humidité indisponible → dérivé météo si présent, sinon estimé du stade+saison
+    let dsv=p.dsvCalc!=null?p.dsvCalc:Math.round(Math.min(20,(p.frac>0.3&&p.frac<0.9?1:0)*(8+(et0<5?6:2))+ (peDec>8?4:0)));
+    p.kc=kc;p.etcDay=etcDay;p.RFU=RFU;p.besoin=besoinNet;p.stress=deficitDec>RFU;p.dsv=dsv;p.et0eff=et0;
+    p.action=(p.frac>=1)?'récolté':(besoinNet>4?'irriguer':(dsv>=15?'traiter':'ok'));
+  });
+}
+
+/* ---------------- Open-Meteo temps réel ---------------- */
+async function fetchMeteo(){
+  setStat(t('interrogation Open-Meteo…'),'busy');$('prog').style.display='inline-block';$('prog').value=0;$('btnMeteo').disabled=true;
+  let done=0,fail=0;
+  // regroupe par coordonnées arrondies (parcelles proches = 1 appel)
+  const groups={};
+  PARCELS.forEach(p=>{const k=p.lat.toFixed(2)+','+p.lon.toFixed(2);(groups[k]=groups[k]||[]).push(p);});
+  const keys=Object.keys(groups);
+  for(let gi=0;gi<keys.length;gi++){
+    const[la,lo]=keys[gi].split(',');
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}`+
+      `&daily=et0_fao_evapotranspiration,precipitation_sum,temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean`+
+      `&past_days=10&forecast_days=1&timezone=auto`;
+    try{
+      const j=await fetchJSON(url);
+      const d=j&&j.daily;
+      if(!d||!d.time||!d.time.length||!d.et0_fao_evapotranspiration){
+        // réponse sans données (quota, erreur API) → échec propre, pas de crash
+        fail+=groups[keys[gi]].length;groups[keys[gi]].forEach(p=>{p.src='échec';});
+      }else{
+        const et0=avg(d.et0_fao_evapotranspiration);
+        const pl=sum(d.precipitation_sum||[]);
+        const tmn=d.temperature_2m_min||[], tmx=d.temperature_2m_max||[];
+        const rhm=d.relative_humidity_2m_mean||[];
+        let dsv=0;
+        for(let k=0;k<d.time.length;k++){
+          const tm=((+tmx[k]||0)+(+tmn[k]||0))/2;
+          const h=rhm[k]!=null?+rhm[k]:70;
+          if(h>85&&tm>=13){dsv+=(tm>=17&&tm<=27)?(h>92?4:2):1;}
+        }
+        groups[keys[gi]].forEach(p=>{p.et0=et0;p.pluie=pl/10;p.dsvCalc=Math.min(25,dsv);p.src='Open-Meteo';});
+      }
+    }catch(e){fail+=groups[keys[gi]].length;groups[keys[gi]].forEach(p=>{p.src='échec';});}
+    done++;$('prog').value=Math.round(100*done/keys.length);
+  }
+  const ref=$('refDate').value?new Date($('refDate').value):new Date();
+  computeAll(ref);
+  $('prog').style.display='none';$('btnMeteo').disabled=false;
+  if(fail){setStat(t('météo OK')+' ('+(keys.length-0)+' '+t('points')+'), '+fail+' '+t('échecs — repli sur normales'),'err');}
+  else setStat(t('ET0 temps réel appliquée')+' · '+keys.length+' '+t('points météo'),'on');
+  $('srcPill').textContent='ET0 : Open-Meteo ('+keys.length+' '+t('points')+')';
+  render();
+}
+const avg=a=>a&&a.length?a.reduce((s,x)=>s+(+x||0),0)/a.length:NaN;
+const sum=a=>a&&a.length?a.reduce((s,x)=>s+(+x||0),0):0;
+// min/max sûrs (amax(bigArray) fait déborder la pile) :
+const amax=a=>{let m=-Infinity;for(let i=0;i<a.length;i++){const v=+a[i];if(v>m)m=v;}return m===-Infinity?NaN:m;};
+const amin=a=>{let m=Infinity;for(let i=0;i<a.length;i++){const v=+a[i];if(v<m)m=v;}return m===Infinity?NaN:m;};
+
+/* ---------------- COLLECTE MÉTÉO DU CYCLE (plantation → récolte) ---------------- */
+const iso=d=>d.toISOString().slice(0,10);
+// DSV TomCast approché à partir de T moyenne du jour et humidité (proxy heures d'humectation via RH)
+function dsvDay(tmean,rhMax){
+  if(tmean<13||rhMax<80)return 0;
+  const wet=rhMax>=95?18:rhMax>=90?12:rhMax>=85?8:5; // heures d'humectation estimées
+  if(tmean<=17){if(wet<=6)return 0;if(wet<=15)return 1;if(wet<=20)return 2;return 3;}
+  if(tmean<=27){if(wet<=2)return 0;if(wet<=5)return 1;if(wet<=12)return 2;if(wet<=20)return 3;return 4;}
+  if(wet<=3)return 0;if(wet<=8)return 1;if(wet<=15)return 2;return 3;
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+// fetch avec gestion du 429 (Too Many Requests) : backoff + Retry-After
+async function fetchJSON(url,tries=4){
+  for(let a=0;a<tries;a++){
+    try{
+      const r=await fetch(url);
+      if(r.status===429){
+        const ra=+r.headers.get('retry-after');
+        const wait=ra?ra*1000:(1500*Math.pow(2,a)); // 1.5s,3s,6s,12s
+        setStat(t('API saturée — pause')+' '+Math.round(wait/1000)+t('s puis reprise…'),'busy');
+        await sleep(wait);continue;
+      }
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return await r.json();
+    }catch(e){
+      if(a===tries-1)throw e;
+      await sleep(1200*(a+1));
+    }
+  }
+  throw new Error('429 persistant');
+}
+async function fetchDaily(la,lo,d0,d1){
+  // 2 requêtes/point max : variables essentielles séparées des lourdes (sol) pour alléger le quota
+  const varsBase='temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,'+
+    'et0_fao_evapotranspiration,relative_humidity_2m_max,shortwave_radiation_sum,windspeed_10m_max';
+  const today=iso(new Date());
+  const out={};
+  if(d0<today){
+    const end=(d1<today)?d1:iso(new Date(Date.now()-864e5));
+    const u=`https://archive-api.open-meteo.com/v1/archive?latitude=${la}&longitude=${lo}&start_date=${d0}&end_date=${end}`+
+      `&daily=${varsBase},soil_moisture_0_to_7cm_mean&timezone=auto`;
+    const j=await fetchJSON(u);mergeDaily(out,j.daily);
+    await sleep(600); // throttle entre appels
+  }
+  if(d1>=today){
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}`+
+      `&daily=${varsBase}&start_date=${today}&end_date=${d1}&timezone=auto`;
+    const j=await fetchJSON(u);mergeDaily(out,j.daily);
+    await sleep(600);
+  }
+  return out;
+}
+function mergeDaily(out,d){if(!d||!d.time)return;Object.keys(d).forEach(k=>{out[k]=(out[k]||[]).concat(d[k]);});}
+
+async function collectCycle(){
+  setStat(t('collecte du cycle plantation → récolte…'),'busy');
+  $('prog').style.display='inline-block';$('prog').value=0;
+  $('btnCycle').disabled=true;$('btnMeteo').disabled=true;
+  // regrouper par (coord arrondie + fenêtre de dates) pour mutualiser les appels
+  const groups={};
+  PARCELS.forEach(p=>{
+    if(!p.dPlant)return;
+    const d1=p.dHarv&&p.dHarv>p.dPlant?p.dHarv:new Date();
+    const k=p.lat.toFixed(2)+'|'+p.lon.toFixed(2)+'|'+iso(p.dPlant)+'|'+iso(d1);
+    (groups[k]=groups[k]||[]).push(p);
+  });
+  const keys=Object.keys(groups);
+  let done=0,fail=0;
+  for(const key of keys){
+    const[la,lo,d0,d1]=key.split('|');
+    setStat(t('collecte')+' '+(done+1)+'/'+keys.length+' '+t('points météo…'),'busy');
+    let d={};
+    try{ d=await fetchDaily(la,lo,d0,d1); }
+    catch(e){ fail+=groups[key].length;done++;$('prog').value=Math.round(100*done/keys.length);continue; }
+    if(!d.time||!d.time.length){fail+=groups[key].length;done++;$('prog').value=Math.round(100*done/keys.length);continue;}
+    // agrégats sur le cycle (arrays sécurisés si une variable manque)
+    const A=(k)=>Array.isArray(d[k])?d[k]:[];
+    const Tx=A('temperature_2m_max'),Tn=A('temperature_2m_min'),Tm=A('temperature_2m_mean'),
+          Pr=A('precipitation_sum'),E0=A('et0_fao_evapotranspiration'),
+          RHx=A('relative_humidity_2m_max'),Rad=A('shortwave_radiation_sum'),
+          Wnd=A('windspeed_10m_max'),SM=A('soil_moisture_0_to_7cm_mean');
+    let gdd=0,pluie=0,et0c=0,etc=0,stressHot=0,dsv=0,radSum=0,windMax=0;
+    const sm=[],rhm=[];
+    for(let i=0;i<d.time.length;i++){
+      const tx=+Tx[i]||0,tn=+Tn[i]||0;
+      const tm=Tm.length?+Tm[i]:(tx+tn)/2;
+      gdd+=Math.max(0,(tx+tn)/2-10);
+      pluie+=+Pr[i]||0;
+      const e0=+E0[i]||0;et0c+=e0;
+      const p0=groups[key][0];
+      const frac=p0.dHarv&&p0.dHarv>p0.dPlant?((new Date(d.time[i])-p0.dPlant)/(p0.dHarv-p0.dPlant)):0.5;
+      etc+=e0*kcFor(p0.crop,Math.max(0,Math.min(1,frac)));
+      if(tx>35)stressHot++;
+      const rhMax=RHx.length?+RHx[i]:70;
+      dsv+=dsvDay(tm,rhMax);
+      radSum+=+Rad[i]||0;
+      if((+Wnd[i]||0)>windMax)windMax=+Wnd[i]||0;
+      if(SM.length&&!isNaN(+SM[i]))sm.push(+SM[i]);
+      rhm.push(rhMax);
+    }
+    const nDays=d.time.length;
+    groups[key].forEach(p=>{
+      p.cycle={
+        nDays,gdd:Math.round(gdd),pluie:+pluie.toFixed(1),et0c:+et0c.toFixed(1),etc:+etc.toFixed(1),
+        deficit:+(etc-pluie).toFixed(1),stressHot,dsv:Math.round(dsv),
+        radMoy:+(radSum/nDays).toFixed(1),windMax:+windMax.toFixed(1),
+        smMoy:sm.length?+(avg(sm)).toFixed(3):null,rhMoy:+(avg(rhm)).toFixed(0),
+        collectedAt:iso(new Date())
+      };
+      // alimente aussi la vue courante
+      p.et0=et0c/nDays;p.pluie=pluie/nDays;p.dsvCalc=Math.min(30,p.cycle.dsv/ (nDays/14));p.src='cycle';
+    });
+    done++;$('prog').value=Math.round(100*done/keys.length);
+  }
+  const ref=$('refDate').value?new Date($('refDate').value):new Date();
+  computeAll(ref);
+  $('prog').style.display='none';$('btnCycle').disabled=false;$('btnMeteo').disabled=false;
+  const ok=PARCELS.filter(p=>p.cycle).length;
+  $('btnExport').disabled=ok===0;
+  setStat(t('cycle collecté pour')+' '+ok+' '+t('parcelles')+(fail?(' · '+fail+' '+t('échecs')):''),fail?'err':'on');
+  $('srcPill').textContent=t('historique cycle')+' · '+keys.length+' '+t('fenêtres météo');
+  render();
+}
+
+/* ---------------- EXPORT FICHIER CONSOLIDÉ ---------------- */
+function buildConsolidated(){
+  return PARCELS.filter(p=>p.cycle).map(p=>({
+    'Id parcelle':p.id,'Agriculteur':p.nom,'Region':p.region,'Ingenieur':p.ing,
+    'Parcelle':p.parcelle,'Culture':p.crop,'Latitude':p.lat,'Longitude':p.lon,
+    'Superficie (ha)':p.sup,'Nature sol':p.sol,
+    'Date plantation':fmtD(p.dPlant),'Date recolte prevue':fmtD(p.dHarv),
+    'Jours cycle':p.cycle.nDays,'GDD cumules (Tb10)':p.cycle.gdd,
+    'Pluie cumulee (mm)':p.cycle.pluie,'ET0 cumulee (mm)':p.cycle.et0c,
+    'ETc cumulee (mm)':p.cycle.etc,'Deficit ETc-P (mm)':p.cycle.deficit,
+    'Jours stress chaud >35C':p.cycle.stressHot,'DSV maladie cumule':p.cycle.dsv,
+    'Rayonnement moyen (MJ/m2)':p.cycle.radMoy,'Vent max (km/h)':p.cycle.windMax,
+    'Humidite sol 0-7cm moy (m3/m3)':p.cycle.smMoy,'HR max moyenne (%)':p.cycle.rhMoy,
+    'Collecte le':p.cycle.collectedAt
+  }));
+}
+function exportConsolidated(){
+  const data=buildConsolidated();
+  if(!data.length){alert(t('Lancez d\'abord « Collecter la météo du cycle ».'));return;}
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Meteo_cycle');
+  const stamp=iso(new Date());
+  XLSX.writeFile(wb,'meteo_cycle_consolide_'+stamp+'.xlsx');
+  // CSV aussi
+  const csv=XLSX.utils.sheet_to_csv(ws,{FS:';'});
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meteo_cycle_consolide_'+stamp+'.csv';a.click();
+}
+
+/* ---------------- carte ---------------- */
+function color(p){
+  if(p.frac>=1)return'#8a97a0';
+  if(p.action==='traiter')return'#bd3b26';
+  if(p.besoin>8)return'#0a5b63';
+  if(p.besoin>4)return'#3fa0a8';
+  if(p.besoin>1)return'#8fc7c4';
+  return'#5fa768';
+}
+function initMap(){
+  if(map){map.remove();}
+  map=L.map('map',{scrollWheelZoom:true});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  try{ if(window.GeoSearch) GeoSearch.add(map,{lang:(window.LANG||document.documentElement.lang||'fr'),overlays:false}); }catch(e){}
+  markers={};
+  const pts=[];
+  PARCELS.forEach(p=>{
+    const m=L.circleMarker([p.lat,p.lon],{radius:8,fillColor:color(p),color:'#fff',weight:1.5,fillOpacity:.9});
+    m.on('click',()=>selectParcel(p.id,true));
+    m.bindPopup(popup(p));
+    m.addTo(map);markers[p.id]=m;pts.push([p.lat,p.lon]);
+  });
+  if(pts.length)map.fitBounds(pts,{padding:[40,40]});
+  // légende
+  const lg=L.control({position:'bottomright'});
+  lg.onAdd=()=>{const d=L.DomUtil.create('div','legend-map');d.innerHTML=
+    '<i style="background:#0a5b63"></i>'+t('irrigation forte')+'<br><i style="background:#3fa0a8"></i>'+t('irrigation modérée')+'<br><i style="background:#5fa768"></i>'+t('réserve OK')+'<br><i style="background:#bd3b26"></i>'+t('alerte traitement')+'<br><i style="background:#8a97a0"></i>'+t('récolté');return d;};
+  lg.addTo(map);
+}
+function popup(p){
+  return `<b>${p.nom||'—'}</b> · ${p.parcelle||p.id}<br>
+  <div class="pop-row"><span>${t('Culture')}</span><span class="v">${p.crop||'—'}</span></div>
+  <div class="pop-row"><span>${t('Stade (Kc)')}</span><span class="v">${stageName(p.frac)} · ${p.kc.toFixed(2)}</span></div>
+  <div class="pop-row"><span>ET0 (${t(p.src)})</span><span class="v">${p.et0eff.toFixed(2)} mm/j</span></div>
+  <div class="pop-row"><span>${t('ETc jour')}</span><span class="v">${p.etcDay.toFixed(2)} mm</span></div>
+  <div class="pop-row"><span>${t('Besoin net décade')}</span><span class="v">${p.besoin.toFixed(0)} mm</span></div>
+  <div class="pop-row"><span>DSV</span><span class="v">${p.dsv}</span></div>
+  <div style="margin-top:6px">${actionTag(p)}</div>`;
+}
+function actionTag(p){
+  if(p.frac>=1)return'<span class="tag wait">'+t('récolté')+'</span>';
+  const arr=[];if(p.besoin>4)arr.push('<span class="tag irr">'+t('irriguer')+'</span>');
+  if(p.dsv>=15)arr.push('<span class="tag spray">'+t('traiter')+'</span>');
+  if(!arr.length)arr.push('<span class="tag ok">'+t('RAS')+'</span>');
+  return arr.join(' ');
+}
+
+/* ---------------- tableau ---------------- */
+function render(){
+  const f=$('filter').value;
+  let rows=PARCELS.slice();
+  if(f==='irr')rows=rows.filter(p=>p.besoin>4&&p.frac<1);
+  else if(f==='spray')rows=rows.filter(p=>p.dsv>=15&&p.frac<1);
+  else if(f==='stress')rows=rows.filter(p=>p.stress&&p.frac<1);
+  rows.sort((a,b)=>{const x=a[sortKey],y=b[sortKey];return (typeof x==='string'?x.localeCompare(y):x-y)*sortDir;});
+  const cols=[['nom','Exploitant'],['parcelle','Parcelle'],['crop','Culture'],['stade','Stade'],['et0eff','ET0'],['kc','Kc'],['etcDay','ETc/j'],['besoin','Besoin'],['dsv','DSV'],['action','Action']];
+  let h='<tr>'+cols.map(([k,l])=>`<th data-k="${k}">${t(l)}${sortKey===k?(sortDir>0?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
+  rows.forEach(p=>{
+    h+=`<tr class="row ${p.id===selId?'sel':''}" data-id="${p.id}">
+      <td>${p.nom||'—'}</td><td>${p.parcelle||p.id}</td><td>${p.crop||'—'}</td>
+      <td>${stageName(p.frac)}</td><td class="mono">${p.et0eff.toFixed(2)}</td><td class="mono">${p.kc.toFixed(2)}</td>
+      <td class="mono">${p.etcDay.toFixed(2)}</td><td class="mono"><b>${p.besoin.toFixed(0)}</b></td>
+      <td class="mono" style="${p.dsv>=15?'color:var(--deficit);font-weight:600':''}">${p.dsv}</td>
+      <td style="text-align:left">${actionTag(p)}</td></tr>`;
+  });
+  $('tbl').innerHTML=h;
+  $('tbl').querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==='nom'||k==='crop')?1:-1;}render();});
+  $('tbl').querySelectorAll('tr.row').forEach(tr=>tr.onclick=()=>selectParcel(tr.dataset.id,false));
+  renderKPI();
+}
+function renderKPI(){
+  const act=PARCELS.filter(p=>p.frac<1);
+  const irr=act.filter(p=>p.besoin>4),spray=act.filter(p=>p.dsv>=15),stress=act.filter(p=>p.stress);
+  const vol=irr.reduce((s,p)=>s+p.besoin*(p.sup||0)*10,0); // mm×ha×10 = m³
+  $('kpi').innerHTML=[
+    ['Parcelles',PARCELS.length,''],
+    ['À irriguer',irr.length,''],
+    ['Alerte traitement',spray.length,''],
+    ['En stress',stress.length,''],
+    ['Volume à apporter',Math.round(vol).toLocaleString('fr-FR'),'m³'],
+    ['ET0 moyenne',(avg(act.map(p=>p.et0eff))||0).toFixed(2),'mm/j'],
+  ].map(([l,v,u])=>`<div class="b"><div class="v">${v}<small style="font-size:11px;color:var(--ink2)"> ${u}</small></div><div class="l">${t(l)}</div></div>`).join('');
+}
+function selectParcel(id,fromMap){
+  selId=id;const p=PARCELS.find(x=>x.id===id);if(!p)return;
+  render();
+  if(markers[id]){markers[id].openPopup();if(!fromMap)map.panTo([p.lat,p.lon]);}
+  const tr=$('tbl').querySelector(`tr[data-id="${CSS.escape(id)}"]`);
+  if(tr&&!fromMap)tr.scrollIntoView({block:'nearest'});
+  else if(tr&&fromMap)tr.scrollIntoView({block:'center'});
+}
+
+/* ---------------- échantillon (tes 2 lignes) ---------------- */
+const SAMPLE=`Agriculteur;CIN;Region;Ingenieur;Collecteur;Parcelle;Culture;Variété prévue;Variété plantée;Superficie (ha);Intercalaire?;Surface plantée;Accessibilité;Déssinée?;position Ferme;Rendement moyen(T);Observation;Récolte mécanique?;Paillage?;Cadence récolte;Pépinière;Nature du sol;Destination;Nbr plants;Densité;Type de plantation;Date debut plantation;Date fin plantation;Cadence de plantation;Date récolte prévue;Ouvert récolte;Recolte terminée;Détection récolte;Récolte détectée le;Id parcelle AgriM
+Adel Abidi;04501737;BEJA;Foughali Yassine;Souhoul Bouhertma;26-AA-BEJA-04282;Tomate;ERCOLE;ERCOLE;0,6;Non;0,6;Semi remorque;Oui;36.56970821258138, 9.095303857992958;70;;Non;Non;15;Royales_Plants;Mixte;DCT;18200;26000;Manuelle;30/03/2026;30/03/2026;0,6;26/07/2026;Non;Non;Non;;4282
+Adel Abidi;04501737;BEJA;Foughali Yassine;Souhoul Bouhertma;26-AA-BEJA-04283;Tomate;ERCOLE;ERCOLE;1,5;Non;1,5;Semi remorque;Oui;36.58506479632673, 9.090236164094398;70;;Non;Non;15;Royales_Plants;Mixte;DCT;39000;26000;Manuelle;01/04/2026;02/04/2026;0,75;28/07/2026;Non;Non;Non;;4283`;
+
+/* ---------------- events ---------------- */
+function readFile(f){
+  const isXlsx=/\.(xlsx|xls)$/i.test(f.name);
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      let rows;
+      if(isXlsx){
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false}); // raw:false → dates en texte lisible
+      }else{
+        rows=parseCSV(new TextDecoder('utf-8').decode(ev.target.result));
+      }
+      ingest(rows);
+      $('srcPill').textContent=PARCELS.length+' '+t('parcelles')+' · '+f.name;
+    }catch(err){setStat(t('erreur lecture fichier'),'err');alert(t('Fichier illisible : ')+err.message);}
+  };
+  r.readAsArrayBuffer(f);
+}
+$('csv').addEventListener('change',e=>{const f=e.target.files[0];if(f)readFile(f);});
+$('btnDemo').onclick=$('btnDemo2').onclick=()=>{ingest(parseCSV(SAMPLE));$('srcPill').textContent+=' · '+t('échantillon');};
+$('btnMeteo').onclick=fetchMeteo;
+$('btnCycle').onclick=collectCycle;
+$('btnExport').onclick=exportConsolidated;
+$('filter').onchange=render;
+$('refDate').onchange=()=>{if(PARCELS.length){const ref=new Date($('refDate').value);PARCELS.forEach(p=>{if(p.dPlant&&p.dHarv&&p.dHarv>p.dPlant)p.frac=Math.max(0,Math.min(1,(ref-p.dPlant)/(p.dHarv-p.dPlant)));});computeAll(ref);initMap();render();}};
+// drag & drop
+const drop=$('drop');
+['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hl');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hl');}));
+drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)readFile(f);});
+// date par défaut = aujourd'hui
+$('refDate').valueAsDate=new Date();
+setStat('en attente d\'un fichier');
+
+/* ================= ONGLETS ================= */
+let farmMap=null,windLayer=null;
+document.querySelectorAll('.tabbtn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabbtn').forEach(x=>x.classList.toggle('active',x===b));
+  const v=b.dataset.view;
+  $('view-portef').style.display=v==='portef'?'block':'none';
+  $('view-expl').style.display=v==='expl'?'block':'none';
+  $('view-live').style.display=v==='live'?'block':'none';
+  if(v==='portef'&&map)setTimeout(()=>map.invalidateSize(),60);
+  if(v==='expl'&&farmMap)setTimeout(()=>farmMap.invalidateSize(),60);
+});
+
+/* ================= MODULE EXPLOITATION ================= */
+let STATION=[], STATION_FILTERED=[], DAILY=[], FARM_GEO=null, GROUPING='jour';
+
+// --- parse CSV station (colonnes A1-*) ---
+function parseStation(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  const sep=detectSep(lines[0]);
+  const head=splitCSV(lines[0],sep).map(h=>h.trim());
+  const idx=name=>head.findIndex(h=>h.toLowerCase().includes(name));
+  const iDate=0;
+  const iWS1=idx('ws1'),iWS2=idx('ws2'),iHR=idx('hr'),iT=idx('-t'),iVolt=idx('volt'),
+        iR=idx('-r'),iB=head.findIndex(h=>/(-b)$/i.test(h.trim())),iWD=idx('wd'),
+        iB1=head.findIndex(h=>/b1$/i.test(h.trim()));
+  const rows=[];
+  for(let li=1;li<lines.length;li++){
+    const c=splitCSV(lines[li],sep);
+    if(c.length<2)continue;                 // ligne vide ou corrompue
+    const dt=parseDT(c[iDate]);if(!dt)continue;
+    const g=k=>{if(k<0||k>=c.length)return NaN;const v=num(c[k]);
+      // valeurs sentinelles de capteur en panne → NaN
+      if(v<=-999||v>=9999||v===-1000)return NaN;
+      return v;};
+    rows.push({
+      dt, ws1:g(iWS1), ws2:g(iWS2), hr:g(iHR), t:g(iT),
+      volt:g(iVolt), rain:g(iR), baro:g(iB),
+      wd:g(iWD), baroSea:g(iB1>=0?iB1:iB)
+    });
+  }
+  return rows;
+}
+function parseDT(s){if(!s)return null;const m=s.trim().match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);if(!m)return null;return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+(m[6]||0));}
+const kmh2ms=v=>v/3.6;
+
+// --- agrégation journalière ---
+function aggregateDaily(rows){
+  const days={};
+  rows.forEach(r=>{
+    const k=r.dt.getFullYear()+'-'+String(r.dt.getMonth()+1).padStart(2,'0')+'-'+String(r.dt.getDate()).padStart(2,'0');
+    (days[k]=days[k]||[]).push(r);
+  });
+  return Object.entries(days).map(([k,rs])=>{
+    const T=rs.map(r=>r.t).filter(v=>!isNaN(v));
+    const HR=rs.map(r=>r.hr).filter(v=>!isNaN(v));
+    const WS=rs.map(r=>Math.max(r.ws1||0,r.ws2||0)).filter(v=>!isNaN(v));
+    const rain=rs.reduce((s,r)=>s+(r.rain||0),0);
+    const baro=rs.map(r=>r.baro).filter(v=>!isNaN(v));
+    const volt=rs.map(r=>r.volt).filter(v=>!isNaN(v)&&v>3&&v<20);
+    // heures d'humectation ≈ nb d'intervals à HR>=90% × pas de temps
+    const stepMin=rs.length>1?Math.max(1,Math.round((rs[1].dt-rs[0].dt)/60000)):10;
+    const wetInt=rs.filter(r=>r.hr>=90).length; const wetHours=wetInt*stepMin/60;
+    const [y,mo,d]=k.split('-').map(Number);
+    const date=new Date(y,mo-1,d);
+    const tmax=amax(T),tmin=amin(T),tmean=T.reduce((a,b)=>a+b,0)/T.length;
+    return{
+      date,key:k,n:rs.length,
+      tmax,tmin,tmean,
+      hrmax:HR.length?amax(HR):NaN,hrmin:HR.length?amin(HR):NaN,hrmean:HR.length?HR.reduce((a,b)=>a+b,0)/HR.length:NaN,
+      wsMean:WS.length?WS.reduce((a,b)=>a+b,0)/WS.length:0, wsMax:WS.length?amax(WS):0,
+      rain, baro:baro.length?baro.reduce((a,b)=>a+b,0)/baro.length:NaN,
+      voltMin:volt.length?amin(volt):NaN, wetHours, tmean2:tmean
+    };
+  }).sort((a,b)=>a.date-b.date);
+}
+
+// --- ET0 Hargreaves-Samani (T seule) ---
+function et0Hargreaves(tmax,tmin,tmean,date,lat){
+  const J=doy(date);
+  const dr=1+0.033*Math.cos(2*Math.PI/365*J);
+  const dec=0.409*Math.sin(2*Math.PI/365*J-1.39);
+  const phi=lat*Math.PI/180;
+  let x=-Math.tan(phi)*Math.tan(dec);x=Math.max(-1,Math.min(1,x));
+  const ws=Math.acos(x);
+  const Ra=(24*60/Math.PI)*0.0820*dr*(ws*Math.sin(phi)*Math.sin(dec)+Math.cos(phi)*Math.cos(dec)*Math.sin(ws));
+  const dt=Math.max(0,tmax-tmin);
+  return Math.max(0,0.0023*(tmean+17.8)*Math.sqrt(dt)*0.408*Ra);
+}
+function dsvStation(tmean,wetHours){
+  if(tmean<13||wetHours<=0)return 0;
+  if(tmean<=17){if(wetHours<=6)return 0;if(wetHours<=15)return 1;if(wetHours<=20)return 2;return 3;}
+  if(tmean<=27){if(wetHours<=2)return 0;if(wetHours<=5)return 1;if(wetHours<=12)return 2;if(wetHours<=20)return 3;return 4;}
+  if(wetHours<=3)return 0;if(wetHours<=8)return 1;if(wetHours<=15)return 2;return 3;
+}
+
+// centre de la ferme (depuis GeoJSON) ou défaut Béja
+function farmCenter(){
+  if(FARM_GEO){try{
+    let xs=[],ys=[];const walk=c=>{if(typeof c[0]==='number'){xs.push(c[0]);ys.push(c[1]);}else c.forEach(walk);};
+    (FARM_GEO.features||[FARM_GEO]).forEach(f=>walk((f.geometry||f).coordinates));
+    return[ys.reduce((a,b)=>a+b,0)/ys.length, xs.reduce((a,b)=>a+b,0)/xs.length];
+  }catch(e){}}
+  return[36.73,9.18];
+}
+
+function loadStation(text){
+  STATION=parseStation(text);
+  if(!STATION.length){setStat(t('CSV station illisible'),'err');alert(t('Aucune ligne station lue — vérifiez le format de la colonne Date/Heure.'));return;}
+  // peupler le sélecteur d'années
+  const years=[...new Set(STATION.map(r=>r.dt.getFullYear()))].sort();
+  $('fYear').innerHTML='<option value="all">'+t('toutes')+'</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  // bornes de dates
+  const dmin=STATION[0].dt,dmax=STATION[STATION.length-1].dt;
+  $('fFrom').value='';$('fTo').value='';
+  $('fFrom').min=$('fTo').min=iso(dmin);$('fFrom').max=$('fTo').max=iso(dmax);
+  $('explEmpty').style.display='none';$('explBody').style.display='block';
+  applyStationFilter();
+  initFarmMap();
+}
+// applique les filtres période → recalcule DAILY → rendu
+function applyStationFilter(){
+  const fy=$('fYear').value, fm=$('fMonth').value;
+  const from=$('fFrom').value?new Date($('fFrom').value):null;
+  const to=$('fTo').value?new Date($('fTo').value+'T23:59:59'):null;
+  let sub=STATION.filter(r=>{
+    if(fy!=='all'&&r.dt.getFullYear()!=+fy)return false;
+    if(fm!=='all'&&(r.dt.getMonth()+1)!=+fm)return false;
+    if(from&&r.dt<from)return false;
+    if(to&&r.dt>to)return false;
+    return true;
+  });
+  STATION_FILTERED=sub;
+  DAILY=aggregateDaily(sub);
+  // si la période dépasse ~120 jours, agréger par semaine pour lisibilité
+  GROUPING=DAILY.length>120?'semaine':'jour';
+  if(GROUPING==='semaine')DAILY=weeklyFrom(DAILY);
+  const span=sub.length?`${fmtD(sub[0].dt)} → ${fmtD(sub[sub.length-1].dt)}`:'—';
+  $('stationPill').textContent=`${sub.length} ${t('mesures')} · ${DAILY.length} ${GROUPING==='semaine'?t('semaines'):t('jours')} · ${span}`;
+  setStat(t('station :')+' '+sub.length+' '+t('mesures affichées')+' ('+t(GROUPING)+')','on');
+  if(sub.length)renderStation();
+  else{$('explKpi').innerHTML='<div class="b"><div class="v">0</div><div class="l">'+t('aucune mesure sur cette période')+'</div></div>';}
+}
+// regroupe des jours en semaines (moyennes / cumuls)
+function weeklyFrom(daily){
+  const wk={};
+  daily.forEach(d=>{
+    const dt=d.date;const onejan=new Date(dt.getFullYear(),0,1);
+    const w=Math.ceil((((dt-onejan)/864e5)+onejan.getDay()+1)/7);
+    const k=dt.getFullYear()+'-S'+String(w).padStart(2,'0');
+    (wk[k]=wk[k]||[]).push(d);
+  });
+  return Object.entries(wk).map(([k,ds])=>({
+    date:ds[Math.floor(ds.length/2)].date,key:k,n:ds.reduce((s,d)=>s+d.n,0),
+    tmax:amax(ds.map(d=>d.tmax)),tmin:amin(ds.map(d=>d.tmin)),
+    tmean:ds.reduce((s,d)=>s+d.tmean,0)/ds.length,
+    hrmax:amax(ds.map(d=>d.hrmax)),hrmin:amin(ds.map(d=>d.hrmin)),
+    hrmean:ds.reduce((s,d)=>s+(d.hrmean||0),0)/ds.length,
+    wsMean:ds.reduce((s,d)=>s+d.wsMean,0)/ds.length,wsMax:amax(ds.map(d=>d.wsMax)),
+    rain:ds.reduce((s,d)=>s+d.rain,0),
+    baro:ds.reduce((s,d)=>s+(d.baro||0),0)/ds.length,
+    voltMin:amin(ds.map(d=>d.voltMin).filter(v=>!isNaN(v))),
+    wetHours:ds.reduce((s,d)=>s+d.wetHours,0)/ds.length
+  })).sort((a,b)=>a.date-b.date);
+}
+/* Carte d'exploitation = surface de DESSIN via le moteur partagé de la plateforme.
+   On peut y dessiner parcelles/pivots/équipements, importer/exporter (GeoJSON + projet),
+   et le contour de ferme importé (FARM_GEO) y est chargé automatiquement. */
+function initFarmMap(){
+  const ctr=farmCenter();
+  if(window._farmCarto){
+    setTimeout(()=>window._farmCarto.invalidate(),80);
+    return;
+  }
+  window._farmCarto=AgriMap.create('#farmMap',{ basemap:'plan', center:ctr, zoom:13,
+    lang:(window.LANG||'fr') });
+  farmMap=window._farmCarto.map;
+  if(FARM_GEO){ try{ window._farmCarto.importGeoJSON(FARM_GEO); }catch(e){} }
+  L.circleMarker(ctr,{radius:7,fillColor:'#bd3b26',color:'#fff',weight:2,fillOpacity:1})
+    .addTo(farmMap).bindPopup(t('Station météo A1'));
+  setTimeout(()=>window._farmCarto.invalidate(),80);
+}
+
+/* ---------- graphes SVG génériques (curseur + zoom par glisser) ---------- */
+let _chartId=0;
+const _zoom={}; // mémorise la plage [i0,i1] par graphe (clé = id de l'élément)
+// boutons +/−/⟲ dans le coin haut-droit du graphe
+function zoomButtons(gid,W,pad,zoomed){
+  const bx=W-pad.r-70, by=pad.t-4, bs=16;
+  const mk=(x,id,sym)=>`<g id="${gid}_${id}" style="cursor:pointer"><rect x="${x}" y="${by}" width="${bs}" height="${bs}" rx="3" fill="#193039" stroke="#2a4a56"/><text x="${x+bs/2}" y="${by+bs/2+4}" text-anchor="middle" font-size="12" fill="#2bb3be" font-weight="700">${sym}</text></g>`;
+  return mk(bx,'zin','+')+mk(bx+bs+3,'zout','−')+mk(bx+2*(bs+3),'zrst','⟲');
+}
+// applique le zoom des boutons sur la fenêtre courante
+function applyZoomBtn(key,len,i0,i1,mode){
+  const span=i1-i0, center=(i0+i1)/2;
+  if(mode==='in'){const ns=Math.max(4,Math.round(span*0.6));_zoom[key]=[Math.max(0,Math.round(center-ns/2)),Math.min(len-1,Math.round(center+ns/2))];}
+  else if(mode==='out'){const ns=Math.min(len-1,Math.round(span/0.6));let a=Math.round(center-ns/2),b=Math.round(center+ns/2);if(a<0){b-=a;a=0;}if(b>len-1){a-=(b-(len-1));b=len-1;}a=Math.max(0,a);if(b-a>=len-1)delete _zoom[key];else _zoom[key]=[a,b];}
+  else delete _zoom[key];
+}
+function wireZoomButtons(el,gid,key,len,i0,i1,redraw){
+  const bind=(id,mode)=>{const g=el.querySelector('#'+gid+'_'+id);if(g)g.addEventListener('click',ev=>{ev.stopPropagation();applyZoomBtn(key,len,i0,i1,mode);redraw();});};
+  bind('zin','in');bind('zout','out');bind('zrst','rst');
+}
+const MOIS_FR=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+const MOIS_EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function dateAxisLabels(data){
+  const mois=(typeof LANG!=='undefined'&&LANG==='en')?MOIS_EN:MOIS_FR;
+  if(!data.length||!data[0].date){const st=Math.ceil(data.length/8);return data.map((d,i)=>i%st===0?{i,txt:''+i}:null).filter(Boolean);}
+  const spanDays=(data[data.length-1].date-data[0].date)/864e5;
+  const out=[];
+  if(spanDays>150){
+    let lastKey='';
+    data.forEach((d,i)=>{const k=d.date.getFullYear()+'-'+d.date.getMonth();if(k!==lastKey){lastKey=k;out.push({i,txt:mois[d.date.getMonth()]+(d.date.getMonth()===0||out.length===0?" '"+String(d.date.getFullYear()).slice(2):'')});}});
+    if(out.length>11){const step=Math.ceil(out.length/10);return out.filter((_,k)=>k%step===0);}
+    return out;
+  }
+  if(spanDays>35){
+    const step=Math.ceil(data.length/9);
+    data.forEach((d,i)=>{if(i%step===0||i===data.length-1)out.push({i,txt:d.date.getDate()+' '+mois[d.date.getMonth()]});});
+    return out;
+  }
+  const step=Math.max(1,Math.ceil(data.length/9));
+  data.forEach((d,i)=>{if(i%step===0||i===data.length-1)out.push({i,txt:d.date.getDate()+'/'+(d.date.getMonth()+1)});});
+  return out;
+}
+function svgLine(el,dataFull,opts){
+  if(opts.smooth===undefined)opts.smooth=true; // courbes lissées par défaut
+  const key=el.id||('c'+(_chartId));
+  const z=_zoom[key];
+  const i0=z?z[0]:0, i1=z?z[1]:dataFull.length-1;
+  const data=dataFull.slice(i0,i1+1);
+  const W=opts.w||760,H=opts.h||180,pad={l:38,r:opts.r2?46:14,t:12,b:26};
+  const series=opts.series.map(se=>({...se,v:se.v.slice(i0,i1+1)}));
+  const band=opts.band?{hi:opts.band.hi.slice(i0,i1+1),lo:opts.band.lo.slice(i0,i1+1),color:opts.band.color}:null;
+  const allV=series.flatMap(s=>s.v.filter(v=>!isNaN(v)));
+  let mn=opts.min!=null?opts.min:amin(allV),mx=opts.max!=null?opts.max:amax(allV);
+  if(isNaN(mn)||isNaN(mx)){mn=0;mx=1;}
+  if(mn===mx){mx=mn+1;}
+  // marge de 6% en haut/bas quand l'échelle est auto, pour que les courbes ne débordent pas
+  if(opts.min==null&&opts.max==null){const m=(mx-mn)*0.06;mn-=m;mx+=m;}
+  const sx=i=>pad.l+(i/(Math.max(1,data.length-1)))*(W-pad.l-pad.r);
+  const sy=v=>{const y=H-pad.b-((v-mn)/(mx-mn))*(H-pad.t-pad.b);return isNaN(y)?H-pad.b:y;};
+  const clipId='clip'+_chartId;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible"><defs><clipPath id="${clipId}"><rect x="${pad.l}" y="${pad.t-2}" width="${W-pad.l-pad.r}" height="${H-pad.t-pad.b+4}"/></clipPath></defs>`;
+  [0,.25,.5,.75,1].forEach(f=>{const y=pad.t+f*(H-pad.t-pad.b);const val=mx-f*(mx-mn);s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#1c333c"/><text x="4" y="${y+3}" class="axlbl">${val.toFixed(opts.dec??0)}</text>`;});
+  s+=`<g clip-path="url(#${clipId})">`;
+  if(band){
+    const valid=data.map((d,i)=>i).filter(i=>!isNaN(band.hi[i])&&!isNaN(band.lo[i]));
+    if(valid.length>1){let up='';valid.forEach((i,k)=>{up+=`${k?'L':'M'}${sx(i)},${sy(band.hi[i])} `;});for(let k=valid.length-1;k>=0;k--){const i=valid[k];up+=`L${sx(i)},${sy(band.lo[i])} `;}s+=`<path d="${up}Z" fill="${band.color||'#3a2f1e'}" opacity=".45"/>`;}
+  }
+  series.forEach(se=>{
+    if(se.bars){data.forEach((d,i)=>{const v=se.v[i];if(isNaN(v)||v<=0)return;const bw=Math.max(1,(W-pad.l-pad.r)/data.length*0.7);s+=`<rect x="${sx(i)-bw/2}" y="${sy(v)}" width="${bw}" height="${H-pad.b-sy(v)}" fill="${se.color}" opacity=".8"/>`;});return;}
+    // points valides (x,y)
+    const pts=[];data.forEach((d,i)=>{const v=se.v[i];if(!isNaN(v))pts.push([sx(i),sy(v)]);});
+    let p='';
+    if(opts.smooth&&pts.length>2){
+      p='M'+pts[0][0]+','+pts[0][1];
+      for(let i=0;i<pts.length-1;i++){
+        const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+        const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
+        const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
+        p+=` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      }
+    }else{
+      pts.forEach((pt,k)=>{p+=`${k?'L':'M'}${pt[0]},${pt[1]} `;});
+    }
+    s+=`<path d="${p}" fill="none" stroke="${se.color}" stroke-width="${se.w||0.8}"/>`;
+    if(se.dots&&data.length<120)data.forEach((d,i)=>{if(!isNaN(se.v[i]))s+=`<circle cx="${sx(i)}" cy="${sy(se.v[i])}" r="1.6" fill="${se.color}"/>`;});
+  });
+  s+=`</g>`;
+  const step=Math.ceil(data.length/8);
+  dateAxisLabels(data).forEach(({i,txt})=>{s+=`<text x="${sx(i)}" y="${H-8}" class="glbl" text-anchor="middle">${txt}</text>`;});
+  const gid='g'+(_chartId++);
+  s+=`<rect id="${gid}_sel" y="${pad.t}" height="${H-pad.t-pad.b}" fill="#2bb3be" opacity="0.15" style="opacity:0"/>`;
+  s+=`<line id="${gid}_v" x1="0" y1="${pad.t}" x2="0" y2="${H-pad.b}" stroke="#6b8a97" stroke-width="1" stroke-dasharray="3,3" style="opacity:0"/>`;
+  series.forEach((se,si)=>{s+=`<circle id="${gid}_d${si}" r="3" fill="${se.color}" stroke="#0d1b22" stroke-width="1" style="opacity:0"/>`;});
+  s+=`<rect id="${gid}_hit" x="${pad.l}" y="${pad.t}" width="${W-pad.l-pad.r}" height="${H-pad.t-pad.b}" fill="transparent" style="cursor:crosshair"/>`;
+  s+=zoomButtons(gid,W,pad,!!z);
+  s+=`</svg>`;
+  el.style.position='relative';
+  el.innerHTML=s+`<div id="${gid}_tip" style="position:absolute;pointer-events:none;background:#0e1f27;border:1px solid #2a4a56;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--ink);opacity:0;transition:opacity .12s;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:5"></div>`;
+  wireZoomButtons(el,gid,key,dataFull.length,i0,i1,()=>svgLine(el,dataFull,opts));
+  attachInteraction(el,gid,data,series,{sx,sy,pad,W,H,opts,i0,i1,key,dataFull,redraw:()=>svgLine(el,dataFull,opts)});
+}
+// couche partagée : curseur, tooltip, glisser-zoomer
+function attachInteraction(el,gid,data,series,ctx){
+  const svg=el.querySelector('svg');
+  const hit=el.querySelector('#'+gid+'_hit'),vline=el.querySelector('#'+gid+'_v'),tip=el.querySelector('#'+gid+'_tip'),sel=el.querySelector('#'+gid+'_sel');
+  const dots=series.map((_,si)=>el.querySelector('#'+gid+'_d'+si));
+  const reset=el.querySelector('#'+gid+'_reset');
+  const {sx,sy,pad,W,opts,i0,dataFull,redraw,key}=ctx;
+  let dragStart=null;
+  const idxAt=ev=>{const r=svg.getBoundingClientRect();const px=(ev.clientX-r.left)/r.width*W;let i=Math.round((px-pad.l)/((W-pad.l-pad.r)/Math.max(1,data.length-1)));return Math.max(0,Math.min(data.length-1,i));};
+  function move(ev){
+    const i=idxAt(ev),x=sx(i);
+    vline.setAttribute('x1',x);vline.setAttribute('x2',x);vline.style.opacity=1;
+    if(dragStart!==null){const xs=sx(dragStart),xe=x;sel.setAttribute('x',Math.min(xs,xe));sel.setAttribute('width',Math.abs(xe-xs));sel.style.opacity=1;}
+    const d=data[i];
+    let rows=(d&&d.date)?`<div style="color:var(--water);font-weight:600;margin-bottom:3px">${d.date.getDate()}/${d.date.getMonth()+1}${data.length>60&&d.date.getFullYear?'/'+String(d.date.getFullYear()).slice(2):''}</div>`:'';
+    series.forEach((se,si)=>{const v=se.v[i];if(!isNaN(v)){dots[si].setAttribute('cx',x);dots[si].setAttribute('cy',sy(v));dots[si].style.opacity=1;rows+=`<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${se.color};margin-right:6px"></span>${se.name?se.name+': ':''}${v.toFixed(opts.tipDec??1)}${opts.unit||''}</div>`;}else dots[si].style.opacity=0;});
+    tip.innerHTML=rows;tip.style.opacity=1;
+    const leftPct=(x/W)*100;tip.style.left=(leftPct>60?`calc(${leftPct}% - 10px)`:`calc(${leftPct}% + 12px)`);tip.style.transform=leftPct>60?'translateX(-100%)':'none';tip.style.top='8px';
+  }
+  function leave(){vline.style.opacity=0;tip.style.opacity=0;dots.forEach(d=>d.style.opacity=0);}
+  hit.addEventListener('mousemove',move);hit.addEventListener('mouseleave',leave);
+  hit.addEventListener('mousedown',ev=>{dragStart=idxAt(ev);});
+  window.addEventListener('mouseup',ev=>{
+    if(dragStart===null)return;
+    const end=idxAt(ev);const a=Math.min(dragStart,end),b=Math.max(dragStart,end);
+    dragStart=null;sel.style.opacity=0;
+    if(b-a>=2){_zoom[key]=[i0+a,i0+b];redraw();}
+  });
+  if(reset)reset.addEventListener('click',()=>{delete _zoom[key];redraw();});
+  svg.addEventListener('dblclick',()=>{if(_zoom[key]){delete _zoom[key];redraw();}});
+}
+// second axe (cumul) — avec curseur + zoom
+function svgLineDual(el,dataFull,leftFull,rightCum,opts){
+  const key=el.id||('c'+_chartId);
+  const z=_zoom[key];
+  const i0=z?z[0]:0, i1=z?z[1]:dataFull.length-1;
+  const data=dataFull.slice(i0,i1+1);
+  const leftVals=leftFull.v.slice(i0,i1+1);
+  const W=760,H=190,pad={l:40,r:48,t:12,b:26};
+  const sx=i=>pad.l+(i/Math.max(1,data.length-1))*(W-pad.l-pad.r);
+  const lv=leftVals.filter(v=>!isNaN(v));let lmn=0,lmx=(a=>{const m=amax(a);return isNaN(m)?1:m;})(lv);
+  // cumul recalculé sur la fenêtre visible (repart de 0)
+  const cum=[];let acc=0;leftVals.forEach(v=>{acc+=(v||0);cum.push(acc);});
+  const cmx=(a=>{const m=amax(a);return isNaN(m)?1:m;})(cum);
+  const syL=v=>{const y=H-pad.b-((v-lmn)/(lmx-lmn))*(H-pad.t-pad.b);return isNaN(y)?H-pad.b:y;};
+  const syR=v=>{const y=H-pad.b-((v)/(cmx))*(H-pad.t-pad.b);return isNaN(y)?H-pad.b:y;};
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">`;
+  [0,.25,.5,.75,1].forEach(f=>{const y=pad.t+f*(H-pad.t-pad.b);s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#1c333c"/><text x="4" y="${y+3}" class="axlbl">${(lmx-f*(lmx-lmn)).toFixed(1)}</text><text x="${W-pad.r+4}" y="${y+3}" class="axlbl" fill="#d59a4e">${Math.round(cmx-f*cmx)}</text>`;});
+  data.forEach((d,i)=>{const v=leftVals[i];if(isNaN(v)||v<=0)return;const bw=Math.max(1,(W-pad.l-pad.r)/data.length*0.7);s+=`<rect x="${sx(i)-bw/2}" y="${syL(v)}" width="${bw}" height="${H-pad.b-syL(v)}" fill="${leftFull.color}" opacity=".8"/>`;});
+  let p='';cum.forEach((v,i)=>{p+=`${i?'L':'M'}${sx(i)},${syR(v)} `;});
+  s+=`<path d="${p}" fill="none" stroke="${opts.cumColor||'#d59a4e'}" stroke-width="1"/>`;
+  const step=Math.ceil(data.length/8);
+  dateAxisLabels(data).forEach(({i,txt})=>{s+=`<text x="${sx(i)}" y="${H-8}" class="glbl" text-anchor="middle">${txt}</text>`;});
+  s+=`<text x="${pad.l}" y="10" class="axlbl">${opts.leftLbl||''}</text><text x="${W-pad.r-30}" y="10" class="axlbl" fill="#d59a4e">${t('cumul')} ${Math.round(cmx)}</text>`;
+  const gid='g'+(_chartId++);
+  const series=[{v:leftVals,color:leftFull.color,name:opts.leftLbl||'',bars:true},{v:cum,color:opts.cumColor||'#d59a4e',name:t('cumul')}];
+  s+=`<rect id="${gid}_sel" y="${pad.t}" height="${H-pad.t-pad.b}" fill="#2bb3be" opacity="0.15" style="opacity:0"/>`;
+  s+=`<line id="${gid}_v" x1="0" y1="${pad.t}" x2="0" y2="${H-pad.b}" stroke="#6b8a97" stroke-width="1" stroke-dasharray="3,3" style="opacity:0"/>`;
+  series.forEach((se,si)=>{s+=`<circle id="${gid}_d${si}" r="3" fill="${se.color}" stroke="#0d1b22" stroke-width="1" style="opacity:0"/>`;});
+  s+=`<rect id="${gid}_hit" x="${pad.l}" y="${pad.t}" width="${W-pad.l-pad.r}" height="${H-pad.t-pad.b}" fill="transparent" style="cursor:crosshair"/>`;
+  s+=zoomButtons(gid,W,pad,!!z);
+  s+=`</svg>`;
+  el.style.position='relative';
+  el.innerHTML=s+`<div id="${gid}_tip" style="position:absolute;pointer-events:none;background:#0e1f27;border:1px solid #2a4a56;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--ink);opacity:0;transition:opacity .12s;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:5"></div>`;
+  wireZoomButtons(el,gid,key,dataFull.length,i0,i1,()=>svgLineDual(el,dataFull,leftFull,rightCum,opts));
+  const syFns=[syL,syR];
+  attachInteractionDual(el,gid,data,series,{sx,syFns,pad,W,opts:{tipDec:1,unit:opts.unit||''},i0,key,redraw:()=>svgLineDual(el,dataFull,leftFull,rightCum,opts)});
+}
+function attachInteractionDual(el,gid,data,series,ctx){
+  const svg=el.querySelector('svg');
+  const hit=el.querySelector('#'+gid+'_hit'),vline=el.querySelector('#'+gid+'_v'),tip=el.querySelector('#'+gid+'_tip'),sel=el.querySelector('#'+gid+'_sel');
+  const dots=series.map((_,si)=>el.querySelector('#'+gid+'_d'+si));
+  const reset=el.querySelector('#'+gid+'_reset');
+  const {sx,syFns,pad,W,opts,i0,key,redraw}=ctx;
+  let dragStart=null;
+  const idxAt=ev=>{const r=svg.getBoundingClientRect();const px=(ev.clientX-r.left)/r.width*W;let i=Math.round((px-pad.l)/((W-pad.l-pad.r)/Math.max(1,data.length-1)));return Math.max(0,Math.min(data.length-1,i));};
+  function move(ev){
+    const i=idxAt(ev),x=sx(i);
+    vline.setAttribute('x1',x);vline.setAttribute('x2',x);vline.style.opacity=1;
+    if(dragStart!==null){const xs=sx(dragStart);sel.setAttribute('x',Math.min(xs,x));sel.setAttribute('width',Math.abs(x-xs));sel.style.opacity=1;}
+    const d=data[i];
+    let rows=(d&&d.date)?`<div style="color:var(--water);font-weight:600;margin-bottom:3px">${d.date.getDate()}/${d.date.getMonth()+1}${data.length>60&&d.date.getFullYear?'/'+String(d.date.getFullYear()).slice(2):''}</div>`:'';
+    series.forEach((se,si)=>{const v=se.v[i];if(!isNaN(v)){dots[si].setAttribute('cx',x);dots[si].setAttribute('cy',syFns[si](v));dots[si].style.opacity=1;rows+=`<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${se.color};margin-right:6px"></span>${se.name?se.name+': ':''}${v.toFixed(opts.tipDec??1)}${opts.unit||''}</div>`;}else dots[si].style.opacity=0;});
+    tip.innerHTML=rows;tip.style.opacity=1;
+    const leftPct=(x/W)*100;tip.style.left=(leftPct>60?`calc(${leftPct}% - 10px)`:`calc(${leftPct}% + 12px)`);tip.style.transform=leftPct>60?'translateX(-100%)':'none';tip.style.top='8px';
+  }
+  function leave(){vline.style.opacity=0;tip.style.opacity=0;dots.forEach(d=>d.style.opacity=0);}
+  hit.addEventListener('mousemove',move);hit.addEventListener('mouseleave',leave);
+  hit.addEventListener('mousedown',ev=>{dragStart=idxAt(ev);});
+  window.addEventListener('mouseup',ev=>{if(dragStart===null)return;const end=idxAt(ev);const a=Math.min(dragStart,end),b=Math.max(dragStart,end);dragStart=null;sel.style.opacity=0;if(b-a>=2){_zoom[key]=[i0+a,i0+b];redraw();}});
+  if(reset)reset.addEventListener('click',()=>{delete _zoom[key];redraw();});
+  svg.addEventListener('dblclick',()=>{if(_zoom[key]){delete _zoom[key];redraw();}});
+}
+
+/* ---------- rose des vents ---------- */
+function windRose(el){
+  const src=STATION_FILTERED.length?STATION_FILTERED:STATION;
+  const bins=16,dirCount=new Array(bins).fill(0),dirSpeed=new Array(bins).fill(0);
+  let calm=0,total=0;
+  const asRadian=dirLooksRadian(); // calculé UNE fois, pas par ligne
+  src.forEach(r=>{
+    const sp=Math.max(r.ws1||0,r.ws2||0);total++;
+    if(sp<1){calm++;return;}
+    let wd=r.wd;if(isNaN(wd))return;
+    if(asRadian&&Math.abs(wd)<=6.3) wd=wd*180/Math.PI;
+    wd=((wd%360)+360)%360;
+    const b=Math.round(wd/(360/bins))%bins;
+    dirCount[b]++;dirSpeed[b]+=sp;
+  });
+  const R=120,cx=140,cy=140,maxC=(a=>{const m=amax(a);return isNaN(m)?1:m;})(dirCount);
+  const labels=['N','','NE','','E','','SE','','S','','SO','','O','','NO',''];
+  let s=`<svg viewBox="0 0 280 300" width="260">`;
+  [0.25,0.5,0.75,1].forEach(f=>{s+=`<circle cx="${cx}" cy="${cy}" r="${R*f}" fill="none" stroke="#2a4a56"/>`;});
+  for(let b=0;b<bins;b++){
+    const ang=(b*(360/bins)-90)*Math.PI/180;
+    const len=R*(dirCount[b]/maxC);
+    const avgSp=dirCount[b]?dirSpeed[b]/dirCount[b]:0;
+    const col=avgSp>20?'#bd3b26':avgSp>12?'#c98a10':avgSp>6?'#3fa0a8':'#5fa768';
+    const wdth=(360/bins)*Math.PI/180*0.8;
+    const x1=cx+Math.cos(ang-wdth/2)*len,y1=cy+Math.sin(ang-wdth/2)*len;
+    const x2=cx+Math.cos(ang+wdth/2)*len,y2=cy+Math.sin(ang+wdth/2)*len;
+    s+=`<path d="M${cx},${cy} L${x1},${y1} A${len},${len} 0 0,1 ${x2},${y2} Z" fill="${col}" opacity=".85"/>`;
+  }
+  labels.forEach((L,b)=>{if(!L)return;const ang=(b*(360/bins)-90)*Math.PI/180;const x=cx+Math.cos(ang)*(R+16),y=cy+Math.sin(ang)*(R+16);s+=`<text x="${x}" y="${y+4}" text-anchor="middle" font-size="11" font-weight="600" fill="#8fa3b0">${L}</text>`;});
+  s+=`<circle cx="${cx}" cy="${cy}" r="3" fill="#e8eef2"/>`;
+  s+=`<text x="${cx}" y="${cy+R+44}" text-anchor="middle" font-size="11" fill="#8fa3b0">${t('calme')} ${(100*calm/Math.max(1,total)).toFixed(0)}% · ${t('couleur = vitesse moy.')}</text>`;
+  s+=`</svg>`;el.innerHTML=s;
+}
+function dirLooksRadian(){const src=STATION_FILTERED.length?STATION_FILTERED:STATION;const vals=src.map(r=>r.wd).filter(v=>!isNaN(v));if(!vals.length)return false;const mx=amax(vals);return mx<=6.3;}
+
+/* ---------- rendu global ---------- */
+function renderStation(){
+  const lat=farmCenter()[0];
+  DAILY.forEach(d=>{
+    d.et0=et0Hargreaves(d.tmax,d.tmin,d.tmean,d.date,lat);
+    const tb=+$('tbaseStation').value||10;
+    d.gddDay=Math.max(0,(d.tmax+d.tmin)/2-tb);
+    d.dsvDay=dsvStation(d.tmean,d.wetHours);
+  });
+  // KPI
+  const totRain=DAILY.reduce((s,d)=>s+d.rain,0);
+  const totEt0=DAILY.reduce((s,d)=>s+d.et0,0);
+  let gddC=0;DAILY.forEach(d=>gddC+=d.gddDay);
+  let dsvC=0;DAILY.forEach(d=>dsvC+=d.dsvDay);
+  const voltMin=amin(DAILY.map(d=>d.voltMin).filter(v=>!isNaN(v)));
+  $('explKpi').innerHTML=[
+    ['Jours mesurés',DAILY.length,''],
+    ['T° moy période',(DAILY.reduce((s,d)=>s+d.tmean,0)/DAILY.length).toFixed(1),'°C'],
+    ['Pluie cumulée',totRain.toFixed(1),'mm'],
+    ['ET0 cumulée',totEt0.toFixed(0),'mm'],
+    ['Déficit ET0−P',(totEt0-totRain).toFixed(0),'mm'],
+    ['GDD cumulés',Math.round(gddC),''],
+    ['DSV cumulé',Math.round(dsvC),''],
+    ['Batterie min',isFinite(voltMin)?voltMin.toFixed(1):'—','V'],
+  ].map(([l,v,u])=>`<div class="b"><div class="v">${v}<small style="font-size:11px;color:var(--ink2)"> ${u}</small></div><div class="l">${t(l)}</div></div>`).join('');
+
+  // Température + bande min/max
+  svgLine($('chTemp'),DAILY,{h:190,dec:0,unit:'°C',tipDec:1,
+    band:{hi:DAILY.map(d=>d.tmax),lo:DAILY.map(d=>d.tmin),color:'#3a2f1e'},
+    series:[
+      {v:DAILY.map(d=>d.tmax),color:'#e0604a',w:0.8,name:t('Max')},
+      {v:DAILY.map(d=>d.tmean),color:'#d59a4e',w:0.9,dots:true,name:t('Moy')},
+      {v:DAILY.map(d=>d.tmin),color:'#4d92d8',w:0.8,name:t('Min')},
+    ]});
+  $('tTitle').textContent=`${t('Température')} — min ${amin(DAILY.map(d=>d.tmin)).toFixed(1)}°C / max ${amax(DAILY.map(d=>d.tmax)).toFixed(1)}°C`;
+  // Pluie + cumul
+  svgLineDual($('chRain'),DAILY,{v:DAILY.map(d=>d.rain),color:'#2f6db0'},true,{cumColor:'#0a5b63',leftLbl:'mm/j'});
+  // ET0 + cumul
+  svgLineDual($('chEt0'),DAILY,{v:DAILY.map(d=>d.et0),color:'#3fa0a8'},true,{cumColor:'#a86a2e',leftLbl:'mm/j'});
+  // Thermo-hygro (T et HR sur axe partagé normalisé)
+  svgLine($('chTH'),DAILY,{h:180,dec:0,min:0,max:100,unit:'',tipDec:1,series:[
+    {v:DAILY.map(d=>d.hrmean),color:'#2bb3be',w:0.8,name:t('Humidité')+' %'},
+    {v:DAILY.map(d=>d.tmean),color:'#e0604a',w:0.8,name:t('Température')+' °C'},
+  ]});
+  // Baro
+  svgLine($('chBaro'),DAILY,{h:150,dec:0,unit:' hPa',series:[{v:DAILY.map(d=>d.baro),color:'#8a72c0',w:0.8,dots:true,name:t('Pression')}]});
+  // Diagnostic : tension batterie seule, échelle fixe lisible (comme les autres graphes)
+  const expected=DAILY.length?amax(DAILY.map(d=>d.n)):1;
+  svgLine($('chDiag'),DAILY,{h:150,dec:1,min:8,max:16,unit:' V',tipDec:1,series:[
+    {v:DAILY.map(d=>d.voltMin),color:'#e0a92a',w:0.8,dots:true,name:t('Batterie')},
+  ]});
+  // GDD cumulé
+  let acc=0;const gddCum=DAILY.map(d=>{acc+=d.gddDay;return acc;});
+  svgLine($('chGdd'),DAILY,{h:170,dec:0,unit:' GDD',series:[{v:gddCum,color:'#d59a4e',w:0.8,name:t('GDD')}]});
+  // DSV cumulé avec reset à 15
+  let dacc=0;const dsvCum=DAILY.map(d=>{dacc+=d.dsvDay;const v=dacc;if(dacc>=15)dacc=0;return v;});
+  svgLine($('chDsv'),DAILY,{h:170,dec:0,unit:' DSV',series:[{v:dsvCum,color:'#e0604a',w:0.8,dots:true,name:'DSV'}]});
+  windRose($('windrose'));
+}
+
+/* ---------- échantillon station (2 ans synthétiques, pas horaire) ---------- */
+function stationSample(){
+  let s='Date/Heure,A1-WS1,A1-WS2,A1-HR1,A1-T1,A1-Volt,A1-R1,A1-B,A1-WD1,A1-B1\n';
+  const start=new Date(2023,0,1,0,0,0);
+  const DAYS=730; // 2 ans
+  for(let day=0;day<DAYS;day++){
+    const base=new Date(start.getTime()+day*864e5);
+    const J=Math.floor((base-new Date(base.getFullYear(),0,0))/864e5);
+    const seasonT=16+11*Math.sin((J-110)/365*2*Math.PI);   // saison thermique
+    const seasonRain=0.5+0.5*Math.cos((J-30)/365*2*Math.PI); // pluie hiver
+    for(let step=0;step<24;step++){ // pas horaire = 24 pts/jour (léger)
+      const t=new Date(base.getTime()+step*3600000);
+      const h=t.getHours();
+      const temp=seasonT+7*Math.sin((h-9)/24*2*Math.PI)+(Math.random()-.5);
+      const hr=Math.max(20,Math.min(98,68-28*Math.sin((h-9)/24*2*Math.PI)+seasonRain*15+(Math.random()-.5)*6));
+      const wsMean=Math.max(0,6+7*Math.max(0,Math.sin((h-13)/24*2*Math.PI))+Math.random()*5);
+      const gust=wsMean+Math.random()*10;
+      const wd=(200+90*Math.sin(day/9+h/6)+Math.random()*40+360)%360;
+      const rain=(Math.random()<seasonRain*0.06)?Math.random()*4:0;
+      const baro=1013+6*Math.sin(day/11)+1.5*Math.sin(h/12*Math.PI);
+      s+=`${String(t.getDate()).padStart(2,'0')}/${String(t.getMonth()+1).padStart(2,'0')}/${t.getFullYear()} ${String(h).padStart(2,'0')}:00:00,`+
+         `${wsMean.toFixed(1)},${gust.toFixed(1)},${hr.toFixed(2)},${temp.toFixed(2)},12.2,${rain.toFixed(1)},${baro.toFixed(1)},${wd.toFixed(0)},${(baro+10).toFixed(1)}\n`;
+    }
+  }
+  return s;
+}
+
+/* ---------- events exploitation ---------- */
+$('stationCsv').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>loadStation(ev.target.result);r.readAsText(f,'utf-8');});
+$('geojson').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{FARM_GEO=JSON.parse(ev.target.result);setStat(t('contours chargés'),'on');if(DAILY.length){initFarmMap();}else{$('explEmpty').style.display='none';$('explBody').style.display='block';initFarmMap();}}catch(err){alert(t('GeoJSON invalide : ')+err.message);}};r.readAsText(f,'utf-8');});
+$('btnStationDemo').onclick=$('btnStationDemo2').onclick=()=>loadStation(stationSample());
+['fYear','fMonth','fFrom','fTo'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>{if(STATION.length)applyStationFilter();});});
+$('fReset').onclick=()=>{$('fYear').value='all';$('fMonth').value='all';$('fFrom').value='';$('fTo').value='';if(STATION.length)applyStationFilter();};
+const ds=$('dropStation');
+if(ds){['dragover','dragenter'].forEach(ev=>ds.addEventListener(ev,e=>{e.preventDefault();ds.classList.add('hl');}));['dragleave','drop'].forEach(ev=>ds.addEventListener(ev,e=>{e.preventDefault();ds.classList.remove('hl');}));ds.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{if(f.name.match(/json/i)){try{FARM_GEO=JSON.parse(ev.target.result);initFarmMap();}catch(x){}}else loadStation(ev.target.result);};r.readAsText(f,'utf-8');});}
+
+/* ================= SONDES DE SOL (CSV / JSON) ================= */
+let SOIL=[]; // mesures normalisées {dt,probe,metric,depth,soilTag,value,unit}
+function soilMetricOf(measure){
+  const m=(measure||'').toLowerCase();
+  if(m.includes('moist')||m.includes('humid')||m.includes('vwc'))return 'moisture';
+  if(m.includes('salin')||m.includes('ec')||m.includes('conduct'))return 'salinity';
+  if(m.includes('temp'))return 'temperature';
+  return 'moisture';
+}
+function soilDepthOf(measure){const m=String(measure).match(/(\d+)\s*cm/i);return m?+m[1]:null;}
+function soilTagOf(measure){const m=String(measure).match(/\(([^)]+)\)/);return m?m[1]:'';}
+// JSON : tableau plat d'objets {local_time, site_name/site_id, probe_measure, soil_value, unit}
+function parseSoilJSON(txt){
+  let arr;try{arr=JSON.parse(txt);}catch(e){throw new Error('JSON invalide');}
+  if(!Array.isArray(arr)){ // tolère {data:[...]}
+    arr=arr.data||arr.list||arr.results||[];
+  }
+  return arr.map(o=>{
+    const dt=new Date(o.local_time||o.time||o.date||o.timestamp);
+    const measure=o.probe_measure||o.measure||o.name||'';
+    return{dt,site:String(o.site_id||o.site_name||o.probe_id||'?'),siteName:o.site_name||'',
+      metric:soilMetricOf(measure),depth:soilDepthOf(measure),soilTag:soilTagOf(measure),
+      value:+(o.soil_value!=null?o.soil_value:o.value),unit:o.unit||''};
+  }).filter(r=>r.dt&&!isNaN(r.dt)&&!isNaN(r.value));
+}
+// CSV : détecte date, une colonne "measure/probe" ou colonnes numériques, valeur
+function parseSoilCSV(txt){
+  const lines=txt.split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return[];
+  const sep=detectSep(lines[0]);const head=splitCSV(lines[0],sep).map(h=>h.trim());
+  const L=head.map(h=>h.toLowerCase());
+  const iDate=L.findIndex(h=>/date|time|heure/.test(h));
+  const iSite=L.findIndex(h=>/site|sonde|probe.*name|station/.test(h));
+  const iMeasure=L.findIndex(h=>/measure|type|probe_measure|capteur/.test(h));
+  const iVal=L.findIndex(h=>/value|soil_value|valeur|vwc|moist|humid/.test(h));
+  const iUnit=L.findIndex(h=>/unit|unit[eé]/.test(h));
+  const out=[];
+  for(let li=1;li<lines.length;li++){
+    const c=splitCSV(lines[li],sep);if(c.length<2)continue;
+    const dt=new Date((c[iDate]||'').replace(' ','T'));if(isNaN(dt))continue;
+    if(iVal>=0&&iMeasure>=0){ // format long (une mesure par ligne)
+      const measure=c[iMeasure]||'';
+      out.push({dt,site:String(iSite>=0?c[iSite]:'1'),siteName:iSite>=0?c[iSite]:'',metric:soilMetricOf(measure),depth:soilDepthOf(measure),soilTag:soilTagOf(measure),value:num(c[iVal]),unit:iUnit>=0?c[iUnit]:''});
+    }else{ // format large : chaque colonne numérique = une profondeur d'humidité
+      head.forEach((h,k)=>{if(k===iDate||k===iSite)return;const v=num(c[k]);if(isNaN(v))return;out.push({dt,site:String(iSite>=0?c[iSite]:'1'),siteName:'',metric:soilMetricOf(h),depth:soilDepthOf(h),soilTag:soilTagOf(h),value:v,unit:'%VWC'});});
+    }
+  }
+  return out.filter(r=>!isNaN(r.value));
+}
+/* ---- agrégateur compact : on ne garde JAMAIS les mesures brutes ---- */
+let SOIL_AGG={}, SOIL_META={order:[],names:{},tags:{},units:{}};
+const soilDayKey=dt=>dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+function soilReset(){SOIL_AGG={};SOIL_META={order:[],names:{},tags:{},units:{}};}
+function soilFeed(rec){ // rec = {dt,site,siteName,metric,depth,soilTag,value,unit}
+  if(!rec.dt||isNaN(rec.dt)||isNaN(rec.value))return;
+  const s=rec.site;
+  if(!SOIL_META.names[s]){SOIL_META.order.push(s);SOIL_META.names[s]=rec.siteName||s;}
+  const dep=rec.depth==null?'?':rec.depth;
+  const A=SOIL_AGG;
+  (A[s]=A[s]||{});(A[s][rec.metric]=A[s][rec.metric]||{});(A[s][rec.metric][dep]=A[s][rec.metric][dep]||{});
+  const day=soilDayKey(rec.dt);
+  const cell=A[s][rec.metric][dep][day]||(A[s][rec.metric][dep][day]=[0,0]);
+  cell[0]+=rec.value;cell[1]++;
+  if(rec.soilTag)SOIL_META.tags[s+'|'+rec.metric+'|'+dep]=rec.soilTag;
+  if(rec.unit)SOIL_META.units[rec.metric]=rec.unit;
+}
+// objet JSON brut → rec normalisé
+function soilRecFromObj(o){
+  const measure=o.probe_measure||o.measure||o.name||'';
+  return{dt:new Date(o.local_time||o.time||o.date||o.timestamp),site:String(o.site_id||o.site_name||o.probe_id||'?'),
+    siteName:o.site_name||'',metric:soilMetricOf(measure),depth:soilDepthOf(measure),soilTag:soilTagOf(measure),
+    value:+(o.soil_value!=null?o.soil_value:o.value),unit:o.unit||''};
+}
+
+/* ---- STREAMING d'un gros JSON (tableau plat, potentiellement 300 Mo) ---- */
+async function streamSoilJSON(file){
+  soilReset();
+  const CHUNK=8*1024*1024;
+  let offset=0,buf='',depth=0,inStr=false,esc=false,objStart=-1,scan=0,count=0;
+  const total=file.size;
+  $('soilProg').style.display='inline-block';$('soilProg').value=0;
+  setStat(t('sondes sol : lecture du fichier…'),'busy');
+  const decoder=new TextDecoder('utf-8');
+  while(offset<total){
+    const slice=file.slice(offset,offset+CHUNK);
+    const ab=await slice.arrayBuffer();
+    buf+=decoder.decode(ab,{stream:true});
+    offset+=CHUNK;
+    // scanner à partir de la position non encore analysée
+    for(;scan<buf.length;scan++){
+      const ch=buf[scan];
+      if(inStr){ if(esc)esc=false; else if(ch==='\\')esc=true; else if(ch==='"')inStr=false; continue; }
+      if(ch==='"'){inStr=true;continue;}
+      if(ch==='{'){ if(depth===0)objStart=scan; depth++; }
+      else if(ch==='}'){ depth--; if(depth===0&&objStart>=0){
+        const objTxt=buf.slice(objStart,scan+1);
+        try{ soilFeed(soilRecFromObj(JSON.parse(objTxt))); count++; }catch(e){}
+        objStart=-1;
+      }}
+    }
+    // tronquer ce qui est déjà consommé ; garder un objet en cours si présent
+    if(objStart>=0){ buf=buf.slice(objStart); scan-=objStart; objStart=0; }
+    else { buf=''; scan=0; }
+    $('soilProg').value=Math.round(100*offset/total);
+    setStat(t('sondes sol :')+' '+count.toLocaleString('fr-FR')+' '+t('mesures lues')+' ('+Math.round(100*offset/total)+'%)','busy');
+    await new Promise(r=>setTimeout(r,0));
+  }
+  $('soilProg').style.display='none';
+  finishSoil(count);
+}
+// petit fichier CSV : agrège via soilFeed aussi
+function feedSoilCSV(txt){
+  soilReset();let count=0;
+  const rows=parseSoilCSV(txt);rows.forEach(r=>{soilFeed(r);count++;});
+  finishSoil(count);
+}
+function finishSoil(count){
+  if(!SOIL_META.order.length){setStat(t('sondes sol :')+' '+t('aucune mesure exploitable'),'err');alert(t('Aucune mesure exploitable dans le fichier.'));return;}
+  // ne garder que les 10 premières sondes
+  SOIL_META.order=SOIL_META.order.slice(0,10);
+  const sel=$('soilProbe');
+  sel.innerHTML=SOIL_META.order.map((s,i)=>`<option value="${s}">${t('Sonde')} ${i+1}</option>`).join('');
+  $('soilCard').style.display='block';$('explEmpty').style.display='none';$('explBody').style.display='block';
+  setStat(t('sondes sol :')+' '+count.toLocaleString('fr-FR')+' '+t('mesures')+' · '+SOIL_META.order.length+' '+t('sonde(s) affichée(s)'),'on');
+  renderSoil();
+}
+function renderSoil(){
+  if(!SOIL_META.order.length)return;
+  const site=$('soilProbe').value, metric=$('soilMetric').value;
+  const byMetric=(SOIL_AGG[site]||{})[metric];
+  if(!byMetric||!Object.keys(byMetric).length){$('chSoil').innerHTML='<div class="muted" style="padding:20px">'+t('aucune donnée pour cette sonde/grandeur')+'</div>';$('soilLegend').innerHTML='';$('soilPill').textContent='0 '+t('mesure');return;}
+  // profondeurs (clés), triées numériquement
+  const depths=Object.keys(byMetric).sort((a,b)=>(a==='?'?1e9:+a)-(b==='?'?1e9:+b));
+  // union des jours sur toutes les profondeurs
+  const daySet=new Set();depths.forEach(dep=>Object.keys(byMetric[dep]).forEach(k=>daySet.add(k)));
+  const allDays=[...daySet].sort();
+  const data=allDays.map(k=>{const[y,m,d]=k.split('-').map(Number);return{date:new Date(y,m-1,d)};});
+  const palette=['#2bb3be','#d59a4e','#4d92d8','#e0604a','#54b365','#8a72c0','#e0a92a'];
+  let totalPts=0;
+  const series=depths.map((dep,di)=>{
+    const cells=byMetric[dep];
+    const perDay=allDays.map(k=>{const c=cells[k];if(!c)return NaN;totalPts+=c[1];return c[0]/c[1];});
+    const tag=SOIL_META.tags[site+'|'+metric+'|'+dep];
+    return{v:perDay,color:palette[di%palette.length],w:0.8,dots:data.length<120,name:(dep==='?'?t('sol'):dep+'cm')+(tag?' ('+tag+')':'')};
+  });
+  const unit=SOIL_META.units[metric]||(metric==='moisture'?'%VWC':metric==='salinity'?'µS/cm':'°C');
+  delete _zoom['chSoil']; // repartir en vue complète quand on change sonde/grandeur
+  svgLine($('chSoil'),data,{h:200,dec:1,tipDec:1,unit:' '+unit,series});
+  $('soilLegend').innerHTML=series.map(se=>`<span><i style="display:inline-block;width:11px;height:11px;border-radius:2px;background:${se.color};margin-right:5px;vertical-align:-1px"></i>${se.name}</span>`).join('');
+  $('soilPill').textContent=totalPts.toLocaleString('fr-FR')+' '+t('mesures')+' · '+series.length+' '+t('profondeur(s)')+' · '+data.length+' '+t('jours');
+}
+/* ---- export des 10 sondes (données journalières agrégées, sans noms) ---- */
+function soilExport(){
+  if(!SOIL_META.order.length){alert(t('Chargez d\'abord un fichier de sondes.'));return;}
+  const rows=[]; // format long : une ligne par sonde/grandeur/profondeur/jour
+  SOIL_META.order.forEach((s,idx)=>{
+    const sonde='Sonde '+(idx+1);
+    const byMetric=SOIL_AGG[s]||{};
+    Object.keys(byMetric).forEach(metric=>{
+      const mLabel=metric==='moisture'?'Humidité':metric==='salinity'?'Salinité':'Température';
+      const unit=SOIL_META.units[metric]||(metric==='moisture'?'%VWC':metric==='salinity'?'µS/cm':'°C');
+      Object.keys(byMetric[metric]).forEach(dep=>{
+        const cells=byMetric[metric][dep];
+        Object.keys(cells).sort().forEach(day=>{
+          const c=cells[day];
+          rows.push({Sonde:sonde,Grandeur:mLabel,Profondeur:dep==='?'?'':dep+'cm',Date:day,Valeur:+(c[0]/c[1]).toFixed(3),Unite:unit,Nb_mesures:c[1]});
+        });
+      });
+    });
+  });
+  if(!rows.length){alert(t('Aucune donnée à exporter.'));return;}
+  const stamp=iso(new Date());
+  // XLSX (via SheetJS déjà chargé) + CSV
+  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Sondes_1-10');
+  XLSX.writeFile(wb,'sondes_sol_1-10_'+stamp+'.xlsx');
+  const csv=XLSX.utils.sheet_to_csv(ws,{FS:';'});
+  dl(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'sondes_sol_1-10_'+stamp+'.csv');
+  // JSON : structure imbriquée compacte
+  const jsonObj={};
+  SOIL_META.order.forEach((s,idx)=>{
+    const sonde='Sonde '+(idx+1);jsonObj[sonde]={};
+    const byMetric=SOIL_AGG[s]||{};
+    Object.keys(byMetric).forEach(metric=>{
+      jsonObj[sonde][metric]={};
+      Object.keys(byMetric[metric]).forEach(dep=>{
+        const cells=byMetric[metric][dep];const series={};
+        Object.keys(cells).sort().forEach(day=>{series[day]=+(cells[day][0]/cells[day][1]).toFixed(3);});
+        jsonObj[sonde][metric][dep==='?'?'na':dep+'cm']=series;
+      });
+    });
+  });
+  dl(new Blob([JSON.stringify(jsonObj,null,1)],{type:'application/json'}),'sondes_sol_1-10_'+stamp+'.json');
+  setStat(t('sondes sol :')+' '+t('export CSV + XLSX + JSON généré'),'on');
+}
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();}
+$('soilExport').onclick=soilExport;
+$('soilFile').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const isJson=/\.json$/i.test(f.name);
+  if(isJson){
+    // streaming pour gros fichiers (jusqu'à plusieurs centaines de Mo)
+    streamSoilJSON(f).catch(err=>{setStat(t('sondes sol :')+' '+err.message,'err');alert(t('Erreur lecture : ')+err.message);});
+  }else{
+    const r=new FileReader();r.onload=ev=>feedSoilCSV(ev.target.result);r.readAsText(f,'utf-8');
+  }
+});
+
+/* ================= MODULE ECOWITT (temps réel + historique) ================= */
+const ECO_APP_DEFAULT='474F0A6089D3C32E6D5658E6711890A5'; // à régénérer après la formation
+const ECO_API_DEFAULT='6b4dbc69-6639-4900-9089-12d3ce632b66';
+let ECO_DEV=[], ECO_HIST=[];
+function ecoInit(){ $('ecoApp').value=ECO_APP_DEFAULT; $('ecoApi').value=ECO_API_DEFAULT; }
+const ECO_BASE='https://api.ecowitt.net/api/v3';
+function ecoUnits(){return 'temp_unitid=1&wind_speed_unitid=7&rainfall_unitid=12&pressure_unitid=3&solar_irradiance_unitid=16';}
+async function ecoFetch(path,params){
+  const url=`${ECO_BASE}/${path}?application_key=${encodeURIComponent($('ecoApp').value.trim())}&api_key=${encodeURIComponent($('ecoApi').value.trim())}${params?'&'+params:''}`;
+  let r,j;
+  try{ r=await fetch(url); }
+  catch(netErr){ throw new Error(t('réseau/CORS : ')+netErr.message+' '+t("(l'API bloque peut-être l'appel navigateur)")); }
+  try{ j=await r.json(); }
+  catch(e){ throw new Error(t('réponse illisible (HTTP ')+r.status+')'); }
+  if(j.code!==0) throw new Error('code '+j.code+' — '+(j.msg||t('erreur'))+(j.code===40010?t(' (clé Application invalide)'):j.code===40011?t(' (clé API invalide)'):j.code===40015?t(' (cycle_type invalide)'):j.code===-1?t(' (paramètre/plage invalide)'):''));
+  return j.data;
+}
+async function ecoListDevices(){
+  $('ecoStatus').textContent=t('connexion…');setStat(t('Ecowitt : liste des stations…'),'busy');
+  try{
+    const data=await ecoFetch('device/list','');
+    ECO_DEV=data.list||[];
+    $('ecoDev').innerHTML=ECO_DEV.length?ECO_DEV.map(d=>`<option value="${d.mac}">${d.name||d.mac}</option>`).join(''):'<option value="">'+t('aucune station')+'</option>';
+    $('ecoLive').disabled=ECO_DEV.length===0;
+    $('ecoStatus').textContent=ECO_DEV.length+' '+t('station(s)');
+    setStat('Ecowitt : '+ECO_DEV.length+' '+t('station(s)'),'on');
+    $('liveEmpty').style.display='none';$('liveBody').style.display='block';
+  }catch(e){$('ecoStatus').textContent=t('échec');setStat('Ecowitt : '+e.message,'err');alert(t('Connexion échouée : ')+e.message+t("\n\nSi le message parle de CORS/réseau, l'accès navigateur direct est bloqué — dis-le moi, je te donne la parade."));}
+}
+function gv(o){return o&&o.value!=null?+o.value:NaN;}
+async function ecoRealtime(){
+  const mac=$('ecoDev').value;if(!mac)return;
+  $('ecoStatus').textContent=t('temps réel…');setStat('Ecowitt : '+t('temps réel…'),'busy');
+  try{
+    const d=await ecoFetch('device/real_time',`mac=${mac}&call_back=all&${ecoUnits()}`);
+    const out=d.outdoor||{},wind=d.wind||{},rain=d.rainfall||d.rain||{},pres=d.pressure||{},solar=d.solar_and_uvi||{},ind=d.indoor||{},batt=d.battery||{};
+    const T=gv(out.temperature),HR=gv(out.humidity),appT=gv(out.app_temp),dew=gv(out.dew_point),feels=gv(out.feels_like),
+      ws=gv(wind.wind_speed),gust=gv(wind.wind_gust),wd=gv(wind.wind_direction),
+      rRate=gv(rain.rain_rate),rEvt=gv(rain.event),rHour=gv(rain.hourly),rDay=gv(rain.daily),rWeek=gv(rain.weekly),rMon=gv(rain.monthly),rYear=gv(rain.yearly),
+      pRel=gv(pres.relative),pAbs=gv(pres.absolute),sol=gv(solar.solar),uv=gv(solar.uvi),
+      inT=gv(ind.temperature),inH=gv(ind.humidity);
+    const f=(v,d2=1)=>isNaN(v)?'—':v.toFixed(d2);
+    // flèche de tendance vs lecture précédente : ↑ rouge, ↓ bleu, = gris
+    const prev=window.ECO_PREV||{};
+    const arrow=(key,cur)=>{
+      if(isNaN(cur)||prev[key]==null||isNaN(prev[key]))return '';
+      const diff=cur-prev[key];
+      if(Math.abs(diff)<1e-6)return '<span style="color:#6b8a97;font-size:12px">→</span>';
+      return diff>0?'<span style="color:#e0604a;font-size:13px">↑</span>':'<span style="color:#4d92d8;font-size:13px">↓</span>';
+    };
+    const cards=[
+      ['Température',f(T),'°C','T',T],['Humidité',f(HR,0),'%','HR',HR],['App Temp',f(appT),'°C','appT',appT],['Point de rosée',f(dew),'°C','dew',dew],
+      ['Vent',f(ws),'km/h','ws',ws],['Rafale',f(gust),'km/h','gust',gust],['Rayonnement',f(sol,0),'W/m²','sol',sol],['UV',f(uv,0),'','uv',uv],
+      ['Pluie /h',f(rRate),'mm','rRate',rRate],['Pluie jour',f(rDay),'mm','rDay',rDay],['Pression rel.',f(pRel,0),'hPa','pRel',pRel],['Pression abs.',f(pAbs,0),'hPa','pAbs',pAbs],
+    ];
+    $('ecoNow').innerHTML=cards.map(([l,v,u,k,cur])=>`<div class="b"><div class="v">${v}<small style="font-size:11px;color:var(--ink2)"> ${u}</small> ${arrow(k,cur)}</div><div class="l">${t(l)}</div></div>`).join('');
+    // mémoriser pour la prochaine comparaison
+    window.ECO_PREV={T,HR,appT,dew,ws,gust,sol,uv,rRate,rDay,pRel,pAbs};
+    // détail : cumuls pluie + indoor + batterie
+    const dir=isNaN(wd)?'—':(['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'][Math.round(wd/22.5)%16]+' ('+wd.toFixed(0)+'°)');
+    const battState=batt.sensor_array?.value!=null?(+batt.sensor_array.value===0?'Normal':'⚠ '+batt.sensor_array.value):(Object.keys(batt).length?t('voir capteurs'):'—');
+    $('ecoNowTitle').textContent=t('Instantané')+' — '+$('ecoDev').selectedOptions[0].textContent;
+    $('ecoNowDetail').innerHTML=
+      `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 20px">`+
+      `<div><b style="color:var(--water)">${t('Vent')}</b><br>${t('Direction')} ${dir}</div>`+
+      `<div><b style="color:var(--water)">${t('Cumuls pluie')}</b><br>${t('évén.')} ${f(rEvt)} · h ${f(rHour)} · ${t('sem.')} ${f(rWeek)}<br>${t('mois')} ${f(rMon)} · ${t('année')} ${f(rYear)} mm</div>`+
+      `<div><b style="color:var(--water)">${t('Intérieur')}</b><br>${f(inT)} °C · ${f(inH,0)} %</div>`+
+      `<div><b style="color:var(--water)">${t('Batterie')}</b><br>${battState}</div>`+
+      `<div><b style="color:var(--water)">${t('Ressenti')}</b><br>${f(feels)} °C</div>`+
+      `</div><div style="margin-top:8px;color:var(--ink2)">${t('relevé ')}${new Date().toLocaleTimeString('fr-FR')}</div>`;
+    ecoWindArrow(wd,ws,gust);
+    $('ecoStatus').textContent=t('à jour ')+new Date().toLocaleTimeString('fr-FR');setStat('Ecowitt : '+t('temps réel OK'),'on');
+  }catch(e){$('ecoStatus').textContent=t('échec');setStat('Ecowitt : '+e.message,'err');}
+}
+function ecoWindArrow(wd,ws,gust){
+  const el=$('ecoWind');if(isNaN(wd)){el.innerHTML='<div class="muted" style="padding:30px">'+t('pas de donnée vent')+'</div>';return;}
+  const cx=110,cy=120,R=80,ang=(wd-90)*Math.PI/180,x=cx+Math.cos(ang)*R,y=cy+Math.sin(ang)*R;
+  let s=`<svg viewBox="0 0 220 250" width="200">`;
+  ['N','E','S','O'].forEach((L,i)=>{const a=(i*90-90)*Math.PI/180;s+=`<text x="${cx+Math.cos(a)*(R+16)}" y="${cy+Math.sin(a)*(R+16)+4}" text-anchor="middle" font-size="12" font-weight="600" fill="#8fa3b0">${L}</text>`;});
+  s+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#2a4a56"/><line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#2bb3be" stroke-width="3"/><circle cx="${x}" cy="${y}" r="5" fill="#2bb3be"/>`;
+  s+=`<text x="${cx}" y="${cy+R+44}" text-anchor="middle" font-size="12" fill="#e8eef2">${ws.toFixed(1)} km/h${isNaN(gust)?'':' · '+t('rafale')+' '+gust.toFixed(0)}</text></svg>`;el.innerHTML=s;
+}
+function et0PM(tmax,tmin,tmean,rhmean,wsMean_kmh,solarMeanWm2,date,lat,alt){
+  const u2=(wsMean_kmh/3.6)*0.748, Rs=solarMeanWm2*0.0864;
+  const es=((0.6108*Math.exp(17.27*tmax/(tmax+237.3)))+(0.6108*Math.exp(17.27*tmin/(tmin+237.3))))/2;
+  const ea=es*(rhmean/100), delta=4098*(0.6108*Math.exp(17.27*tmean/(tmean+237.3)))/Math.pow(tmean+237.3,2);
+  const P=101.3*Math.pow((293-0.0065*alt)/293,5.26), gamma=0.000665*P;
+  const J=doy(date),dr=1+0.033*Math.cos(2*Math.PI/365*J),dec=0.409*Math.sin(2*Math.PI/365*J-1.39),phi=lat*Math.PI/180;
+  let x=-Math.tan(phi)*Math.tan(dec);x=Math.max(-1,Math.min(1,x));const wsa=Math.acos(x);
+  const Ra=(24*60/Math.PI)*0.0820*dr*(wsa*Math.sin(phi)*Math.sin(dec)+Math.cos(phi)*Math.cos(dec)*Math.sin(wsa));
+  const Rso=(0.75+2e-5*alt)*Ra, Rns=0.77*Rs;
+  const Rnl=4.903e-9*((Math.pow(tmax+273.16,4)+Math.pow(tmin+273.16,4))/2)*(0.34-0.14*Math.sqrt(Math.max(0,ea)))*(1.35*Math.min(1,Rs/Rso||0)-0.35);
+  const Rn=Rns-Rnl;
+  return Math.max(0,(0.408*delta*Rn+gamma*(900/(tmean+273))*u2*Math.max(0,es-ea))/(delta+gamma*(1+0.34*u2)));
+}
+async function ecoHistory(){
+  const mac=$('ecoDev').value;if(!mac){alert(t('Choisis une station.'));return;}
+  const from=$('ecoFrom').value,to=$('ecoTo').value;if(!from||!to){alert(t('Choisis une plage de dates.'));return;}
+  let cycle=$('ecoCycle').value;
+  const days=(new Date(to)-new Date(from))/864e5;
+  if(cycle==='auto'){
+    cycle = days<=1 ? '5min' : days<=7 ? '30min' : days<=90 ? '4hour' : '1day';
+  }
+  // garde-fous : respecter les rétentions Ecowitt (5min:90j, 30min:365j, 4hour:730j)
+  if(cycle==='5min'&&days>7){cycle='30min';}
+  if(cycle==='30min'&&days>90){cycle='4hour';}
+  if(cycle==='4hour'&&days>365){cycle='1day';}
+  $('ecoProg').style.display='inline-block';$('ecoProg').value=20;setStat('Ecowitt : '+t('historique…'),'busy');
+  try{
+    const cb='outdoor.temperature,outdoor.humidity,wind.wind_speed,rainfall.daily,pressure.relative,solar_and_uvi.solar';
+    const d=await ecoFetch('device/history',`mac=${mac}&start_date=${from} 00:00:00&end_date=${to} 23:59:59&cycle_type=${cycle}&call_back=${cb}&${ecoUnits()}`);
+    $('ecoProg').value=70;ECO_HIST=ecoParseHistory(d);$('ecoProg').style.display='none';
+    if(!ECO_HIST.length){setStat('Ecowitt : '+t('aucune donnée sur la période'),'err');alert(t('Aucune donnée renvoyée pour cette période.'));return;}
+    $('ecoHistBody').style.display='grid';$('ecoExport').disabled=false;
+    setStat('Ecowitt : '+ECO_HIST.length+' '+t('jours'),'on');ecoRenderHist();
+  }catch(e){$('ecoProg').style.display='none';setStat('Ecowitt : '+e.message,'err');alert(t('Historique échoué : ')+e.message);}
+}
+function ecoParseHistory(d){
+  // Ecowitt renvoie parfois data:[] (aucune donnée) ou des null en "-"
+  if(!d||Array.isArray(d)||typeof d!=='object')return [];
+  const pick=(cat,field)=>{try{const l=d[cat][field].list;return (l&&typeof l==='object'&&!Array.isArray(l))?l:null;}catch(e){return null;}};
+  const temp=pick('outdoor','temperature');if(!temp)return [];
+  const days={};
+  const tsToDate=ts=>{
+    // ts peut être des secondes epoch (string/number) OU "YYYY-MM-DD HH:MM:SS"
+    if(/^\d+$/.test(String(ts)))return new Date(+ts*1000);
+    const s=String(ts).replace(' ','T');const dt=new Date(s);return isNaN(dt)?null:dt;
+  };
+  const push=(ts,key,v)=>{const dt=tsToDate(ts);if(!dt)return;const k=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');(days[k]=days[k]||{T:[],HR:[],WS:[],RAIN:[],P:[],SOL:[],date:new Date(dt.getFullYear(),dt.getMonth(),dt.getDate())})[key].push(v);};
+  const cleanNum=v=>{if(v==null||v==='-'||v==='')return NaN;const n=+v;return (!isNaN(n)&&n>-999&&n<9999)?n:NaN;};
+  const feed=(list,key)=>{if(!list)return;Object.entries(list).forEach(([ts,v])=>{const n=cleanNum(v);if(!isNaN(n))push(ts,key,n);});};
+  feed(temp,'T');feed(pick('outdoor','humidity'),'HR');feed(pick('wind','wind_speed'),'WS');feed(pick('pressure','relative'),'P');feed(pick('solar_and_uvi','solar'),'SOL');
+  const rainD=pick('rainfall','daily')||pick('rainfall_piezo','daily');
+  if(rainD)Object.entries(rainD).forEach(([ts,v])=>{const n=cleanNum(v);if(!isNaN(n))push(ts,'RAIN',n);});
+  const av=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
+  return Object.values(days).map(o=>({date:o.date,tmax:amax(o.T),tmin:amin(o.T),tmean:av(o.T),hrmean:av(o.HR),hrmax:amax(o.HR),hrmin:amin(o.HR),wsMean:av(o.WS),wsMax:amax(o.WS),rain:o.RAIN.length?amax(o.RAIN):0,baro:av(o.P),solMean:av(o.SOL)})).sort((a,b)=>a.date-b.date);
+}
+function ecoRenderHist(){
+  const dev=ECO_DEV.find(x=>x.mac===$('ecoDev').value)||{};
+  const lat=dev.latitude!=null?+dev.latitude:36.7, alt=dev.elevation!=null?+dev.elevation:100;
+  ECO_HIST.forEach(d=>{
+    d.et0=(!isNaN(d.solMean)&&!isNaN(d.tmax)&&!isNaN(d.tmin))?et0PM(d.tmax,d.tmin,d.tmean,d.hrmean,d.wsMean,d.solMean,d.date,lat,alt):et0Hargreaves(d.tmax,d.tmin,d.tmean,d.date,lat);
+    d.gddDay=Math.max(0,(d.tmax+d.tmin)/2-(+$('ecoTbase').value||10));
+    const wet=d.hrmax>=95?18:d.hrmax>=90?12:d.hrmax>=85?8:0;d.dsvDay=dsvStation(d.tmean,wet);
+  });
+  const totRain=ECO_HIST.reduce((s,d)=>s+(d.rain||0),0),totEt0=ECO_HIST.reduce((s,d)=>s+d.et0,0);
+  let gddC=0;ECO_HIST.forEach(d=>gddC+=d.gddDay);let dsvC=0;ECO_HIST.forEach(d=>dsvC+=d.dsvDay);
+  $('ecoHistKpi').innerHTML=[
+    ['Jours',ECO_HIST.length,''],['T° moy',(ECO_HIST.reduce((s,d)=>s+d.tmean,0)/ECO_HIST.length).toFixed(1),'°C'],
+    ['Pluie cumul',totRain.toFixed(1),'mm'],['ET0 cumul',totEt0.toFixed(0),'mm'],['Déficit',(totEt0-totRain).toFixed(0),'mm'],
+    ['GDD',Math.round(gddC),''],['DSV',Math.round(dsvC),''],['Rayon. moy',(ECO_HIST.reduce((s,d)=>s+(d.solMean||0),0)/ECO_HIST.length).toFixed(0),'W/m²'],
+  ].map(([l,v,u])=>`<div class="b"><div class="v">${v}<small style="font-size:11px;color:var(--ink2)"> ${u}</small></div><div class="l">${t(l)}</div></div>`).join('');
+  svgLine($('ecoChTemp'),ECO_HIST,{h:190,dec:0,unit:'°C',tipDec:1,band:{hi:ECO_HIST.map(d=>d.tmax),lo:ECO_HIST.map(d=>d.tmin),color:'#3a2f1e'},series:[{v:ECO_HIST.map(d=>d.tmax),color:'#e0604a',w:0.8,name:t('Max')},{v:ECO_HIST.map(d=>d.tmean),color:'#d59a4e',w:0.9,dots:true,name:t('Moy')},{v:ECO_HIST.map(d=>d.tmin),color:'#4d92d8',w:0.8,name:t('Min')}]});
+  $('ecoTTitle').textContent=`${t('Température')} — min ${amin(ECO_HIST.map(d=>d.tmin)).toFixed(1)}°C / max ${amax(ECO_HIST.map(d=>d.tmax)).toFixed(1)}°C`;
+  svgLineDual($('ecoChRain'),ECO_HIST,{v:ECO_HIST.map(d=>d.rain||0),color:'#2f6db0'},true,{cumColor:'#0a5b63',leftLbl:'mm/j'});
+  svgLineDual($('ecoChEt0'),ECO_HIST,{v:ECO_HIST.map(d=>d.et0),color:'#3fa0a8'},true,{cumColor:'#a86a2e',leftLbl:'mm/j'});
+  svgLine($('ecoChSolar'),ECO_HIST,{h:160,dec:0,series:[{v:ECO_HIST.map(d=>d.solMean),color:'#c98a10',w:0.8,dots:true}]});
+  svgLine($('ecoChTH'),ECO_HIST,{h:180,dec:0,min:0,max:100,series:[{v:ECO_HIST.map(d=>d.hrmean),color:'#0e7c86',w:0.8},{v:ECO_HIST.map(d=>d.tmean),color:'#bd3b26',w:0.8,dots:true}]});
+  let acc=0;const gc=ECO_HIST.map(d=>{acc+=d.gddDay;return acc;});svgLine($('ecoChGdd'),ECO_HIST,{h:170,dec:0,series:[{v:gc,color:'#a86a2e',w:0.8}]});
+  let da=0;const dc=ECO_HIST.map(d=>{da+=d.dsvDay;const v=da;if(da>=15)da=0;return v;});svgLine($('ecoChDsv'),ECO_HIST,{h:170,dec:0,series:[{v:dc,color:'#bd3b26',w:0.8,dots:true}]});
+}
+function ecoExport(){
+  if(!ECO_HIST.length)return;
+  const data=ECO_HIST.map(d=>({Date:fmtD(d.date),'T min':d.tmin,'T max':d.tmax,'T moy':d.tmean?.toFixed(1),'HR moy':d.hrmean?.toFixed(0),'Vent moy km/h':d.wsMean?.toFixed(1),'Pluie mm':(d.rain||0).toFixed(1),'Rayonnement W/m2':d.solMean?.toFixed(0),'ET0 mm':d.et0?.toFixed(2),'GDD/j':d.gddDay?.toFixed(1),'DSV/j':d.dsvDay}));
+  const ws=XLSX.utils.json_to_sheet(data),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Ecowitt');
+  const stamp=iso(new Date());XLSX.writeFile(wb,'ecowitt_historique_'+stamp+'.xlsx');
+  const csv=XLSX.utils.sheet_to_csv(ws,{FS:';'});const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ecowitt_historique_'+stamp+'.csv';a.click();
+}
+ecoInit();
+$('ecoList').onclick=ecoListDevices;$('ecoLive').onclick=ecoRealtime;$('ecoHist').onclick=ecoHistory;$('ecoExport').onclick=ecoExport;
+let ecoTimer=null;
+$('ecoAuto').addEventListener('change',e=>{if(e.target.checked){ecoRealtime();ecoTimer=setInterval(ecoRealtime,5*60000);}else clearInterval(ecoTimer);});
+$('ecoTo').valueAsDate=new Date();$('ecoFrom').valueAsDate=new Date(Date.now()-30*864e5);
+
+/* ================= TRILINGUE FR / EN / AR ================= */
+let LANG='fr';
+// dictionnaire : texte FR exact → EN. Appliqué aux nœuds texte + placeholders + options.
+const I18N={
+  // onglets
+  'Portefeuille — 2 500 parcelles':'Portfolio — 2,500 plots',
+  'Exploitation — station & contours':'Farm — station & boundaries',
+  'Station live (Ecowitt)':'Live station (Ecowitt)',
+  // entête
+  'SICAM · bilan hydrique FAO-56 · stations & API temps réel':'SICAM · FAO-56 water balance · stations & real-time API',
+  "en attente d'un fichier":'waiting for a file',
+  // toolbar portefeuille
+  'Importer les parcelles (Excel / CSV)':'Import plots (Excel / CSV)',
+  'Calculer ET0 temps réel (Open-Meteo)':'Compute real-time ET0 (Open-Meteo)',
+  'Collecter la météo du cycle (plantation → récolte)':'Collect cycle weather (planting → harvest)',
+  'Exporter le fichier consolidé':'Export consolidated file',
+  "Charger l'échantillon (2 parcelles)":'Load sample (2 plots)',
+  'Date bilan':'Balance date','Filtre':'Filter','toutes':'all',
+  'à irriguer':'to irrigate','alerte traitement':'spray alert','en stress':'under stress',
+  'aucune donnée':'no data',
+  // drop portefeuille
+  "Déposez l'export AgriManager ici":'Drop your AgriManager export here',
+  'ou charger l\'échantillon':'or load the sample',
+  // exploitation toolbar
+  'Importer station météo (CSV)':'Import weather station (CSV)',
+  'Contours de ferme (GeoJSON)':'Farm boundaries (GeoJSON)',
+  "Charger l'échantillon station":'Load station sample',
+  'Année':'Year','Mois':'Month','tous':'all','Du':'From','Au':'To','Résolution':'Resolution',
+  "Station météo d'exploitation":'Farm weather station',
+  // titres graphiques exploitation
+  'Rose des vents':'Wind rose',
+  'Température & amplitude journalière':'Temperature & daily range',
+  'Pluie journalière & cumul':'Daily rain & cumulative',
+  'ET0 journalière (Hargreaves) & cumul — besoin en eau':'Daily ET0 (Hargreaves) & cumulative — water demand',
+  'Thermo-hygrogramme — T° vs humidité relative':'Thermo-hygrogram — T° vs relative humidity',
+  'Pression barométrique & tendance':'Barometric pressure & trend',
+  'Diagnostic station — tension batterie & continuité des mesures':'Station diagnostics — battery & data continuity',
+  'Degrés-jours & DSV maladie — sur données station réelles':'Growing degree-days & disease DSV — from real station data',
+  'DSV TomCast (heures d\'humectation = RH ≥ 90%)':'TomCast DSV (leaf wetness hours = RH ≥ 90%)',
+  // Ecowitt
+  'App Key':'App Key','API Key':'API Key','Lister mes stations':'List my stations','Station':'Station',
+  'Temps réel':'Real-time','auto':'auto','clés à renseigner':'enter keys',
+  'Connexion directe à ta station Ecowitt':'Direct connection to your Ecowitt station',
+  'Historique':'History','Charger l\'historique':'Load history','Exporter (CSV/XLSX)':'Export (CSV/XLSX)',
+  'Instantané':'Snapshot','Vent temps réel':'Real-time wind',
+  'Température & amplitude':'Temperature & range',
+  'ET0 (Penman-Monteith, avec rayonnement) & cumul':'ET0 (Penman-Monteith, with radiation) & cumulative',
+  'Rayonnement solaire & UV':'Solar radiation & UV',
+  'Thermo-hygrogramme — T° vs humidité':'Thermo-hygrogram — T° vs humidity',
+  // KPI labels
+  'Parcelles':'Plots','À irriguer':'To irrigate','Alerte traitement':'Spray alert','En stress':'Under stress',
+  'Volume à apporter':'Volume to apply','ET0 moyenne':'Mean ET0',
+  'Jours mesurés':'Measured days','Jours':'Days','T° moy période':'Mean T° period','T° moy':'Mean T°',
+  'Pluie cumulée':'Cumulative rain','Pluie cumul':'Cum. rain','ET0 cumulée':'Cumulative ET0','ET0 cumul':'Cum. ET0',
+  'Déficit ET0−P':'Deficit ET0−P','Déficit':'Deficit','GDD cumulés':'Cumulative GDD','GDD':'GDD',
+  'DSV cumulé':'Cumulative DSV','DSV':'DSV','Batterie min':'Min battery','Rayonnement moy':'Mean radiation','Rayon. moy':'Mean rad.',
+  'Température':'Temperature','Humidité':'Humidity','App Temp':'App Temp','Point de rosée':'Dew point',
+  'Vent':'Wind','Rafale':'Gust','Rayonnement':'Radiation','Pluie /h':'Rain /h','Pluie jour':'Rain today',
+  'Pression rel.':'Rel. pressure','Pression abs.':'Abs. pressure',
+  // table headers portefeuille
+  'Exploitant':'Farmer','Parcelle':'Plot','Culture':'Crop','Stade':'Stage','Besoin':'Need','Action':'Action',
+  'Max':'Max','Min':'Min','Moy':'Avg','vue complète':'reset zoom','cumul':'cum.',
+  'Batterie':'Battery','Pression':'Pressure','Sonde':'Probe',
+  'Sondes de sol — humidité / salinité / température par profondeur':'Soil probes — moisture / salinity / temperature by depth',
+  'Importer sondes sol (CSV/JSON)':'Import soil probes (CSV/JSON)',
+  'Grandeur':'Metric','Humidité (%VWC)':'Moisture (%VWC)','Salinité (µS/cm)':'Salinity (µS/cm)','Température (°C)':'Temperature (°C)',
+  // titre entête
+  'AgriManager · Météo & Irrigation':'AgriManager · Weather & Irrigation',
+  // aide portefeuille (fragments)
+  'CSV avec vos 35 colonnes (séparateur':'CSV with your 35 columns (separator',
+  'ou':'or',', décimales à virgule).':', decimals with comma).',
+  "L'appli lit":'The app reads','position Ferme':'Farm position','(lat, lon),':'(lat, lon),',
+  'Date début plantation':'Planting start date','et':'and','Date récolte prévue':'Expected harvest date',
+  '— le reste (ET0, Kc, stade, bilan, DSV) est calculé.':'— the rest (ET0, Kc, stage, balance, DSV) is computed.',
+  // aide exploitation (fragments)
+  'Déposez le':'Drop the','CSV de la station':'station CSV',
+  "(Date/Heure, WS1, WS2, HR1, T1, Volt, R1, B, WD1, B1) et, si vous l'avez, le":"(Date/Time, WS1, WS2, HR1, T1, Volt, R1, B, WD1, B1) and, if you have it, the",
+  'GeoJSON des contours':'boundary GeoJSON','de la ferme.':'of the farm.',
+  "L'appli agrège le pas de temps fin en journalier et recalcule ET0 (Hargreaves), GDD, DSV sur vos vraies mesures.":'The app aggregates the fine time step into daily values and recomputes ET0 (Hargreaves), GDD, DSV from your real measurements.',
+  // libellés bas de graphiques
+  'GDD cumulés (base':'Cumulative GDD (base','DSV maladie cumulé':'Cumulative disease DSV',
+  'Exporter Sondes 1-10 (CSV+JSON)':'Export probes 1-10 (CSV+JSON)',
+  // aide Ecowitt (fragments)
+  'Application Key':'Application Key',
+  "Renseigne l'Application Key et l'API Key, puis":'Enter the Application Key and API Key, then',
+  'pour récupérer tes appareils.':'to fetch your devices.','Ensuite :':'Then:',
+  "pour l'instantané, ou choisis une plage de dates plus bas pour l'":'for the snapshot, or pick a date range below for the',
+  'historique':'history',
+  '(avec ET0 Penman-Monteith, car Ecowitt fournit le rayonnement solaire).':'(with Penman-Monteith ET0, since Ecowitt provides solar radiation).',
+  // mois (select) + résolutions
+  'janv':'Jan','févr':'Feb','mars':'Mar','avr':'Apr','mai':'May','juin':'Jun','juil':'Jul','août':'Aug','sept':'Sep','oct':'Oct','nov':'Nov','déc':'Dec',
+  // stades phénologiques
+  'avant plantation':'before planting','récolté':'harvested','initiale':'initial','développement':'development','mi-saison':'mid-season','arrière-saison':'late season',
+  // tags d'action
+  'irriguer':'irrigate','traiter':'spray','RAS':'OK',
+  // légende carte
+  'irrigation forte':'high irrigation','irrigation modérée':'moderate irrigation','réserve OK':'reserve OK',
+  // popup carte
+  'Stade (Kc)':'Stage (Kc)','ETc jour':'ETc day','Besoin net décade':'Net 10-day need',
+  'consolidé':'consolidated','cycle':'cycle','échec':'failed',
+  // rose des vents / vent
+  'calme':'calm','couleur = vitesse moy.':'color = mean speed','pas de donnée vent':'no wind data','rafale':'gust',
+  // sondes de sol (contenu)
+  'aucune donnée pour cette sonde/grandeur':'no data for this probe/metric','sol':'soil',
+  'mesure':'measurement','mesures':'measurements','profondeur(s)':'depth(s)','jours':'days','semaines':'weeks',
+  // station (contenu + statut)
+  'aucune mesure sur cette période':'no measurement in this period',
+  'station :':'station:','mesures affichées':'measurements shown','jour':'day','semaine':'week',
+  // statuts / messages portefeuille
+  'parcelles chargées':'plots loaded','parcelles rechargées depuis le consolidé (sans API)':'plots reloaded from consolidated file (no API)',
+  'parcelles géolocalisées':'geolocated plots','parcelles':'plots','échantillon':'sample',
+  'interrogation Open-Meteo…':'querying Open-Meteo…',
+  'météo OK':'weather OK','points':'points','échecs — repli sur normales':'failures — fell back to normals',
+  'ET0 temps réel appliquée':'real-time ET0 applied','points météo':'weather points',
+  'API saturée — pause':'API throttled — pausing','s puis reprise…':'s then resume…',
+  'collecte du cycle plantation → récolte…':'collecting cycle weather planting → harvest…',
+  'collecte':'collecting','points météo…':'weather points…',
+  'cycle collecté pour':'cycle collected for','échecs':'failures',
+  'historique cycle':'cycle history','fenêtres météo':'weather windows',
+  'erreur lecture fichier':'file read error','Fichier illisible : ':'Unreadable file: ',
+  "Lancez d'abord « Collecter la météo du cycle ».":'First run “Collect cycle weather”.',
+  // statuts / messages station & sondes
+  'CSV station illisible':'unreadable station CSV',
+  'Aucune ligne station lue — vérifiez le format de la colonne Date/Heure.':'No station row read — check the Date/Time column format.',
+  'contours chargés':'boundaries loaded','GeoJSON invalide : ':'Invalid GeoJSON: ',
+  'sondes sol :':'soil probes:','sondes sol : lecture du fichier…':'soil probes: reading file…',
+  'mesures lues':'measurements read','aucune mesure exploitable':'no usable measurement',
+  'Aucune mesure exploitable dans le fichier.':'No usable measurement in the file.',
+  'sonde(s) affichée(s)':'probe(s) shown','Chargez d\'abord un fichier de sondes.':'First load a probe file.',
+  'Aucune donnée à exporter.':'No data to export.','export CSV + XLSX + JSON généré':'CSV + XLSX + JSON export generated',
+  'Erreur lecture : ':'Read error: ',
+  // statuts / messages Ecowitt
+  'Ecowitt : liste des stations…':'Ecowitt: listing stations…','connexion…':'connecting…',
+  'aucune station':'no station','station(s)':'station(s)',
+  'réseau/CORS : ':'network/CORS: ',"(l'API bloque peut-être l'appel navigateur)":'(the API may be blocking the browser call)',
+  'réponse illisible (HTTP ':'unreadable response (HTTP ','erreur':'error',
+  ' (clé Application invalide)':' (invalid Application key)',' (clé API invalide)':' (invalid API key)',
+  ' (cycle_type invalide)':' (invalid cycle_type)',' (paramètre/plage invalide)':' (invalid parameter/range)',
+  'Connexion échouée : ':'Connection failed: ',
+  "\n\nSi le message parle de CORS/réseau, l'accès navigateur direct est bloqué — dis-le moi, je te donne la parade.":'\n\nIf the message mentions CORS/network, direct browser access is blocked — let me know and I\'ll give you the workaround.',
+  'temps réel…':'real-time…','Direction':'Direction','Cumuls pluie':'Rain totals','évén.':'event','sem.':'week','mois':'month','année':'year',
+  'Intérieur':'Indoor','Ressenti':'Feels like','relevé ':'reading ','temps réel OK':'real-time OK','à jour ':'updated ',
+  'Choisis une station.':'Choose a station.','Choisis une plage de dates.':'Choose a date range.',
+  'Station météo A1':'Weather station A1','voir capteurs':'see sensors','aucune donnée station':'no station data',
+  'historique…':'history…','aucune donnée sur la période':'no data for the period',
+  'Aucune donnée renvoyée pour cette période.':'No data returned for this period.','Historique échoué : ':'History failed: ',
+};
+// dictionnaire FR -> AR (arabe) — mêmes clés que I18N
+const I18N_AR={
+  'Portefeuille — 2 500 parcelles':'المحفظة — 2500 قطعة',
+  'Exploitation — station & contours':'المزرعة — المحطة والحدود',
+  'Station live (Ecowitt)':'المحطة المباشرة (Ecowitt)',
+  'SICAM · bilan hydrique FAO-56 · stations & API temps réel':'SICAM · الميزان المائي FAO-56 · محطات وواجهات مباشرة',
+  "en attente d'un fichier":'في انتظار ملف',
+  'Importer les parcelles (Excel / CSV)':'استيراد القطع (Excel / CSV)',
+  'Calculer ET0 temps réel (Open-Meteo)':'حساب ET₀ الفوري (Open-Meteo)',
+  'Collecter la météo du cycle (plantation → récolte)':'جمع مناخ الدورة (الزراعة ← الحصاد)',
+  'Exporter le fichier consolidé':'تصدير الملف المجمّع',
+  "Charger l'échantillon (2 parcelles)":'تحميل العينة (قطعتان)',
+  'Date bilan':'تاريخ الميزان','Filtre':'تصفية','toutes':'الكل',
+  'à irriguer':'بحاجة للري','alerte traitement':'تنبيه معالجة','en stress':'تحت الإجهاد',
+  'aucune donnée':'لا توجد بيانات',
+  "Déposez l'export AgriManager ici":'أفلت ملف تصدير AgriManager هنا',
+  'ou charger l\'échantillon':'أو حمّل العينة',
+  'Importer station météo (CSV)':'استيراد المحطة الجوية (CSV)',
+  'Contours de ferme (GeoJSON)':'حدود المزرعة (GeoJSON)',
+  "Charger l'échantillon station":'تحميل عينة المحطة',
+  'Année':'السنة','Mois':'الشهر','tous':'الكل','Du':'من','Au':'إلى','Résolution':'الدقة',
+  "Station météo d'exploitation":'المحطة الجوية للمزرعة',
+  'Rose des vents':'وردة الرياح',
+  'Température & amplitude journalière':'الحرارة والمدى اليومي',
+  'Pluie journalière & cumul':'المطر اليومي والتراكمي',
+  'ET0 journalière (Hargreaves) & cumul — besoin en eau':'ET₀ اليومي (Hargreaves) والتراكمي — الحاجة المائية',
+  'Thermo-hygrogramme — T° vs humidité relative':'مخطط حراري-رطوبي — الحرارة مقابل الرطوبة النسبية',
+  'Pression barométrique & tendance':'الضغط الجوي والاتجاه',
+  'Diagnostic station — tension batterie & continuité des mesures':'تشخيص المحطة — جهد البطارية واستمرارية القياسات',
+  'Degrés-jours & DSV maladie — sur données station réelles':'درجات-أيام النمو وDSV المرض — من بيانات محطة حقيقية',
+  'DSV TomCast (heures d\'humectation = RH ≥ 90%)':'DSV TomCast (ساعات البلل = الرطوبة ≥ 90٪)',
+  'App Key':'مفتاح التطبيق','API Key':'مفتاح API','Lister mes stations':'عرض محطاتي','Station':'المحطة',
+  'Temps réel':'الوقت الحقيقي','auto':'تلقائي','clés à renseigner':'أدخل المفاتيح',
+  'Connexion directe à ta station Ecowitt':'اتصال مباشر بمحطة Ecowitt',
+  'Historique':'السجل','Charger l\'historique':'تحميل السجل','Exporter (CSV/XLSX)':'تصدير (CSV/XLSX)',
+  'Instantané':'لقطة','Vent temps réel':'الرياح الفورية',
+  'Température & amplitude':'الحرارة والمدى',
+  'ET0 (Penman-Monteith, avec rayonnement) & cumul':'ET₀ (Penman-Monteith، مع الإشعاع) والتراكمي',
+  'Rayonnement solaire & UV':'الإشعاع الشمسي والأشعة فوق البنفسجية',
+  'Thermo-hygrogramme — T° vs humidité':'مخطط حراري-رطوبي — الحرارة مقابل الرطوبة',
+  'Parcelles':'القطع','À irriguer':'بحاجة للري','Alerte traitement':'تنبيه معالجة','En stress':'تحت الإجهاد',
+  'Volume à apporter':'الحجم المطلوب','ET0 moyenne':'متوسط ET₀',
+  'Jours mesurés':'الأيام المقاسة','Jours':'أيام','T° moy période':'متوسط حرارة الفترة','T° moy':'متوسط الحرارة',
+  'Pluie cumulée':'المطر التراكمي','Pluie cumul':'تراكم المطر','ET0 cumulée':'ET₀ التراكمي','ET0 cumul':'تراكم ET₀',
+  'Déficit ET0−P':'العجز ET₀−P','Déficit':'العجز','GDD cumulés':'GDD تراكمي','GDD':'GDD',
+  'DSV cumulé':'DSV تراكمي','DSV':'DSV','Batterie min':'أدنى بطارية','Rayonnement moy':'متوسط الإشعاع','Rayon. moy':'م. الإشعاع',
+  'Température':'الحرارة','Humidité':'الرطوبة','App Temp':'الحرارة المحسوسة','Point de rosée':'نقطة الندى',
+  'Vent':'الرياح','Rafale':'هبّة','Rayonnement':'الإشعاع','Pluie /h':'مطر/س','Pluie jour':'مطر اليوم',
+  'Pression rel.':'الضغط النسبي','Pression abs.':'الضغط المطلق',
+  'Exploitant':'المزارع','Parcelle':'القطعة','Culture':'المحصول','Stade':'المرحلة','Besoin':'الحاجة','Action':'الإجراء',
+  'Max':'الأقصى','Min':'الأدنى','Moy':'المتوسط','vue complète':'إعادة الضبط','cumul':'تراكمي',
+  'Batterie':'البطارية','Pression':'الضغط','Sonde':'المجس',
+  'Sondes de sol — humidité / salinité / température par profondeur':'مجسات التربة — الرطوبة/الملوحة/الحرارة حسب العمق',
+  'Importer sondes sol (CSV/JSON)':'استيراد مجسات التربة (CSV/JSON)',
+  'Grandeur':'المقدار','Humidité (%VWC)':'الرطوبة (%VWC)','Salinité (µS/cm)':'الملوحة (µS/cm)','Température (°C)':'الحرارة (°C)',
+  // titre entête
+  'AgriManager · Météo & Irrigation':'AgriManager · الطقس والري',
+  // aide portفeuille (fragments)
+  'CSV avec vos 35 colonnes (séparateur':'ملف CSV بأعمدتك الـ35 (الفاصل',
+  'ou':'أو',', décimales à virgule).':'، الأرقام العشرية بفاصلة).',
+  "L'appli lit":'يقرأ التطبيق','position Ferme':'موقع المزرعة','(lat, lon),':'(خط العرض، خط الطول)،',
+  'Date début plantation':'تاريخ بدء الزراعة','et':'و','Date récolte prévue':'تاريخ الحصاد المتوقع',
+  '— le reste (ET0, Kc, stade, bilan, DSV) est calculé.':'— أما البقية (ET₀، Kc، المرحلة، الميزان، DSV) فتُحسب.',
+  // aide exploitation (fragments)
+  'Déposez le':'أفلت','CSV de la station':'ملف CSV للمحطة',
+  "(Date/Heure, WS1, WS2, HR1, T1, Volt, R1, B, WD1, B1) et, si vous l'avez, le":'(التاريخ/الساعة، WS1، WS2، HR1، T1، Volt، R1، B، WD1، B1) وإذا توفّر لديك، ملف',
+  'GeoJSON des contours':'GeoJSON للحدود','de la ferme.':'للمزرعة.',
+  "L'appli agrège le pas de temps fin en journalier et recalcule ET0 (Hargreaves), GDD, DSV sur vos vraies mesures.":'يجمّع التطبيق الخطوة الزمنية الدقيقة إلى قيم يومية ويعيد حساب ET₀ (Hargreaves) وGDD وDSV من قياساتك الحقيقية.',
+  // libellات بأسفل الرسوم
+  'GDD cumulés (base':'GDD تراكمي (الأساس','DSV maladie cumulé':'DSV المرض التراكمي',
+  'Exporter Sondes 1-10 (CSV+JSON)':'تصدير المجسات 1-10 (CSV+JSON)',
+  // aide Ecowitt (fragments)
+  'Application Key':'مفتاح التطبيق',
+  "Renseigne l'Application Key et l'API Key, puis":'أدخل مفتاح التطبيق ومفتاح API، ثم',
+  'pour récupérer tes appareils.':'لجلب أجهزتك.','Ensuite :':'بعد ذلك:',
+  "pour l'instantané, ou choisis une plage de dates plus bas pour l'":'للقطة الفورية، أو اختر مجالًا زمنيًا أدناه من أجل',
+  'historique':'السجل',
+  '(avec ET0 Penman-Monteith, car Ecowitt fournit le rayonnement solaire).':'(مع ET₀ Penman-Monteith، لأن Ecowitt يوفّر الإشعاع الشمسي).',
+  // الأشهر (قائمة) + الدقة
+  'janv':'يناير','févr':'فبراير','mars':'مارس','avr':'أبريل','mai':'مايو','juin':'يونيو','juil':'يوليو','août':'أغسطس','sept':'سبتمبر','oct':'أكتوبر','nov':'نوفمبر','déc':'ديسمبر',
+  // المراحل الفينولوجية
+  'avant plantation':'قبل الزراعة','récolté':'محصود','initiale':'ابتدائية','développement':'نمو','mi-saison':'منتصف الموسم','arrière-saison':'آخر الموسم',
+  // وسوم الإجراء
+  'irriguer':'ري','traiter':'معالجة','RAS':'لا شيء',
+  // مفتاح الخريطة
+  'irrigation forte':'ري مرتفع','irrigation modérée':'ري معتدل','réserve OK':'المخزون جيد',
+  // نافذة الخريطة المنبثقة
+  'Stade (Kc)':'المرحلة (Kc)','ETc jour':'ETc اليوم','Besoin net décade':'الحاجة الصافية للعشرية',
+  'consolidé':'مجمّع','cycle':'دورة','échec':'فشل',
+  // وردة الرياح / الرياح
+  'calme':'هدوء','couleur = vitesse moy.':'اللون = متوسط السرعة','pas de donnée vent':'لا بيانات رياح','rafale':'هبّة',
+  // مجسات التربة (المحتوى)
+  'aucune donnée pour cette sonde/grandeur':'لا بيانات لهذا المجس/المقدار','sol':'تربة',
+  'mesure':'قياس','mesures':'قياسات','profondeur(s)':'أعماق','jours':'أيام','semaines':'أسابيع',
+  // المحطة (المحتوى + الحالة)
+  'aucune mesure sur cette période':'لا قياس في هذه الفترة',
+  'station :':'المحطة:','mesures affichées':'قياسات معروضة','jour':'يوم','semaine':'أسبوع',
+  // الحالة / الرسائل — المحفظة
+  'parcelles chargées':'قطعة محمّلة','parcelles rechargées depuis le consolidé (sans API)':'قطعة أُعيد تحميلها من الملف المجمّع (دون API)',
+  'parcelles géolocalisées':'قطعة محدّدة الموقع','parcelles':'قطعة','échantillon':'عينة',
+  'interrogation Open-Meteo…':'استعلام Open-Meteo…',
+  'météo OK':'الطقس محدّث','points':'نقاط','échecs — repli sur normales':'إخفاقات — الرجوع إلى المعدلات',
+  'ET0 temps réel appliquée':'تم تطبيق ET₀ الفوري','points météo':'نقاط جوية',
+  'API saturée — pause':'API مشبعة — توقف','s puis reprise…':'ث ثم المتابعة…',
+  'collecte du cycle plantation → récolte…':'جمع مناخ الدورة الزراعة ← الحصاد…',
+  'collecte':'جمع','points météo…':'نقاط جوية…',
+  'cycle collecté pour':'تم جمع الدورة لـ','échecs':'إخفاقات',
+  'historique cycle':'سجل الدورة','fenêtres météo':'نوافذ جوية',
+  'erreur lecture fichier':'خطأ في قراءة الملف','Fichier illisible : ':'ملف غير قابل للقراءة: ',
+  "Lancez d'abord « Collecter la météo du cycle ».":'شغّل أولًا «جمع مناخ الدورة».',
+  // الحالة / الرسائل — المحطة والمجسات
+  'CSV station illisible':'ملف CSV للمحطة غير قابل للقراءة',
+  'Aucune ligne station lue — vérifiez le format de la colonne Date/Heure.':'لم يُقرأ أي سطر للمحطة — تحقّق من تنسيق عمود التاريخ/الساعة.',
+  'contours chargés':'تم تحميل الحدود','GeoJSON invalide : ':'GeoJSON غير صالح: ',
+  'sondes sol :':'مجسات التربة:','sondes sol : lecture du fichier…':'مجسات التربة: قراءة الملف…',
+  'mesures lues':'قياسات مقروءة','aucune mesure exploitable':'لا قياس قابل للاستخدام',
+  'Aucune mesure exploitable dans le fichier.':'لا قياس قابل للاستخدام في الملف.',
+  'sonde(s) affichée(s)':'مجسات معروضة','Chargez d\'abord un fichier de sondes.':'حمّل أولًا ملف مجسات.',
+  'Aucune donnée à exporter.':'لا بيانات للتصدير.','export CSV + XLSX + JSON généré':'تم إنشاء تصدير CSV + XLSX + JSON',
+  'Erreur lecture : ':'خطأ قراءة: ',
+  // الحالة / الرسائل — Ecowitt
+  'Ecowitt : liste des stations…':'Ecowitt: عرض المحطات…','connexion…':'جارٍ الاتصال…',
+  'aucune station':'لا محطة','station(s)':'محطة',
+  'réseau/CORS : ':'شبكة/CORS: ',"(l'API bloque peut-être l'appel navigateur)":'(قد تحظر الواجهة استدعاء المتصفح)',
+  'réponse illisible (HTTP ':'استجابة غير قابلة للقراءة (HTTP ','erreur':'خطأ',
+  ' (clé Application invalide)':' (مفتاح التطبيق غير صالح)',' (clé API invalide)':' (مفتاح API غير صالح)',
+  ' (cycle_type invalide)':' (cycle_type غير صالح)',' (paramètre/plage invalide)':' (معامل/مجال غير صالح)',
+  'Connexion échouée : ':'فشل الاتصال: ',
+  "\n\nSi le message parle de CORS/réseau, l'accès navigateur direct est bloqué — dis-le moi, je te donne la parade.":'\n\nإذا كانت الرسالة تذكر CORS/الشبكة، فإن الوصول المباشر من المتصفح محظور — أخبرني وسأعطيك الحل.',
+  'temps réel…':'الوقت الحقيقي…','Direction':'الاتجاه','Cumuls pluie':'مجاميع المطر','évén.':'حدث','sem.':'أسبوع','mois':'شهر','année':'سنة',
+  'Intérieur':'داخلي','Ressenti':'الإحساس','relevé ':'قراءة ','temps réel OK':'الوقت الحقيقي محدّث','à jour ':'محدّث ',
+  'Choisis une station.':'اختر محطة.','Choisis une plage de dates.':'اختر مجالًا زمنيًا.',
+  'Station météo A1':'محطة الطقس A1','voir capteurs':'انظر الحساسات','aucune donnée station':'لا بيانات محطة',
+  'historique…':'السجل…','aucune donnée sur la période':'لا بيانات لهذه الفترة',
+  'Aucune donnée renvoyée pour cette période.':'لم تُرجَع أي بيانات لهذه الفترة.','Historique échoué : ':'فشل السجل: ',
+};
+// nœuds texte : on stocke le FR d'origine une fois, puis on bascule
+function walkText(node,fn){
+  if(node.nodeType===3){fn(node);return;}
+  if(node.nodeType===1){
+    if(['SCRIPT','STYLE'].includes(node.tagName))return;
+    node.childNodes.forEach(c=>walkText(c,fn));
+  }
+}
+// valeur traduite d'une clé FR selon LANG (undefined => garder le FR)
+function trOf(key){ return LANG==='ar' ? I18N_AR[key] : LANG==='en' ? I18N[key] : undefined; }
+function applyLang(){
+  // 1) nœuds texte statiques
+  walkText(document.body,tn=>{
+    const raw=tn.__fr!==undefined?tn.__fr:tn.textContent;
+    const key=raw.trim();
+    if(I18N[key]!==undefined){
+      if(tn.__fr===undefined)tn.__fr=tn.textContent;
+      const tv=trOf(key);
+      tn.textContent=tn.__fr.replace(key, tv!==undefined?tv:key);
+    }
+  });
+  // 2) placeholders
+  document.querySelectorAll('[placeholder]').forEach(el=>{
+    const key=(el.__frph!==undefined?el.__frph:el.placeholder).trim();
+    if(I18N[key]!==undefined){if(el.__frph===undefined)el.__frph=el.placeholder;const tv=trOf(key);el.placeholder=tv!==undefined?tv:el.__frph;}
+  });
+  // 3) options de select
+  document.querySelectorAll('option').forEach(op=>{
+    const key=(op.__fr!==undefined?op.__fr:op.textContent).trim();
+    if(I18N[key]!==undefined){if(op.__fr===undefined)op.__fr=op.textContent;const tv=trOf(key);op.textContent=tv!==undefined?tv:op.__fr;}
+  });
+  // 4) re-render des vues dynamiques si données présentes
+  if(typeof PARCELS!=='undefined'&&PARCELS.length&&typeof render==='function')render();
+  if(typeof DAILY!=='undefined'&&DAILY.length&&typeof renderStation==='function')renderStation();
+  if(typeof ECO_HIST!=='undefined'&&ECO_HIST.length&&typeof ecoRenderHist==='function')ecoRenderHist();
+  // 5) sens d'écriture + police (arabe = RTL)
+  document.documentElement.dir = document.body.dir = (LANG==='ar'?'rtl':'ltr');
+  document.documentElement.lang = LANG;
+  window.LANG = LANG;
+  $('langBtn').textContent = (LANG==='fr'?'EN':LANG==='en'?'ع':'FR');
+}
+// helper de traduction pour le JS dynamique
+function t(fr){ const tv=trOf(fr); return tv!==undefined?tv:fr; }
+// bascule cyclique FR → EN → عربي → FR
+$('langBtn').onclick=()=>{ LANG = (LANG==='fr'?'en':LANG==='en'?'ar':'fr'); applyLang(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sondes IoT — Tableau de bord multi-profondeur</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  /* ---- specific to this dashboard, on top of theme.css (clair-vert) ---- */
+  .lead{color:var(--muted);max-width:900px;margin:-4px 0 4px;font-size:14px}
+  .lead b{color:var(--ink)}
+  .toolrow{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  select,input[type=range]{font:inherit}
+  select{border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:#fff;color:var(--ink);font-weight:600;min-width:170px}
+  select:focus{outline:none;border-color:var(--green)}
+  input[type=range]{width:150px;accent-color:var(--green)}
+  .rngval{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:13px}
+  .toolrow .grow{flex:1}
+  .chartwrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 8px 4px}
+  svg.chart{width:100%;height:auto;display:block;touch-action:none}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 6px 2px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:15px;height:3px;border-radius:2px;display:inline-block}
+  .legend i.dash{height:0;border-top:2px dashed currentColor;width:15px}
+  .hoverbox{font-size:13px;color:var(--muted);padding:9px 12px;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;margin-top:10px;min-height:20px}
+  .hoverbox b{color:var(--ink)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+  .kpi{background:var(--green-bg);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .kpi .l{color:var(--muted);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+  .kpi .v{font-size:1.55rem;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .kpi .v small{font-size:.85rem;font-weight:700;color:var(--muted)}
+  .kpi .x{color:var(--faint);font-size:11.5px;margin-top:3px}
+  .kpi.good{background:#eef8ef;border-color:#bfe3c3}.kpi.good .v{color:var(--impact)}
+  .kpi.warn{background:#fdf3e3;border-color:#f0d9ac}.kpi.warn .v{color:#b5701a}
+  .kpi.bad{background:#fbecea;border-color:#eecac5}.kpi.bad .v{color:var(--decision)}
+  .grid2{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .evt{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;border-radius:11px;font-size:13px;border:1px solid var(--line);margin-bottom:9px;background:#fff}
+  .evt .dot{width:11px;height:11px;border-radius:50%;flex:none;margin-top:3px}
+  .evt b{display:block}
+  .evt .when{color:var(--faint);font-size:11.5px;font-family:"JetBrains Mono",monospace;margin-top:2px}
+  .evt.irr .dot{background:var(--capture)}.evt.drain .dot{background:var(--decision)}
+  .evt.stress .dot{background:#b5701a}.evt.ok .dot{background:var(--impact)}
+  .guide p{font-size:13px;color:var(--muted);line-height:1.75;margin:0 0 9px}
+  .guide b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:11px;margin-inline-start:6px;vertical-align:middle}
+  .tag.blue{background:#e6f2fa;color:#2f7fae}.tag.red{background:#fbecea;color:var(--decision)}
+  .tag.amber{background:#fdf3e3;color:#b5701a}.tag.green{background:#eef8ef;color:var(--impact)}
+  .minirow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:620px){.minirow{grid-template-columns:1fr}}
+  .spark{background:#fff;border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .spark .top{display:flex;justify-content:space-between;align-items:baseline}
+  .spark .name{font-weight:800;font-size:13.5px}
+  .spark .now{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:1.15rem}
+  .spark svg{width:100%;height:46px;display:block;margin-top:6px}
+  .spark .foot{color:var(--faint);font-size:11.5px;margin-top:4px}
+  /* modal format */
+  .modal{position:fixed;inset:0;background:rgba(30,40,20,.45);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
+  .modal.on{display:flex}
+  .modal .box{background:#fff;border-radius:16px;max-width:680px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal .hd{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .modal .hd b{font-size:15px}.modal .hd .x{margin-inline-start:auto;cursor:pointer;color:var(--muted);font-size:22px;line-height:1}
+  .modal .bd{padding:18px 20px}
+  pre.code{background:#0e1512;color:#d7e3cd;border-radius:10px;padding:14px 16px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:12px;line-height:1.6}
+  .note{font-size:12.5px;color:var(--muted);background:var(--green-bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-top:12px}
+  .modcap{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--green-d)}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">IoT</span> <b>Sondes</b> <span data-i18n="s_title2">Sol</span></div>
+  <div class="sub" data-i18n="s_sub">Capteurs multi-profondeur · humidité, salinité, température</div>
+  <div class="right">
+    <span class="chip" id="modeChip">M3 · IoT</span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <p class="lead" data-i18n-html="s_lead"></p>
+
+  <!-- ---- Controls ---- -->
+  <div class="card">
+    <div class="toolrow">
+      <div class="fld">
+        <label data-i18n="s_site"></label>
+        <select id="site"></select>
+      </div>
+      <div class="fld">
+        <label data-i18n="s_texture"></label>
+        <select id="texture"></select>
+      </div>
+      <div class="fld">
+        <label><span data-i18n="s_mad"></span> · <span class="rngval" id="madv">50%</span></label>
+        <input type="range" id="mad" min="20" max="70" step="5" value="50">
+      </div>
+      <div class="grow"></div>
+      <div class="fld">
+        <label>&nbsp;</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" onclick="doImport()">📥 <span data-i18n="import"></span></button>
+          <button class="btn ghost" onclick="doExport()">📤 <span data-i18n="export"></span></button>
+          <button class="btn ghost" onclick="openFmt()">❓ <span data-i18n="format_help"></span></button>
+          <button class="btn ghost" onclick="loadDemo()">↺ <span data-i18n="s_demo"></span></button>
+        </div>
+      </div>
+    </div>
+    <div class="note" id="srcNote"></div>
+  </div>
+
+  <!-- ---- Main chart ---- -->
+  <div class="card">
+    <h2>💧 <span data-i18n="s_chart_title"></span></h2>
+    <div class="chartwrap">
+      <svg class="chart" id="svg" viewBox="0 0 960 380" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="hoverbox" id="hover"></div>
+    <div class="kpis" id="kpis"></div>
+  </div>
+
+  <!-- ---- Events + Guide ---- -->
+  <div class="grid2">
+    <div class="card">
+      <h2>🔎 <span data-i18n="s_events_title"></span></h2>
+      <div class="sub muted" style="font-size:12.5px;margin:-6px 0 12px" data-i18n="s_events_sub"></div>
+      <div id="events"></div>
+    </div>
+
+    <div class="card guide">
+      <h2>📖 <span data-i18n="s_guide_title"></span></h2>
+      <p data-i18n-html="s_g1"></p>
+      <p data-i18n-html="s_g2"></p>
+      <p data-i18n-html="s_g3"></p>
+      <p data-i18n-html="s_g4"></p>
+      <p data-i18n-html="s_g5"></p>
+    </div>
+  </div>
+
+  <!-- ---- Salinity + Temperature ---- -->
+  <div class="card">
+    <h2>🌡️ <span data-i18n="s_env_title"></span></h2>
+    <div class="sub muted" style="font-size:12.5px;margin:-6px 0 12px" data-i18n="s_env_sub"></div>
+    <div class="minirow" id="env"></div>
+  </div>
+
+</div>
+
+<!-- ---- Format modal ---- -->
+<div class="modal" id="fmt" onclick="if(event.target===this)closeFmt()">
+  <div class="box">
+    <div class="hd"><span class="modcap" data-i18n="format_help"></span><b data-i18n="s_fmt_title"></b><span class="x" onclick="closeFmt()">×</span></div>
+    <div class="bd">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px" data-i18n="s_fmt_desc"></p>
+      <div class="modcap" style="margin-bottom:6px">JSON</div>
+      <pre class="code" id="fmtJson"></pre>
+      <div class="modcap" style="margin:14px 0 6px">CSV</div>
+      <pre class="code" id="fmtCsv"></pre>
+      <div class="note" data-i18n="s_fmt_note"></div>
+    </div>
+  </div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+/* ===================================================================
+   Sondes IoT — tableau de bord multi-profondeur
+   Construit sur theme.css + i18n.js + store.js (standards plateforme)
+   =================================================================== */
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+
+/* ---- page dictionary (merged into shared I18N) ---- */
+Object.assign(I18N.DICT, {
+  s_title2:{fr:"Sol",ar:"التربة",en:"Soil"},
+  s_sub:{fr:"Capteurs multi-profondeur · humidité, salinité, température",
+         ar:"مجسات متعددة الأعماق · الرطوبة، الملوحة، الحرارة",
+         en:"Multi-depth probes · moisture, salinity, temperature"},
+  s_lead:{fr:"Un réseau de sondes raconte, couche par couche, ce que fait l'eau dans le sol. Choisissez un site : le tableau lit les <b>vraies séries</b> par profondeur, trace les seuils (capacité au champ, seuil de recharge, point de flétrissement) et <b>détecte automatiquement</b> les irrigations, le drainage et le stress. Importez vos propres relevés ou repartez du jeu démo.",
+          ar:"شبكة المجسات تروي، طبقة بعد طبقة، ما يفعله الماء في التربة. اختر موقعاً: تقرأ اللوحة <b>السلاسل الحقيقية</b> حسب العمق، وترسم العتبات (السعة الحقلية، عتبة إعادة الري، نقطة الذبول)، و<b>تكتشف تلقائياً</b> الري والصرف والإجهاد. استورد قياساتك أو ابدأ من البيانات التجريبية.",
+          en:"A probe network tells, layer by layer, what water does in the soil. Pick a site: the board reads the <b>real series</b> per depth, draws the thresholds (field capacity, refill point, wilting point) and <b>auto-detects</b> irrigation, drainage and stress. Import your own readings or start from the demo set."},
+  s_site:{fr:"Site / station",ar:"الموقع / المحطة",en:"Site / station"},
+  s_texture:{fr:"Texture du sol",ar:"قوام التربة",en:"Soil texture"},
+  s_mad:{fr:"Épuisement admissible (MAD)",ar:"الاستنزاف المسموح",en:"Allowed depletion (MAD)"},
+  s_demo:{fr:"Jeu démo",ar:"بيانات تجريبية",en:"Demo set"},
+  s_chart_title:{fr:"Humidité du sol par profondeur",ar:"رطوبة التربة حسب العمق",en:"Soil moisture by depth"},
+  s_events_title:{fr:"Événements détectés",ar:"الأحداث المكتشفة",en:"Detected events"},
+  s_events_sub:{fr:"Analyse automatique de la couche la plus proche de la surface.",ar:"تحليل تلقائي لأقرب طبقة إلى السطح.",en:"Automatic analysis of the shallowest layer."},
+  s_guide_title:{fr:"Lire la courbe",ar:"قراءة المنحنى",en:"Reading the curve"},
+  s_g1:{fr:"<b>Pic vertical</b> → apport d'eau (irrigation ou pluie). La hauteur du pic ≈ quantité infiltrée.",
+        ar:"<b>قفزة عمودية</b> ← إضافة ماء (ري أو مطر). ارتفاع القفزة ≈ الكمية المتسربة.",
+        en:"<b>Vertical spike</b> → water input (irrigation or rain). Spike height ≈ infiltrated amount."},
+  s_g2:{fr:"<b>Descente en escalier</b> → paliers diurnes : le sol se dessèche le jour (racines + évaporation), se stabilise la nuit.",
+        ar:"<b>هبوط متدرّج</b> ← مراحل نهارية: تجفّ التربة نهاراً (الجذور + التبخّر) وتستقر ليلاً.",
+        en:"<b>Staircase decline</b> → diurnal steps: soil dries by day (roots + evaporation), stabilises at night."},
+  s_g3:{fr:"<b>Plafond à la capacité au champ (CC)</b> → sol plein. Au-dessus, l'eau part en <b>drainage profond</b> (perdue, elle lessive les nutriments).",
+        ar:"<b>السقف عند السعة الحقلية</b> ← التربة ممتلئة. فوقها يذهب الماء إلى <b>الصرف العميق</b> (مفقود ويغسل المغذيات).",
+        en:"<b>Ceiling at field capacity (FC)</b> → soil is full. Above it, water goes to <b>deep drainage</b> (lost, it leaches nutrients)."},
+  s_g4:{fr:"<b>Seuil de recharge</b> → niveau où déclencher l'irrigation, avant le stress. Fixé par le curseur MAD.",
+        ar:"<b>عتبة إعادة الري</b> ← المستوى الذي يبدأ عنده الري قبل الإجهاد. يحدده مؤشر MAD.",
+        en:"<b>Refill point</b> → level to trigger irrigation, before stress. Set by the MAD slider."},
+  s_g5:{fr:"<b>Sous le point de flétrissement (PF)</b> → stress sévère : la plante ne peut plus extraire l'eau.",
+        ar:"<b>تحت نقطة الذبول</b> ← إجهاد شديد: لا يستطيع النبات سحب الماء.",
+        en:"<b>Below wilting point (WP)</b> → severe stress: the plant can no longer extract water."},
+  s_env_title:{fr:"Salinité & température du sol",ar:"ملوحة وحرارة التربة",en:"Soil salinity & temperature"},
+  s_env_sub:{fr:"Contexte du profil racinaire : une salinité qui monte = accumulation de sels (lessivage insuffisant).",
+             ar:"سياق منطقة الجذور: ارتفاع الملوحة = تراكم الأملاح (غسل غير كافٍ).",
+             en:"Root-zone context: rising salinity = salt build-up (insufficient leaching)."},
+  s_fmt_title:{fr:"Format d'import / export des sondes",ar:"صيغة استيراد/تصدير المجسات",en:"Probe import / export format"},
+  s_fmt_desc:{fr:"Deux formats acceptés : JSON (tableau d'objets) ou CSV. La colonne « probe_measure » indique le type et la profondeur — les suffixes (#0, (Clay), (Adjusted)…) sont ignorés automatiquement.",
+              ar:"صيغتان مقبولتان: JSON (مصفوفة كائنات) أو CSV. عمود «probe_measure» يحدد النوع والعمق — تُتجاهل اللواحق تلقائياً.",
+              en:"Two accepted formats: JSON (array of objects) or CSV. The “probe_measure” column carries type and depth — suffixes (#0, (Clay), (Adjusted)…) are ignored automatically."},
+  s_fmt_note:{fr:"Astuce : le gros historique soil-sensor-readings-historical-data.json (1,5 M lignes) s'importe aussi, mais choisissez ensuite un seul site dans le sélecteur.",
+              ar:"ملاحظة: الملف التاريخي الكبير يمكن استيراده أيضاً، ثم اختر موقعاً واحداً.",
+              en:"Tip: the large historical file (1.5M rows) also imports — then pick a single site in the selector."},
+  // states / labels
+  st_over:{fr:"sur-irrigation",ar:"ريّ زائد",en:"over-irrigation"},
+  st_comfort:{fr:"confort",ar:"مريح",en:"comfort"},
+  st_pilot:{fr:"à piloter",ar:"يتطلب متابعة",en:"to watch"},
+  st_irr:{fr:"à irriguer",ar:"يحتاج ري",en:"irrigate soon"},
+  st_stress:{fr:"stress",ar:"إجهاد",en:"stress"},
+  k_now:{fr:"Humidité actuelle",ar:"الرطوبة الحالية",en:"Current moisture"},
+  k_nirr:{fr:"Irrigations détectées",ar:"مرات الري المكتشفة",en:"Irrigations detected"},
+  k_drain:{fr:"Temps au-dessus de la CC",ar:"الوقت فوق السعة الحقلية",en:"Time above FC"},
+  k_ru:{fr:"Réserve utile disponible",ar:"المخزون المتاح",en:"Available storage"},
+  k_span:{fr:"Amplitude min–max",ar:"المدى الأدنى-الأقصى",en:"Min–max range"},
+  k_depth:{fr:"couche",ar:"طبقة",en:"layer"},
+  ev_irr:{fr:"Apport d'eau",ar:"إضافة ماء",en:"Water input"},
+  ev_over:{fr:"Apport excessif → drainage",ar:"إضافة زائدة ← صرف",en:"Excess input → drainage"},
+  ev_refill:{fr:"Seuil de recharge atteint",ar:"بلوغ عتبة إعادة الري",en:"Refill point reached"},
+  ev_stress:{fr:"Stress sévère (sous PF)",ar:"إجهاد شديد (تحت الذبول)",en:"Severe stress (below WP)"},
+  ev_irrigate:{fr:"à irriguer",ar:"يحتاج ري",en:"irrigate"},
+  ev_ok:{fr:"Recharge maîtrisée",ar:"إعادة ري متحكّم بها",en:"Well-controlled refill"},
+  ev_none:{fr:"Aucun événement marquant sur la période.",ar:"لا أحداث بارزة في الفترة.",en:"No notable events over the period."},
+  ev_mag:{fr:"gain",ar:"زيادة",en:"gain"},
+  fc_lbl:{fr:"CC",ar:"سعة",en:"FC"},sr_lbl:{fr:"Recharge",ar:"إعادة ري",en:"Refill"},pf_lbl:{fr:"PF",ar:"ذبول",en:"WP"},
+  trend_up:{fr:"en hausse",ar:"في ارتفاع",en:"rising"},trend_dn:{fr:"en baisse",ar:"في انخفاض",en:"falling"},trend_st:{fr:"stable",ar:"مستقر",en:"stable"},
+  src_demo:{fr:"Source : jeu démo « Domaine Sebha » (généré, pédagogique).",ar:"المصدر: بيانات تجريبية «مزرعة سبها» (مولّدة، تعليمية).",en:"Source: demo set “Domaine Sebha” (generated, educational)."},
+  src_file:{fr:"Source : fichier importé",ar:"المصدر: ملف مستورد",en:"Source: imported file"},
+  no_depth:{fr:"(sans profondeur)",ar:"(بدون عمق)",en:"(no depth)"}
+});
+
+/* ---- soil texture presets (%VWC) : field capacity & wilting point ---- */
+const TEX = [
+  {id:'sand',   fc:12, pf:4,  fr:"Sableux",             ar:"رملي",              en:"Sand"},
+  {id:'sloam',  fc:18, pf:8,  fr:"Limono-sableux",      ar:"طيني رملي",         en:"Sandy loam"},
+  {id:'loam',   fc:28, pf:12, fr:"Limoneux",            ar:"طَمْيي",             en:"Loam"},
+  {id:'cloam',  fc:38, pf:20, fr:"Argilo-limoneux",     ar:"طيني طَمْيي",        en:"Clay loam"},
+  {id:'clay',   fc:42, pf:24, fr:"Argileux",            ar:"طيني",              en:"Clay"}
+];
+const DEPTH_COLORS = ['#3a9bd0','#2f7fae','#8e6fc7','#6f4fb0','#e0912b','#c9741a','#d1584e','#8a3b34'];
+
+/* ---- state ---- */
+let DB = {};             // { site: { moisture:{depth:[[t,v]]}, salinity:{}, temperature:{}, units:{} } }
+let curSite = null;
+let srcLabel = 'demo';   // 'demo' | filename
+
+/* ================= DEMO DATA (Domaine Sebha) ================= */
+function makeDemo(){
+  const site="Domaine Sebha";
+  const start=Date.parse("2026-05-01T00:00:00Z");
+  const H=14*24;                         // 14 days, hourly
+  const fc=18, pf=8;                      // sandy-loam-ish for realistic curve
+  const moist={30:[],50:[],80:[]};
+  const sal={20:[]}, temp={50:[]};
+  let m={30:15,50:14,80:13.5};
+  const irrDays=new Set([1,4,6,9,11]);    // irrigation mornings
+  const overDay=6;                        // over-irrigation → drainage
+  let saltBase=0.30;
+  for(let h=0;h<H;h++){
+    const t=start+h*3600e3, day=Math.floor(h/24), hod=h%24;
+    if(hod===6 && irrDays.has(day)){
+      const dose = day===overDay?14:8;
+      m[30]=m[30]+dose;
+      saltBase=Math.max(0.22, saltBase-0.03);  // leaching dilutes salts a bit
+    }
+    // downward redistribution (cascade), damped
+    let t1=Math.max(0,m[30]-fc)*0.45 + 0.04; t1=Math.min(t1,m[30]); m[30]-=t1; m[50]+=t1*0.88;
+    let t2=Math.max(0,m[50]-fc)*0.32 + 0.03; t2=Math.min(t2,m[50]); m[50]-=t2; m[80]+=t2*0.85;
+    if(m[80]>fc) m[80]-=(m[80]-fc)*0.18;       // deep drainage out of profile
+    // diurnal ET (root uptake), mostly shallow
+    const et=Math.max(0,Math.sin((hod-6)/12*Math.PI))*0.34;
+    m[30]-=et; m[50]-=et*0.4;
+    for(const d of [30,50,80]) m[d]=Math.max(m[d], pf-1);
+    moist[30].push([t,+m[30].toFixed(2)]);
+    moist[50].push([t,+m[50].toFixed(2)]);
+    moist[80].push([t,+m[80].toFixed(2)]);
+    saltBase=Math.min(0.55, saltBase+0.0016);  // slow salt build-up between irrigations
+    sal[20].push([t,+(saltBase+0.01*Math.sin(h/9)).toFixed(3)]);
+    temp[50].push([t,+(18+4*Math.sin((hod-9)/24*2*Math.PI)+0.05*day).toFixed(1)]);
+  }
+  return {[site]:{moisture:moist,salinity:sal,temperature:temp,
+    units:{moisture:'%VWC',salinity:'µS/cm',temperature:'ºC'}}};
+}
+
+/* ================= PARSER (robust, both formats) ================= */
+function parseMeasure(pm){
+  pm=String(pm||'');
+  const type=/salinit/i.test(pm)?'salinity':/temperat/i.test(pm)?'temperature':/moist/i.test(pm)?'moisture':null;
+  const dm=pm.match(/(\d{1,3})\s*cm/i);
+  const depth=dm?parseInt(dm[1],10):null;
+  return {type,depth};
+}
+function ingest(records){
+  const db={};
+  for(const r of records){
+    const site=r.site_name||r.site||'—';
+    const {type,depth}=parseMeasure(r.probe_measure);
+    if(!type) continue;
+    const t=Date.parse(r.local_time||r.time||r.date);
+    const v=parseFloat(r.soil_value);
+    if(isNaN(t)||isNaN(v)) continue;
+    const dep = depth==null?0:depth;
+    db[site]=db[site]||{moisture:{},salinity:{},temperature:{},units:{}};
+    (db[site][type][dep]=db[site][type][dep]||[]).push([t,v]);
+    if(r.unit) db[site].units[type]=r.unit;
+  }
+  // sort each series by time
+  for(const s in db) for(const ty of ['moisture','salinity','temperature'])
+    for(const d in db[s][ty]) db[s][ty][d].sort((a,b)=>a[0]-b[0]);
+  return db;
+}
+function parseCSV(txt){
+  const lines=txt.split(/\r?\n/).filter(l=>l.trim());
+  const head=lines[0].split(',').map(s=>s.trim().replace(/^"|"$/g,''));
+  const idx=n=>head.findIndex(h=>h.toLowerCase()===n);
+  const iT=idx('local_time')>=0?idx('local_time'):idx('time'),
+        iS=idx('site_name')>=0?idx('site_name'):idx('site'),
+        iM=idx('probe_measure'), iV=idx('soil_value'), iU=idx('unit');
+  const out=[];
+  for(let k=1;k<lines.length;k++){
+    const c=lines[k].split(',').map(s=>s.trim().replace(/^"|"$/g,''));
+    out.push({local_time:c[iT],site_name:c[iS],probe_measure:c[iM],soil_value:c[iV],unit:iU>=0?c[iU]:''});
+  }
+  return out;
+}
+
+/* ================= LOAD / IMPORT / EXPORT ================= */
+function loadDemo(){ DB=makeDemo(); srcLabel='demo'; refreshSites(); }
+function setDB(records, name){
+  const db=ingest(records);
+  if(!Object.keys(db).length){ alert(I18N.t('s_fmt_desc')); return; }
+  DB=db; srcLabel=name; refreshSites();
+}
+function doImport(){
+  Store.pickFile('.json,.geojson,.csv',(txt,name)=>{
+    try{
+      let recs;
+      if(/\.csv$/i.test(name)) recs=parseCSV(txt);
+      else { const j=JSON.parse(txt); recs=Array.isArray(j)?j:(j.readings||j.records||j.features?.map(f=>f.properties)||[]); }
+      setDB(recs,name);
+    }catch(e){ alert('⚠ '+e.message); }
+  });
+}
+function doExport(){
+  const site=curSite, S=DB[site]; if(!S) return;
+  const recs=[]; const csv=['local_time,site_name,probe_measure,soil_value,unit'];
+  const nm={moisture:'Soil Moisture',salinity:'Soil Salinity',temperature:'Soil Temperature'};
+  for(const ty of ['moisture','salinity','temperature']) for(const d in S[ty])
+    for(const [t,v] of S[ty][d]){
+      const pm=`${nm[ty]} ${d}cm`, iso=new Date(t).toISOString(), u=S.units[ty]||'';
+      recs.push({local_time:iso,site_name:site,probe_measure:pm,soil_value:v,unit:u});
+      csv.push(`${iso},${site},${pm},${v},${u}`);
+    }
+  Store.download(`sondes_${site.replace(/\s+/g,'_')}.json`, JSON.stringify(recs,null,2), 'application/json');
+  Store.download(`sondes_${site.replace(/\s+/g,'_')}.csv`, csv.join('\n'), 'text/csv');
+}
+
+/* ================= UI wiring ================= */
+function refreshSites(){
+  const sel=$('site'); sel.innerHTML='';
+  Object.keys(DB).forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+  curSite=Object.keys(DB)[0]||null;
+  sel.value=curSite;
+  $('srcNote').textContent = srcLabel==='demo'? I18N.t('src_demo') : I18N.t('src_file')+' : '+srcLabel;
+  render();
+}
+function fillTexture(){
+  const sel=$('texture'); const keep=sel.value;
+  sel.innerHTML=''; TEX.forEach(x=>{ const o=document.createElement('option'); o.value=x.id; o.textContent=`${x[I18N.lang]||x.fr} · CC ${x.fc} / PF ${x.pf}`; sel.appendChild(o); });
+  sel.value=keep||'sloam';
+}
+function thresholds(){
+  const tx=TEX.find(x=>x.id===$('texture').value)||TEX[1];
+  const mad=+$('mad').value/100;
+  const CC=tx.fc, PF=tx.pf, SR=+(CC-mad*(CC-PF)).toFixed(1);
+  return {CC,PF,SR};
+}
+
+/* ================= DETECTION ================= */
+function shallowSeries(S){
+  const depths=Object.keys(S.moisture).map(Number).sort((a,b)=>a-b);
+  return {depth:depths[0], series:S.moisture[depths[0]]||[], depths};
+}
+function detect(series,{CC,SR,PF}){
+  const ev=[]; if(series.length<3) return ev;
+  // irrigation / water-input events: rising runs
+  let i=1;
+  while(i<series.length){
+    if(series[i][1]-series[i-1][1] >= 1.0){
+      const startV=series[i-1][1], startT=series[i-1][0]; let j=i;
+      while(j<series.length && series[j][1]>=series[j-1][1]-0.15) j++;
+      const peakV=series[j-1][1], mag=peakV-startV;
+      if(mag>=2.5){
+        ev.push({kind: peakV>CC?'over':'irr', t:startT, mag:+mag.toFixed(1), peak:+peakV.toFixed(1)});
+      }
+      i=j+1;
+    } else i++;
+  }
+  // stress spells: below SR (warn) / below PF (severe) — record entry points
+  let inStress=false;
+  for(let k=0;k<series.length;k++){
+    const v=series[k][1];
+    if(!inStress && v<SR){ inStress=true; ev.push({kind:'stress', t:series[k][0], v:+v.toFixed(1), severe:v<PF}); }
+    else if(inStress && v>=SR+0.5) inStress=false;
+  }
+  return ev.sort((a,b)=>a.t-b.t);
+}
+
+/* ================= RENDER ================= */
+function fmtDate(t){ const d=new Date(t); return d.toLocaleDateString(I18N.lang==='ar'?'ar':I18N.lang, {month:'short',day:'numeric'})+' '+String(d.getHours()).padStart(2,'0')+'h'; }
+
+function render(){
+  if(!curSite||!DB[curSite]){ $('svg').innerHTML=''; return; }
+  const S=DB[curSite], th=thresholds();
+  drawChart(S,th);
+  drawKPIs(S,th);
+  drawEvents(S,th);
+  drawEnv(S);
+}
+
+function svgEl(tag,attrs){ const e=document.createElementNS(NS,tag); for(const k in attrs)e.setAttribute(k,attrs[k]); return e; }
+function drawChart(S,{CC,SR,PF}){
+  const svg=$('svg'); svg.innerHTML='';
+  const W=960,H=380,PADL=44,PADR=14,PADT=16,PADB=40;
+  const x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB;
+  const {depths,series:shallow}=shallowSeries(S);
+  // time bounds across all moisture depths
+  let tmin=Infinity,tmax=-Infinity,vmax=CC+8,vmin=Math.max(0,PF-4);
+  depths.forEach(d=>S.moisture[d].forEach(([t,v])=>{tmin=Math.min(tmin,t);tmax=Math.max(tmax,t);vmax=Math.max(vmax,v);}));
+  if(!isFinite(tmin)) return;
+  const sx=t=>x0+(t-tmin)/(tmax-tmin||1)*(x1-x0);
+  const sy=v=>y1-(v-vmin)/(vmax-vmin)*(y1-y0);
+  // y grid
+  const step=vmax-vmin>40?10:5;
+  for(let v=Math.ceil(vmin/step)*step; v<=vmax; v+=step){
+    svg.appendChild(svgEl('line',{x1:x0,y1:sy(v),x2:x1,y2:sy(v),stroke:'#eef3e5','stroke-width':1}));
+    const tx=svgEl('text',{x:x0-7,y:sy(v)+4,'text-anchor':'end',fill:'#9aa890','font-size':11}); tx.textContent=v+'%'; svg.appendChild(tx);
+  }
+  // day gridlines
+  const oneDay=864e5; let d0=new Date(tmin); d0.setHours(0,0,0,0);
+  for(let t=d0.getTime(); t<=tmax; t+=oneDay){
+    if(t<tmin) continue;
+    svg.appendChild(svgEl('line',{x1:sx(t),y1:y0,x2:sx(t),y2:y1,stroke:'#f1f5ea','stroke-width':1}));
+    const tx=svgEl('text',{x:sx(t)+3,y:y1+15,'text-anchor':'start',fill:'#9aa890','font-size':10});
+    tx.textContent=new Date(t).toLocaleDateString(I18N.lang==='ar'?'ar':I18N.lang,{month:'short',day:'numeric'}); svg.appendChild(tx);
+  }
+  // threshold lines
+  const thL=(v,col,lab)=>{ svg.appendChild(svgEl('line',{x1:x0,y1:sy(v),x2:x1,y2:sy(v),stroke:col,'stroke-width':1.4,'stroke-dasharray':'6 5',opacity:.85}));
+    const tx=svgEl('text',{x:x1-3,y:sy(v)-4,'text-anchor':'end',fill:col,'font-size':10.5,'font-weight':700}); tx.textContent=lab+' '+v; svg.appendChild(tx); };
+  thL(CC,'#3fa66a',I18N.t('fc_lbl')); thL(SR,'#d99a2b',I18N.t('sr_lbl')); thL(PF,'#d1584e',I18N.t('pf_lbl'));
+  // irrigation markers (from shallow detection)
+  const evs=detect(shallow,{CC,SR,PF});
+  evs.filter(e=>e.kind==='irr'||e.kind==='over').forEach(e=>{
+    const x=sx(e.t);
+    svg.appendChild(svgEl('line',{x1:x,y1:y0,x2:x,y2:y1,stroke:e.kind==='over'?'rgba(209,88,78,.28)':'rgba(58,155,208,.28)','stroke-width':2}));
+    const tx=svgEl('text',{x:x,y:y0+11,'text-anchor':'middle','font-size':12}); tx.textContent=e.kind==='over'?'⚠':'💧'; svg.appendChild(tx);
+  });
+  // curves per depth
+  depths.forEach((d,idx)=>{
+    const col=DEPTH_COLORS[idx%DEPTH_COLORS.length];
+    let path=''; S.moisture[d].forEach(([t,v],i)=>{ path+=(i?'L':'M')+sx(t).toFixed(1)+' '+sy(v).toFixed(1)+' '; });
+    svg.appendChild(svgEl('path',{d:path,fill:'none',stroke:col,'stroke-width':idx===0?2.4:1.9,'stroke-linejoin':'round',opacity:idx===0?1:.85}));
+  });
+  // legend
+  $('legend').innerHTML = depths.map((d,i)=>`<span style="color:${DEPTH_COLORS[i%DEPTH_COLORS.length]}"><i style="background:${DEPTH_COLORS[i%DEPTH_COLORS.length]}"></i>${d} cm</span>`).join('')
+    + `<span style="color:#3fa66a"><i class="dash" style="color:#3fa66a"></i>${I18N.t('fc_lbl')}</span>`
+    + `<span style="color:#d99a2b"><i class="dash" style="color:#d99a2b"></i>${I18N.t('sr_lbl')}</span>`
+    + `<span style="color:#d1584e"><i class="dash" style="color:#d1584e"></i>${I18N.t('pf_lbl')}</span>`;
+  // hover
+  const hl=svgEl('rect',{x:x0,y:y0,width:x1-x0,height:y1-y0,fill:'transparent'}); hl.style.cursor='crosshair'; svg.appendChild(hl);
+  const cur=svgEl('line',{stroke:'#7cb342','stroke-width':1,opacity:0,y1:y0,y2:y1}); svg.appendChild(cur);
+  function move(ev){
+    const r=svg.getBoundingClientRect(); const px=(ev.clientX-r.left)/r.width*W;
+    const t=tmin+(px-x0)/(x1-x0)*(tmax-tmin); const tt=Math.max(tmin,Math.min(tmax,t));
+    cur.setAttribute('x1',sx(tt)); cur.setAttribute('x2',sx(tt)); cur.setAttribute('opacity',.5);
+    const nearest=arr=>{ let best=arr[0],bd=Infinity; for(const p of arr){const dd=Math.abs(p[0]-tt); if(dd<bd){bd=dd;best=p;}} return best; };
+    const parts=depths.map((d,i)=>{ const p=nearest(S.moisture[d]); return `<b style="color:${DEPTH_COLORS[i%DEPTH_COLORS.length]}">${d}cm ${p[1].toFixed(1)}%</b>`; });
+    const sh=nearest(shallow)[1];
+    const st = sh>CC?'st_over':sh>=(CC+SR)/2?'st_comfort':sh>=SR?'st_pilot':sh>PF?'st_irr':'st_stress';
+    $('hover').innerHTML=`<b>${fmtDate(tt)}</b> — ${parts.join(' · ')} — ${I18N.t('k_depth')} ${depths[0]}cm : <b>${I18N.t(st)}</b>`;
+  }
+  hl.addEventListener('mousemove',move);
+  hl.addEventListener('touchmove',e=>{if(e.touches[0])move(e.touches[0]);},{passive:true});
+}
+
+function kpi(cls,label,val,unit,sub){ return `<div class="kpi ${cls||''}"><div class="l">${label}</div><div class="v">${val}<small>${unit||''}</small></div><div class="x">${sub||''}</div></div>`; }
+function drawKPIs(S,{CC,SR,PF}){
+  const {series:sh,depth}=shallowSeries(S); if(!sh.length){ $('kpis').innerHTML=''; return; }
+  const vals=sh.map(p=>p[1]); const last=vals[vals.length-1];
+  const peak=Math.max(...vals), trough=Math.min(...vals);
+  const nIrr=detect(sh,{CC,SR,PF}).filter(e=>e.kind==='irr'||e.kind==='over').length;
+  const drainPct=vals.filter(v=>v>CC).length/vals.length*100;
+  // available storage = mean of latest per depth vs PF..CC
+  const depths=Object.keys(S.moisture).map(Number);
+  const meanLast=depths.reduce((a,d)=>a+S.moisture[d][S.moisture[d].length-1][1],0)/depths.length;
+  const ru=Math.max(0,Math.min(100,(meanLast-PF)/(CC-PF)*100));
+  const stCls=last>CC?'bad':last>=(CC+SR)/2?'good':last>=SR?'warn':'bad';
+  const stKey=last>CC?'st_over':last>=(CC+SR)/2?'st_comfort':last>=SR?'st_pilot':last>PF?'st_irr':'st_stress';
+  $('kpis').innerHTML=
+    kpi(stCls,I18N.t('k_now'),last.toFixed(1),'%',`${depth}cm · ${I18N.t(stKey)}`)+
+    kpi('',I18N.t('k_nirr'),nIrr,'',I18N.t('k_depth')+' '+depth+'cm')+
+    kpi(drainPct>8?'bad':'good',I18N.t('k_drain'),drainPct.toFixed(0),'%','= '+I18N.t('ev_over').toLowerCase())+
+    kpi(ru<25?'bad':ru<50?'warn':'good',I18N.t('k_ru'),ru.toFixed(0),'%',`PF ${PF} · CC ${CC}`)+
+    kpi('',I18N.t('k_span'),`${trough.toFixed(0)}–${peak.toFixed(0)}`,'%',`${I18N.t('sr_lbl')} ${SR}`);
+}
+function drawEvents(S,th){
+  const {series:sh}=shallowSeries(S); const evs=detect(sh,th);
+  if(!evs.length){ $('events').innerHTML=`<div class="evt ok"><span class="dot"></span><div>${I18N.t('ev_none')}</div></div>`; return; }
+  const html=evs.slice().reverse().map(e=>{
+    if(e.kind==='irr') return `<div class="evt irr"><span class="dot"></span><div><b>${I18N.t('ev_irr')} <span class="tag blue">+${e.mag}%</span></b><div class="when">${fmtDate(e.t)} · pic ${e.peak}%</div></div></div>`;
+    if(e.kind==='over') return `<div class="evt drain"><span class="dot"></span><div><b>${I18N.t('ev_over')} <span class="tag red">${e.peak}% &gt; CC</span></b><div class="when">${fmtDate(e.t)} · ${I18N.t('ev_mag')} +${e.mag}%</div></div></div>`;
+    if(e.severe) return `<div class="evt drain"><span class="dot"></span><div><b>${I18N.t('ev_stress')} <span class="tag red">${e.v}% &lt; PF</span></b><div class="when">${fmtDate(e.t)}</div></div></div>`;
+    return `<div class="evt stress"><span class="dot"></span><div><b>${I18N.t('ev_refill')} <span class="tag amber">${e.v}% · ${I18N.t('ev_irrigate')}</span></b><div class="when">${fmtDate(e.t)}</div></div></div>`;
+  }).join('');
+  $('events').innerHTML=html;
+}
+function spark(name,arr,unit,col){
+  if(!arr||!arr.length) return '';
+  const vals=arr.map(p=>p[1]), mn=Math.min(...vals),mx=Math.max(...vals),now=vals[vals.length-1];
+  const W=240,H=42; const sx=i=>i/(arr.length-1)*W, sy=v=>H-2-((v-mn)/((mx-mn)||1))*(H-4);
+  let p=''; arr.forEach((q,i)=>p+=(i?'L':'M')+sx(i).toFixed(1)+' '+sy(q[1]).toFixed(1)+' ');
+  const first=vals[0], diff=now-first; const trend=Math.abs(diff)<(mx-mn)*0.08?'trend_st':diff>0?'trend_up':'trend_dn';
+  return `<div class="spark"><div class="top"><span class="name">${name}</span><span class="now" style="color:${col}">${now}<small style="font-size:.7rem;color:var(--muted)"> ${unit}</small></span></div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${p}" fill="none" stroke="${col}" stroke-width="2"/></svg>
+    <div class="foot">${mn}–${mx} ${unit} · ${I18N.t(trend)}</div></div>`;
+}
+function drawEnv(S){
+  let html='';
+  const salDepths=Object.keys(S.salinity); const tempDepths=Object.keys(S.temperature);
+  if(salDepths.length){ const d=salDepths[0]; html+=spark(`${I18N.t('s_env_title').split('&')[0].trim()} · ${d}cm`, S.salinity[d], S.units.salinity||'µS/cm', '#8e6fc7'); }
+  if(tempDepths.length){ const d=tempDepths[0]; html+=spark(`T° · ${d}cm`, S.temperature[d], S.units.temperature||'ºC', '#e0912b'); }
+  $('env').innerHTML=html||`<div class="muted" style="font-size:13px">${I18N.t('ev_none')}</div>`;
+}
+
+/* ================= format modal ================= */
+function openFmt(){
+  $('fmtJson').textContent=JSON.stringify([
+    {local_time:"2026-05-06T06:00:00+00:00",site_name:"Domaine Sebha",probe_id:"1338798",probe_measure:"Soil Moisture 30cm",soil_value:22.4,unit:"%VWC"},
+    {local_time:"2026-05-06T06:00:00+00:00",site_name:"Domaine Sebha",probe_id:"1338800",probe_measure:"Soil Salinity 20cm",soil_value:0.31,unit:"µS/cm"}
+  ],null,2);
+  $('fmtCsv').textContent="local_time,site_name,probe_measure,soil_value,unit\n2026-05-06T06:00:00+00:00,Domaine Sebha,Soil Moisture 30cm,22.4,%VWC\n2026-05-06T06:00:00+00:00,Domaine Sebha,Soil Salinity 20cm,0.31,µS/cm";
+  $('fmt').classList.add('on');
+}
+function closeFmt(){ $('fmt').classList.remove('on'); }
+
+/* ================= wire controls & i18n ================= */
+['site'].forEach(id=>$(id).addEventListener('change',e=>{curSite=e.target.value;render();}));
+$('texture').addEventListener('change',render);
+$('mad').addEventListener('input',e=>{$('madv').textContent=e.target.value+'%';render();});
+function applyHTML(){ document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html'))); }
+document.addEventListener('i18n:changed',()=>{ applyHTML(); fillTexture(); $('srcNote').textContent=srcLabel==='demo'?I18N.t('src_demo'):I18N.t('src_file')+' : '+srcLabel; render(); });
+
+/* boot */
+fillTexture();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');   // applies data-i18n + dir
+applyHTML();
+loadDemo();
+if(window.Store&&Store.detect){ Store.detect().then(()=>{ $('modeChip').textContent = Store.serverMode?'M3 · IoT · '+ (I18N.lang==='ar'?'خادم':'server') : 'M3 · IoT'; }); }
+</script>
+</body>
+</html>

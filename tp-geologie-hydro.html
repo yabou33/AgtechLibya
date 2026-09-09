@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TP guidé — Géologie & Hydrogéologie · G0</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .wrap{max-width:940px}
+  .lead{color:var(--muted);max-width:900px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  /* hero */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#5a8f2c,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:var(--shadow)}
+  .hero h1{font-size:23px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  /* progress */
+  .progwrap{position:sticky;top:63px;z-index:900;background:var(--paper);padding:10px 0 4px;margin-bottom:4px}
+  .progbar{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:12px 18px}
+  .progtrack{flex:1;height:12px;border-radius:8px;background:var(--green-bg);overflow:hidden;border:1px solid var(--line)}
+  .progfill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--impact));transition:width .35s}
+  .progtxt{font-weight:800;font-size:13.5px;color:var(--green-d);white-space:nowrap;font-variant-numeric:tabular-nums;direction:ltr}
+  .progsteps{display:flex;gap:6px}
+  .dot{width:13px;height:13px;border-radius:50%;background:var(--green-bg);border:1.5px solid var(--line)}
+  .dot.done{background:var(--green);border-color:var(--green-d)}
+  @media(max-width:620px){.progsteps{display:none}}
+  /* step card */
+  .step{border-inline-start:4px solid var(--sc,var(--green))}
+  body[dir="rtl"] .step{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--sc,var(--green))}
+  .step .head{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .step .n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--sc,var(--green));
+    color:#fff;font-size:16px;font-weight:800;flex:none}
+  .step h2{font-size:16.5px;margin:0}
+  .step .app-of{font-size:11.5px;color:var(--muted);font-weight:600}
+  .consigne{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 15px;margin:10px 0;
+    font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .consigne b{color:var(--green-d)}
+  .openbtn{margin:8px 0 4px}
+  .qblock{margin-top:14px}
+  .qlabel{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:7px;display:block}
+  .qlabel .u{font-weight:600;color:var(--muted);font-size:12px}
+  input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;
+    font:inherit;color:var(--ink);background:#fff}
+  input:focus,textarea:focus{outline:none;border-color:var(--green)}
+  textarea{min-height:66px;resize:vertical}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;
+    font-size:13.5px;background:#fff;transition:.14s}
+  .opt:hover{border-color:var(--green)}
+  .opt input{accent-color:var(--green);width:16px;height:16px;flex:none}
+  .opt.sel{background:var(--green-bg);border-color:var(--green)}
+  .opt.good{background:#eef8ef;border-color:#8ecb96}
+  .opt.bad{background:#fbecea;border-color:#e3a8a1}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row2{grid-template-columns:1fr}}
+  .fb{margin-top:10px;font-size:13px;border-radius:10px;padding:10px 14px;line-height:1.55;display:none}
+  .fb.show{display:block}
+  .fb.ok{background:#eef8ef;border:1px solid #bfe3c3;color:#2f7d3a}
+  .fb.no{background:#fbecea;border:1px solid #eecac5;color:#b23b30}
+  .fb.info{background:#eaf3fa;border:1px solid #bcd9ec;color:#25607f}
+  .stepfoot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+  .chk{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer}
+  .chk input{width:19px;height:19px;accent-color:var(--green)}
+  /* score */
+  .scorebox{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:linear-gradient(120deg,#eef8ef,#f6fbf0);
+    border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px;margin-top:8px}
+  .scoredial{width:82px;height:82px;border-radius:50%;flex:none;display:grid;place-items:center;
+    background:conic-gradient(var(--impact) var(--p,0deg),#e3efd8 0);position:relative}
+  .scoredial::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+  .scoredial b{position:relative;z-index:1;font-size:18px;font-weight:800;color:var(--green-d)}
+  .scoreinfo .st{font-weight:800;font-size:15px;color:var(--ink)}
+  .scoreinfo .sd{font-size:13px;color:var(--muted);margin-top:2px}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:4px}
+  .modebadge{font-size:11.5px;color:var(--muted)}
+  .modebadge b{color:var(--green-d)}
+  .backlink{font-size:13px;font-weight:700;color:var(--green-d)}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:20px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">G0</span> <b data-i18n="t_brand">TP Géologie</b> <span data-i18n="t_brand2">& Hydrogéo</span></div>
+  <div class="sub" data-i18n="t_sub">Travaux pratiques guidés · 5 étapes manipulées</div>
+  <div class="right">
+    <span class="chip">G0 · <span data-i18n="t_lab_chip">TP</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="g0">G0</div>
+    <div>
+      <h1 data-i18n="t_title">TP guidé — Géologie & Hydrogéologie</h1>
+      <div class="tag" data-i18n="t_tag">Manipulez les applications du domaine, étape par étape</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="t_intro"></p>
+  <a class="backlink" href="cours-geologie-hydro.html">← <span data-i18n="t_back">Revoir le cours</span></a>
+
+  <!-- PROGRESS -->
+  <div class="progwrap">
+    <div class="progbar">
+      <span class="progtxt" id="ptxt">0 / 5</span>
+      <div class="progtrack"><div class="progfill" id="pfill"></div></div>
+      <div class="progsteps" id="pdots"></div>
+    </div>
+  </div>
+
+  <!-- ETAPE 1 -->
+  <div class="card step" style="--sc:#8e6fc7">
+    <div class="head"><span class="n">1</span>
+      <div><h2 data-i18n="t_s1_h">Explorer les aquifères</h2><div class="app-of" data-i18n="t_s1_app">App · Explorateur d'aquifères</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s1_c"></div>
+    <a class="btn primary openbtn" href="explorateur-aquiferes.html" target="_blank" rel="noopener">🗺️ <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <label class="qlabel" data-i18n="t_s1_q1">L'eau du système de Nubie est-elle renouvelable ?</label>
+      <div class="opts" data-q="s1a">
+        <label class="opt"><input type="radio" name="s1a" value="0"><span data-i18n="t_s1_o1">Oui, la pluie la recharge chaque année</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="1"><span data-i18n="t_s1_o2">Non — c'est une eau fossile, recharge quasi nulle</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="2"><span data-i18n="t_s1_o3">Elle se recharge par la mer</span></label>
+      </div>
+      <div class="row2" style="margin-top:12px">
+        <div><label class="qlabel" data-i18n="t_s1_q2">Réserve estimée relevée <span class="u">(unité libre)</span></label><input type="text" data-f="s1_reserve" placeholder="ex. ~ milliers de km³"></div>
+        <div><label class="qlabel" data-i18n="t_s1_q3">Recharge annuelle observée</label><input type="text" data-f="s1_recharge" placeholder="ex. ~ 0 / négligeable"></div>
+      </div>
+      <div class="fb" data-fb="s1a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="1"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 2 -->
+  <div class="card step" style="--sc:#e0912b">
+    <div class="head"><span class="n">2</span>
+      <div><h2 data-i18n="t_s2_h">Lire un log de forage</h2><div class="app-of" data-i18n="t_s2_app">App · Log de forage (démo Sarir)</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s2_c"></div>
+    <a class="btn primary openbtn" href="log-forage.html" target="_blank" rel="noopener">📊 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s2_q1">Profondeur crépinée (haut → bas) <span class="u">m</span></label><input type="number" data-f="s2_screen" placeholder="ex. 150 – 300"></div>
+        <div><label class="qlabel" data-i18n="t_s2_q2">Niveau statique relevé <span class="u">m</span></label><input type="number" data-f="s2_static" placeholder="ex. 60"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s2_q3">En face de quelle couche placez-vous la crépine ?</label>
+      <div class="opts" data-q="s2a">
+        <label class="opt"><input type="radio" name="s2a" value="0"><span data-i18n="t_s2_o1">En face de l'argile (toit imperméable)</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="1"><span data-i18n="t_s2_o2">En face du grès aquifère (couche productive)</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="2"><span data-i18n="t_s2_o3">En surface, dans les sables secs</span></label>
+      </div>
+      <div class="fb" data-fb="s2a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="2"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 3 -->
+  <div class="card step" style="--sc:#3a9bd0">
+    <div class="head"><span class="n">3</span>
+      <div><h2 data-i18n="t_s3_h">Données réelles Sarir — essai de pompage</h2><div class="app-of" data-i18n="t_s3_app">App · Hydrogéo Sarir</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s3_c"></div>
+    <a class="btn primary openbtn" href="hydrogeo-sarir.html" target="_blank" rel="noopener">💧 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s3_q1">Transmissivité T lue <span class="u">m²/j</span></label><input type="number" data-f="s3_T" placeholder="ex. 260 – 1860"></div>
+        <div><label class="qlabel" data-i18n="t_s3_q2">Méthode utilisée</label><input type="text" data-f="s3_method" placeholder="Theis / Cooper-Jacob"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s3_q3">Une pente Δs plus forte sur la droite semi-log signifie…</label>
+      <div class="opts" data-q="s3a">
+        <label class="opt"><input type="radio" name="s3a" value="0"><span data-i18n="t_s3_o1">Une transmissivité T plus faible</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="1"><span data-i18n="t_s3_o2">Une transmissivité T plus forte</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="2"><span data-i18n="t_s3_o3">Aucun lien avec T</span></label>
+      </div>
+      <div class="fb" data-fb="s3a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="3"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 4 -->
+  <div class="card step" style="--sc:#3fa66a">
+    <div class="head"><span class="n">4</span>
+      <div><h2 data-i18n="t_s4_h">Bilan de nappe — observer la déplétion</h2><div class="app-of" data-i18n="t_s4_app">App · HydroSim</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s4_c"></div>
+    <a class="btn primary openbtn" href="hydrosim.html" target="_blank" rel="noopener">📉 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <label class="qlabel" data-i18n="t_s4_q1">Sous exploitation continue d'une nappe fossile, le niveau…</label>
+      <div class="opts" data-q="s4a">
+        <label class="opt"><input type="radio" name="s4a" value="0"><span data-i18n="t_s4_o1">remonte grâce à la recharge</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="1"><span data-i18n="t_s4_o2">reste stable indéfiniment</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="2"><span data-i18n="t_s4_o3">baisse continûment — déplétion du stock</span></label>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s4_q2">Votre interprétation en une phrase <span class="u">(champ libre)</span></label>
+      <textarea data-f="s4_interp" placeholder="…"></textarea>
+      <div class="fb" data-fb="s4a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="4"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 5 : SYNTHESE -->
+  <div class="card step" style="--sc:#d1584e">
+    <div class="head"><span class="n">5</span>
+      <div><h2 data-i18n="t_s5_h">Synthèse — QCM auto-corrigé</h2><div class="app-of" data-i18n="t_s5_app">Évaluation · score /5</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s5_c"></div>
+    <div id="quiz"></div>
+    <label class="qlabel" style="margin-top:8px" data-i18n="t_s5_free">Ce que vous retenez de ce TP <span class="u">(champ libre)</span></label>
+    <textarea data-f="s5_takeaway" placeholder="…"></textarea>
+    <div class="btns"><button class="btn primary" id="correctBtn">✅ <span data-i18n="t_correct">Corriger le QCM</span></button></div>
+    <div class="scorebox" id="scorebox" hidden>
+      <div class="scoredial" id="dial"><b id="scoreval">0/5</b></div>
+      <div class="scoreinfo"><div class="st" id="scoretitle"></div><div class="sd" id="scoredesc"></div></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="5"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- OUTILS -->
+  <div class="card">
+    <div class="tools">
+      <div class="modebadge" data-i18n="t_mode">Mode local (localStorage) — progression sauvegardée automatiquement.</div>
+      <div class="btns" style="margin:0">
+        <button class="btn ghost" id="exportBtn">📤 <span data-i18n="t_export">Exporter le compte-rendu (JSON)</span></button>
+        <button class="btn ghost" id="resetBtn">♻️ <span data-i18n="t_reset">Réinitialiser</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="t_foot">Plateforme AgriTech Libye · EU4Skills — Module G0 · travaux pratiques</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  t_brand:{fr:"TP Géologie",ar:"عمل تطبيقي جيولوجيا",en:"Geology Lab"},
+  t_brand2:{fr:"& Hydrogéo",ar:"وهيدروجيو",en:"& Hydrogeo"},
+  t_sub:{fr:"Travaux pratiques guidés · 5 étapes manipulées",ar:"عمل تطبيقي موجّه · 5 خطوات",en:"Guided lab · 5 hands-on steps"},
+  t_lab_chip:{fr:"TP",ar:"تطبيقي",en:"Lab"},
+  t_title:{fr:"TP guidé — Géologie & Hydrogéologie",ar:"عمل تطبيقي موجّه — الجيولوجيا والهيدروجيولوجيا",en:"Guided lab — Geology & Hydrogeology"},
+  t_tag:{fr:"Manipulez les applications du domaine, étape par étape",ar:"استعمل تطبيقات المجال خطوة بخطوة",en:"Work through the domain's apps, step by step"},
+  t_intro:{fr:"Ce TP vous fait <b>manipuler</b> les applications du module G0. À chaque étape : une consigne, un bouton pour <b>ouvrir l'app</b> dans un nouvel onglet, une ou deux réponses à saisir, puis une case « étape terminée ». Votre progression et vos réponses sont <b>sauvegardées automatiquement</b> ; à la fin, exportez votre compte-rendu.",
+    ar:"يجعلك هذا العمل التطبيقي <b>تستعمل</b> تطبيقات الوحدة G0. في كل خطوة: تعليمة، وزرّ <b>لفتح التطبيق</b> في تبويب جديد، وإجابة أو إجابتان، ثم خانة «تمّت الخطوة». تُحفظ تقدّمك وإجاباتك <b>تلقائياً</b>؛ وفي النهاية صدّر تقريرك.",
+    en:"This lab makes you <b>use</b> the G0 module's apps. At each step: an instruction, a button to <b>open the app</b> in a new tab, one or two answers to enter, then a \"step done\" box. Your progress and answers are <b>saved automatically</b>; at the end, export your report."},
+  t_back:{fr:"Revoir le cours",ar:"مراجعة الدرس",en:"Back to course"},
+  t_open:{fr:"Ouvrir l'app",ar:"فتح التطبيق",en:"Open the app"},
+  t_done:{fr:"Étape terminée",ar:"تمّت الخطوة",en:"Step done"},
+
+  // Step 1
+  t_s1_h:{fr:"Explorer les aquifères",ar:"استكشاف الطبقات الحاملة",en:"Explore the aquifers"},
+  t_s1_app:{fr:"App · Explorateur d'aquifères",ar:"تطبيق · مستكشف الطبقات",en:"App · Aquifer explorer"},
+  t_s1_c:{fr:"Ouvrez l'explorateur et localisez le <b>système de grès de Nubie</b> (Kufra–Sarir). Relevez l'ordre de grandeur de la <b>réserve</b> et de la <b>recharge annuelle</b>, puis comparez-les.",
+    ar:"افتح المستكشف وحدّد <b>نظام حجر النوبة</b> (الكفرة–السرير). سجّل رتبة قدر <b>الاحتياطي</b> و<b>التغذية السنوية</b>، ثم قارن بينهما.",
+    en:"Open the explorer and locate the <b>Nubian Sandstone system</b> (Kufra–Sarir). Note the order of magnitude of the <b>reserve</b> and the <b>annual recharge</b>, then compare them."},
+  t_s1_q1:{fr:"L'eau du système de Nubie est-elle renouvelable ?",ar:"هل مياه نظام النوبة متجدّدة؟",en:"Is Nubian system water renewable?"},
+  t_s1_o1:{fr:"Oui, la pluie la recharge chaque année",ar:"نعم، المطر يغذّيها كل عام",en:"Yes, rain recharges it every year"},
+  t_s1_o2:{fr:"Non — c'est une eau fossile, recharge quasi nulle",ar:"لا — إنها مياه أحفورية، تغذية شبه معدومة",en:"No — it's fossil water, near-zero recharge"},
+  t_s1_o3:{fr:"Elle se recharge par la mer",ar:"تتغذّى من البحر",en:"It recharges from the sea"},
+  t_s1_q2:{fr:"Réserve estimée relevée",ar:"الاحتياطي المقدَّر المسجَّل",en:"Estimated reserve noted"},
+  t_s1_q3:{fr:"Recharge annuelle observée",ar:"التغذية السنوية الملاحَظة",en:"Observed annual recharge"},
+  t_s1_fb_ok:{fr:"Exact. Réserve immense mais recharge ≈ 0 : la comparaison prouve le caractère fossile.",ar:"صحيح. احتياطي هائل لكن التغذية ≈ 0: المقارنة تثبت الطابع الأحفوري.",en:"Correct. Huge reserve but recharge ≈ 0: the comparison proves it is fossil."},
+  t_s1_fb_no:{fr:"Comparez réserve et recharge : la recharge est négligeable, l'eau est fossile.",ar:"قارن الاحتياطي بالتغذية: التغذية مهملة، والماء أحفوري.",en:"Compare reserve and recharge: recharge is negligible, the water is fossil."},
+
+  // Step 2
+  t_s2_h:{fr:"Lire un log de forage",ar:"قراءة سجل البئر",en:"Read a borehole log"},
+  t_s2_app:{fr:"App · Log de forage (démo Sarir)",ar:"تطبيق · سجل البئر (نموذج السرير)",en:"App · Borehole log (Sarir demo)"},
+  t_s2_c:{fr:"Ouvrez le log de forage de démonstration. Repérez le <b>tubage plein</b>, la <b>crépine</b> et le <b>niveau statique</b>, puis notez la <b>profondeur crépinée</b> (de … à … mètres).",
+    ar:"افتح سجل البئر النموذجي. حدّد <b>التبطين الكامل</b> و<b>المصفاة</b> و<b>المستوى الساكن</b>، ثم سجّل <b>عمق التصفية</b> (من … إلى … متراً).",
+    en:"Open the demo borehole log. Spot the <b>solid casing</b>, the <b>screen</b> and the <b>static level</b>, then note the <b>screened depth</b> (from … to … metres)."},
+  t_s2_q1:{fr:"Profondeur crépinée (haut → bas)",ar:"عمق التصفية (أعلى ← أسفل)",en:"Screened depth (top → bottom)"},
+  t_s2_q2:{fr:"Niveau statique relevé",ar:"المستوى الساكن المسجَّل",en:"Static level noted"},
+  t_s2_q3:{fr:"En face de quelle couche placez-vous la crépine ?",ar:"مقابل أي طبقة تضع المصفاة؟",en:"Against which layer do you place the screen?"},
+  t_s2_o1:{fr:"En face de l'argile (toit imperméable)",ar:"مقابل الطين (السقف الكتيم)",en:"Against the clay (impermeable roof)"},
+  t_s2_o2:{fr:"En face du grès aquifère (couche productive)",ar:"مقابل الحجر الرملي الحامل (الطبقة المنتجة)",en:"Against the sandstone aquifer (productive layer)"},
+  t_s2_o3:{fr:"En surface, dans les sables secs",ar:"في السطح، ضمن الرمال الجافة",en:"At the surface, in the dry sand"},
+  t_s2_fb_ok:{fr:"Exact : la crépine doit faire face à la couche productive pour laisser entrer l'eau.",ar:"صحيح: يجب أن تكون المصفاة مقابل الطبقة المنتجة لإدخال الماء.",en:"Correct: the screen must face the productive layer to let water in."},
+  t_s2_fb_no:{fr:"Non : on crépine en face du grès aquifère, jamais l'argile ni les sables secs.",ar:"لا: تُوضع المصفاة مقابل الحجر الحامل، لا الطين ولا الرمال الجافة.",en:"No: you screen against the sandstone aquifer, never clay or dry sand."},
+
+  // Step 3
+  t_s3_h:{fr:"Données réelles Sarir — essai de pompage",ar:"بيانات السرير الحقيقية — اختبار ضخ",en:"Real Sarir data — pumping test"},
+  t_s3_app:{fr:"App · Hydrogéo Sarir",ar:"تطبيق · هيدروجيو السرير",en:"App · Hydrogeo Sarir"},
+  t_s3_c:{fr:"Ouvrez Hydrogéo Sarir et lancez un <b>essai Theis / Cooper-Jacob</b> sur un puits réel. Lisez la <b>transmissivité T</b> déduite de la droite semi-log et notez sa valeur (m²/j).",
+    ar:"افتح هيدروجيو السرير وأطلق <b>اختبار ثايس/كوبر-جاكوب</b> على بئر حقيقي. اقرأ <b>الناقلية T</b> المستنتجة من الخط شبه اللوغاريتمي وسجّل قيمتها (م²/يوم).",
+    en:"Open Hydrogeo Sarir and run a <b>Theis / Cooper-Jacob test</b> on a real well. Read the <b>transmissivity T</b> derived from the semi-log line and note its value (m²/day)."},
+  t_s3_q1:{fr:"Transmissivité T lue",ar:"الناقلية T المقروءة",en:"Transmissivity T read"},
+  t_s3_q2:{fr:"Méthode utilisée",ar:"الطريقة المستعملة",en:"Method used"},
+  t_s3_q3:{fr:"Une pente Δs plus forte sur la droite semi-log signifie…",ar:"ميل Δs أكبر على الخط شبه اللوغاريتمي يعني…",en:"A steeper Δs slope on the semi-log line means…"},
+  t_s3_o1:{fr:"Une transmissivité T plus faible",ar:"ناقلية T أضعف",en:"A lower transmissivity T"},
+  t_s3_o2:{fr:"Une transmissivité T plus forte",ar:"ناقلية T أقوى",en:"A higher transmissivity T"},
+  t_s3_o3:{fr:"Aucun lien avec T",ar:"لا علاقة بـ T",en:"No link with T"},
+  t_s3_fb_ok:{fr:"Exact : T = 2,3·Q/(4π·Δs) — plus la pente est forte, plus T est faible. Valeur plausible pour Sarir : 260–1860 m²/j.",ar:"صحيح: T = 2.3·Q/(4π·Δs) — كلما زاد الميل قلّت T. قيمة معقولة للسرير: 260–1860 م²/يوم.",en:"Correct: T = 2.3·Q/(4π·Δs) — the steeper the slope, the lower T. Plausible Sarir value: 260–1860 m²/day."},
+  t_s3_fb_no:{fr:"Regardez la formule T = 2,3·Q/(4π·Δs) : Δs au dénominateur → pente forte = T faible.",ar:"انظر إلى T = 2.3·Q/(4π·Δs): Δs في المقام ← ميل كبير = T صغير.",en:"Look at T = 2.3·Q/(4π·Δs): Δs is in the denominator → steep slope = low T."},
+  t_s3_fb_range:{fr:" La valeur de T saisie sort de l'ordre attendu (≈ 200–2000 m²/j) — vérifiez la lecture.",ar:" قيمة T المُدخَلة خارج المجال المتوقّع (≈ 200–2000) — تحقّق من القراءة.",en:" Your T value is outside the expected range (≈ 200–2000) — check the reading."},
+
+  // Step 4
+  t_s4_h:{fr:"Bilan de nappe — observer la déplétion",ar:"ميزان الطبقة — ملاحظة الاستنزاف",en:"Aquifer balance — observe depletion"},
+  t_s4_app:{fr:"App · HydroSim",ar:"تطبيق · هيدروسيم",en:"App · HydroSim"},
+  t_s4_c:{fr:"Ouvrez HydroSim et faites tourner la simulation d'une nappe fossile sous pompage. <b>Observez l'évolution du niveau</b> dans le temps, puis interprétez-la.",
+    ar:"افتح هيدروسيم وشغّل محاكاة طبقة أحفورية تحت الضخ. <b>لاحظ تطوّر المستوى</b> عبر الزمن، ثم فسّره.",
+    en:"Open HydroSim and run the simulation of a fossil aquifer under pumping. <b>Watch the level evolve</b> over time, then interpret it."},
+  t_s4_q1:{fr:"Sous exploitation continue d'une nappe fossile, le niveau…",ar:"تحت الاستغلال المستمرّ لطبقة أحفورية، المستوى…",en:"Under continuous pumping of a fossil aquifer, the level…"},
+  t_s4_o1:{fr:"remonte grâce à la recharge",ar:"يرتفع بفضل التغذية",en:"rises thanks to recharge"},
+  t_s4_o2:{fr:"reste stable indéfiniment",ar:"يبقى مستقرّاً إلى ما لا نهاية",en:"stays stable indefinitely"},
+  t_s4_o3:{fr:"baisse continûment — déplétion du stock",ar:"ينخفض باستمرار — استنزاف المخزون",en:"falls continuously — stock depletion"},
+  t_s4_q2:{fr:"Votre interprétation en une phrase",ar:"تفسيرك في جملة",en:"Your interpretation in one sentence"},
+  t_s4_fb_ok:{fr:"Exact : sans recharge, chaque m³ pompé abaisse durablement le niveau — le stock se vide.",ar:"صحيح: بلا تغذية، كل م³ مضخوخ يخفض المستوى بشكل دائم — المخزون يفرغ.",en:"Correct: with no recharge, every m³ pumped lowers the level for good — the stock empties."},
+  t_s4_fb_no:{fr:"Une nappe fossile n'a pas de recharge : le niveau baisse continûment.",ar:"الطبقة الأحفورية بلا تغذية: المستوى ينخفض باستمرار.",en:"A fossil aquifer has no recharge: the level falls continuously."},
+
+  // Step 5 quiz
+  t_s5_h:{fr:"Synthèse — QCM auto-corrigé",ar:"التركيب — اختبار ذاتي التصحيح",en:"Synthesis — self-marked quiz"},
+  t_s5_app:{fr:"Évaluation · score /5",ar:"تقييم · النتيجة /5",en:"Assessment · score /5"},
+  t_s5_c:{fr:"Répondez aux cinq questions puis cliquez sur <b>Corriger</b>. Votre score et vos réponses sont enregistrés.",ar:"أجب عن الأسئلة الخمسة ثم اضغط <b>تصحيح</b>. تُحفظ نتيجتك وإجاباتك.",en:"Answer the five questions then click <b>Correct</b>. Your score and answers are saved."},
+  t_s5_free:{fr:"Ce que vous retenez de ce TP",ar:"ما تحتفظ به من هذا العمل التطبيقي",en:"Your takeaway from this lab"},
+  t_correct:{fr:"Corriger le QCM",ar:"تصحيح الاختبار",en:"Correct the quiz"},
+
+  q1:{fr:"Qu'est-ce qui distingue une nappe captive d'une nappe libre ?",ar:"ما الذي يميّز طبقة محصورة عن طبقة حرة؟",en:"What sets a confined aquifer apart from an unconfined one?"},
+  q1a:{fr:"Elle est coincée sous une couche imperméable et sous pression",ar:"محبوسة تحت طبقة كتيمة وتحت ضغط",en:"It is trapped under an impermeable layer and under pressure"},
+  q1b:{fr:"Elle est toujours plus proche de la surface",ar:"دائماً أقرب إلى السطح",en:"It is always nearer the surface"},
+  q1c:{fr:"Elle ne contient jamais d'eau exploitable",ar:"لا تحتوي أبداً على ماء قابل للاستغلال",en:"It never holds usable water"},
+  q2:{fr:"Que représente la transmissivité T ?",ar:"ماذا تمثّل الناقلية T؟",en:"What does transmissivity T represent?"},
+  q2a:{fr:"La quantité d'eau stockée par mètre de charge",ar:"كمية الماء المخزونة لكل متر شحنة",en:"Water stored per metre of head"},
+  q2b:{fr:"La capacité de l'aquifère à transmettre l'eau (K·b)",ar:"قدرة الطبقة على تمرير الماء (K·b)",en:"The aquifer's ability to transmit water (K·b)"},
+  q2c:{fr:"La profondeur du forage",ar:"عمق البئر",en:"The borehole depth"},
+  q3:{fr:"Pourquoi l'eau du grès de Nubie est-elle « fossile » ?",ar:"لماذا تُعدّ مياه حجر النوبة «أحفورية»؟",en:"Why is Nubian sandstone water \"fossil\"?"},
+  q3a:{fr:"Parce qu'elle contient des fossiles",ar:"لأنها تحتوي على أحافير",en:"Because it contains fossils"},
+  q3b:{fr:"Parce qu'elle date d'un passé humide et n'est plus rechargée",ar:"لأنها من ماضٍ رطب ولم تعد تتغذّى",en:"Because it dates from a humid past and is no longer recharged"},
+  q3c:{fr:"Parce qu'elle est salée",ar:"لأنها مالحة",en:"Because it is salty"},
+  q4:{fr:"Sur la droite de Cooper-Jacob, comment obtient-on T ?",ar:"على خط كوبر-جاكوب، كيف نحصل على T؟",en:"On the Cooper-Jacob line, how is T obtained?"},
+  q4a:{fr:"À partir de la pente Δs sur un cycle logarithmique",ar:"من الميل Δs في دورة لوغاريتمية",en:"From the slope Δs over one log cycle"},
+  q4b:{fr:"En mesurant la profondeur du puits",ar:"بقياس عمق البئر",en:"By measuring the well depth"},
+  q4c:{fr:"En comptant les crépines",ar:"بعدّ المصافي",en:"By counting the screens"},
+  q5:{fr:"Quelle est la principale limite du GMMR ?",ar:"ما القيد الرئيسي للنهر الصناعي؟",en:"What is the GMMR's main limitation?"},
+  q5a:{fr:"Il déplace une eau fossile non renouvelable, sans en créer",ar:"ينقل ماءً أحفورياً غير متجدّد دون أن يخلقه",en:"It moves non-renewable fossil water without creating any"},
+  q5b:{fr:"Il est trop court pour atteindre la côte",ar:"قصير جداً لا يبلغ الساحل",en:"It is too short to reach the coast"},
+  q5c:{fr:"Il ne fonctionne que la nuit",ar:"يعمل ليلاً فقط",en:"It only works at night"},
+
+  t_score_ex:{fr:"Excellent — concepts maîtrisés !",ar:"ممتاز — المفاهيم متمكَّنة!",en:"Excellent — concepts mastered!"},
+  t_score_ok:{fr:"Bien — quelques points à revoir.",ar:"جيّد — بعض النقاط للمراجعة.",en:"Good — a few points to revisit."},
+  t_score_lo:{fr:"À revoir — relisez le cours puis recommencez.",ar:"يحتاج مراجعة — أعد قراءة الدرس ثم أعد المحاولة.",en:"Needs work — reread the course then retry."},
+  t_score_desc:{fr:"Réponses correctes sur 5 questions de synthèse.",ar:"إجابات صحيحة من 5 أسئلة تركيبية.",en:"Correct answers out of 5 synthesis questions."},
+
+  t_mode:{fr:"Mode local (localStorage) — progression sauvegardée automatiquement.",ar:"وضع محلي (localStorage) — التقدّم محفوظ تلقائياً.",en:"Local mode (localStorage) — progress saved automatically."},
+  t_export:{fr:"Exporter le compte-rendu (JSON)",ar:"تصدير التقرير (JSON)",en:"Export report (JSON)"},
+  t_reset:{fr:"Réinitialiser",ar:"إعادة الضبط",en:"Reset"},
+  t_reset_confirm:{fr:"Effacer toutes vos réponses et repartir de zéro ?",ar:"مسح جميع إجاباتك والبدء من جديد؟",en:"Erase all your answers and start over?"},
+  t_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Module G0 · travaux pratiques",ar:"منصّة أجريتك ليبيا · EU4Skills — الوحدة G0 · عمل تطبيقي",en:"AgriTech Libya Platform · EU4Skills — Module G0 · practical work"}
+});
+
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const LKEY="tp_geologie_v1";
+const QUIZ=[
+  {id:"q1",correct:0,opts:["q1a","q1b","q1c"]},
+  {id:"q2",correct:1,opts:["q2a","q2b","q2c"]},
+  {id:"q3",correct:1,opts:["q3a","q3b","q3c"]},
+  {id:"q4",correct:0,opts:["q4a","q4b","q4c"]},
+  {id:"q5",correct:0,opts:["q5a","q5b","q5c"]}
+];
+// correct radio answers for step MCQs
+const STEPQ={s1a:1,s2a:1,s3a:0,s4a:2};
+
+let STATE=load();
+function load(){try{return JSON.parse(localStorage.getItem(LKEY))||blank();}catch(e){return blank();}}
+function blank(){return{radios:{},fields:{},done:{},quiz:{},score:null,corrected:false};}
+function save(){STATE.updatedAt=new Date().toISOString();localStorage.setItem(LKEY,JSON.stringify(STATE));}
+
+/* ---- build quiz ---- */
+function buildQuiz(){
+  const box=$('#quiz');box.innerHTML='';
+  QUIZ.forEach((q,qi)=>{
+    const blk=document.createElement('div');blk.className='qblock';
+    const lab=document.createElement('label');lab.className='qlabel';
+    lab.textContent=(qi+1)+'. '+I18N.t(q.id);blk.appendChild(lab);
+    const opts=document.createElement('div');opts.className='opts';opts.dataset.quiz=q.id;
+    q.opts.forEach((ok,oi)=>{
+      const l=document.createElement('label');l.className='opt';
+      const inp=document.createElement('input');inp.type='radio';inp.name='qz_'+q.id;inp.value=oi;
+      if(STATE.quiz[q.id]===oi){inp.checked=true;l.classList.add('sel');}
+      inp.addEventListener('change',()=>{STATE.quiz[q.id]=oi;opts.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));l.classList.add('sel');save();});
+      const sp=document.createElement('span');sp.textContent=I18N.t(ok);
+      l.appendChild(inp);l.appendChild(sp);opts.appendChild(l);
+    });
+    blk.appendChild(opts);box.appendChild(blk);
+  });
+}
+
+/* ---- restore inputs ---- */
+function restore(){
+  // radios (steps)
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q, val=STATE.radios[name];
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.checked=(String(val)===r.value);
+      r.closest('.opt').classList.toggle('sel',r.checked);
+    });
+  });
+  // text/number/textarea fields
+  $$('[data-f]').forEach(f=>{if(STATE.fields[f.dataset.f]!=null)f.value=STATE.fields[f.dataset.f];});
+  // done checkboxes
+  $$('[data-done]').forEach(c=>{c.checked=!!STATE.done[c.dataset.done];});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+}
+
+/* ---- wire inputs ---- */
+function wire(){
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q;
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.addEventListener('change',()=>{
+        STATE.radios[name]=+r.value;
+        g.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+        r.closest('.opt').classList.add('sel');
+        feedbackStep(name);save();
+      });
+    });
+  });
+  $$('[data-f]').forEach(f=>f.addEventListener('input',()=>{STATE.fields[f.dataset.f]=f.value;save();}));
+  $$('[data-done]').forEach(c=>c.addEventListener('change',()=>{STATE.done[c.dataset.done]=c.checked;save();updateProgress();}));
+}
+
+/* ---- per-step feedback ---- */
+function feedbackStep(name){
+  const fb=$('.fb[data-fb="'+name+'"]');if(!fb)return;
+  const val=STATE.radios[name], ok=(val===STEPQ[name]);
+  let key=name.replace(/a$/,'')+ (ok?'_fb_ok':'_fb_no'); // s1 -> t_s1_fb_ok
+  key='t_'+key;
+  let msg=I18N.t(key);
+  // step 3 extra range check on T
+  if(name==='s3a'&&ok){
+    const T=parseFloat(STATE.fields.s3_T);
+    if(!isNaN(T)&&(T<200||T>2000))msg+=I18N.t('t_s3_fb_range');
+  }
+  fb.textContent=msg;
+  fb.className='fb show '+(ok?'ok':'no');
+}
+
+/* ---- progress ---- */
+function updateProgress(){
+  const done=[1,2,3,4,5].filter(i=>STATE.done[i]).length;
+  $('#pfill').style.width=(done/5*100)+'%';
+  $('#ptxt').textContent=done+' / 5';
+  const dots=$('#pdots');dots.innerHTML='';
+  for(let i=1;i<=5;i++){const d=document.createElement('div');d.className='dot'+(STATE.done[i]?' done':'');dots.appendChild(d);}
+}
+
+/* ---- correct quiz ---- */
+function correctQuiz(){
+  let score=0;
+  QUIZ.forEach(q=>{
+    const g=$('.opts[data-quiz="'+q.id+'"]');
+    const ans=STATE.quiz[q.id];
+    g.querySelectorAll('.opt').forEach((l,oi)=>{
+      l.classList.remove('good','bad');
+      if(oi===q.correct)l.classList.add('good');
+      else if(oi===ans)l.classList.add('bad');
+    });
+    if(ans===q.correct)score++;
+  });
+  STATE.score=score;STATE.corrected=true;save();
+  showScore(score,true);
+}
+function showScore(score,scroll){
+  const box=$('#scorebox');box.hidden=false;
+  $('#scoreval').textContent=score+'/5';
+  $('#dial').style.setProperty('--p',(score/5*360)+'deg');
+  const tk=score>=5?'t_score_ex':score>=3?'t_score_ok':'t_score_lo';
+  $('#scoretitle').textContent=I18N.t(tk);
+  $('#scoredesc').textContent=score+' / 5 — '+I18N.t('t_score_desc');
+  if(scroll)box.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ---- export ---- */
+function doExport(){
+  const rep={
+    format:"agritech-tp-report",module:"G0",tp:"geologie-hydro",version:"tp_geologie_v1",
+    lang:I18N.lang,exportedAt:new Date().toISOString(),
+    stepsCompleted:[1,2,3,4,5].filter(i=>STATE.done[i]),
+    answers:{
+      step1:{renewable_choice:STATE.radios.s1a,reserve:STATE.fields.s1_reserve||"",recharge:STATE.fields.s1_recharge||""},
+      step2:{screen_depth_m:STATE.fields.s2_screen||"",static_level_m:STATE.fields.s2_static||"",screen_layer_choice:STATE.radios.s2a},
+      step3:{T_m2_day:STATE.fields.s3_T||"",method:STATE.fields.s3_method||"",slope_choice:STATE.radios.s3a},
+      step4:{level_trend_choice:STATE.radios.s4a,interpretation:STATE.fields.s4_interp||""},
+      step5:{quiz:STATE.quiz,takeaway:STATE.fields.s5_takeaway||""}
+    },
+    quizScore:STATE.score,quizMax:5
+  };
+  const name="tp_geologie_hydro_"+(new Date().toISOString().slice(0,10))+".json";
+  if(window.Store&&Store.download)Store.download(name,JSON.stringify(rep,null,2),'application/json');
+  else{const a=document.createElement('a');a.href='data:application/json,'+encodeURIComponent(JSON.stringify(rep,null,2));a.download=name;a.click();}
+}
+
+/* ---- reset ---- */
+function doReset(){
+  if(!confirm(I18N.t('t_reset_confirm')))return;
+  STATE=blank();localStorage.removeItem(LKEY);
+  $$('.fb').forEach(f=>f.className='fb');
+  $('#scorebox').hidden=true;
+  buildQuiz();restore();
+}
+
+/* ---- i18n re-render ---- */
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{
+  applyHTML();buildQuiz();
+  // re-show step feedback in new language
+  ['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+});
+
+$('#correctBtn').addEventListener('click',correctQuiz);
+$('#exportBtn').addEventListener('click',doExport);
+$('#resetBtn').addEventListener('click',doReset);
+
+buildQuiz();wire();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();restore();
+['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

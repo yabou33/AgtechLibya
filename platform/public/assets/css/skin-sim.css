@@ -1,0 +1,49 @@
+/* =====================================================================
+   Skin plateforme (accueil vert clair) — partagé par les simulateurs J5
+   sim-sonde · sim-qualite-eau · sim-pompage · sim-ia-tomcast
+   (palette sombre commune --bg:#0e1512 … surchargée en clair-vert)
+   ===================================================================== */
+:root{
+  --bg:#fbfcf8; --panel:#ffffff; --panel-2:#f6faf0; --line:#d8e4c8; --line-2:#cfe0bd;
+  --ink:#2c3a24; --muted:#6f7d64; --faint:#9aa890;
+  --water:#3a9bd0; --water-d:#2f7fae; --soil:#c9922b;
+  --good:#3fa66a; --warn:#d99a2b; --bad:#d1584e; --shadow:0 4px 18px rgba(60,80,40,.10);
+}
+body{font-family:"Inter","Segoe UI",system-ui,sans-serif}
+.topbar{background:#fff!important;border-bottom:1px solid var(--line)!important;box-shadow:0 2px 10px rgba(60,80,40,.06)}
+.logo{background:radial-gradient(120% 120% at 30% 20%,#7cb342,#5a8f2c)!important}
+.mod-badge{background:#f1f7e9!important;color:#5a8f2c!important;border-color:#a5d16e!important}
+.card{background:#fff!important;border-color:#d8e4c8!important;box-shadow:var(--shadow)}
+.lead b{color:#2c3a24!important}
+.chartwrap{background:#fbfcf8!important;border-color:#d8e4c8!important}
+/* contrôles */
+.seg{background:#f1f7e9!important;border-color:#d8e4c8!important}
+.seg button{color:#6f7d64!important}
+.seg button.on{background:#7cb342!important;color:#fff!important}
+.tbtn{background:#f1f7e9!important;color:#2c3a24!important;border-color:#d8e4c8!important}
+.tbtn:hover{border-color:#7cb342!important}
+.tbtn.primary{background:linear-gradient(180deg,#7cb342,#5a8f2c)!important;border-color:#5a8f2c!important;color:#fff!important}
+select,input,textarea{background:#fff!important;color:#2c3a24!important;border-color:#d8e4c8!important}
+/* lecture / mission */
+.ro{background:#f6faf0!important;border-color:#d8e4c8!important}
+.opt{background:#f6faf0!important;border-color:#d8e4c8!important}
+.opt:hover{border-color:#cfe0bd!important}
+.opt.sel{background:#eef7e6!important;border-color:#7cb342!important}
+.opt .mk{border-color:#cfe0bd!important}
+.explain,.hoverbox{background:#f6faf0!important;border-color:#d8e4c8!important}
+.score b{color:#3fa66a!important}
+/* tables (qualité eau / verdicts) */
+table th,table td{border-color:#d8e4c8!important}
+thead th,tr:nth-child(even) td{background:#f6faf0!important}
+/* classes spécifiques aux simulateurs */
+.preset{background:#f1f7e9!important;color:#2c3a24!important;border-color:#d8e4c8!important}
+.fld input,.fld select{background:#fff!important;color:#2c3a24!important;border-color:#d8e4c8!important}
+.formula{background:#fff!important;border-color:#d8e4c8!important;color:#6f7d64!important}
+.formula b{color:#2c3a24!important}
+.formula code{color:#2f7fae!important}
+.mission{background:linear-gradient(180deg,#f6faf0,#eef7e6)!important;border-color:#a5d16e!important}
+.rc{background:#fff!important;border-color:#d8e4c8!important}
+/* fonds de barres (pistes) -> clair */
+.barrow .bt,.pred .conf-bar,.sbar{background:#e3ecd6!important;border-color:#d8e4c8!important}
+/* tuiles feuille (classifieur IA) + ligne de prédiction */
+.leaf,.pred{background:#f6faf0!important}

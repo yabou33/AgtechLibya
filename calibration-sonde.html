@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calibration de sonde — VWC</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:960px;margin:-4px 0 4px;font-size:14px}
+  .lead b{color:var(--ink)}
+  .grid-main{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+  @media(max-width:920px){.grid-main{grid-template-columns:1fr}}
+  .fld{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+  .fld label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:flex;justify-content:space-between;align-items:baseline}
+  .fld .rngval{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:12.5px}
+  select,input[type=text],input[type=number]{border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:#fff;color:var(--ink);font:inherit;font-weight:600}
+  select:focus,input[type=text]:focus,input[type=number]:focus{outline:none;border-color:var(--green)}
+  input[type=range]{width:100%;accent-color:var(--green)}
+  .seg{display:inline-flex;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;overflow:hidden;width:100%}
+  .seg button{flex:1;background:transparent;border:0;color:var(--muted);padding:8px 6px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .seg button.on{background:var(--green);color:#fff}
+  .chartwrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 8px 4px}
+  svg.chart{width:100%;height:auto;display:block;touch-action:none}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 6px 2px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:15px;height:3px;border-radius:2px;display:inline-block}
+  .legend i.sq{width:12px;height:12px;border-radius:50%}
+  .legend i.dash{height:0;border-top:2px dashed currentColor;width:15px}
+  .hoverbox{font-size:13px;color:var(--muted);padding:9px 12px;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;margin-top:10px;min-height:20px}
+  .hoverbox b{color:var(--ink)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:14px}
+  .kpi{background:var(--green-bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .kpi .l{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+  .kpi .v{font-size:1.35rem;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--ink);font-family:"JetBrains Mono",monospace}
+  .kpi .v small{font-size:.72rem;font-weight:700;color:var(--muted);font-family:inherit}
+  .kpi .x{color:var(--faint);font-size:11px;margin-top:3px}
+  .kpi.good{background:#eef8ef;border-color:#bfe3c3}.kpi.good .v{color:var(--impact)}
+  .kpi.warn{background:#fdf3e3;border-color:#f0d9ac}.kpi.warn .v{color:#b5701a}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:13px;background:#0e1512;color:#d7e3cd;border-radius:9px;padding:11px 14px;overflow:auto;margin:2px 0 4px}
+  .formula .hl{color:#a5d16e;font-weight:700}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  table.pairs{width:100%;border-collapse:collapse;font-size:13px}
+  table.pairs th{text-align:start;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.pairs td{padding:5px 8px;border-bottom:1px solid var(--green-bg)}
+  table.pairs input{width:100%;max-width:120px}
+  .del{background:#fbecea;color:var(--decision);border:1px solid #eecac5;border-radius:8px;width:30px;height:30px;font-weight:800;cursor:pointer;font-size:15px;line-height:1}
+  .del:hover{background:#f6d9d5}
+  .prevbox{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;background:var(--green-bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:12px}
+  .prevbox .out{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:1.5rem;color:var(--green-d)}
+  .prevbox .out small{font-size:.7rem;color:var(--muted);font-weight:700}
+  .peda{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:6px}
+  .peda .p{background:var(--green-bg);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:13px;color:var(--muted)}
+  .peda .p h4{font-size:13.5px;color:var(--green-d);margin-bottom:5px}
+  .peda .p b{color:var(--ink)}
+  details.fmt{margin-top:12px;font-size:13px}
+  details.fmt summary{cursor:pointer;font-weight:700;color:var(--green-d)}
+  details.fmt pre{background:#0e1512;color:#d7e3cd;border-radius:9px;padding:12px 14px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:12px;margin-top:8px;line-height:1.5}
+  .note{font-size:12.5px;color:var(--muted);background:#fdf6ea;border:1px solid #f0d9ac;border-radius:9px;padding:9px 12px;margin-top:10px}
+  .note b{color:#b5701a}
+  .metagrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">SOL</span> <b data-i18n="cs_brand">Calibration</b> <span data-i18n="cs_brand2">sonde</span></div>
+  <div class="sub" data-i18n="cs_sub">Signal capacitif brut → teneur en eau volumique (VWC/θ)</div>
+  <div class="right">
+    <span class="chip">M3</span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="cs_lead"></p>
+
+  <div class="grid-main">
+    <!-- ---- Controls ---- -->
+    <div class="card">
+      <h2>⚙️ <span data-i18n="cs_setup"></span></h2>
+
+      <div class="fld">
+        <label data-i18n="cs_mode"></label>
+        <div class="seg" id="mode">
+          <button class="on" data-v="two" data-i18n="cs_m_two"></button>
+          <button data-v="lin" data-i18n="cs_m_lin"></button>
+          <button data-v="poly" data-i18n="cs_m_poly"></button>
+        </div>
+      </div>
+
+      <div class="metagrid">
+        <div class="fld">
+          <label data-i18n="cs_soil"></label>
+          <select id="soil"></select>
+        </div>
+        <div class="fld">
+          <label data-i18n="cs_bd"></label>
+          <input type="number" id="bd" min="1.0" max="1.8" step="0.05" value="1.55">
+        </div>
+      </div>
+      <div class="fld">
+        <label data-i18n="cs_probe"></label>
+        <input type="text" id="probe" value="Capacitive v1.2">
+      </div>
+
+      <h2 style="margin-top:6px">🌡️ <span data-i18n="cs_perturb"></span></h2>
+      <div class="fld">
+        <label><span data-i18n="cs_ce"></span><span class="rngval" id="cev">1.5 dS/m</span></label>
+        <input type="range" id="ce" min="0.5" max="8" step="0.5" value="1.5">
+      </div>
+      <div class="fld">
+        <label><span data-i18n="cs_temp"></span><span class="rngval" id="tempv">25 °C</span></label>
+        <input type="range" id="temp" min="5" max="40" step="1" value="25">
+      </div>
+      <p class="note" data-i18n-html="cs_perturb_note"></p>
+
+      <div class="btns" style="margin-top:12px">
+        <button class="btn ghost" onclick="doImport()" title="JSON (.json) ou CSV (.csv) — colonnes : raw,theta_ref,note">📥 <span data-i18n="import"></span></button>
+        <button class="btn ghost" onclick="doExport()" title="Télécharge JSON + CSV (raw,theta_ref,note ; réglages en # clé,valeur)">📤 <span data-i18n="export"></span></button>
+        <button class="btn ghost" onclick="loadDemo(true)">↺ <span data-i18n="cs_demo"></span></button>
+      </div>
+    </div>
+
+    <!-- ---- Scatter + fit ---- -->
+    <div class="card">
+      <h2>📈 <span data-i18n="cs_chart_title"></span></h2>
+      <div class="chartwrap">
+        <svg class="chart" id="svg" viewBox="0 0 900 380" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="hoverbox" id="hover"></div>
+
+      <div class="formula" id="eq"></div>
+      <div class="kpis" id="kpis"></div>
+
+      <!-- preview -->
+      <div class="prevbox">
+        <div class="fld" style="margin:0">
+          <label data-i18n="cs_prev_raw"></label>
+          <input type="number" id="prevRaw" value="620" step="1" style="max-width:130px">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em" data-i18n="cs_prev_out"></div>
+          <div class="out" id="prevOut">— <small>m³/m³</small></div>
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);max-width:280px" id="prevExpl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Calibration pairs table ---- -->
+  <div class="card">
+    <h2>🧪 <span data-i18n="cs_pairs_title"></span></h2>
+    <p class="lead" style="margin-top:0" data-i18n="cs_pairs_help"></p>
+    <div style="overflow-x:auto">
+      <table class="pairs">
+        <thead>
+          <tr>
+            <th data-i18n="cs_th_raw"></th>
+            <th data-i18n="cs_th_theta"></th>
+            <th data-i18n="cs_th_note"></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="btns" style="margin-top:12px">
+      <button class="btn primary" onclick="addPair()">＋ <span data-i18n="cs_add"></span></button>
+    </div>
+    <details class="fmt">
+      <summary data-i18n="format_help"></summary>
+      <pre id="fmtEx"></pre>
+    </details>
+  </div>
+
+  <!-- ---- Method ---- -->
+  <div class="card">
+    <h2>📐 <span data-i18n="cs_method"></span></h2>
+    <div class="formula" data-i18n-html="cs_method_eq"></div>
+    <div class="peda">
+      <div class="p"><h4 data-i18n="cs_why_t"></h4><p data-i18n-html="cs_why_x"></p></div>
+      <div class="p"><h4 data-i18n="cs_grav_t"></h4><p data-i18n-html="cs_grav_x"></p></div>
+      <div class="p"><h4 data-i18n="cs_2vsr_t"></h4><p data-i18n-html="cs_2vsr_x"></p></div>
+    </div>
+  </div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+const LKEY="calibsonde_v1";
+
+Object.assign(I18N.DICT,{
+  cs_brand:{fr:"Calibration",ar:"معايرة",en:"Calibration"},
+  cs_brand2:{fr:"sonde",ar:"المجس",en:"probe"},
+  cs_sub:{fr:"Signal capacitif brut → teneur en eau volumique (VWC/θ)",ar:"إشارة سعوية خام ← المحتوى المائي الحجمي (VWC/θ)",en:"Raw capacitive signal → volumetric water content (VWC/θ)"},
+  cs_lead:{fr:"Une sonde capacitive délivre un <b>signal brut</b> (compte, fréquence, mV — ou un « VWC usine ») qui <b>n'est pas</b> la vraie teneur en eau du <b>sol local</b>. On la <b>calibre</b> : on relie le brut à une <b>référence gravimétrique</b> mesurée au laboratoire, puis on ajuste une équation. Saisis tes paires (brut, θ<sub>réf</sub>), choisis un mode d'ajustement et récupère les <b>coefficients</b>.",
+          ar:"يعطي المجس السعوي <b>إشارة خام</b> (عدّاً، تردداً، ملّي فولت — أو «VWC مصنعي») <b>ليست</b> المحتوى المائي الحقيقي <b>للتربة المحلية</b>. نقوم <b>بالمعايرة</b>: نربط الخام بمرجع <b>وزني مخبري</b> ثم نضبط معادلة. أدخل الأزواج (خام، θ<sub>مرجع</sub>)، اختر نمط الضبط واحصل على <b>المعاملات</b>.",
+          en:"A capacitive probe outputs a <b>raw signal</b> (count, frequency, mV — or a “factory VWC”) that is <b>not</b> the true water content of the <b>local soil</b>. We <b>calibrate</b> it: link the raw value to a lab <b>gravimetric reference</b>, then fit an equation. Enter your (raw, θ<sub>ref</sub>) pairs, pick a fit mode and read the <b>coefficients</b>."},
+
+  cs_setup:{fr:"Réglages & sol",ar:"الإعدادات والتربة",en:"Setup & soil"},
+  cs_mode:{fr:"Mode d'ajustement",ar:"نمط الضبط",en:"Fit mode"},
+  cs_m_two:{fr:"2 points",ar:"نقطتان",en:"2 points"},
+  cs_m_lin:{fr:"Régr. linéaire",ar:"خطي",en:"Linear reg."},
+  cs_m_poly:{fr:"Polynôme 2",ar:"كثير حدود 2",en:"Poly deg-2"},
+  cs_soil:{fr:"Type de sol",ar:"نوع التربة",en:"Soil type"},
+  cs_bd:{fr:"Densité app. ρb",ar:"الكثافة ρb",en:"Bulk density ρb"},
+  cs_probe:{fr:"Sonde / modèle",ar:"المجس / الطراز",en:"Probe / model"},
+  cs_perturb:{fr:"Effets perturbateurs",ar:"العوامل المؤثرة",en:"Disturbing effects"},
+  cs_ce:{fr:"Salinité (CE)",ar:"الملوحة (CE)",en:"Salinity (EC)"},
+  cs_temp:{fr:"Température sol",ar:"حرارة التربة",en:"Soil temperature"},
+  cs_perturb_note:{fr:"Sur sonde capacitive, la <b>salinité</b> gonfle la lecture (permittivité de l'eau ionique) et la <b>température</b> la décale. Réf. calibration : CE 1 dS/m, 25 °C. La courbe pointillée montre la lecture <b>perturbée non corrigée</b>.",
+                   ar:"في المجس السعوي، ترفع <b>الملوحة</b> القراءة وتُزيحها <b>الحرارة</b>. مرجع المعايرة: CE 1 dS/m و25 °م. يُظهر الخط المنقّط القراءة <b>المتأثرة غير المصححة</b>.",
+                   en:"On a capacitive probe, <b>salinity</b> inflates the reading (ionic-water permittivity) and <b>temperature</b> shifts it. Calibration ref: EC 1 dS/m, 25 °C. The dashed curve shows the <b>uncorrected disturbed</b> reading."},
+  cs_demo:{fr:"Démo",ar:"عرض",en:"Demo"},
+
+  cs_chart_title:{fr:"Nuage d'étalonnage & droite calibrée",ar:"سحابة المعايرة والمنحنى",en:"Calibration scatter & fitted curve"},
+  cs_prev_raw:{fr:"Lecture brute",ar:"القراءة الخام",en:"Raw reading"},
+  cs_prev_out:{fr:"θ calibré",ar:"θ المعاير",en:"Calibrated θ"},
+
+  cs_pairs_title:{fr:"Paires d'étalonnage",ar:"أزواج المعايرة",en:"Calibration pairs"},
+  cs_pairs_help:{fr:"Chaque ligne = un échantillon : lecture brute de la sonde ↔ θ mesuré au laboratoire (gravimétrie × densité apparente). Édite, ajoute ou supprime.",
+                 ar:"كل سطر = عينة: قراءة خام للمجس ↔ θ مقاس مخبرياً. عدّل، أضف أو احذف.",
+                 en:"Each row = one sample: raw probe reading ↔ θ measured in the lab (gravimetric × bulk density). Edit, add or delete."},
+  cs_th_raw:{fr:"Brut sonde",ar:"خام المجس",en:"Probe raw"},
+  cs_th_theta:{fr:"θ réf (m³/m³)",ar:"θ مرجع (م³/م³)",en:"θ ref (m³/m³)"},
+  cs_th_note:{fr:"Note",ar:"ملاحظة",en:"Note"},
+  cs_add:{fr:"Ajouter une paire",ar:"إضافة زوج",en:"Add a pair"},
+
+  cs_method:{fr:"Méthode — pourquoi et comment calibrer",ar:"الطريقة — لماذا وكيف نعاير",en:"Method — why and how to calibrate"},
+  cs_method_eq:{fr:"2 points :  a = (θ<sub>hum</sub>−θ<sub>sec</sub>) / (brut<sub>hum</sub>−brut<sub>sec</sub>) ,  θ = a·brut + b     ·     Régr. : minimise Σ(θ − θ̂)²     ·     R² = 1 − SS<sub>rés</sub>/SS<sub>tot</sub>",
+                ar:"نقطتان:  a = (θ<sub>رطب</sub>−θ<sub>جاف</sub>) / (خام<sub>رطب</sub>−خام<sub>جاف</sub>) ,  θ = a·خام + b     ·     انحدار: تصغير Σ(θ − θ̂)²     ·     R² = 1 − SS<sub>بواقي</sub>/SS<sub>كلي</sub>",
+                en:"2 points:  a = (θ<sub>wet</sub>−θ<sub>dry</sub>) / (raw<sub>wet</sub>−raw<sub>dry</sub>) ,  θ = a·raw + b     ·     Reg.: minimise Σ(θ − θ̂)²     ·     R² = 1 − SS<sub>res</sub>/SS<sub>tot</sub>"},
+  cs_why_t:{fr:"Pourquoi calibrer ?",ar:"لماذا نعاير؟",en:"Why calibrate?"},
+  cs_why_x:{fr:"La calibration <b>usine</b> vaut pour un sol « moyen ». Sur un sol <b>sableux de Sebha</b>, la même lecture correspond à une autre teneur en eau : sans calibration locale, l'erreur peut dépasser <b>0,05 m³/m³</b> — soit sur/sous-irriguer.",
+            ar:"معايرة <b>المصنع</b> لتربة «متوسطة». على تربة <b>سبها الرملية</b> تعني القراءة نفسها محتوى مائياً مختلفاً: بدون معايرة محلية قد يتجاوز الخطأ <b>0.05 م³/م³</b>.",
+            en:"The <b>factory</b> calibration assumes an “average” soil. On a <b>sandy Sebha soil</b> the same reading means a different water content: without local calibration the error can exceed <b>0.05 m³/m³</b> — over/under-irrigating."},
+  cs_grav_t:{fr:"Méthode gravimétrique",ar:"الطريقة الوزنية",en:"Gravimetric method"},
+  cs_grav_x:{fr:"On prélève, on pèse humide, on sèche 24 h à 105 °C, on repèse. θ<sub>massique</sub> = (m<sub>hum</sub>−m<sub>sec</sub>)/m<sub>sec</sub>, puis <b>θ<sub>vol</sub> = θ<sub>massique</sub> · ρ<sub>b</sub></b>. C'est la <b>vérité terrain</b> de l'axe Y.",
+             ar:"نأخذ عينة، نزنها رطبة، نجفّفها 24 س عند 105 °م، نعيد الوزن. θ<sub>كتلي</sub> = (m<sub>رطب</sub>−m<sub>جاف</sub>)/m<sub>جاف</sub>، ثم <b>θ<sub>حجمي</sub> = θ<sub>كتلي</sub> · ρ<sub>b</sub></b>. هذه <b>الحقيقة المرجعية</b> للمحور Y.",
+             en:"Sample, weigh moist, oven-dry 24 h at 105 °C, weigh again. θ<sub>mass</sub> = (m<sub>wet</sub>−m<sub>dry</sub>)/m<sub>dry</sub>, then <b>θ<sub>vol</sub> = θ<sub>mass</sub> · ρ<sub>b</sub></b>. This is the <b>ground truth</b> on the Y axis."},
+  cs_2vsr_t:{fr:"2 points vs régression",ar:"نقطتان مقابل الانحدار",en:"2 points vs regression"},
+  cs_2vsr_x:{fr:"<b>2 points</b> (sol sec à l'air + sol à saturation/capacité au champ) : rapide, suffisant si la réponse est linéaire. <b>Régression</b> sur N points : plus robuste, quantifie l'ajustement (R²) et capte une éventuelle <b>courbure</b> (polynôme 2).",
+             ar:"<b>نقطتان</b> (تربة جافة هوائياً + مشبعة/سعة حقلية): سريعة وكافية إذا كانت الاستجابة خطية. <b>الانحدار</b> على N نقطة: أكثر متانة، يقيس الجودة (R²) ويلتقط <b>الانحناء</b> (كثير حدود 2).",
+             en:"<b>2 points</b> (air-dry soil + saturated/field-capacity soil): fast, enough if the response is linear. <b>Regression</b> over N points: more robust, quantifies the fit (R²) and captures possible <b>curvature</b> (poly deg-2)."},
+
+  // dynamic labels
+  cs_lg_pts:{fr:"Paires (brut, θréf)",ar:"الأزواج (خام، θ)",en:"Pairs (raw, θref)"},
+  cs_lg_fit:{fr:"Droite / courbe calibrée",ar:"المنحنى المعاير",en:"Fitted curve"},
+  cs_lg_pert:{fr:"Lecture perturbée",ar:"القراءة المتأثرة",en:"Disturbed reading"},
+  cs_k_a:{fr:"Pente a",ar:"الميل a",en:"Slope a"},
+  cs_k_b:{fr:"Offset b",ar:"الإزاحة b",en:"Offset b"},
+  cs_k_c:{fr:"Terme c (·brut²)",ar:"الحد c (·خام²)",en:"Term c (·raw²)"},
+  cs_k_r2:{fr:"R²",ar:"R²",en:"R²"},
+  cs_k_rmse:{fr:"RMSE",ar:"RMSE",en:"RMSE"},
+  cs_k_n:{fr:"Points",ar:"نقاط",en:"Points"},
+  cs_hover_hint:{fr:"Survole le nuage ou saisis une lecture brute ci-dessous pour prévisualiser θ.",ar:"مرّر فوق السحابة أو أدخل قراءة خام أدناه لمعاينة θ.",en:"Hover the scatter or type a raw reading below to preview θ."},
+  cs_prev_expl:{fr:"Sans correction : <b>{u}</b>. La correction CE/T ramène à <b>{c}</b> (écart évité {d}).",
+                ar:"بدون تصحيح: <b>{u}</b>. تصحيح CE/T يعيدها إلى <b>{c}</b> (فرق مُتفادى {d}).",
+                en:"Uncorrected: <b>{u}</b>. EC/T correction gives <b>{c}</b> (error avoided {d})."},
+  cs_need2:{fr:"Ajoute au moins 2 paires pour ajuster.",ar:"أضف زوجين على الأقل للضبط.",en:"Add at least 2 pairs to fit."}
+});
+
+/* ---- soils ---- */
+const SOILS=[
+  {id:'sand', fr:"Sable (Sebha)", ar:"رمل (سبها)",  en:"Sand (Sebha)"},
+  {id:'sloam',fr:"Limon sableux", ar:"طيني رملي",   en:"Sandy loam"},
+  {id:'loam', fr:"Limon",         ar:"طَمْي",        en:"Loam"},
+  {id:'cloam',fr:"Argilo-limon",  ar:"طيني طَمْيي",  en:"Clay loam"},
+  {id:'clay', fr:"Argile",        ar:"طين",          en:"Clay"}
+];
+
+/* ---- state ---- */
+let ST=null;
+function demoState(){
+  return {
+    soil:'sand', bd:1.55, probe:"Capacitive v1.2", mode:'lin',
+    ce:1.5, temp:25,
+    pairs:[
+      {raw:320, theta:0.040, note:"sec air / air-dry"},
+      {raw:410, theta:0.082, note:""},
+      {raw:500, theta:0.128, note:""},
+      {raw:590, theta:0.186, note:""},
+      {raw:680, theta:0.255, note:""},
+      {raw:760, theta:0.330, note:"saturé / sat."}
+    ]
+  };
+}
+function load(){
+  try{ const s=JSON.parse(localStorage.getItem(LKEY)); if(s&&s.pairs) return s; }catch(e){}
+  return demoState();
+}
+function save(){ try{ localStorage.setItem(LKEY,JSON.stringify(ST)); }catch(e){} }
+function loadDemo(force){ if(force){ ST=demoState(); save(); syncControls(); render(); } }
+
+/* ---- fit maths ---- */
+function fit(pairs,mode){
+  const pts=pairs.filter(p=>isFinite(p.raw)&&isFinite(p.theta)).sort((a,b)=>a.raw-b.raw);
+  const n=pts.length;
+  if(n<2) return {ok:false,n};
+  const xs=pts.map(p=>+p.raw), ys=pts.map(p=>+p.theta);
+  let coef, predict;
+  if(mode==='two'){
+    const lo=pts[0], hi=pts[n-1];
+    const a=(hi.theta-lo.theta)/((hi.raw-lo.raw)||1e-9), b=lo.theta-a*lo.raw;
+    coef={a,b,c:0}; predict=x=>a*x+b;
+  } else if(mode==='poly' && n>=3){
+    const c=polyfit2(xs,ys); coef={a:c[1],b:c[0],c:c[2]}; predict=x=>c[0]+c[1]*x+c[2]*x*x;
+  } else { // linear least squares
+    let Sx=0,Sy=0,Sxx=0,Sxy=0;
+    for(let i=0;i<n;i++){Sx+=xs[i];Sy+=ys[i];Sxx+=xs[i]*xs[i];Sxy+=xs[i]*ys[i];}
+    const a=(n*Sxy-Sx*Sy)/((n*Sxx-Sx*Sx)||1e-9), b=(Sy-a*Sx)/n;
+    coef={a,b,c:0}; predict=x=>a*x+b;
+  }
+  // R² + RMSE
+  const ybar=ys.reduce((s,v)=>s+v,0)/n; let sst=0,ssr=0;
+  for(let i=0;i<n;i++){ const e=ys[i]-predict(xs[i]); ssr+=e*e; sst+=(ys[i]-ybar)**2; }
+  const r2=sst>0?1-ssr/sst:1, rmse=Math.sqrt(ssr/n);
+  return {ok:true,n,pts,coef,predict,r2,rmse,poly:(mode==='poly'&&n>=3)};
+}
+function polyfit2(xs,ys){
+  const n=xs.length; let S=[0,0,0,0,0], T=[0,0,0]; // Sx^k, Sx^k*y
+  for(let i=0;i<n;i++){ const x=xs[i],y=ys[i]; let xp=1;
+    for(let k=0;k<5;k++){ S[k]+=xp; if(k<3) T[k]+=xp*y; xp*=x; } }
+  // normal matrix (sums of powers of x, but S[0] must be n) -> rebuild properly
+  let p=[0,0,0,0,0]; for(let i=0;i<n;i++){ let xp=1; for(let k=0;k<5;k++){p[k]+=xp;xp*=xs[i];} }
+  let q=[0,0,0]; for(let i=0;i<n;i++){ let xp=1; for(let k=0;k<3;k++){q[k]+=xp*ys[i];xp*=xs[i];} }
+  const A=[[p[0],p[1],p[2]],[p[1],p[2],p[3]],[p[2],p[3],p[4]]];
+  return solve3(A,q);
+}
+function solve3(A,b){
+  const M=A.map((r,i)=>r.concat(b[i]));
+  for(let c=0;c<3;c++){
+    let piv=c; for(let r=c+1;r<3;r++) if(Math.abs(M[r][c])>Math.abs(M[piv][c])) piv=r;
+    [M[c],M[piv]]=[M[piv],M[c]];
+    const d=M[c][c]||1e-9;
+    for(let k=c;k<4;k++) M[c][k]/=d;
+    for(let r=0;r<3;r++) if(r!==c){ const f=M[r][c]; for(let k=c;k<4;k++) M[r][k]-=f*M[c][k]; }
+  }
+  return [M[0][3],M[1][3],M[2][3]];
+}
+/* perturbation: raw shift (raw units) vs calibration reference */
+const CE0=1.0, T0=25, K_CE=18, K_T=-3;
+function rawShift(){ return K_CE*(ST.ce-CE0) + K_T*(ST.temp-T0); }
+
+/* ---- render ---- */
+function render(){
+  const F=fit(ST.pairs,ST.mode);
+  drawChart(F); drawEq(F); drawKPIs(F); drawPreview(F);
+}
+function svgEl(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+function drawChart(F){
+  const svg=$('svg'); svg.innerHTML='';
+  const W=900,H=380,PADL=54,PADR=18,PADT=18,PADB=42;
+  const x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB;
+  const pairs=ST.pairs.filter(p=>isFinite(p.raw)&&isFinite(p.theta));
+  const xsAll=pairs.map(p=>+p.raw), ysAll=pairs.map(p=>+p.theta);
+  let rmin=Math.min.apply(null,xsAll.concat([300])), rmax=Math.max.apply(null,xsAll.concat([800]));
+  if(!isFinite(rmin)){rmin=300;rmax=800;}
+  const rpad=(rmax-rmin)*0.08||40; rmin-=rpad; rmax+=rpad;
+  let tmax=Math.max(0.4, Math.max.apply(null,ysAll.concat([0.35]))*1.12);
+  const sx=v=>x0+(v-rmin)/((rmax-rmin)||1)*(x1-x0);
+  const sy=v=>y1-(v/tmax)*(y1-y0);
+  // grid Y
+  const ystep=tmax>0.6?0.1:0.05;
+  for(let v=0;v<=tmax+1e-9;v+=ystep){ svg.appendChild(svgEl('line',{x1:x0,y1:sy(v),x2:x1,y2:sy(v),stroke:'#eef3e5','stroke-width':1}));
+    const t=svgEl('text',{x:x0-8,y:sy(v)+4,'text-anchor':'end',fill:'#9aa890','font-size':11});t.textContent=v.toFixed(2);svg.appendChild(t);}
+  // grid X
+  const xstep=Math.max(50,Math.round((rmax-rmin)/6/50)*50);
+  for(let v=Math.ceil(rmin/xstep)*xstep;v<=rmax;v+=xstep){ svg.appendChild(svgEl('line',{x1:sx(v),y1:y0,x2:sx(v),y2:y1,stroke:'#f4f7ee','stroke-width':1}));
+    const t=svgEl('text',{x:sx(v),y:y1+18,'text-anchor':'middle',fill:'#9aa890','font-size':11});t.textContent=Math.round(v);svg.appendChild(t);}
+  // axis titles
+  const ax=svgEl('text',{x:(x0+x1)/2,y:H-6,'text-anchor':'middle',fill:'#6f7d64','font-size':12,'font-weight':700});ax.textContent=I18N.t('cs_th_raw');svg.appendChild(ax);
+  const ay=svgEl('text',{x:14,y:(y0+y1)/2,'text-anchor':'middle',fill:'#6f7d64','font-size':12,'font-weight':700,transform:`rotate(-90 14 ${(y0+y1)/2})`});ay.textContent="θ (m³/m³)";svg.appendChild(ay);
+
+  if(F.ok){
+    // fitted curve (sample across range)
+    let d=''; const N=60;
+    for(let i=0;i<=N;i++){ const x=rmin+(rmax-rmin)*i/N; const y=Math.max(0,F.predict(x));
+      d+=(i?'L':'M')+sx(x).toFixed(1)+' '+sy(y).toFixed(1)+' '; }
+    svg.appendChild(svgEl('path',{d,fill:'none',stroke:'#3fa66a','stroke-width':2.8,'stroke-linejoin':'round'}));
+    // perturbed (uncorrected) curve: apparent theta = predict(x - shift)
+    const sh=rawShift();
+    if(Math.abs(sh)>0.5){
+      let dp='';
+      for(let i=0;i<=N;i++){ const x=rmin+(rmax-rmin)*i/N; const y=Math.max(0,F.predict(x-sh));
+        dp+=(i?'L':'M')+sx(x).toFixed(1)+' '+sy(y).toFixed(1)+' '; }
+      svg.appendChild(svgEl('path',{d:dp,fill:'none',stroke:'#d99a2b','stroke-width':2,'stroke-dasharray':'7 5',opacity:.9}));
+    }
+  }
+  // points
+  pairs.forEach((p,i)=>{
+    const cx=sx(+p.raw),cy=sy(+p.theta);
+    const c=svgEl('circle',{cx,cy,r:5.5,fill:'#3a9bd0',stroke:'#fff','stroke-width':1.5});
+    c.style.cursor='pointer';
+    c.addEventListener('mouseenter',()=>{ $('hover').innerHTML=`<b>#${i+1}</b> — ${I18N.t('cs_th_raw')} <b>${p.raw}</b> · θ<sub>réf</sub> <b>${(+p.theta).toFixed(3)}</b> m³/m³${p.note?' · '+p.note:''}`; });
+    svg.appendChild(c);
+  });
+  // legend
+  const sh=rawShift();
+  $('legend').innerHTML=
+    `<span style="color:#3a9bd0"><i class="sq" style="background:#3a9bd0"></i>${I18N.t('cs_lg_pts')}</span>`+
+    `<span style="color:#3fa66a"><i style="background:#3fa66a"></i>${I18N.t('cs_lg_fit')}</span>`+
+    (Math.abs(sh)>0.5?`<span style="color:#b5701a"><i class="dash" style="color:#d99a2b"></i>${I18N.t('cs_lg_pert')}</span>`:'');
+  if(!$('hover').innerHTML.trim()) $('hover').innerHTML=F.ok?I18N.t('cs_hover_hint'):I18N.t('cs_need2');
+}
+
+function fmtEq(F){
+  if(!F.ok) return I18N.t('cs_need2');
+  const c=F.coef, s=(x,d=4)=>(x>=0?'+ ':'− ')+Math.abs(x).toFixed(d);
+  if(F.poly) return `<span class="hl">θ</span> = ${c.c.toExponential(2)}·brut² ${s(c.a,5)}·brut ${s(c.b,3)}`;
+  return `<span class="hl">θ</span> = ${c.a.toFixed(5)} · brut ${s(c.b,3)}`;
+}
+function drawEq(F){ $('eq').innerHTML=fmtEq(F); }
+
+function kpi(cls,l,v,u,x){return `<div class="kpi ${cls||''}"><div class="l">${l}</div><div class="v">${v}<small>${u||''}</small></div><div class="x">${x||''}</div></div>`;}
+function drawKPIs(F){
+  if(!F.ok){ $('kpis').innerHTML=kpi('warn',I18N.t('cs_k_n'),F.n,'',I18N.t('cs_need2')); return; }
+  const r2cls=F.r2>=0.98?'good':F.r2>=0.9?'':'warn';
+  let h=kpi('',I18N.t('cs_k_a'),F.coef.a.toFixed(5),'','')+
+        kpi('',I18N.t('cs_k_b'),F.coef.b.toFixed(3),'','');
+  if(F.poly) h+=kpi('',I18N.t('cs_k_c'),F.coef.c.toExponential(2),'','');
+  h+=kpi(r2cls,I18N.t('cs_k_r2'),F.r2.toFixed(4),'','')+
+     kpi('',I18N.t('cs_k_rmse'),F.rmse.toFixed(4),' θ','')+
+     kpi('',I18N.t('cs_k_n'),F.n,'','');
+  $('kpis').innerHTML=h;
+}
+
+function drawPreview(F){
+  const raw=+$('prevRaw').value;
+  if(!F.ok||!isFinite(raw)){ $('prevOut').innerHTML='— <small>m³/m³</small>'; $('prevExpl').textContent=''; return; }
+  const sh=rawShift();
+  const corrected=Math.max(0,F.predict(raw-sh));   // treat prevRaw as disturbed measurement
+  const uncorr=Math.max(0,F.predict(raw));
+  $('prevOut').innerHTML=`${corrected.toFixed(3)} <small>m³/m³</small>`;
+  if(Math.abs(sh)>0.5){
+    $('prevExpl').innerHTML=I18N.t('cs_prev_expl')
+      .replace('{u}',uncorr.toFixed(3)).replace('{c}',corrected.toFixed(3))
+      .replace('{d}',Math.abs(uncorr-corrected).toFixed(3));
+  } else $('prevExpl').textContent='';
+}
+
+/* ---- pairs table ---- */
+function drawTable(){
+  const tb=$('tbody'); tb.innerHTML='';
+  ST.pairs.forEach((p,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      `<td><input type="number" step="1" value="${p.raw}" data-i="${i}" data-f="raw"></td>`+
+      `<td><input type="number" step="0.001" value="${p.theta}" data-i="${i}" data-f="theta"></td>`+
+      `<td><input type="text" value="${(p.note||'').replace(/"/g,'&quot;')}" data-i="${i}" data-f="note" style="max-width:200px"></td>`+
+      `<td><button class="del" data-del="${i}" title="✕">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',e=>{
+    const i=+e.target.dataset.i, f=e.target.dataset.f;
+    ST.pairs[i][f]= f==='note'? e.target.value : parseFloat(e.target.value);
+    save(); render();
+  }));
+  tb.querySelectorAll('.del').forEach(b=>b.addEventListener('click',e=>{
+    ST.pairs.splice(+e.target.dataset.del,1); save(); drawTable(); render();
+  }));
+}
+function addPair(){ ST.pairs.push({raw:500,theta:0.15,note:""}); save(); drawTable(); render(); }
+
+/* ---- import / export ---- */
+function exportObj(){
+  const F=fit(ST.pairs,ST.mode);
+  return {
+    format:"soil-probe-calibration", version:1,
+    soil:ST.soil, bulk_density:ST.bd, probe:ST.probe, fit_mode:ST.mode,
+    reference:{ec_dS_m:CE0, temperature_C:T0}, conditions:{ec_dS_m:ST.ce, temperature_C:ST.temp},
+    coefficients: F.ok? (F.poly?{a:+F.coef.a.toFixed(6),b:+F.coef.b.toFixed(6),c:+F.coef.c.toExponential(4)}
+                                :{a:+F.coef.a.toFixed(6),b:+F.coef.b.toFixed(6)}) : null,
+    quality: F.ok?{r2:+F.r2.toFixed(4),rmse:+F.rmse.toFixed(4),n:F.n}:null,
+    equation: F.ok? (F.poly?"theta = c*raw^2 + a*raw + b":"theta = a*raw + b"):null,
+    pairs: ST.pairs.map(p=>({raw:+p.raw, theta_ref:+p.theta, note:p.note||""}))
+  };
+}
+/* ---- CSV (tabulaire) : parité règle 6 — une ligne par POINT (raw,theta_ref,note).
+   Métadonnées (sol, densité, sonde, mode, CE, T) en lignes « # clé,valeur ».
+   Parser robuste (guillemets doubles + virgules) calqué sur agrimap-draw.js. */
+function csvCell(v){ v=String(v==null?'':v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function parseCSV(text){
+  const rows=[]; let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===',') { row.push(cur); cur=''; }
+    else if(ch==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+    else if(ch!=='\r') cur+=ch;
+  }
+  if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.length && r.some(c=>c!==''));
+}
+function exportCSV(){
+  let out='';
+  [['soil',ST.soil],['bulk_density',ST.bd],['probe',ST.probe],['fit_mode',ST.mode],
+   ['ce_dS_m',ST.ce],['temperature_C',ST.temp]].forEach(([k,v])=>{ out+='# '+k+','+csvCell(v)+'\n'; });
+  const head=['raw','theta_ref','note'];
+  const rows=ST.pairs.map(p=>[p.raw,p.theta,p.note||''].map(csvCell).join(','));
+  return out+head.join(',')+'\n'+rows.join('\n')+'\n';
+}
+function importCSV(text){
+  const meta={}, dataLines=[];
+  text.split(/\r?\n/).forEach(ln=>{
+    if(/^\s*#/.test(ln)){ const cells=(parseCSV(ln.replace(/^\s*#\s?/,''))[0])||[];
+      const k=(cells[0]||'').trim().toLowerCase(); if(k) meta[k]=cells[1]!==undefined?cells[1]:''; }
+    else if(ln.trim()!=='') dataLines.push(ln);
+  });
+  const rows=parseCSV(dataLines.join('\n')); if(rows.length<2) return false;
+  const head=rows[0].map(x=>x.trim().toLowerCase()), ix=n=>head.indexOf(n);
+  const iR=ix('raw');
+  const iT=ix('theta_ref')>=0?ix('theta_ref'):ix('theta');
+  const iN=ix('note');
+  const pairs=[];
+  for(let r=1;r<rows.length;r++){ const c=rows[r];
+    const raw=+(iR>=0?c[iR]:c[0]), theta=+(iT>=0?c[iT]:c[1]);
+    if(!isFinite(raw)||!isFinite(theta)) continue;
+    pairs.push({raw,theta,note:iN>=0?(c[iN]||''):''}); }
+  if(!pairs.length) return false;
+  ST.pairs=pairs;
+  if(meta.soil) ST.soil=meta.soil;
+  if(isFinite(+meta.bulk_density)) ST.bd=+meta.bulk_density;
+  if(meta.probe) ST.probe=meta.probe;
+  if(meta.fit_mode) ST.mode=meta.fit_mode;
+  if(isFinite(+meta.ce_dS_m)) ST.ce=+meta.ce_dS_m;
+  if(isFinite(+meta.temperature_C)) ST.temp=+meta.temperature_C;
+  return true;
+}
+
+function doExport(){
+  Store.download('calibration_sonde.json', JSON.stringify(exportObj(),null,2),'application/json');
+  Store.download('calibration_sonde.csv', exportCSV(),'text/csv');
+}
+function doImport(){
+  Store.pickFile('.json,.csv',(txt)=>{
+    try{
+      const s=(txt||'').replace(/^﻿/,'').trimStart();
+      if(s[0]==='{'||s[0]==='['){                       // JSON
+        const o=JSON.parse(txt);
+        const pairs=(o.pairs||[]).map(p=>({raw:+(p.raw), theta:+(p.theta_ref!=null?p.theta_ref:p.theta), note:p.note||""}))
+                                 .filter(p=>isFinite(p.raw)&&isFinite(p.theta));
+        if(!pairs.length) throw new Error('no pairs');
+        ST.pairs=pairs;
+        if(o.soil) ST.soil=o.soil;
+        if(isFinite(+o.bulk_density)) ST.bd=+o.bulk_density;
+        if(o.probe) ST.probe=o.probe;
+        if(o.fit_mode) ST.mode=o.fit_mode;
+        if(o.conditions){ if(isFinite(+o.conditions.ec_dS_m)) ST.ce=+o.conditions.ec_dS_m; if(isFinite(+o.conditions.temperature_C)) ST.temp=+o.conditions.temperature_C; }
+      } else {                                          // sinon = CSV (règle 6)
+        if(!importCSV(txt)) throw new Error('CSV vide');
+      }
+      save(); syncControls(); drawTable(); render();
+    }catch(e){ alert('Import: '+e.message); }
+  });
+}
+
+/* ---- controls sync ---- */
+function fillSoil(){
+  const s=$('soil'), k=ST.soil; s.innerHTML='';
+  SOILS.forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=x[I18N.lang]||x.fr;s.appendChild(o);});
+  s.value=k||'sand';
+}
+function syncControls(){
+  fillSoil();
+  $('soil').value=ST.soil; $('bd').value=ST.bd; $('probe').value=ST.probe;
+  $('ce').value=ST.ce; $('temp').value=ST.temp;
+  $('cev').textContent=ST.ce+' dS/m'; $('tempv').textContent=ST.temp+' °C';
+  document.querySelectorAll('#mode button').forEach(b=>b.classList.toggle('on',b.dataset.v===ST.mode));
+  $('fmtEx').textContent=JSON.stringify({format:"soil-probe-calibration",soil:"sand",bulk_density:1.55,probe:"Capacitive v1.2",fit_mode:"lin",pairs:[{raw:320,theta_ref:0.040,note:"air-dry"},{raw:760,theta_ref:0.330,note:"sat"}]},null,2)
+    +'\n\n— CSV (1 ligne = 1 point) —\n# soil,sand\n# bulk_density,1.55\nraw,theta_ref,note\n320,0.040,air-dry\n760,0.330,sat';
+}
+
+/* ---- wiring ---- */
+$('soil').addEventListener('change',e=>{ST.soil=e.target.value;save();});
+$('bd').addEventListener('input',e=>{ST.bd=parseFloat(e.target.value);save();});
+$('probe').addEventListener('input',e=>{ST.probe=e.target.value;save();});
+$('ce').addEventListener('input',e=>{ST.ce=+e.target.value;$('cev').textContent=ST.ce+' dS/m';save();render();});
+$('temp').addEventListener('input',e=>{ST.temp=+e.target.value;$('tempv').textContent=ST.temp+' °C';save();render();});
+$('prevRaw').addEventListener('input',()=>render());
+document.querySelectorAll('#mode button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#mode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  ST.mode=b.dataset.v; save(); render();
+}));
+
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{ applyHTML(); fillSoil(); $('soil').value=ST.soil; $('fmtEx').textContent=$('fmtEx').textContent; drawTable(); render(); });
+
+/* ---- boot ---- */
+ST=load();
+syncControls();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML(); drawTable(); render();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

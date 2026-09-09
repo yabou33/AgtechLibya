@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HydroSim 3D — Simulateur de Nappe Phréatique · SKILLS4EU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg:#070f0a; --panel:#0f1f14; --panel2:#162519; --panel3:#1d2f21;
+  --line:#243d28; --ink:#edf5eb; --sub:#8fb68a; --moss:#97bc62;
+  --gold:#d4af37; --blue:#38bdf8; --cyan:#06b6d4; --teal:#0d9488;
+  --purple:#a78bfa; --pink:#f472b6; --danger:#ef4444; --amber:#f59e0b;
+  --water:#1d6fa4; --water-light:#4fc3f7; --water-sat:#0277bd;
+  --sand:#c4a25a; --clay:#7a6040; --rock:#5a5a5a;
+  --radius:12px; --shadow:0 8px 32px rgba(0,0,0,0.5);
+}
+*{box-sizing:border-box; margin:0; padding:0}
+body { background:var(--bg); color:var(--ink); font:13.5px/1.5 "Nunito Sans",system-ui,sans-serif; min-height:100vh; overflow-x:hidden }
+
+/* === Header === */
+header {
+  background:linear-gradient(90deg,#0f1f14 0%,#142219 50%,#0f1f14 100%);
+  border-bottom:1px solid var(--line); padding:10px 20px;
+  display:flex; align-items:center; gap:14px; position:sticky; top:0; z-index:2000; flex-wrap:wrap
+}
+header .logo { font-size:20px; font-weight:800 }
+header .logo b { color:var(--water-light) } header .logo span { color:var(--gold) }
+header .tag { color:var(--sub); font-size:11.5px; border-left:1px solid var(--line); padding-left:12px }
+header .right { margin-left:auto; display:flex; align-items:center; gap:8px }
+
+/* === Navigation Modules === */
+.mod-nav { background:var(--panel); border-bottom:1px solid var(--line); padding:0 20px; display:flex; gap:4px; overflow-x:auto }
+.mod-btn { background:none; border:none; border-bottom:3px solid transparent; color:var(--sub); padding:10px 14px; font-weight:700; font-size:12.5px; cursor:pointer; white-space:nowrap; transition:all .15s }
+.mod-btn:hover { color:var(--ink) }
+.mod-btn.active { color:var(--water-light); border-bottom-color:var(--water-light) }
+
+/* === Layout === */
+.app-layout { display:grid; grid-template-columns:1fr 380px; min-height:calc(100vh - 96px) }
+@media(max-width:1100px){ .app-layout{grid-template-columns:1fr} }
+.left-col { display:flex; flex-direction:column; border-right:1px solid var(--line) }
+.right-col { overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px }
+
+/* === Buttons & Controls === */
+button, select, input[type=range] {
+  background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:8px;
+  padding:6px 12px; font:inherit; cursor:pointer; transition:all .15s; font-size:12px
+}
+button:hover { border-color:var(--moss); color:#fff }
+button.active { background:#1a3a22; border-color:var(--moss); color:#fff; box-shadow:0 0 12px rgba(151,188,98,0.3) }
+button.primary { background:var(--water); color:#fff; border-color:#1e7ab8; font-weight:700 }
+button.primary:hover { background:#1565c0 }
+button.gold { background:var(--gold); color:#0f1f14; border-color:var(--gold); font-weight:800 }
+button.danger-btn { background:#3b0f0f; color:#fca5a5; border-color:var(--danger) }
+input[type=range] { padding:0; height:22px; accent-color:var(--water-light); cursor:pointer }
+input[type=number], input[type=text] {
+  background:#0a140d; color:var(--ink); border:1px solid var(--line); border-radius:6px;
+  padding:5px 10px; font:inherit; font-size:12px; width:100%
+}
+
+/* === Toolbar === */
+.toolbar { display:flex; gap:6px; flex-wrap:wrap; padding:10px 14px; border-bottom:1px solid var(--line); align-items:center; background:var(--panel) }
+.toolbar .sep { width:1px; align-self:stretch; background:var(--line); margin:0 4px }
+.tool-label { font-size:11px; color:var(--sub); font-weight:700 }
+
+/* === Cross-Section Canvas (Main Sim) === */
+#xsectionCanvas {
+  width:100%; display:block; background:#0a1a0e;
+  cursor:crosshair; border-bottom:1px solid var(--line)
+}
+
+/* === Plan Map === */
+#planMap { width:100%; height:240px; background:#0c180e; border-bottom:1px solid var(--line) }
+
+/* === Status bar === */
+.statusbar { padding:5px 14px; font-size:12px; color:var(--sub); border-bottom:1px solid var(--line); background:var(--panel); min-height:28px; display:flex; align-items:center; gap:12px }
+.statusbar .stat-chip { background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:2px 10px; font-size:11.5px }
+.statusbar .stat-chip b { color:var(--water-light) }
+
+/* === Right Panel Cards === */
+.card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow) }
+.card h3 { font-size:14px; font-weight:800; margin-bottom:8px; display:flex; align-items:center; gap:8px }
+.card h3 .ar { color:var(--gold); font-size:11.5px; margin-left:auto; font-weight:700 }
+.hint { color:var(--sub); font-size:12px; line-height:1.45; margin-bottom:8px }
+.formula { font-family:'JetBrains Mono',monospace; background:#070f0a; padding:6px 10px; border-radius:6px; font-size:11px; color:var(--blue); margin:6px 0; border:1px solid rgba(36,61,40,0.8) }
+
+/* === Well List === */
+.well-list { display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto }
+.well-item { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; display:grid; grid-template-columns:1fr auto; align-items:center; gap:8px; transition:border-color .15s }
+.well-item:hover { border-color:var(--water-light) }
+.well-item.pumping { border-color:var(--danger); animation:wellPulse 2s infinite }
+.well-item.recharge { border-color:var(--water-light) }
+.well-item .wname { font-weight:700; font-size:12.5px }
+.well-item .wstats { font-size:11.5px; color:var(--sub) }
+.well-item .wstats b { color:var(--water-light) }
+@keyframes wellPulse { 0%,100%{ box-shadow:none } 50%{ box-shadow:0 0 12px rgba(239,68,68,0.4) } }
+
+/* === Parameter Sliders Row === */
+.param-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px }
+.param-row label { font-size:12px; color:var(--sub) }
+.param-row b { color:var(--gold); font-size:12px; min-width:80px; text-align:right }
+
+/* === Time Controls === */
+.time-ctrl { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--panel); border-bottom:1px solid var(--line); flex-wrap:wrap }
+.time-display { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--water-light); font-weight:700; min-width:120px }
+.time-bar { flex:1; min-width:100px }
+.speed-btns { display:flex; gap:4px }
+
+/* === Legend Strip === */
+.legend-strip { display:flex; align-items:center; gap:12px; padding:8px 14px; font-size:11.5px; color:var(--sub); flex-wrap:wrap; border-bottom:1px solid var(--line) }
+.leg-item { display:flex; align-items:center; gap:5px }
+.leg-dot { width:12px; height:12px; border-radius:50%; border:2px solid rgba(255,255,255,0.2) }
+
+/* === Particle System Visual === */
+.particle { position:absolute; border-radius:50%; pointer-events:none; transition:none }
+
+/* === Charts Canvas === */
+canvas.mini-chart { width:100%; height:120px; background:#070f0a; border:1px solid var(--line); border-radius:8px; display:block; margin-top:6px }
+
+/* === Modal === */
+.modal-back { position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:3000; display:none; align-items:center; justify-content:center; backdrop-filter:blur(6px) }
+.modal-back.open { display:flex }
+.modal { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px; width:90%; max-width:480px; box-shadow:0 24px 48px rgba(0,0,0,0.7) }
+.modal h3 { color:var(--water-light); font-size:17px; margin-bottom:12px }
+.modal .field { margin-bottom:10px }
+.modal .field label { display:block; font-size:12px; color:var(--sub); margin-bottom:3px }
+.modal .actions { display:flex; justify-content:flex-end; gap:10px; margin-top:16px }
+
+/* === Tab Module Panels === */
+.module-pane { display:none; flex:1; flex-direction:column }
+.module-pane.active { display:flex }
+
+/* === Tooltip === */
+.tooltip-box {
+  position:absolute; background:rgba(7,15,10,0.95); border:1px solid var(--line); border-radius:8px;
+  padding:8px 12px; font-size:11.5px; pointer-events:none; z-index:1500; display:none;
+  min-width:180px; box-shadow:var(--shadow)
+}
+.tooltip-box b { color:var(--water-light) }
+
+/* === Scenario Badges === */
+.scenario-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.scenario-card {
+  background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+  padding:10px; cursor:pointer; transition:all .15s; text-align:center
+}
+.scenario-card:hover { border-color:var(--water-light) }
+.scenario-card.sel { border-color:var(--gold); background:rgba(212,175,55,0.1) }
+.scenario-card .sc-icon { font-size:24px; margin-bottom:4px }
+.scenario-card .sc-name { font-size:12px; font-weight:700 }
+.scenario-card .sc-desc { font-size:11px; color:var(--sub) }
+</style>
+<style id="platform-skin">
+/* ===== AgriTech Libye — Thème clair-vert (surcharge) ===== */
+:root{
+  --bg:#fbfcf8!important; --panel:#ffffff!important; --panel2:#f6faf0!important; --panel3:#f1f7e9!important;
+  --line:#d8e4c8!important; --ink:#2c3a24!important; --sub:#6f7d64!important; --moss:#5a8f2c!important;
+  --gold:#b5852a!important; --blue:#3a9bd0!important; --cyan:#2b9fb3!important; --teal:#2f8f7f!important;
+  --purple:#8e6fc7!important; --pink:#d1588f!important; --danger:#d1584e!important; --amber:#e0912b!important;
+  --water:#3a9bd0!important; --water-light:#2e86b8!important; --water-sat:#0277bd!important;
+  --shadow:0 6px 22px rgba(60,80,40,0.10)!important;
+}
+body{ background:#fbfcf8!important; color:#2c3a24!important }
+header{ background:linear-gradient(90deg,#ffffff 0%,#f6faf0 50%,#ffffff 100%)!important; border-bottom:1px solid #d8e4c8!important }
+.mod-nav{ background:#ffffff!important; border-bottom:1px solid #d8e4c8!important }
+.mod-btn{ color:#6f7d64!important }
+.mod-btn:hover{ color:#2c3a24!important }
+.mod-btn.active{ color:#5a8f2c!important; border-bottom-color:#7cb342!important }
+.left-col{ border-right:1px solid #d8e4c8!important }
+
+button,select{ background:#f1f7e9!important; color:#2c3a24!important; border:1px solid #d8e4c8!important }
+button:hover{ border-color:#5a8f2c!important; color:#2c3a24!important }
+button.active{ background:#e3efd2!important; border-color:#7cb342!important; color:#2c3a24!important; box-shadow:0 0 0 2px rgba(124,179,66,.18)!important }
+button.primary{ background:#7cb342!important; color:#fff!important; border-color:#5a8f2c!important }
+button.primary:hover{ background:#5a8f2c!important; color:#fff!important }
+button.gold{ background:#e0912b!important; color:#fff!important; border-color:#c67d1e!important }
+button.gold:hover{ background:#c67d1e!important; color:#fff!important }
+button.danger-btn,button.danger-btn:hover{ background:#fbe9e7!important; color:#d1584e!important; border-color:#d1584e!important }
+input[type=number],input[type=text]{ background:#ffffff!important; color:#2c3a24!important; border:1px solid #d8e4c8!important }
+input[type=range]{ background:transparent!important; border:none!important; accent-color:#7cb342!important }
+
+.toolbar{ background:#ffffff!important; border-bottom:1px solid #d8e4c8!important }
+.toolbar .sep{ background:#d8e4c8!important }
+.tool-label{ color:#6f7d64!important }
+
+.statusbar{ background:#f6faf0!important; color:#6f7d64!important; border-bottom:1px solid #d8e4c8!important }
+.statusbar .stat-chip{ background:#f1f7e9!important; border:1px solid #d8e4c8!important }
+.statusbar .stat-chip b{ color:#2e86b8!important }
+
+.card{ background:#ffffff!important; border:1px solid #d8e4c8!important; box-shadow:0 6px 22px rgba(60,80,40,0.08)!important }
+.hint{ color:#6f7d64!important }
+.formula{ background:#f1f7e9!important; color:#2e86b8!important; border:1px solid #d8e4c8!important }
+
+.well-item{ background:#f6faf0!important; border:1px solid #d8e4c8!important }
+.well-item .wstats{ color:#6f7d64!important }
+.well-item .wstats b{ color:#2e86b8!important }
+
+.time-ctrl{ background:#ffffff!important; border-bottom:1px solid #d8e4c8!important }
+.time-display{ color:#2e86b8!important }
+.legend-strip{ color:#6f7d64!important; border-bottom:1px solid #d8e4c8!important }
+
+.param-row label{ color:#6f7d64!important }
+.param-row b{ color:#b5852a!important }
+
+.scenario-card{ background:#f6faf0!important; border:1px solid #d8e4c8!important }
+.scenario-card:hover{ border-color:#7cb342!important }
+.scenario-card.sel{ border-color:#e0912b!important; background:#fbf3e2!important }
+.scenario-card .sc-desc{ color:#6f7d64!important }
+
+.modal-back{ background:rgba(44,58,36,0.35)!important; backdrop-filter:blur(4px)!important }
+.modal{ background:#ffffff!important; border:1px solid #d8e4c8!important; box-shadow:0 24px 48px rgba(60,80,40,0.25)!important }
+.modal h3{ color:#2e86b8!important }
+.modal .field label{ color:#6f7d64!important }
+
+.tooltip-box{ background:rgba(255,255,255,0.97)!important; border:1px solid #d8e4c8!important; color:#2c3a24!important; box-shadow:0 6px 22px rgba(60,80,40,0.18)!important }
+.tooltip-box b{ color:#2e86b8!important }
+
+/* Surfaces canvas (fallback CSS ; le fond peint en JS est édité séparément) */
+#xsectionCanvas{ background:#eef4e6!important; border-bottom:1px solid #d8e4c8!important }
+#planMap{ background:#eef4e6!important; border-bottom:1px solid #d8e4c8!important }
+canvas.mini-chart{ background:#f1f7e9!important; border:1px solid #d8e4c8!important }
+#planCanvas,#saltCanvas,#theisChart,#bilanChart{ background:#f1f7e9!important }
+
+/* Boîtes sombres en style inline */
+[style*="#0a140d"]{ background:#f1f7e9!important; color:#2c3a24!important }
+[style*="#3b0f0f"]{ background:#fbe9e7!important; color:#d1584e!important; border-color:#d1584e!important }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><b>Hydro</b><span>Sim</span></div>
+  <div class="tag">Simulateur de Nappe Phréatique — Puits · Débit · Sources · Salinité · SKILLS4EU M3/M5</div>
+  <div class="right">
+    <button class="gold" id="btnAddWell">＋ Ajouter un Puits</button>
+    <button id="btnAddSource" style="border-color:var(--blue);color:var(--blue)">💧 Source / Recharge</button>
+    <button id="btnReset" class="danger-btn">🗑 Réinitialiser</button>
+    <a href="tp_remotesensing_geology.html" style="text-decoration:none;background:var(--panel2);color:var(--ink);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid var(--line)">← TP Géologie</a>
+  </div>
+</header>
+
+<nav class="mod-nav">
+  <button class="mod-btn active" id="modXS">🔍 Coupe Hydrogéologique</button>
+  <button class="mod-btn" id="modPlan">🗺 Carte Piézométrique</button>
+  <button class="mod-btn" id="modTheis">📐 Essai de Pompage (Theis)</button>
+  <button class="mod-btn" id="modSalt">🧂 Intrusion Saline</button>
+  <button class="mod-btn" id="modBilan">💡 Bilan Hydrique</button>
+</nav>
+
+<!-- ============================================================ MODULE 1 : COUPE HYDROGÉOLOGIQUE ============================================================ -->
+<div class="module-pane active" id="paneXS">
+  <div class="app-layout">
+    <div class="left-col">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <span class="tool-label">OUTIL :</span>
+        <button id="toolWell" class="active" title="Placer un puits de pompage">🔴 Puits Pompage</button>
+        <button id="toolSource" title="Placer une source / zone de recharge">💧 Source</button>
+        <button id="toolObs" title="Placer un piézomètre d'observation">📏 Piézomètre</button>
+        <div class="sep"></div>
+        <span class="tool-label">GÉOLOGIE :</span>
+        <button id="geoUnconf" class="active">Libre (non confiné)</button>
+        <button id="geoConf">Confiné (entre couches)</button>
+        <div class="sep"></div>
+        <button id="btnPlaySim" class="primary">▶ Simuler</button>
+        <button id="btnStopSim">⏹ Pause</button>
+        <div class="sep"></div>
+        <span class="tool-label" style="color:var(--sub);font-size:11px">Clic sur la coupe = placer un élément</span>
+      </div>
+
+      <!-- Légende -->
+      <div class="legend-strip">
+        <span style="font-weight:700;color:var(--ink)">Légende :</span>
+        <div class="leg-item"><div class="leg-dot" style="background:#c4a25a"></div> Sable / Grès</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#7a6040"></div> Argile imperméable</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#5a5a5a"></div> Roche mère</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#1d6fa4"></div> Zone saturée</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#4fc3f7;opacity:0.5"></div> Zone non saturée</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div> Puits pompage</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#06b6d4"></div> Source / Recharge</div>
+      </div>
+
+      <!-- Coupe Hydrogéologique -->
+      <canvas id="xsectionCanvas" height="340"></canvas>
+
+      <!-- Time Controls -->
+      <div class="time-ctrl">
+        <span class="time-display" id="simTimeLabel">T = 0 jours</span>
+        <input type="range" class="time-bar" id="simTimeSlider" min="0" max="365" value="0" step="1">
+        <div class="speed-btns">
+          <button id="speedX1" class="active">×1</button>
+          <button id="speedX5">×5</button>
+          <button id="speedX20">×20</button>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="statusbar" id="simStatusBar">
+        <div class="stat-chip">Nappe : <b id="statWL">Z = 45.0 m</b></div>
+        <div class="stat-chip">Débit total pompé : <b id="statQ">0 m³/h</b></div>
+        <div class="stat-chip">Volume pompé : <b id="statVol">0 m³</b></div>
+        <div class="stat-chip">Recharge : <b id="statR">0 m³/j</b></div>
+      </div>
+
+      <!-- Mini Chart of Water Table vs Time -->
+      <canvas id="chartWL" class="mini-chart" height="100"></canvas>
+    </div>
+
+    <!-- Right Panel: Controls & Well List -->
+    <div class="right-col">
+      <!-- Paramètres Aquifère -->
+      <div class="card">
+        <h3>⚙️ Paramètres Aquifère <span class="ar">معاملات الطبقة الحاملة للمياه</span></h3>
+        <div class="hint">Modifiez les propriétés du système aquifère. Les modifications s'appliquent en temps réel.</div>
+
+        <div class="param-row">
+          <label>Transmissivité T (m²/s) :</label>
+          <b id="vT">1.5 × 10⁻³</b>
+        </div>
+        <select id="selT" style="width:100%;margin-bottom:8px">
+          <option value="0.0001">T = 10⁻⁴ (Aquifère faible)</option>
+          <option value="0.0005">T = 5×10⁻⁴ (Faible-moyen)</option>
+          <option value="0.0015" selected>T = 1.5×10⁻³ (Moyen — Grès Nubie)</option>
+          <option value="0.005">T = 5×10⁻³ (Bon — Alluvions)</option>
+          <option value="0.02">T = 2×10⁻² (Excellent — Calcaire karstique)</option>
+        </select>
+
+        <div class="param-row">
+          <label>Coefficient d'emmagasinement S :</label>
+          <b id="vS">0.15</b>
+        </div>
+        <input type="range" id="rgS" min="-4" max="-1" step="0.1" value="-0.82" style="width:100%;margin-bottom:8px">
+
+        <div class="param-row">
+          <label>Pluie / Recharge R (mm/an) :</label>
+          <b id="vR">100 mm/an</b>
+        </div>
+        <input type="range" id="rgR" min="0" max="400" step="10" value="100" style="width:100%;margin-bottom:8px">
+
+        <div class="param-row">
+          <label>Profondeur toit aquifère (m) :</label>
+          <b id="vTop">25 m</b>
+        </div>
+        <input type="range" id="rgTop" min="5" max="80" step="1" value="25" style="width:100%;margin-bottom:8px">
+
+        <div class="param-row">
+          <label>Épaisseur aquifère (m) :</label>
+          <b id="vThick">60 m</b>
+        </div>
+        <input type="range" id="rgThick" min="10" max="200" step="5" value="60" style="width:100%">
+
+        <div class="formula" style="margin-top:10px">Theis: s(r,t) = (Q/4πT)·W(u) | u = r²S/(4Tt)</div>
+      </div>
+
+      <!-- Liste des Puits & Sources -->
+      <div class="card">
+        <h3>🔴 Puits, Sources &amp; Piézomètres <span class="ar">الآبار والمصادر</span></h3>
+        <div class="well-list" id="wellList">
+          <div style="color:var(--sub);font-size:12px;text-align:center;padding:10px">
+            Cliquez sur la coupe hydrogéologique ou sur <b style="color:var(--gold)">＋ Ajouter un Puits</b> pour commencer.
+          </div>
+        </div>
+      </div>
+
+      <!-- Scénarios Pédagogiques -->
+      <div class="card">
+        <h3>🎓 Scénarios Pédagogiques <span class="ar">السيناريوهات التعليمية</span></h3>
+        <div class="scenario-grid">
+          <div class="scenario-card sel" id="sc0" onclick="loadScenario(0)">
+            <div class="sc-icon">🏔️</div>
+            <div class="sc-name">Oasis Naturelle</div>
+            <div class="sc-desc">Source de flanc, nappe affleurante</div>
+          </div>
+          <div class="scenario-card" id="sc1" onclick="loadScenario(1)">
+            <div class="sc-icon">🔴</div>
+            <div class="sc-name">Exploitation Intensive</div>
+            <div class="sc-desc">Pompage excessif, rabattement</div>
+          </div>
+          <div class="scenario-card" id="sc2" onclick="loadScenario(2)">
+            <div class="sc-icon">🌊</div>
+            <div class="sc-name">Biseau Salin</div>
+            <div class="sc-desc">Côtier — Ghyben-Herzberg</div>
+          </div>
+          <div class="scenario-card" id="sc3" onclick="loadScenario(3)">
+            <div class="sc-icon">💧</div>
+            <div class="sc-name">Réseau de Forages</div>
+            <div class="sc-desc">Interférence cônes dépression</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Résultats Hydrogéologiques -->
+      <div class="card">
+        <h3>📊 Résultats Calculés <span class="ar">النتائج المحسوبة</span></h3>
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:5px 4px;color:var(--sub)">Rabattement max (s)</td>
+            <td style="padding:5px 4px;text-align:right"><b id="resS" style="color:var(--danger)">— m</b></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:5px 4px;color:var(--sub)">Rayon d'influence (R)</td>
+            <td style="padding:5px 4px;text-align:right"><b id="resR" style="color:var(--amber)">— m</b></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:5px 4px;color:var(--sub)">Gradient hydraulique (i)</td>
+            <td style="padding:5px 4px;text-align:right"><b id="resI" style="color:var(--blue)">—</b></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:5px 4px;color:var(--sub)">Vitesse de Darcy (v)</td>
+            <td style="padding:5px 4px;text-align:right"><b id="resV" style="color:var(--moss)">— m/j</b></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:5px 4px;color:var(--sub)">Durée vie aquifère (extrapolée)</td>
+            <td style="padding:5px 4px;text-align:right"><b id="resLife" style="color:var(--gold)">— ans</b></td>
+          </tr>
+          <tr>
+            <td style="padding:5px 4px;color:var(--sub)">Énergie d'exhaure</td>
+            <td style="padding:5px 4px;text-align:right"><b id="resEnergy" style="color:var(--purple)">— kWh/m³</b></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ MODULE 2 : CARTE PIÉZOMÉTRIQUE ============================================================ -->
+<div class="module-pane" id="panePlan">
+  <div class="toolbar">
+    <button id="toolPlanWell" class="active">🔴 Puits</button>
+    <button id="toolPlanSrc">💧 Source</button>
+    <button id="toolPlanObs">📏 Piézomètre</button>
+    <div class="sep"></div>
+    <button id="btnShowIso" class="active">〰 Isopièzes</button>
+    <button id="btnShowParticles" class="active">✦ Trajectoires</button>
+    <div class="sep"></div>
+    <button class="primary" id="btnRunPlan">▶ Calculer</button>
+  </div>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 360px">
+    <canvas id="planCanvas" style="width:100%;background:#070f0a;cursor:crosshair"></canvas>
+    <div style="padding:14px;display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--line)">
+      <div class="card">
+        <h3>🗺 Vue en Plan — Piézométrie <span class="ar">خريطة البيزومتر</span></h3>
+        <div class="hint">Chaque puits crée un cône de rabattement (ligne en pointillé). Les trajectoires de l'eau suivent les lignes de flux perpendiculaires aux isopièzes.</div>
+        <div class="formula">Isopièze : h(x,y) = h₀ - Σᵢ (Qᵢ/4πT)·W(uᵢ)</div>
+        <canvas id="piezoChart" class="mini-chart" height="120"></canvas>
+      </div>
+      <div class="card">
+        <h3>📏 Lectures Piézométriques <span class="ar">قراءات منسوب المياه</span></h3>
+        <div class="hint">Cliquez sur 📏 Piézomètre puis sur la carte pour ajouter des points de mesure.</div>
+        <div id="piezoReadings" style="font-size:12px;color:var(--sub)">Aucun piézomètre — placez-en sur la carte.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ MODULE 3 : THEIS ESSAI POMPAGE ============================================================ -->
+<div class="module-pane" id="paneTheis">
+  <div style="display:grid;grid-template-columns:1fr 380px;min-height:100%">
+    <div style="padding:20px;display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h3>📐 Essai de Pompage — Méthode de Theis <span class="ar">تجربة الضخ - طريقة ثيس</span></h3>
+        <div class="hint">Simulez un essai de pompage à débit constant. La courbe de Theis vous permet de déterminer T et S à partir des mesures de rabattement dans le piézomètre d'observation.</div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px">
+          <div>
+            <div class="param-row"><label>Débit de pompage Q (m³/h) :</label><b id="theisQ">120</b></div>
+            <input type="range" id="rgTheisQ" min="10" max="500" value="120" style="width:100%;margin-bottom:10px">
+            <div class="param-row"><label>Distance piézomètre r (m) :</label><b id="theisR">100</b></div>
+            <input type="range" id="rgTheisR" min="5" max="500" value="100" style="width:100%;margin-bottom:10px">
+            <div class="param-row"><label>Durée de l'essai (heures) :</label><b id="theisDur">48</b></div>
+            <input type="range" id="rgTheisDur" min="1" max="240" value="48" style="width:100%">
+          </div>
+          <div>
+            <div class="param-row"><label>T réel (m²/s) :</label><b id="theisTV">1.5 × 10⁻³</b></div>
+            <select id="selTheisT" style="width:100%;margin-bottom:10px">
+              <option value="0.0001">10⁻⁴ (Faible)</option>
+              <option value="0.0005">5×10⁻⁴</option>
+              <option value="0.0015" selected>1.5×10⁻³ (Moyen)</option>
+              <option value="0.005">5×10⁻³ (Bon)</option>
+              <option value="0.02">2×10⁻² (Excellent)</option>
+            </select>
+            <div class="param-row"><label>S réel :</label><b id="theisSV">0.15</b></div>
+            <input type="range" id="rgTheisS" min="-4" max="-1" step="0.1" value="-0.82" style="width:100%">
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1">
+        <h3>📈 Courbe de Theis — s = f(log t)</h3>
+        <canvas id="theisChart" style="width:100%;height:300px;background:#070f0a;border-radius:8px" height="300"></canvas>
+      </div>
+    </div>
+
+    <div style="padding:14px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <h3>📊 Résultats de l'Essai <span class="ar">نتائج التجربة</span></h3>
+        <div class="formula" style="margin-bottom:8px">s(r,t) = (Q/4πT) × W(u)<br>u = r²S / (4Tt)</div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <tr style="border-bottom:1px solid var(--line)"><td style="padding:5px 4px;color:var(--sub)">s max (r=<span id="theisRLabel">100</span>m)</td><td style="text-align:right"><b id="theisSMax" style="color:var(--danger)">—</b></td></tr>
+          <tr style="border-bottom:1px solid var(--line)"><td style="padding:5px 4px;color:var(--sub)">Temps critique (u=0.1)</td><td style="text-align:right"><b id="theisTCrit" style="color:var(--amber)">—</b></td></tr>
+          <tr style="border-bottom:1px solid var(--line)"><td style="padding:5px 4px;color:var(--sub)">Transmissivité T calculée</td><td style="text-align:right"><b id="theisCalcT" style="color:var(--blue)">—</b></td></tr>
+          <tr><td style="padding:5px 4px;color:var(--sub)">Coefficient S calculé</td><td style="text-align:right"><b id="theisCalcS" style="color:var(--moss)">—</b></td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>⚡ Bilan Énergétique <span class="ar">موازنة الطاقة</span></h3>
+        <div class="hint">Coût d'exhaure en fonction du rabattement cumulé et du prix de l'électricité.</div>
+        <div style="font-size:12px;line-height:1.8">
+          <div class="param-row"><label>Profondeur dynamique :</label><b id="enDepth" style="color:var(--danger)">— m</b></div>
+          <div class="param-row"><label>Énergie spécifique :</label><b id="enSpec" style="color:var(--purple)">— kWh/m³</b></div>
+          <div class="param-row"><label>Débit pompé :</label><b id="enQ" style="color:var(--water-light)">— m³/h</b></div>
+          <div class="param-row"><label>Puissance pompe nécessaire :</label><b id="enPow" style="color:var(--gold)">— kW</b></div>
+          <div class="param-row"><label>Coût annuel (pivot 50 ha) :</label><b id="enCost" style="color:var(--amber)">— DT/an</b></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>❓ Question Examen</h3>
+        <div class="hint">À T = 1.5×10⁻³ m²/s, S = 0.15, Q = 120 m³/h, que se passe-t-il si vous installez un 2e forage à 200 m ?</div>
+        <div style="background:#0a140d;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;color:#c8e6c9;line-height:1.6">
+          Les <b style="color:var(--gold)">cônes de rabattement interfèrent</b> → Le niveau dynamique de chaque puits s'abaisse (<b style="color:var(--danger)">surexploitation</b>). La transmissivité apparente mesurée sera <b>sous-estimée</b> si l'essai n'en tient pas compte.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ MODULE 4 : INTRUSION SALINE ============================================================ -->
+<div class="module-pane" id="paneSalt">
+  <div style="display:grid;grid-template-columns:1fr 360px;min-height:100%">
+    <div style="padding:0;display:flex;flex-direction:column">
+      <div class="toolbar">
+        <button id="saltBtnSim" class="primary">▶ Simuler l'Intrusion</button>
+        <div class="sep"></div>
+        <span class="tool-label">Intensité pompage :</span>
+        <input type="range" id="rgSaltPump" min="0" max="100" value="40" style="width:140px;accent-color:var(--danger)">
+        <b id="saltPumpVal" style="color:var(--danger);font-size:12px">40 %</b>
+        <div class="sep"></div>
+        <span class="tool-label">Distance mer (km) :</span>
+        <input type="range" id="rgSaltDist" min="1" max="20" value="5" style="width:100px">
+        <b id="saltDistVal" style="color:var(--blue);font-size:12px">5 km</b>
+      </div>
+      <canvas id="saltCanvas" style="flex:1;width:100%;background:#070f0a;cursor:default" height="420"></canvas>
+      <div class="statusbar">
+        <div class="stat-chip">Interface biseau : <b id="saltInterface" style="color:var(--danger)">x = 0 m</b></div>
+        <div class="stat-chip">Ghyben-Herzberg : <b id="saltGH" style="color:var(--amber)">z_salt = 40 × h_fresh</b></div>
+        <div class="stat-chip">Chlorures estimés : <b id="saltCl" style="color:var(--purple)">— mg/L</b></div>
+      </div>
+    </div>
+    <div style="padding:14px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <h3>🌊 Intrusion Saline (Jefara) <span class="ar">التسرب الملحي</span></h3>
+        <div class="hint">Le pompage réduit la hauteur d'eau douce côtière, permettant à l'eau salée de pénétrer. La relation de Ghyben-Herzberg décrit l'interface.</div>
+        <div class="formula">z_sel = (ρ_e / (ρ_s - ρ_e)) × h_douce<br>≈ 40 × h_douce</div>
+        <div class="hint">Chaque mètre de rabattement dans la nappe côtière fait remonter l'interface salée de <b style="color:var(--danger)">40 mètres</b> dans l'aquifère.</div>
+        <canvas id="saltProfileChart" class="mini-chart" height="120"></canvas>
+      </div>
+      <div class="card">
+        <h3>🧪 Qualité de l'Eau Extraite</h3>
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <tr style="border-bottom:1px solid var(--line)"><td style="padding:5px 4px;color:var(--sub)">Chlorures (mg/L)</td><td style="text-align:right"><b id="qCl" style="color:var(--danger)">—</b></td></tr>
+          <tr style="border-bottom:1px solid var(--line)"><td style="padding:5px 4px;color:var(--sub)">Conductivité (µS/cm)</td><td style="text-align:right"><b id="qEC" style="color:var(--amber)">—</b></td></tr>
+          <tr style="border-bottom:1px solid var(--line)"><td style="padding:5px 4px;color:var(--sub)">Statut irrigation (FAO)</td><td style="text-align:right"><b id="qFAO" style="color:var(--moss)">—</b></td></tr>
+          <tr><td style="padding:5px 4px;color:var(--sub)">Risque culture sensible</td><td style="text-align:right"><b id="qRisk">—</b></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ MODULE 5 : BILAN HYDRIQUE ============================================================ -->
+<div class="module-pane" id="paneBilan">
+  <div style="display:grid;grid-template-columns:1fr 380px;min-height:100%;padding:20px;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h3>💡 Bilan Hydrique Global <span class="ar">الموازنة المائية الشاملة</span></h3>
+        <div class="hint">Le bilan de la nappe est la différence entre toutes les entrées (pluie infiltrée, berges, irrigation de retour) et toutes les sorties (pompage, sources, évapotranspiration).</div>
+        <div class="formula">ΔS = (P + I + Q_berge) - (E + Q_source + Q_pompage)</div>
+      </div>
+      <div class="card" style="flex:1">
+        <h3>📊 Diagramme de Flux Annuel</h3>
+        <canvas id="bilanChart" style="width:100%;height:320px;background:#070f0a;border-radius:8px" height="320"></canvas>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <h3>🎚️ Contrôles du Bilan <span class="ar">معاملات الموازنة</span></h3>
+        <div class="param-row"><label>Pluie efficace (Peff, mm/an) :</label><b id="bPeff">80</b></div>
+        <input type="range" id="rgBP" min="0" max="400" value="80" style="width:100%;margin-bottom:8px">
+        <div class="param-row"><label>Irrigation retour (%) :</label><b id="bIrrig">20 %</b></div>
+        <input type="range" id="rgBI" min="0" max="50" value="20" style="width:100%;margin-bottom:8px">
+        <div class="param-row"><label>Débit pompé total (m³/j) :</label><b id="bPump">5000</b></div>
+        <input type="range" id="rgBPump" min="0" max="50000" step="500" value="5000" style="width:100%;margin-bottom:8px">
+        <div class="param-row"><label>Étiage sources (m³/j) :</label><b id="bSpring">500</b></div>
+        <input type="range" id="rgBSpring" min="0" max="10000" step="100" value="500" style="width:100%;margin-bottom:8px">
+        <div class="param-row"><label>Surface aquifère (km²) :</label><b id="bArea">500</b></div>
+        <input type="range" id="rgBArea" min="10" max="5000" step="10" value="500" style="width:100%">
+      </div>
+
+      <div class="card">
+        <h3>📈 Résultat du Bilan</h3>
+        <div id="bilanResult" style="font-size:13px;line-height:2">
+          <div class="param-row"><label>Total entrées :</label><b id="bilanIn" style="color:var(--water-light)">— m³/an</b></div>
+          <div class="param-row"><label>Total sorties :</label><b id="bilanOut" style="color:var(--danger)">— m³/an</b></div>
+          <div class="param-row"><label>ΔS (variation stock) :</label><b id="bilanDS" style="color:var(--gold)">— m³/an</b></div>
+          <div class="param-row"><label>Taux de renouvellement :</label><b id="bilanRenew" style="color:var(--moss)">— %</b></div>
+          <div class="param-row"><label>Durée de vie du stock :</label><b id="bilanLife" style="color:var(--amber)">— ans</b></div>
+        </div>
+        <div id="bilanAlert" style="margin-top:8px;display:none;background:#3b0f0f;border:1px solid var(--danger);border-radius:8px;padding:10px;font-size:12px;color:#fca5a5">
+          ⚠️ <b>Déséquilibre détecté :</b> Les sorties dépassent les entrées. L'aquifère est en cours de dépletion.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ajout Puits -->
+<div class="modal-back" id="modalWell">
+  <div class="modal">
+    <h3>🔴 Ajouter un Puits de Pompage</h3>
+    <div class="field"><label>Nom du puits</label><input type="text" id="wName" value="Forage F1"></div>
+    <div class="field"><label>Débit de pompage Q (m³/h)</label><input type="number" id="wQ" value="120" min="1" max="2000"></div>
+    <div class="field"><label>Profondeur du forage (m)</label><input type="number" id="wDepth" value="80" min="5" max="300"></div>
+    <div class="field"><label>Crépine de (m) à (m)</label>
+      <div style="display:flex;gap:8px">
+        <input type="number" id="wCrepFrom" value="40" style="width:50%">
+        <input type="number" id="wCrepTo" value="80" style="width:50%">
+      </div>
+    </div>
+    <div class="field">
+      <label>Type de pompe</label>
+      <select id="wPumpType">
+        <option value="submersible">Submersible (classique)</option>
+        <option value="solar">Solaire</option>
+        <option value="vertical">Centrifuge verticale</option>
+      </select>
+    </div>
+    <div class="actions">
+      <button id="btnCancelWell">Annuler</button>
+      <button id="btnConfirmWell" class="gold">✓ Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ajout Source -->
+<div class="modal-back" id="modalSource">
+  <div class="modal">
+    <h3>💧 Ajouter une Source / Zone de Recharge</h3>
+    <div class="field"><label>Nom</label><input type="text" id="sName" value="Source S1"></div>
+    <div class="field">
+      <label>Type</label>
+      <select id="sType">
+        <option value="spring">Source naturelle (drainage gravitaire)</option>
+        <option value="recharge">Zone de recharge (pluviale)</option>
+        <option value="wadi">Oued en crue (recharge temporaire)</option>
+        <option value="irrigation">Retour d'irrigation</option>
+      </select>
+    </div>
+    <div class="field"><label>Débit / Taux de recharge (m³/j)</label><input type="number" id="sQ" value="500" min="0" max="50000"></div>
+    <div class="actions">
+      <button id="btnCancelSrc">Annuler</button>
+      <button id="btnConfirmSrc" style="background:var(--water);color:#fff;font-weight:700">✓ Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip-box" id="tooltip"></div>
+
+<script>
+"use strict";
+
+/* ============================= MODULE NAVIGATION ============================= */
+const modBtns = {
+  modXS: { btn: document.getElementById("modXS"), pane: document.getElementById("paneXS") },
+  modPlan: { btn: document.getElementById("modPlan"), pane: document.getElementById("panePlan") },
+  modTheis: { btn: document.getElementById("modTheis"), pane: document.getElementById("paneTheis") },
+  modSalt: { btn: document.getElementById("modSalt"), pane: document.getElementById("paneSalt") },
+  modBilan: { btn: document.getElementById("modBilan"), pane: document.getElementById("paneBilan") }
+};
+
+Object.entries(modBtns).forEach(([id, { btn, pane }]) => {
+  btn.onclick = () => {
+    Object.values(modBtns).forEach(x => { x.btn.classList.remove("active"); x.pane.classList.remove("active"); });
+    btn.classList.add("active"); pane.classList.add("active");
+    if (id === "modXS") { resizeXS(); drawXS(); }
+    if (id === "modPlan") { resizePlan(); drawPlan(); }
+    if (id === "modTheis") { drawTheisChart(); updateTheisResults(); }
+    if (id === "modSalt") { resizeSalt(); drawSalt(); }
+    if (id === "modBilan") { updateBilan(); drawBilanChart(); }
+  };
+});
+
+/* ============================= STATE ============================= */
+let wells = [], sources = [], piezos = [];
+let simTime = 0, simPlaying = false, simSpeed = 1, simAnimId = null;
+let activeTool = "well", geoType = "unconf";
+let aquifer = { T: 0.0015, S: 0.15, R: 100, topDepth: 25, thickness: 60 };
+let naturalHead = 45.0; // m
+
+/* ============================= CROSS-SECTION CANVAS ============================= */
+const xs = document.getElementById("xsectionCanvas");
+const xctx = xs.getContext("2d");
+let xsW = 0, xsH = 0;
+
+function resizeXS() {
+  const r = xs.parentElement.getBoundingClientRect();
+  xs.width = r.width; xs.height = 340;
+  xsW = xs.width; xsH = xs.height;
+}
+
+function theis_W(u) {
+  if (u >= 10) return 0;
+  if (u < 1e-10) return 15;
+  // W(u) = -γ - ln(u) + u - u²/(2·2!) + u³/(3·3!) - ...  (série convergente, u < 10)
+  let sum = -0.5772156649 - Math.log(u), uf = -1;
+  for (let k = 1; k <= 25; k++) {
+    uf = -uf * u / k;          // (-1)^(k+1) · u^k / k!
+    sum += uf / k;
+  }
+  return Math.max(0, sum);
+}
+
+function drawdown(x, xw, t) {
+  if (!wells.length && !sources.length) return 0;
+  let s = 0;
+  for (const w of wells) {
+    const r = Math.max(0.1, Math.abs(x - w.xNorm) * 500);
+    const u = (r * r * aquifer.S) / (4 * aquifer.T * Math.max(0.001, t * 86400));
+    s += (w.Q / 3600 / (4 * Math.PI * aquifer.T)) * theis_W(u);
+  }
+  for (const sr of sources) {
+    const r = Math.max(0.1, Math.abs(x - sr.xNorm) * 500);
+    const u = (r * r * aquifer.S) / (4 * aquifer.T * Math.max(0.001, t * 86400));
+    s -= (sr.Q / 86400 / (4 * Math.PI * aquifer.T)) * theis_W(u) * 0.3;
+  }
+  return s;
+}
+
+function drawXS() {
+  if (!xsW) return;
+  const W = xsW, H = xsH;
+  xctx.clearRect(0, 0, W, H);
+
+  // Geological layers heights
+  const topY = 20;
+  const surfaceY = 50;
+  const topAqY = surfaceY + (aquifer.topDepth / 120) * (H - 80);
+  const botAqY = topAqY + (aquifer.thickness / 120) * (H - 80);
+  const botY = H - 20;
+
+  // Sky gradient (surface soil)
+  const skyGrad = xctx.createLinearGradient(0, topY, 0, surfaceY);
+  skyGrad.addColorStop(0, "#e7f0d7"); skyGrad.addColorStop(1, "#cfe0ad");
+  xctx.fillStyle = skyGrad;
+  xctx.fillRect(0, topY, W, surfaceY - topY);
+
+  // Unsaturated zone (sand / loose) — light sand/beige
+  const unsatGrad = xctx.createLinearGradient(0, surfaceY, 0, topAqY);
+  unsatGrad.addColorStop(0, "#e8dcc0"); unsatGrad.addColorStop(0.5, "#e0d0ac"); unsatGrad.addColorStop(1, "#d6c39a");
+  xctx.fillStyle = unsatGrad;
+  xctx.fillRect(0, surfaceY, W, topAqY - surfaceY);
+
+  // Aquifer zone (saturated) — light water blue
+  const satGrad = xctx.createLinearGradient(0, topAqY, 0, botAqY);
+  satGrad.addColorStop(0, "#bfe0f2"); satGrad.addColorStop(0.5, "#9ccef0"); satGrad.addColorStop(1, "#b3d9ee");
+  xctx.fillStyle = satGrad;
+  xctx.fillRect(0, topAqY, W, botAqY - topAqY);
+
+  // Rock bottom — light grey substratum
+  const rockGrad = xctx.createLinearGradient(0, botAqY, 0, botY);
+  rockGrad.addColorStop(0, "#d9dde0"); rockGrad.addColorStop(1, "#c7cdd2");
+  xctx.fillStyle = rockGrad;
+  xctx.fillRect(0, botAqY, W, botY - botAqY);
+
+  // Layer separators for readability on light theme
+  xctx.strokeStyle = "#9aa6ad"; xctx.lineWidth = 1; xctx.setLineDash([]);
+  xctx.beginPath(); xctx.moveTo(0, topAqY); xctx.lineTo(W, topAqY); xctx.stroke();
+  xctx.beginPath(); xctx.moveTo(0, botAqY); xctx.lineTo(W, botAqY); xctx.stroke();
+
+  // Draw animated water particles in aquifer
+  const t = Date.now() / 1000;
+  xctx.fillStyle = "rgba(31, 143, 206, 0.30)";
+  for (let i = 0; i < 30; i++) {
+    const px = ((i * 137.5 + t * 30) % W);
+    const py = topAqY + ((i * 73 + t * 12) % (botAqY - topAqY));
+    xctx.beginPath(); xctx.arc(px, py, 2.5, 0, Math.PI * 2); xctx.fill();
+  }
+
+  // Water table line with drawdown profile
+  xctx.beginPath();
+  xctx.strokeStyle = "#1f8fce"; xctx.lineWidth = 2.5; xctx.setLineDash([]);
+  for (let px = 0; px <= W; px += 2) {
+    const xNorm = px / W;
+    const s = drawdown(xNorm, 0.5, simTime || 1);
+    const wlY = topAqY - (15 - Math.max(0, Math.min(15, s))) * 0.8;
+    px === 0 ? xctx.moveTo(px, wlY) : xctx.lineTo(px, wlY);
+  }
+  xctx.stroke();
+
+  // Draw Wells
+  wells.forEach(w => {
+    const wx = w.xNorm * W;
+    const s = drawdown(w.xNorm, w.xNorm, simTime || 1);
+    const wellWL = topAqY - Math.max(0, 15 - s) * 0.8 + Math.min(s, 20) * 1.2;
+    const botWell = topAqY + (w.depth / 120) * (H - 80) * 0.8;
+
+    // Casing
+    xctx.fillStyle = "#666"; xctx.fillRect(wx - 4, surfaceY, 8, botWell - surfaceY);
+    xctx.strokeStyle = "#999"; xctx.lineWidth = 1.5; xctx.strokeRect(wx - 4, surfaceY, 8, botWell - surfaceY);
+
+    // Screen (crépine)
+    const crYfrom = topAqY + ((w.crepFrom || 40) / 120) * (H - 80) * 0.8;
+    const crYto = topAqY + ((w.crepTo || 80) / 120) * (H - 80) * 0.8;
+    xctx.strokeStyle = "#4fc3f7"; xctx.setLineDash([3, 3]);
+    xctx.strokeRect(wx - 4, crYfrom, 8, Math.min(crYto - crYfrom, botWell - crYfrom));
+    xctx.setLineDash([]);
+
+    // Pump arrow (animated)
+    const arrowOffset = (Date.now() / 200) % 20;
+    xctx.strokeStyle = w.Q > 0 ? "#ef4444" : "#4fc3f7";
+    xctx.lineWidth = 2; xctx.beginPath();
+    xctx.moveTo(wx, wellWL + 10 - arrowOffset);
+    xctx.lineTo(wx, surfaceY - 20);
+    xctx.stroke();
+
+    // Well head
+    xctx.fillStyle = w.Q > 0 ? "#ef4444" : "#06b6d4";
+    xctx.beginPath(); xctx.arc(wx, surfaceY - 6, 7, 0, Math.PI * 2); xctx.fill();
+
+    // Water level in well
+    xctx.fillStyle = "#4fc3f7";
+    xctx.fillRect(wx - 3, wellWL, 6, botWell - wellWL);
+
+    // Label
+    xctx.fillStyle = "#2c3a24"; xctx.font = "bold 11px Nunito Sans";
+    xctx.textAlign = "center"; xctx.fillText(w.name, wx, surfaceY - 18);
+    xctx.fillStyle = w.Q > 0 ? "#ef4444" : "#06b6d4";
+    xctx.font = "10px JetBrains Mono"; xctx.fillText(`${w.Q} m³/h`, wx, surfaceY - 30);
+  });
+
+  // Draw Sources
+  sources.forEach(sr => {
+    const sx = sr.xNorm * W;
+    const srY = topAqY + 5;
+
+    // Water eruption animation
+    const t2 = Date.now() / 400;
+    for (let i = 0; i < 5; i++) {
+      const dropX = sx + Math.sin(t2 + i * 1.2) * 14;
+      const dropY = srY - (((t2 * 0.8 + i * 0.6) % 1) * 25);
+      const alpha = 1 - (((t2 * 0.8 + i * 0.6) % 1));
+      xctx.fillStyle = `rgba(6,182,212,${alpha * 0.8})`;
+      xctx.beginPath(); xctx.arc(dropX, dropY, 3, 0, Math.PI * 2); xctx.fill();
+    }
+
+    // Source icon
+    xctx.fillStyle = "#06b6d4"; xctx.beginPath(); xctx.arc(sx, srY, 8, 0, Math.PI * 2); xctx.fill();
+    xctx.fillStyle = "#fff"; xctx.font = "bold 10px Nunito Sans"; xctx.textAlign = "center";
+    xctx.fillText("💧", sx, srY + 3);
+    xctx.fillStyle = "#06b6d4"; xctx.font = "10px Nunito Sans";
+    xctx.fillText(sr.name, sx, topAqY - 12);
+    xctx.fillText(`+${sr.Q}m³/j`, sx, topAqY - 24);
+  });
+
+  // Draw Piezometers
+  piezos.forEach(p => {
+    const px2 = p.xNorm * W;
+    const s = drawdown(p.xNorm, p.xNorm, simTime || 1);
+    const piezY = topAqY - Math.max(0, 15 - s) * 0.8 + Math.min(s, 20) * 1.2;
+    xctx.strokeStyle = "#a78bfa"; xctx.lineWidth = 1.5; xctx.setLineDash([4, 2]);
+    xctx.beginPath(); xctx.moveTo(px2, surfaceY); xctx.lineTo(px2, botAqY); xctx.stroke();
+    xctx.setLineDash([]);
+    xctx.fillStyle = "#a78bfa"; xctx.beginPath(); xctx.arc(px2, piezY, 5, 0, Math.PI * 2); xctx.fill();
+    xctx.fillStyle = "#a78bfa"; xctx.font = "bold 10px Nunito Sans"; xctx.textAlign = "center";
+    xctx.fillText(p.name, px2, surfaceY - 10);
+    xctx.fillText(`h=${(naturalHead - Math.min(s, 20)).toFixed(1)}m`, px2, surfaceY - 22);
+  });
+
+  // Layer labels
+  xctx.fillStyle = "#6b5a3a"; xctx.font = "11px Nunito Sans"; xctx.textAlign = "left";
+  xctx.fillText("Zone non saturée (aération)", 8, topAqY - 10);
+  xctx.fillStyle = "#1565a0";
+  xctx.fillText("Aquifère saturé — Zone de captage", 8, topAqY + 20);
+  xctx.fillStyle = "#6c757d";
+  xctx.fillText("Substratum imperméable (roche mère)", 8, botAqY + 15);
+
+  // Depth scale
+  xctx.fillStyle = "#445"; xctx.textAlign = "right"; xctx.font = "10px JetBrains Mono";
+  [0, 25, 50, 75, 100].forEach(d => {
+    const dy = surfaceY + (d / 120) * (H - 70);
+    xctx.fillText(`${d}m`, W - 8, dy);
+    xctx.strokeStyle = "rgba(44,58,36,0.12)"; xctx.lineWidth = 0.5;
+    xctx.beginPath(); xctx.moveTo(0, dy); xctx.lineTo(W - 50, dy); xctx.stroke();
+  });
+}
+
+/* Click on Cross-Section to place elements */
+xs.onclick = e => {
+  const rect = xs.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  if (activeTool === "well") { pendingWellX = x; document.getElementById("modalWell").classList.add("open"); }
+  if (activeTool === "source") { pendingSourceX = x; document.getElementById("modalSource").classList.add("open"); }
+  if (activeTool === "obs") {
+    const name = "Pz" + (piezos.length + 1);
+    piezos.push({ name, xNorm: x });
+    updateWellList(); drawXS();
+  }
+};
+
+xs.onmousemove = e => {
+  const rect = xs.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  const t = document.getElementById("tooltip");
+  const s = drawdown(x, 0.5, simTime || 1);
+  const dist = Math.round(x * 500);
+  t.style.display = "block";
+  t.style.left = (e.clientX + 12) + "px";
+  t.style.top = (e.clientY - 30) + "px";
+  t.innerHTML = `Distance depuis centre : <b>${dist} m</b><br>Rabattement : <b style="color:#ef4444">${s.toFixed(2)} m</b><br>Niveau piézom. : <b style="color:#4fc3f7">${(naturalHead - Math.min(s, 30)).toFixed(1)} m NGT</b>`;
+};
+xs.onmouseleave = () => { document.getElementById("tooltip").style.display = "none"; };
+
+/* ============================= PLAN MAP CANVAS ============================= */
+const planCanvas = document.getElementById("planCanvas");
+const pctx = planCanvas.getContext("2d");
+let planW = 0, planH = 0;
+let planToolActive = "well";
+
+function resizePlan() {
+  const r = planCanvas.parentElement.getBoundingClientRect();
+  planCanvas.width = r.width - 360; planCanvas.height = Math.max(400, r.height - 60);
+  planW = planCanvas.width; planH = planCanvas.height;
+}
+
+function drawPlan() {
+  if (!planW) return;
+  pctx.clearRect(0, 0, planW, planH);
+
+  // Background grid
+  pctx.fillStyle = "#f4f8ec"; pctx.fillRect(0, 0, planW, planH);
+  pctx.strokeStyle = "#d8e4c8"; pctx.lineWidth = 0.5;
+  for (let gx = 0; gx < planW; gx += 40) { pctx.beginPath(); pctx.moveTo(gx, 0); pctx.lineTo(gx, planH); pctx.stroke(); }
+  for (let gy = 0; gy < planH; gy += 40) { pctx.beginPath(); pctx.moveTo(0, gy); pctx.lineTo(planW, gy); pctx.stroke(); }
+
+  // Draw isopiezometric contours
+  const nContours = 10;
+  for (let ci = 0; ci < nContours; ci++) {
+    const targetS = ci * 2;
+    pctx.strokeStyle = `rgba(77,182,255,${0.15 + ci * 0.04})`; pctx.lineWidth = 1; pctx.setLineDash([4, 4]);
+    pctx.beginPath(); let first = true;
+    for (let py = 0; py < planH; py += 2) {
+      for (let px = 0; px < planW; px += 2) {
+        const xN = px / planW, yN = py / planH;
+        let s = 0;
+        for (const w of wells) {
+          const dx = (xN - (w.planX || 0.5)) * planW, dy = (yN - (w.planY || 0.5)) * planH;
+          const r = Math.max(0.5, Math.sqrt(dx * dx + dy * dy) * 0.5);
+          const u = (r * r * aquifer.S) / (4 * aquifer.T * Math.max(1, simTime) * 86400);
+          s += (w.Q / 3600 / (4 * Math.PI * aquifer.T)) * theis_W(u);
+        }
+        if (Math.abs(s - targetS) < 0.5) {
+          first ? pctx.moveTo(px, py) : pctx.lineTo(px, py);
+          first = false;
+        }
+      }
+    }
+    pctx.stroke(); pctx.setLineDash([]);
+  }
+
+  // Particle flow lines
+  const tAnimate = Date.now() / 1000;
+  pctx.fillStyle = "rgba(77,182,255,0.5)";
+  for (let i = 0; i < 20; i++) {
+    const sx = (i * 137.5 % planW), sy = (i * 73 % planH);
+    const age = (tAnimate * 0.3 + i * 0.3) % 1;
+    let px = sx, py = sy;
+    for (let step = 0; step < 10; step++) {
+      let gradX = 0, gradY = 0;
+      for (const w of wells) {
+        const dx = (px / planW - (w.planX || 0.5)) * planW;
+        const dy = (py / planH - (w.planY || 0.5)) * planH;
+        const r2 = Math.max(1, dx * dx + dy * dy);
+        gradX += dx / r2 * w.Q * 0.2;
+        gradY += dy / r2 * w.Q * 0.2;
+      }
+      px -= gradX * 0.5; py -= gradY * 0.5;
+    }
+    pctx.beginPath(); pctx.arc(px, py, 3 * age, 0, Math.PI * 2);
+    pctx.globalAlpha = 1 - age; pctx.fill(); pctx.globalAlpha = 1;
+  }
+
+  // Draw wells in plan view
+  wells.forEach(w => {
+    const wx = (w.planX || 0.5) * planW, wy = (w.planY || 0.5) * planH;
+    // Cone of depression (dashed circle for influence)
+    const t = Math.max(1, simTime);
+    const radiusInfluence = 1.5 * Math.sqrt(aquifer.T * t * 86400 / aquifer.S);
+    const rPx = Math.min(radiusInfluence * 0.2, Math.min(planW, planH) / 2);
+    pctx.strokeStyle = "rgba(239,68,68,0.3)"; pctx.lineWidth = 1.5; pctx.setLineDash([6, 4]);
+    pctx.beginPath(); pctx.arc(wx, wy, rPx, 0, Math.PI * 2); pctx.stroke();
+    pctx.setLineDash([]);
+
+    // Well symbol
+    pctx.fillStyle = "#ef4444"; pctx.beginPath(); pctx.arc(wx, wy, 8, 0, Math.PI * 2); pctx.fill();
+    pctx.fillStyle = "#fff"; pctx.font = "bold 11px Nunito Sans"; pctx.textAlign = "center";
+    pctx.fillText(w.name, wx, wy - 14);
+    pctx.fillStyle = "#ef4444"; pctx.font = "10px Nunito Sans";
+    pctx.fillText(`Q=${w.Q}m³/h`, wx, wy - 25);
+  });
+
+  sources.forEach(sr => {
+    const sx = (sr.planX || 0.2) * planW, sy = (sr.planY || 0.3) * planH;
+    pctx.fillStyle = "#06b6d4"; pctx.beginPath(); pctx.arc(sx, sy, 8, 0, Math.PI * 2); pctx.fill();
+    pctx.fillStyle = "#fff"; pctx.font = "bold 11px Nunito Sans"; pctx.textAlign = "center";
+    pctx.fillText(sr.name, sx, sy - 14);
+  });
+
+  piezos.forEach(p => {
+    const px2 = (p.planX || 0.7) * planW, py2 = (p.planY || 0.4) * planH;
+    pctx.fillStyle = "#a78bfa"; pctx.beginPath(); pctx.arc(px2, py2, 5, 0, Math.PI * 2); pctx.fill();
+    pctx.fillStyle = "#a78bfa"; pctx.font = "10px Nunito Sans"; pctx.textAlign = "center";
+    pctx.fillText(p.name, px2, py2 - 12);
+  });
+
+  // North arrow
+  pctx.fillStyle = "rgba(44,58,36,0.65)"; pctx.font = "bold 12px Nunito Sans"; pctx.textAlign = "center";
+  pctx.fillText("N", planW - 20, 28);
+  pctx.strokeStyle = "rgba(44,58,36,0.65)"; pctx.lineWidth = 1.5;
+  pctx.beginPath(); pctx.moveTo(planW - 20, 40); pctx.lineTo(planW - 20, 65); pctx.stroke();
+  pctx.beginPath(); pctx.moveTo(planW - 20, 40); pctx.lineTo(planW - 25, 50); pctx.lineTo(planW - 20, 47); pctx.lineTo(planW - 15, 50); pctx.closePath(); pctx.fill();
+}
+
+planCanvas.onclick = e => {
+  const rect = planCanvas.getBoundingClientRect();
+  const xN = (e.clientX - rect.left) / planW, yN = (e.clientY - rect.top) / planH;
+  if (planToolActive === "well") {
+    pendingWellX = xN; pendingWellY = yN; document.getElementById("modalWell").classList.add("open");
+  } else if (planToolActive === "source") {
+    pendingSourceX = xN; pendingSourceY = yN; document.getElementById("modalSource").classList.add("open");
+  } else if (planToolActive === "obs") {
+    const name = "Pz" + (piezos.length + 1);
+    piezos.push({ name, xNorm: xN, planX: xN, planY: yN });
+    updateWellList(); drawPlan();
+  }
+};
+
+/* ============================= SALT INTRUSION CANVAS ============================= */
+const saltCanvas = document.getElementById("saltCanvas");
+const sctx = saltCanvas.getContext("2d");
+let saltW = 0, saltH = 0;
+let saltPumpPct = 40, saltDist = 5;
+let saltAnimating = false, saltAnimId = null;
+
+function resizeSalt() {
+  const r = saltCanvas.parentElement.getBoundingClientRect();
+  saltCanvas.width = r.width; saltCanvas.height = 420;
+  saltW = saltCanvas.width; saltH = saltCanvas.height;
+}
+
+function drawSalt() {
+  if (!saltW) return;
+  const W = saltW, H = saltH;
+  sctx.clearRect(0, 0, W, H);
+
+  const t = Date.now() / 1000;
+  const pumpFactor = saltPumpPct / 100;
+  const freshHead = 10 - pumpFactor * 8; // fresh water head (m)
+  const saltToe = (W * 0.75) - (pumpFactor * W * 0.4); // x position of salt wedge toe
+  const interfaceZ = H * 0.4 + pumpFactor * H * 0.15;
+
+  // Sea (right side)
+  const seaGrad = sctx.createLinearGradient(W * 0.75, 0, W, 0);
+  seaGrad.addColorStop(0, "#0d4a8a"); seaGrad.addColorStop(1, "#0a3060");
+  sctx.fillStyle = seaGrad; sctx.fillRect(W * 0.75, 0, W * 0.25, H);
+
+  // Animated sea waves
+  for (let wi = 0; wi < 3; wi++) {
+    sctx.strokeStyle = "rgba(100,200,255,0.3)"; sctx.lineWidth = 1.5; sctx.beginPath();
+    for (let sx2 = W * 0.75; sx2 <= W; sx2 += 2) {
+      const sy2 = H * 0.15 + Math.sin((sx2 * 0.05) + t * 2 + wi * 2) * 6;
+      sx2 === W * 0.75 ? sctx.moveTo(sx2, sy2) : sctx.lineTo(sx2, sy2);
+    }
+    sctx.stroke();
+  }
+
+  // Land surface (left)
+  const landGrad = sctx.createLinearGradient(0, 0, W * 0.75, 0);
+  landGrad.addColorStop(0, "#2d4a2d"); landGrad.addColorStop(1, "#1d3020");
+  sctx.fillStyle = landGrad; sctx.fillRect(0, 0, W * 0.75, H * 0.2);
+
+  // Aquifer unconfined zone (fresh water)
+  const freshGrad = sctx.createLinearGradient(0, H * 0.2, 0, interfaceZ);
+  freshGrad.addColorStop(0, "#0d5a8a"); freshGrad.addColorStop(1, "#0a4070");
+  sctx.fillStyle = freshGrad;
+  sctx.beginPath();
+  sctx.moveTo(0, H * 0.2);
+  sctx.lineTo(saltToe, H * 0.2);
+  sctx.lineTo(W * 0.75, interfaceZ);
+  sctx.lineTo(0, interfaceZ);
+  sctx.closePath();
+  sctx.fill();
+
+  // Salt water wedge
+  const saltGrad = sctx.createLinearGradient(saltToe, 0, W * 0.75, 0);
+  saltGrad.addColorStop(0, "#1a3a6a"); saltGrad.addColorStop(1, "#3060a0");
+  sctx.fillStyle = saltGrad;
+  sctx.beginPath();
+  sctx.moveTo(saltToe, H * 0.2);
+  sctx.lineTo(W * 0.75, H * 0.2);
+  sctx.lineTo(W * 0.75, H - 20);
+  sctx.lineTo(saltToe, interfaceZ);
+  sctx.closePath();
+  sctx.fill();
+
+  // Aquifer base (rock)
+  sctx.fillStyle = "#2a2a2a"; sctx.fillRect(0, H - 20, W * 0.75, 20);
+
+  // Fresh-salt interface line (animated)
+  sctx.strokeStyle = `rgba(255, 180, 0, 0.8)`; sctx.lineWidth = 2.5; sctx.setLineDash([8, 4]);
+  sctx.beginPath();
+  sctx.moveTo(saltToe, interfaceZ);
+  sctx.lineTo(W * 0.75, H * 0.2);
+  sctx.stroke(); sctx.setLineDash([]);
+
+  // Pumping well (if pumping)
+  if (pumpFactor > 0.1) {
+    const wellX = W * 0.3;
+    sctx.fillStyle = "#ef4444"; sctx.beginPath(); sctx.arc(wellX, H * 0.2, 8, 0, Math.PI * 2); sctx.fill();
+    sctx.strokeStyle = "#ef4444"; sctx.lineWidth = 2;
+    sctx.beginPath(); sctx.moveTo(wellX, H * 0.2); sctx.lineTo(wellX, interfaceZ * 0.7); sctx.stroke();
+
+    // Water extraction arrows
+    const arrowY = H * 0.2 - 5 - (t * 20 % 30);
+    sctx.strokeStyle = "#ef4444"; sctx.lineWidth = 2; sctx.beginPath();
+    sctx.moveTo(wellX, arrowY); sctx.lineTo(wellX, arrowY - 15); sctx.stroke();
+    sctx.fillStyle = "#ef4444"; sctx.font = "10px Nunito Sans"; sctx.textAlign = "center";
+    sctx.fillText(`Pompage: ${Math.round(pumpFactor * 200)}m³/h`, wellX, H * 0.2 - 40);
+  }
+
+  // Labels
+  sctx.fillStyle = "rgba(200,230,255,0.8)"; sctx.font = "bold 13px Nunito Sans"; sctx.textAlign = "center";
+  sctx.fillText("Nappe d'eau douce", W * 0.25, H * 0.32);
+  sctx.fillStyle = "rgba(80,140,255,0.8)";
+  sctx.fillText("Biseau salé", (saltToe + W * 0.75) / 2, interfaceZ - 10);
+  sctx.fillStyle = "rgba(100,200,255,0.9)"; sctx.font = "bold 14px Nunito Sans";
+  sctx.fillText("MER", W * 0.875, H * 0.1);
+
+  // Ghyben-Herzberg annotation
+  sctx.fillStyle = "rgba(255,180,0,0.8)"; sctx.font = "11px Nunito Sans"; sctx.textAlign = "left";
+  sctx.fillText(`Interface: z_sel ≈ 40 × ${freshHead.toFixed(1)}m = ${(40 * freshHead).toFixed(0)}m`, 10, H - 30);
+
+  // Distance scale
+  const seaDist = saltDist;
+  sctx.fillStyle = "rgba(255,255,255,0.4)"; sctx.textAlign = "center"; sctx.font = "11px Nunito Sans";
+  sctx.fillText(`← ${seaDist} km du littoral →`, W * 0.375, H * 0.08);
+
+  // Update stats
+  const toeAdvance = (saltToe < W * 0.5) ? Math.round((W * 0.5 - saltToe) / W * 5000) : 0;
+  document.getElementById("saltInterface").textContent = `x = ${toeAdvance} m inland`;
+  document.getElementById("saltGH").textContent = `z_sel = ${(40 * freshHead).toFixed(0)} m`;
+  const cl = Math.min(35000, 250 + pumpFactor * 25000);
+  document.getElementById("saltCl").textContent = `${Math.round(cl)} mg/L`;
+  document.getElementById("qCl").textContent = cl > 1000 ? `<b style="color:var(--danger)">${Math.round(cl)} mg/L ⚠️</b>` : `${Math.round(cl)} mg/L`;
+  document.getElementById("qEC").textContent = `${Math.round(cl * 2)} µS/cm`;
+  document.getElementById("qFAO").textContent = cl < 500 ? "✓ Bonne" : cl < 1500 ? "⚠️ Limite" : "✕ Inapte";
+  document.getElementById("qRisk").textContent = cl < 500 ? '<span style="color:var(--moss)">Faible</span>' : cl < 1500 ? '<span style="color:var(--amber)">Modéré</span>' : '<span style="color:var(--danger)">Élevé</span>';
+}
+
+/* ============================= SIMULATION ENGINE ============================= */
+let simLastTime = 0;
+let waterLevelHistory = [];
+
+function simStep(timestamp) {
+  if (!simPlaying) return;
+  if (timestamp - simLastTime > (1000 / (simSpeed * 2))) {
+    simTime = Math.min(365, simTime + simSpeed * 0.2);
+    document.getElementById("simTimeSlider").value = simTime;
+    document.getElementById("simTimeLabel").textContent = `T = ${simTime.toFixed(1)} jours`;
+    simLastTime = timestamp;
+    updateSimStats();
+  }
+  drawXS();
+  if (simTime < 365) simAnimId = requestAnimationFrame(simStep);
+  else simPlaying = false;
+}
+
+function updateSimStats() {
+  const totalQ = wells.reduce((s, w) => s + w.Q, 0);
+  const totalR = sources.reduce((s, sr) => s + sr.Q / 24, 0);
+  const vol = totalQ * simTime * 24;
+  const sMax = wells.length > 0 ? drawdown(wells[0].xNorm, wells[0].xNorm, Math.max(1, simTime)) : 0;
+  const wl = (naturalHead - Math.min(sMax, 30)).toFixed(1);
+
+  document.getElementById("statWL").textContent = `Z = ${wl} m`;
+  document.getElementById("statQ").textContent = `${totalQ} m³/h`;
+  document.getElementById("statVol").textContent = `${(vol / 1000).toFixed(0)} 000 m³`;
+  document.getElementById("statR").textContent = `${Math.round(totalR * 24)} m³/j`;
+  document.getElementById("resS").textContent = `${sMax.toFixed(2)} m`;
+  const T_use = aquifer.T;
+  const rInf = Math.round(1.5 * Math.sqrt(T_use * Math.max(1, simTime) * 86400 / aquifer.S));
+  document.getElementById("resR").textContent = `${rInf} m`;
+  const grad = wells.length > 0 ? (sMax / Math.max(10, rInf)).toFixed(5) : "—";
+  document.getElementById("resI").textContent = grad;
+  const kApprox = T_use / (aquifer.thickness || 60);
+  const darcy = (kApprox * (sMax / Math.max(10, rInf)) * 86400).toFixed(3);
+  document.getElementById("resV").textContent = `${darcy} m/j`;
+  const aquiferVol = 100 * 100 * (aquifer.thickness || 60) * aquifer.S * 1e6;
+  const extractRate = totalQ * 24 * 365;
+  document.getElementById("resLife").textContent = extractRate > 0 ? `${Math.round(aquiferVol / extractRate)} ans` : "∞";
+  const depth = aquifer.topDepth + sMax;
+  const energy = (0.00272 * depth).toFixed(3);
+  document.getElementById("resEnergy").textContent = `${energy} kWh/m³`;
+  document.getElementById("enDepth").textContent = `${depth.toFixed(1)} m`;
+  document.getElementById("enSpec").textContent = `${energy} kWh/m³`;
+  document.getElementById("enQ").textContent = `${totalQ} m³/h`;
+  const power = (totalQ * 0.00272 * depth / 0.75).toFixed(1);
+  document.getElementById("enPow").textContent = `${power} kW`;
+  document.getElementById("enCost").textContent = `${Math.round(totalQ * 24 * 365 * energy * 0.28 / 1000)} 000 DT/an`;
+
+  waterLevelHistory.push({ t: simTime, wl: +wl });
+  if (waterLevelHistory.length > 100) waterLevelHistory.shift();
+  drawWLChart();
+}
+
+function drawWLChart() {
+  const c = document.getElementById("chartWL"), ctx = c.getContext("2d");
+  const W = c.width = c.parentElement.offsetWidth, H = 100;
+  c.height = H;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#f1f7e9"; ctx.fillRect(0, 0, W, H);
+  if (waterLevelHistory.length < 2) return;
+  const mn = Math.min(...waterLevelHistory.map(x => x.wl)) - 1;
+  const mx = Math.max(...waterLevelHistory.map(x => x.wl)) + 1;
+  ctx.strokeStyle = "#d8e4c8"; ctx.lineWidth = 0.5;
+  for (let g = 0; g <= 4; g++) { const gy = H - g / 4 * (H - 20) - 10; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+  ctx.strokeStyle = "#2e86b8"; ctx.lineWidth = 2; ctx.beginPath();
+  waterLevelHistory.forEach((x, i) => {
+    const px = (i / (waterLevelHistory.length - 1)) * W;
+    const py = H - ((x.wl - mn) / (mx - mn)) * (H - 20) - 10;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+  ctx.fillStyle = "#2e86b8"; ctx.font = "10px JetBrains Mono"; ctx.textAlign = "right";
+  ctx.fillText(`Niveau piézom. (m NGT) — Dernière val.: ${waterLevelHistory[waterLevelHistory.length - 1].wl}m`, W - 6, 12);
+}
+
+/* ============================= THEIS CHART ============================= */
+function drawTheisChart() {
+  const c = document.getElementById("theisChart"), ctx = c.getContext("2d");
+  const W = c.width = c.parentElement.offsetWidth - 40, H = 300; c.height = H;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#f1f7e9"; ctx.fillRect(0, 0, W, H);
+
+  const Q = +document.getElementById("rgTheisQ").value / 3600;
+  const r = +document.getElementById("rgTheisR").value;
+  const S = Math.pow(10, +document.getElementById("rgTheisS").value);
+  const T = +document.getElementById("selTheisT").value;
+  const durH = +document.getElementById("rgTheisDur").value;
+
+  const L = 55, R2 = 20, T2 = 20, B = 30;
+  const cW = W - L - R2, cH = H - T2 - B;
+
+  ctx.strokeStyle = "#d8e4c8"; ctx.fillStyle = "#6f7d64"; ctx.font = "10px JetBrains Mono";
+  for (let gi = 0; gi <= 4; gi++) {
+    const gy = T2 + gi / 4 * cH;
+    ctx.beginPath(); ctx.moveTo(L, gy); ctx.lineTo(L + cW, gy); ctx.stroke();
+  }
+  // Time axis in log scale
+  const logMin = 0, logMax = Math.log10(durH * 3600);
+  for (let lt = 0; lt <= 6; lt++) {
+    const lv = lt / 6 * (logMax - logMin) + logMin;
+    const gx = L + (lv / logMax) * cW;
+    ctx.beginPath(); ctx.moveTo(gx, T2); ctx.lineTo(gx, T2 + cH); ctx.stroke();
+    const tv = Math.pow(10, lv);
+    ctx.textAlign = "center"; ctx.fillText(tv < 3600 ? `${tv.toFixed(0)}s` : `${(tv / 3600).toFixed(1)}h`, gx, T2 + cH + 16);
+  }
+
+  // Compute Theis curve
+  ctx.strokeStyle = "#2e86b8"; ctx.lineWidth = 2.5; ctx.beginPath();
+  const times = [];
+  for (let lt = 1; lt <= 200; lt++) {
+    const t_s = Math.pow(10, (lt / 200) * (logMax - logMin) + logMin);
+    const u = (r * r * S) / (4 * T * t_s);
+    const s = (Q / (4 * Math.PI * T)) * theis_W(u);
+    times.push({ t_s, s });
+  }
+  const sMax2 = Math.max(...times.map(x => x.s));
+  times.forEach(({ t_s, s }, idx) => {
+    const t_log = Math.log10(t_s);
+    const px = L + (t_log / logMax) * cW;
+    const py = T2 + cH - (s / (sMax2 * 1.1)) * cH;
+    idx === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+
+  // Cooper-Jacob straight line (valid for u < 0.01)
+  ctx.strokeStyle = "#b5852a"; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]); ctx.beginPath();
+  times.filter(x => (x.s / sMax2) > 0.3).forEach(({ t_s, s }, idx) => {
+    const t_log = Math.log10(t_s);
+    const px = L + (t_log / logMax) * cW;
+    const py = T2 + cH - (s / (sMax2 * 1.1)) * cH;
+    idx === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  });
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // Labels
+  ctx.fillStyle = "#2e86b8"; ctx.font = "11px Nunito Sans"; ctx.textAlign = "left";
+  ctx.fillText("— Courbe de Theis s(r,t)", L + 10, T2 + 16);
+  ctx.fillStyle = "#b5852a"; ctx.fillText("--- Droite Cooper-Jacob (u<0.01)", L + 10, T2 + 30);
+
+  // Update results
+  document.getElementById("theisSMax").textContent = `${sMax2.toFixed(2)} m`;
+  document.getElementById("theisRLabel").textContent = r;
+  const tCrit = (r * r * S) / (4 * T * 0.05);
+  document.getElementById("theisTCrit").textContent = tCrit > 3600 ? `${(tCrit / 3600).toFixed(1)} h` : `${Math.round(tCrit)} s`;
+  document.getElementById("theisCalcT").textContent = `${T.toExponential(2)} m²/s`;
+  document.getElementById("theisCalcS").textContent = S.toFixed(4);
+}
+
+/* ============================= BILAN CHART ============================= */
+function updateBilan() {
+  const Peff = +document.getElementById("rgBP").value;
+  const irrig = +document.getElementById("rgBI").value / 100;
+  const pump = +document.getElementById("rgBPump").value;
+  const spring = +document.getElementById("rgBSpring").value;
+  const area = +document.getElementById("rgBArea").value * 1e6;
+
+  const rain_in = (Peff / 1000) * area * 0.15;
+  const irrig_in = pump * 365 * irrig;
+  const total_in = rain_in + irrig_in;
+  const total_out = pump * 365 + spring * 365;
+  const dS = total_in - total_out;
+  const aquiferStorage = area * aquifer.thickness * aquifer.S;
+
+  document.getElementById("bilanIn").textContent = `${(total_in / 1e6).toFixed(2)} M m³/an`;
+  document.getElementById("bilanOut").textContent = `${(total_out / 1e6).toFixed(2)} M m³/an`;
+  document.getElementById("bilanDS").textContent = `${(dS / 1e6).toFixed(2)} M m³/an`;
+  document.getElementById("bilanRenew").textContent = `${Math.max(0, (total_in / total_out * 100)).toFixed(1)} %`;
+  const lifeYrs = dS < 0 ? Math.round(aquiferStorage / (-dS)) : "∞";
+  document.getElementById("bilanLife").textContent = typeof lifeYrs === "number" ? `${lifeYrs} ans` : "∞ (recharge > pompage)";
+  document.getElementById("bilanAlert").style.display = dS < 0 ? "block" : "none";
+}
+
+function drawBilanChart() {
+  const c = document.getElementById("bilanChart"), ctx = c.getContext("2d");
+  const W = c.width = c.parentElement.offsetWidth - 40, H = 320; c.height = H;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#f1f7e9"; ctx.fillRect(0, 0, W, H);
+
+  const Peff = +document.getElementById("rgBP").value;
+  const irrig = +document.getElementById("rgBI").value / 100;
+  const pump = +document.getElementById("rgBPump").value;
+  const spring = +document.getElementById("rgBSpring").value;
+  const area = +document.getElementById("rgBArea").value * 1e6;
+
+  const rain_in = (Peff / 1000) * area * 0.15;
+  const irrig_in = pump * 365 * irrig;
+  const pumpOut = pump * 365;
+  const springOut = spring * 365;
+  const bars = [
+    { label: "Pluie infiltrée", val: rain_in / 1e6, color: "#38bdf8" },
+    { label: "Retour irrigation", val: irrig_in / 1e6, color: "#06b6d4" },
+    { label: "Pompage total", val: -pumpOut / 1e6, color: "#ef4444" },
+    { label: "Étiage sources", val: -springOut / 1e6, color: "#a78bfa" }
+  ];
+  const mxAbs = Math.max(...bars.map(b => Math.abs(b.val))) * 1.1;
+  const barW = (W - 80) / bars.length - 10, midY = H / 2;
+
+  ctx.strokeStyle = "#c7d6b0"; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(40, midY); ctx.lineTo(W, midY); ctx.stroke();
+  ctx.fillStyle = "#6f7d64"; ctx.font = "10px JetBrains Mono"; ctx.textAlign = "right";
+  for (let g = -2; g <= 2; g++) {
+    const gy = midY - g / mxAbs * (H / 2 - 20);
+    ctx.fillText(`${g.toFixed(1)}`, 36, gy + 3);
+    ctx.strokeStyle = "#d8e4c8"; ctx.beginPath(); ctx.moveTo(40, gy); ctx.lineTo(W, gy); ctx.stroke();
+  }
+
+  bars.forEach((b, i) => {
+    const bx = 50 + i * (barW + 10);
+    const bh = (b.val / mxAbs) * (H / 2 - 20);
+    const by = bh > 0 ? midY - bh : midY;
+    const grad = ctx.createLinearGradient(bx, by, bx + barW, by + Math.abs(bh));
+    grad.addColorStop(0, b.color + "cc"); grad.addColorStop(1, b.color + "44");
+    ctx.fillStyle = grad; ctx.fillRect(bx, Math.min(midY, midY - bh), barW, Math.abs(bh));
+    ctx.strokeStyle = b.color; ctx.lineWidth = 1.5; ctx.strokeRect(bx, Math.min(midY, midY - bh), barW, Math.abs(bh));
+    ctx.fillStyle = b.color; ctx.font = "10px Nunito Sans"; ctx.textAlign = "center";
+    ctx.fillText(b.label, bx + barW / 2, H - 8);
+    ctx.fillText(`${Math.abs(b.val).toFixed(2)}M m³`, bx + barW / 2, bh > 0 ? midY - bh - 8 : midY - bh + 16);
+  });
+
+  ctx.fillStyle = "#2c3a24"; ctx.font = "bold 12px Nunito Sans"; ctx.textAlign = "center";
+  ctx.fillText("Bilan en M m³/an — Entrées (haut) / Sorties (bas)", W / 2, 16);
+}
+
+/* ============================= WELL LIST UI ============================= */
+function updateWellList() {
+  const list = document.getElementById("wellList");
+  if (!wells.length && !sources.length && !piezos.length) {
+    list.innerHTML = '<div style="color:var(--sub);font-size:12px;text-align:center;padding:10px">Aucun élément — Cliquez sur la coupe ou sur ＋ Ajouter</div>';
+    return;
+  }
+  list.innerHTML = "";
+  wells.forEach((w, i) => {
+    const d = document.createElement("div");
+    d.className = "well-item " + (w.Q > 0 ? "pumping" : "");
+    d.innerHTML = `<div>
+      <div class="wname">🔴 ${w.name} <span style="color:var(--sub);font-weight:400;font-size:11px">(${w.pumpType || "submersible"})</span></div>
+      <div class="wstats">Q = <b>${w.Q} m³/h</b> · Prof. = <b>${w.depth} m</b> · Crépine: <b>${w.crepFrom}–${w.crepTo} m</b></div>
+    </div>
+    <button onclick="removeWell(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:4px">✕</button>`;
+    list.appendChild(d);
+  });
+  sources.forEach((sr, i) => {
+    const d = document.createElement("div");
+    d.className = "well-item recharge";
+    d.innerHTML = `<div>
+      <div class="wname">💧 ${sr.name} <span style="color:var(--sub);font-weight:400;font-size:11px">(${sr.type})</span></div>
+      <div class="wstats">Débit = <b>${sr.Q} m³/j</b></div>
+    </div>
+    <button onclick="removeSource(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:4px">✕</button>`;
+    list.appendChild(d);
+  });
+  piezos.forEach((p, i) => {
+    const d = document.createElement("div");
+    d.className = "well-item";
+    d.innerHTML = `<div>
+      <div class="wname">📏 ${p.name} <span style="color:var(--sub);font-weight:400;font-size:11px">(Piézomètre)</span></div>
+      <div class="wstats">Niveau : <b>${(naturalHead - Math.min(drawdown(p.xNorm, p.xNorm, Math.max(1, simTime)), 30)).toFixed(1)} m NGT</b></div>
+    </div>
+    <button onclick="removePiezo(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:4px">✕</button>`;
+    list.appendChild(d);
+  });
+}
+
+function removeWell(i) { lmap && wells[i]?.layer && lmap.removeLayer(wells[i].layer); wells.splice(i, 1); updateWellList(); }
+function removeSource(i) { sources.splice(i, 1); updateWellList(); }
+function removePiezo(i) { piezos.splice(i, 1); updateWellList(); }
+
+/* ============================= SCENARIO LOADER ============================= */
+let pendingWellX = 0.5, pendingWellY = 0.5, pendingSourceX = 0.2, pendingSourceY = 0.3;
+
+function loadScenario(idx) {
+  wells = []; sources = []; piezos = [];
+  simTime = 0; waterLevelHistory = [];
+  document.querySelectorAll(".scenario-card").forEach((c, i) => c.classList.toggle("sel", i === idx));
+
+  if (idx === 0) { // Oasis Naturelle
+    sources.push({ name: "Source Ain Draham", Q: 1200, type: "spring", xNorm: 0.25, planX: 0.3, planY: 0.4 });
+    piezos.push({ name: "Pz1", xNorm: 0.6, planX: 0.6, planY: 0.5 });
+  } else if (idx === 1) { // Exploitation intensive
+    wells.push({ name: "F1", Q: 180, depth: 80, crepFrom: 40, crepTo: 80, pumpType: "submersible", xNorm: 0.3, planX: 0.3, planY: 0.5 });
+    wells.push({ name: "F2", Q: 150, depth: 90, crepFrom: 50, crepTo: 90, pumpType: "submersible", xNorm: 0.7, planX: 0.7, planY: 0.5 });
+    piezos.push({ name: "Pz1", xNorm: 0.5, planX: 0.5, planY: 0.5 });
+  } else if (idx === 2) { // Biseau salin
+    wells.push({ name: "F1-côtier", Q: 120, depth: 60, crepFrom: 30, crepTo: 60, pumpType: "submersible", xNorm: 0.35, planX: 0.35, planY: 0.5 });
+    sources.push({ name: "Mer (recharge saline)", Q: -500, type: "spring", xNorm: 0.9, planX: 0.85, planY: 0.5 });
+  } else if (idx === 3) { // Réseau forages
+    [0.2, 0.5, 0.8].forEach((xn, k) => {
+      wells.push({ name: `F${k+1}`, Q: 100 + k * 30, depth: 70, crepFrom: 35, crepTo: 70, pumpType: "submersible", xNorm: xn, planX: xn, planY: 0.5 });
+    });
+  }
+
+  updateWellList();
+  drawXS();
+}
+
+/* ============================= CONTROLS EVENTS ============================= */
+// Tool selector
+["toolWell", "toolSource", "toolObs"].forEach(id => {
+  document.getElementById(id).onclick = function() {
+    ["toolWell", "toolSource", "toolObs"].forEach(b => document.getElementById(b).classList.remove("active"));
+    this.classList.add("active");
+    activeTool = id === "toolWell" ? "well" : id === "toolSource" ? "source" : "obs";
+  };
+});
+
+// Aquifer params
+document.getElementById("selT").onchange = function() { aquifer.T = +this.value; document.getElementById("vT").textContent = this.options[this.selectedIndex].text.split(" ")[2] || this.value; drawXS(); };
+document.getElementById("rgS").oninput = function() { aquifer.S = Math.pow(10, +this.value).toFixed(4); document.getElementById("vS").textContent = (+aquifer.S).toFixed(3); drawXS(); };
+document.getElementById("rgR").oninput = function() { aquifer.R = +this.value; document.getElementById("vR").textContent = this.value + " mm/an"; };
+document.getElementById("rgTop").oninput = function() { aquifer.topDepth = +this.value; document.getElementById("vTop").textContent = this.value + " m"; drawXS(); };
+document.getElementById("rgThick").oninput = function() { aquifer.thickness = +this.value; document.getElementById("vThick").textContent = this.value + " m"; drawXS(); };
+
+// Simulation controls
+document.getElementById("btnPlaySim").onclick = () => { simPlaying = true; if (simAnimId) cancelAnimationFrame(simAnimId); simAnimId = requestAnimationFrame(simStep); };
+document.getElementById("btnStopSim").onclick = () => { simPlaying = false; cancelAnimationFrame(simAnimId); };
+document.getElementById("simTimeSlider").oninput = function() { simTime = +this.value; document.getElementById("simTimeLabel").textContent = `T = ${(+this.value).toFixed(0)} jours`; drawXS(); updateSimStats(); };
+["speedX1", "speedX5", "speedX20"].forEach((id, k) => {
+  document.getElementById(id).onclick = function() { simSpeed = [1, 5, 20][k]; ["speedX1", "speedX5", "speedX20"].forEach(b => document.getElementById(b).classList.remove("active")); this.classList.add("active"); };
+});
+
+// Well modal
+let pendingWellCB = null;
+document.getElementById("btnAddWell").onclick = () => { pendingWellX = 0.5 + Math.random() * 0.3 - 0.15; pendingWellY = 0.5; document.getElementById("modalWell").classList.add("open"); };
+document.getElementById("btnCancelWell").onclick = () => document.getElementById("modalWell").classList.remove("open");
+document.getElementById("btnConfirmWell").onclick = () => {
+  const w = {
+    name: document.getElementById("wName").value || `F${wells.length + 1}`,
+    Q: +document.getElementById("wQ").value || 120,
+    depth: +document.getElementById("wDepth").value || 80,
+    crepFrom: +document.getElementById("wCrepFrom").value || 40,
+    crepTo: +document.getElementById("wCrepTo").value || 80,
+    pumpType: document.getElementById("wPumpType").value,
+    xNorm: pendingWellX, planX: pendingWellX, planY: pendingWellY || 0.5
+  };
+  wells.push(w);
+  document.getElementById("wName").value = `F${wells.length + 1}`;
+  document.getElementById("modalWell").classList.remove("open");
+  updateWellList(); drawXS();
+};
+
+// Source modal
+document.getElementById("btnAddSource").onclick = () => { pendingSourceX = 0.15 + Math.random() * 0.2; pendingSourceY = 0.3; document.getElementById("modalSource").classList.add("open"); };
+document.getElementById("btnCancelSrc").onclick = () => document.getElementById("modalSource").classList.remove("open");
+document.getElementById("btnConfirmSrc").onclick = () => {
+  const sr = {
+    name: document.getElementById("sName").value || `S${sources.length + 1}`,
+    Q: +document.getElementById("sQ").value || 500,
+    type: document.getElementById("sType").value,
+    xNorm: pendingSourceX, planX: pendingSourceX, planY: pendingSourceY || 0.3
+  };
+  sources.push(sr);
+  document.getElementById("sName").value = `S${sources.length + 1}`;
+  document.getElementById("modalSource").classList.remove("open");
+  updateWellList(); drawXS();
+};
+
+// Reset
+document.getElementById("btnReset").onclick = () => { wells = []; sources = []; piezos = []; simTime = 0; simPlaying = false; waterLevelHistory = []; document.getElementById("simTimeSlider").value = 0; document.getElementById("simTimeLabel").textContent = "T = 0 jours"; updateWellList(); drawXS(); };
+
+// Salt controls
+document.getElementById("rgSaltPump").oninput = function() { saltPumpPct = +this.value; document.getElementById("saltPumpVal").textContent = this.value + " %"; drawSalt(); };
+document.getElementById("rgSaltDist").oninput = function() { saltDist = +this.value; document.getElementById("saltDistVal").textContent = this.value + " km"; drawSalt(); };
+document.getElementById("saltBtnSim").onclick = function() {
+  if (saltAnimating) { saltAnimating = false; cancelAnimationFrame(saltAnimId); this.textContent = "▶ Simuler l'Intrusion"; return; }
+  saltAnimating = true; this.textContent = "⏹ Arrêter";
+  const loop = () => { if (!saltAnimating) return; drawSalt(); saltAnimId = requestAnimationFrame(loop); };
+  loop();
+};
+
+// Theis controls
+["rgTheisQ", "rgTheisR", "rgTheisDur", "rgTheisS", "selTheisT"].forEach(id => {
+  document.getElementById(id).oninput = () => {
+    document.getElementById("theisQ").textContent = document.getElementById("rgTheisQ").value;
+    document.getElementById("theisR").textContent = document.getElementById("rgTheisR").value;
+    document.getElementById("theisDur").textContent = document.getElementById("rgTheisDur").value;
+    document.getElementById("theisSV").textContent = Math.pow(10, +document.getElementById("rgTheisS").value).toFixed(4);
+    document.getElementById("theisTV").textContent = document.getElementById("selTheisT").options[document.getElementById("selTheisT").selectedIndex].text.split(" ")[2] || "";
+    drawTheisChart(); updateTheisResults();
+  };
+});
+
+function updateTheisResults() {
+  const Q = +document.getElementById("rgTheisQ").value / 3600;
+  const r = +document.getElementById("rgTheisR").value;
+  const S = Math.pow(10, +document.getElementById("rgTheisS").value);
+  const T = +document.getElementById("selTheisT").value;
+  const durH = +document.getElementById("rgTheisDur").value;
+  const u = (r * r * S) / (4 * T * durH * 3600);
+  const sMax = (Q / (4 * Math.PI * T)) * theis_W(u);
+  document.getElementById("theisSMax").textContent = `${sMax.toFixed(2)} m`;
+  document.getElementById("enDepth").textContent = `${(aquifer.topDepth + sMax).toFixed(1)} m`;
+  const E = (0.00272 * (aquifer.topDepth + sMax)).toFixed(3);
+  document.getElementById("enSpec").textContent = `${E} kWh/m³`;
+  document.getElementById("enQ").textContent = `${document.getElementById("rgTheisQ").value} m³/h`;
+  const P = (+document.getElementById("rgTheisQ").value * 0.00272 * (aquifer.topDepth + sMax) / 0.75).toFixed(1);
+  document.getElementById("enPow").textContent = `${P} kW`;
+  const cost = Math.round(+document.getElementById("rgTheisQ").value * 24 * 365 * E * 0.28 / 1000);
+  document.getElementById("enCost").textContent = `${cost} 000 DT/an`;
+}
+
+// Bilan controls
+["rgBP", "rgBI", "rgBPump", "rgBSpring", "rgBArea"].forEach(id => {
+  document.getElementById(id).oninput = () => {
+    document.getElementById("bPeff").textContent = document.getElementById("rgBP").value;
+    document.getElementById("bIrrig").textContent = document.getElementById("rgBI").value + " %";
+    document.getElementById("bPump").textContent = (+document.getElementById("rgBPump").value).toLocaleString();
+    document.getElementById("bSpring").textContent = (+document.getElementById("rgBSpring").value).toLocaleString();
+    document.getElementById("bArea").textContent = document.getElementById("rgBArea").value;
+    updateBilan(); drawBilanChart();
+  };
+});
+
+// Plan tools
+["toolPlanWell", "toolPlanSrc", "toolPlanObs"].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.onclick = function() {
+    ["toolPlanWell", "toolPlanSrc", "toolPlanObs"].forEach(b => document.getElementById(b)?.classList.remove("active"));
+    this.classList.add("active");
+    planToolActive = id === "toolPlanWell" ? "well" : id === "toolPlanSrc" ? "source" : "obs";
+  };
+});
+const btnRunPlan = document.getElementById("btnRunPlan");
+if (btnRunPlan) btnRunPlan.onclick = () => drawPlan();
+
+/* ============================= INIT ============================= */
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    resizeXS(); loadScenario(0); drawXS();
+    resizeSalt(); drawSalt();
+    updateBilan(); drawBilanChart();
+    resizePlan(); drawPlan();
+    drawTheisChart(); updateTheisResults();
+  }, 100);
+});
+
+window.addEventListener("resize", () => { resizeXS(); drawXS(); resizePlan(); drawPlan(); });
+
+// Animate XS when idle
+let idleAnimId = null;
+function idleAnim() { drawXS(); idleAnimId = requestAnimationFrame(idleAnim); }
+idleAnim();
+</script>
+</body>
+</html>

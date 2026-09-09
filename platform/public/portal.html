@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plateforme AgriTech Libye · EU4Skills</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/theme.css">
+<style>
+  .hero{background:linear-gradient(160deg,var(--green),var(--green-d)); color:#fff; border-radius:var(--radius);
+    padding:26px 28px; box-shadow:var(--shadow)}
+  .hero h1{font-size:26px; font-weight:800; letter-spacing:-.3px}
+  .hero p{opacity:.94; font-size:14px; margin-top:6px; max-width:760px}
+  .modemsg{display:inline-flex; align-items:center; gap:8px; margin-top:14px; background:rgba(255,255,255,.18);
+    padding:6px 12px; border-radius:20px; font-size:12.5px; font-weight:700}
+  .dot{width:9px; height:9px; border-radius:50%; background:#ffd66b}
+  .dot.on{background:#7dffa8}
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  /* Modales */
+  .ov{position:fixed; inset:0; background:rgba(20,30,50,.45); display:none; align-items:center;
+    justify-content:center; z-index:2000; padding:18px}
+  .ov.show{display:flex}
+  .modal{background:#fff; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.3); width:100%;
+    max-width:460px; padding:24px; max-height:90vh; overflow:auto}
+  .modal h3{font-size:18px; font-weight:800; margin-bottom:4px}
+  .modal .hint{color:var(--sub); font-size:12.5px; margin-bottom:16px}
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:13px}
+  .field label{font-size:12px; font-weight:800; color:var(--sub)}
+  .field input, .field select{border:1px solid var(--line); border-radius:9px; padding:10px 12px;
+    font:inherit; color:var(--ink); background:#fff}
+  .field input:focus{outline:2px solid var(--blue); outline-offset:1px; border-color:var(--blue)}
+  .rolepick{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 4px}
+  .rolepick button{border:1px solid var(--line); background:var(--chip); border-radius:10px; padding:12px;
+    font:inherit; font-weight:700; cursor:pointer; text-align:center}
+  .rolepick button.on{background:var(--blue); color:#fff; border-color:var(--blue)}
+  .secnote{background:#fff7ec; border:1px solid #f2d9ae; color:#8a6320; border-radius:10px;
+    padding:9px 12px; font-size:12px; margin:4px 0 14px}
+  .mclose{float:inline-end; cursor:pointer; color:var(--sub); font-size:22px; line-height:1; border:none; background:none}
+  .divider{height:1px; background:var(--line); margin:16px 0}
+  .fmtbox{background:#0e1726; color:#cfe3ff; border-radius:10px; padding:12px; font-family:Consolas,monospace;
+    font-size:11.5px; white-space:pre; overflow:auto; max-height:260px}
+</style>
+</head>
+<body dir="ltr">
+
+<header class="app">
+  <div class="logo"><span class="es-logo">ezzayra</span><span><b>Agri</b><span>Tech</span></span></div>
+  <div class="sub" data-i18n="tagline">Formation Agriculture Intelligente & Gestion de l'Eau · EU4Skills</div>
+  <div class="right">
+    <a class="btn ghost" href="index.html">← <span data-i18n="nav_home">Accueil</span></a>
+    <div class="langbox" id="langbox">
+      <button data-lang="fr">FR</button><button data-lang="ar">ع</button><button data-lang="en">EN</button>
+    </div>
+    <button class="btn ghost" id="btnProfile" hidden>👤 <span id="userName">—</span></button>
+    <button class="btn primary" id="btnLogin" data-i18n="login">Connexion</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1 data-i18n="app_title">Plateforme AgriTech Libye</h1>
+    <p data-i18n="tagline">Formation Agriculture Intelligente & Gestion de l'Eau · EU4Skills</p>
+    <div class="modemsg"><span class="dot" id="modeDot"></span><span id="modeTxt">Détection du mode…</span></div>
+  </section>
+
+  <!-- OUTILS DONNÉES -->
+  <section class="card">
+    <h2>🗂 <span data-i18n="nav_data">Mes données</span></h2>
+    <div class="toolbar">
+      <button class="btn primary" id="btnImport">⬇ <span data-i18n="import">Importer</span></button>
+      <button class="btn ghost"   id="btnExport">⬆ <span data-i18n="export">Exporter</span></button>
+      <button class="btn ghost"   id="btnFormats">❔ <span data-i18n="format_help">Format ?</span></button>
+      <span class="chip muted">GeoJSON · JSON projet · NDVI CSV · Capteurs · Météo</span>
+    </div>
+  </section>
+
+  <!-- MODULES -->
+  <section class="card">
+    <h2>🎓 <span data-i18n="nav_modules">Modules de formation</span></h2>
+    <div class="grid" id="modgrid"></div>
+  </section>
+
+</div>
+
+<!-- ================= MODALE LOGIN ================= -->
+<div class="ov" id="ovLogin">
+  <div class="modal">
+    <button class="mclose" data-close>×</button>
+    <h3 data-i18n="login">Connexion</h3>
+    <div class="hint" id="loginHint">—</div>
+    <div id="serverLogin">
+      <div class="field"><label>Email</label><input type="email" id="liEmail" placeholder="prof@agritech.ly"></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="liPass" placeholder="••••••••"></div>
+      <button class="btn primary" id="doLogin" style="width:100%" data-i18n="login">Connexion</button>
+      <div class="divider"></div>
+    </div>
+    <div class="hint" data-i18n="guest">Invité (mode local)</div>
+    <div class="rolepick" id="rolePick">
+      <button data-role="admin"       data-i18n="role_admin">Administrateur</button>
+      <button data-role="professeur"  data-i18n="role_professeur">Professeur</button>
+      <button data-role="etudiant"    data-i18n="role_etudiant">Étudiant</button>
+      <button data-role="agriculteur" data-i18n="role_agriculteur">Agriculteur</button>
+    </div>
+    <button class="btn green" id="doGuest" style="width:100%; margin-top:6px" data-i18n="guest">Invité (mode local)</button>
+  </div>
+</div>
+
+<!-- ================= MODALE PROFIL + API ================= -->
+<div class="ov" id="ovProfile">
+  <div class="modal">
+    <button class="mclose" data-close>×</button>
+    <h3>👤 <span id="pfName">Profil</span></h3>
+    <div class="hint"><span id="pfRole">—</span></div>
+
+    <div class="divider"></div>
+    <h3 style="font-size:15px">🛰 Sentinel Hub</h3>
+    <div class="secnote" id="pfSecNote">🔐 En mode serveur, le client secret reste côté serveur (proxy). En mode local, il est stocké dans ce navigateur uniquement — ne pas utiliser sur un poste partagé.</div>
+    <div class="field"><label>Client ID</label><input id="pfShId" placeholder="xxxxxxxx-xxxx-xxxx"></div>
+    <div class="field"><label>Client Secret</label><input id="pfShSecret" type="password" placeholder="••••••••••••"></div>
+    <div class="field"><label>Instance ID (optionnel)</label><input id="pfShInst" placeholder="configuration Sentinel Hub"></div>
+
+    <div class="divider"></div>
+    <h3 style="font-size:15px">🌦 API Météo</h3>
+    <div class="field"><label>Fournisseur</label>
+      <select id="pfWxProv">
+        <option value="open-meteo">Open-Meteo (gratuit, sans clé)</option>
+        <option value="openweather">OpenWeather</option>
+        <option value="agromonitoring">Agromonitoring</option>
+        <option value="tomorrow">Tomorrow.io</option>
+      </select>
+    </div>
+    <div class="field"><label>Clé API</label><input id="pfWxKey" type="password" placeholder="clé du fournisseur"></div>
+
+    <button class="btn primary" id="pfSave" style="width:100%; margin-top:8px">💾 Enregistrer</button>
+    <button class="btn ghost"   id="pfLogout" style="width:100%; margin-top:8px" data-i18n="logout">Déconnexion</button>
+  </div>
+</div>
+
+<!-- ================= MODALE FORMATS ================= -->
+<div class="ov" id="ovFormats">
+  <div class="modal" style="max-width:640px">
+    <button class="mclose" data-close>×</button>
+    <h3>❔ Formats d'import / export</h3>
+    <div class="hint">Tout ce qui est dessiné ou calculé est exportable ET réimportable. Exemples dans <span class="mono">platform/samples/</span>.</div>
+    <p class="mono" style="font-weight:800; margin:8px 0 4px">Parcelles — GeoJSON (Polygon, CRS84 lon,lat)</p>
+    <div class="fmtbox">{ "type":"FeatureCollection",
+  "features":[ { "type":"Feature",
+    "properties":{ "name":"Pivot Nord","crop":"ble","area_ha":50 },
+    "geometry":{ "type":"Polygon","coordinates":[[[14.42,27.035],…]] } } ] }</div>
+    <p class="mono" style="font-weight:800; margin:12px 0 4px">Séries d'indices — NDVI CSV</p>
+    <div class="fmtbox">parcel,index,date,mean,min,max,std,p10,p50,p90,cloud_pct,source
+Pivot Nord,NDVI,2026-04-04,0.671,0.40,0.81,0.070,0.58,0.675,0.76,2,sentinel-2-l2a</div>
+    <p class="mono" style="font-weight:800; margin:12px 0 4px">Projet complet — JSON agrimanager-irrigation v1</p>
+    <div class="fmtbox">{ "format":"agrimanager-irrigation","version":1,
+  "name":"Domaine Sebha","center":[27.036,14.425],"zoom":13,
+  "parcels":[…], "equipment":[…], "planning":[] }</div>
+  </div>
+</div>
+
+<script src="assets/i18n/i18n.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+/* ---------- Modules (miroir de la table `modules`) ---------- */
+const MODULES = [
+  { code:"M1", key:"m1", icon:"🌱", url:"../../J2/Simulateur_Smart_Agriculture.html", ready:true  },
+  { code:"M2", key:"m2", icon:"🛰️", url:"../../agrimap.html",                         ready:true  },
+  { code:"M3", key:"m3", icon:"📡", url:"apps/m3-iot.html",                           ready:false },
+  { code:"M4", key:"m4", icon:"🌦️", url:"../../hydrosim.html",                        ready:true  },
+  { code:"M5", key:"m5", icon:"💧", url:"../../J3/pilotage-irrigation.html",          ready:true  },
+  { code:"M6", key:"m6", icon:"🗂️", url:"../../J4/agrimanager-v1.6.html",             ready:true  },
+  { code:"M7", key:"m7", icon:"🤖", url:"apps/m7-ai.html",                            ready:false },
+  { code:"M8", key:"m8", icon:"📊", url:"apps/m8-gap.html",                           ready:false },
+  { code:"M9", key:"m9", icon:"🎯", url:"apps/m9-plan.html",                          ready:false },
+  { code:"G0", key:"g0", icon:"🌍", url:"../../agri_geology_live.html",               ready:true  }
+];
+
+function renderModules(){
+  const g = document.getElementById("modgrid"); g.innerHTML = "";
+  MODULES.forEach(m => {
+    const c = document.createElement("div"); c.className = "modcard";
+    c.innerHTML = `<span class="code">${m.code}</span>
+      <div class="ico">${m.icon}</div>
+      <h3 data-i18n="${m.key}"></h3>
+      <p data-i18n="${m.key}d"></p>
+      <div style="display:flex; align-items:center; gap:8px; justify-content:space-between">
+        <span class="badge ${m.ready?'':'soon'}" data-i18n="${m.ready?'ready':'soon'}"></span>
+        <button class="btn ${m.ready?'primary':'ghost'} go" ${m.ready?'':'disabled'}
+          onclick="location.href='${m.url}'"><span data-i18n="open"></span> →</button>
+      </div>`;
+    g.appendChild(c);
+  });
+  I18N.apply();
+}
+
+/* ---------- Modales ---------- */
+const ov = id => document.getElementById(id);
+function show(id){ ov(id).classList.add("show"); }
+function hide(id){ ov(id).classList.remove("show"); }
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = e => e.target.closest(".ov").classList.remove("show"));
+document.querySelectorAll(".ov").forEach(o => o.addEventListener("click", e => { if(e.target===o) o.classList.remove("show"); }));
+
+/* ---------- Langue ---------- */
+document.getElementById("langbox").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(b) I18N.set(b.dataset.lang);
+});
+
+/* ---------- Auth UI ---------- */
+let pickedRole = "agriculteur";
+document.querySelectorAll("#rolePick button").forEach(b => b.onclick = () => {
+  pickedRole = b.dataset.role;
+  document.querySelectorAll("#rolePick button").forEach(x => x.classList.toggle("on", x===b));
+});
+document.getElementById("btnLogin").onclick = () => show("ovLogin");
+document.getElementById("doGuest").onclick = async () => {
+  await Store.loginGuest(pickedRole); hide("ovLogin"); refreshUser();
+};
+document.getElementById("doLogin").onclick = async () => {
+  try {
+    await Store.login(ov("liEmail").value, ov("liPass").value);
+    hide("ovLogin"); refreshUser();
+  } catch(e){ alert(e.message); }
+};
+
+function refreshUser(){
+  const u = Store.user;
+  const has = !!u;
+  document.getElementById("btnLogin").hidden = has;
+  document.getElementById("btnProfile").hidden = !has;
+  if (has){
+    document.getElementById("userName").textContent = u.full_name || u.role;
+    document.getElementById("pfName").textContent = u.full_name || "Profil";
+    document.getElementById("pfRole").textContent = I18N.t("role_"+u.role) + (u.mode==="local" ? " · "+I18N.t("guest") : "");
+    loadCreds();
+  }
+}
+
+/* ---------- Profil + credentials API ---------- */
+document.getElementById("btnProfile").onclick = () => show("ovProfile");
+document.getElementById("pfLogout").onclick = async () => { await Store.logout(); hide("ovProfile"); refreshUser(); };
+
+const CKEY = "agri_creds";
+function loadCreds(){
+  // Mode local : localStorage ; mode serveur : GET api/credentials.php (secret masqué)
+  let c = {};
+  try { c = JSON.parse(localStorage.getItem(CKEY)||"{}"); } catch(e){}
+  ov("pfShId").value    = c.sh_client_id || "";
+  ov("pfShSecret").value= c.sh_client_secret || "";
+  ov("pfShInst").value  = c.sh_instance_id || "";
+  ov("pfWxProv").value  = c.weather_provider || "open-meteo";
+  ov("pfWxKey").value   = c.weather_api_key || "";
+}
+document.getElementById("pfSave").onclick = async () => {
+  const c = {
+    sh_client_id: ov("pfShId").value.trim(),
+    sh_client_secret: ov("pfShSecret").value.trim(),
+    sh_instance_id: ov("pfShInst").value.trim(),
+    weather_provider: ov("pfWxProv").value,
+    weather_api_key: ov("pfWxKey").value.trim()
+  };
+  if (Store.serverMode){
+    try {
+      await fetch("/api/credentials", { method:"POST",
+        headers:{ "Content-Type":"application/json" }, body: JSON.stringify(c) });
+    } catch(e){ alert("Enregistrement serveur échoué : "+e.message); return; }
+    // On ne garde pas le secret en clair côté client en mode serveur
+    localStorage.setItem(CKEY, JSON.stringify({ ...c, sh_client_secret:"" }));
+  } else {
+    localStorage.setItem(CKEY, JSON.stringify(c));
+  }
+  alert("Identifiants enregistrés ✓");
+};
+
+/* ---------- Import / Export ---------- */
+document.getElementById("btnExport").onclick = async () => {
+  const projs = await Store.listProjects();
+  Store.download("agritech_export_"+Date.now()+".json",
+    JSON.stringify({ format:"agritech-platform", version:1, projects:projs }, null, 2), "application/json");
+};
+document.getElementById("btnImport").onclick = () => Store.pickFile(".json,.geojson,.csv", async (txt, name) => {
+  try {
+    const j = JSON.parse(txt);
+    if (j.projects) { for (const p of j.projects) await Store.saveProject(p); alert(j.projects.length+" projet(s) importé(s) ✓"); }
+    else if (j.type === "FeatureCollection") alert("GeoJSON reconnu : "+ (j.features?.length||0) +" parcelle(s). Ouvrez un module carto pour l'afficher.");
+    else if (j.format === "agrimanager-irrigation") { await Store.saveProject(j); alert("Projet importé ✓"); }
+    else alert("Format non reconnu.");
+  } catch(e){ alert("Fichier illisible : "+e.message); }
+});
+document.getElementById("btnFormats").onclick = () => show("ovFormats");
+
+/* ---------- Init ---------- */
+(async function(){
+  I18N.set(I18N.lang);
+  renderModules();
+  const { serverMode } = await Store.detect();
+  document.getElementById("modeDot").classList.toggle("on", serverMode);
+  document.getElementById("modeTxt").textContent = serverMode
+    ? "Mode serveur · base SQLite partagée"
+    : "Mode local · localStorage (GitHub Pages / hors-ligne)";
+  document.getElementById("serverLogin").style.display = serverMode ? "" : "none";
+  document.getElementById("loginHint").textContent = serverMode
+    ? "Connectez-vous avec votre compte, ou entrez en invité."
+    : "Mode local : choisissez un rôle pour explorer (données sur ce navigateur).";
+  refreshUser();
+  document.addEventListener("i18n:changed", () => { renderModules(); refreshUser(); });
+})();
+</script>
+</body>
+</html>

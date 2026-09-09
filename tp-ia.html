@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TP guidé — Intelligence artificielle · IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .wrap{max-width:940px}
+  .lead{color:var(--muted);max-width:900px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  /* hero */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#8e6fc7,#5b3fb0);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:var(--shadow)}
+  .hero h1{font-size:23px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  /* progress */
+  .progwrap{position:sticky;top:63px;z-index:900;background:var(--paper);padding:10px 0 4px;margin-bottom:4px}
+  .progbar{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:12px 18px}
+  .progtrack{flex:1;height:12px;border-radius:8px;background:var(--green-bg);overflow:hidden;border:1px solid var(--line)}
+  .progfill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--impact));transition:width .35s}
+  .progtxt{font-weight:800;font-size:13.5px;color:var(--green-d);white-space:nowrap;font-variant-numeric:tabular-nums;direction:ltr}
+  .progsteps{display:flex;gap:6px}
+  .dot{width:13px;height:13px;border-radius:50%;background:var(--green-bg);border:1.5px solid var(--line)}
+  .dot.done{background:var(--green);border-color:var(--green-d)}
+  @media(max-width:620px){.progsteps{display:none}}
+  /* step card */
+  .step{border-inline-start:4px solid var(--sc,var(--green))}
+  body[dir="rtl"] .step{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--sc,var(--green))}
+  .step .head{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .step .n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--sc,var(--green));
+    color:#fff;font-size:16px;font-weight:800;flex:none}
+  .step h2{font-size:16.5px;margin:0}
+  .step .app-of{font-size:11.5px;color:var(--muted);font-weight:600}
+  .consigne{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 15px;margin:10px 0;
+    font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .consigne b{color:var(--green-d)}
+  .openbtn{margin:8px 0 4px}
+  .qblock{margin-top:14px}
+  .qlabel{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:7px;display:block}
+  .qlabel .u{font-weight:600;color:var(--muted);font-size:12px}
+  input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;
+    font:inherit;color:var(--ink);background:#fff}
+  input:focus,textarea:focus{outline:none;border-color:var(--green)}
+  textarea{min-height:66px;resize:vertical}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;
+    font-size:13.5px;background:#fff;transition:.14s}
+  .opt:hover{border-color:var(--green)}
+  .opt input{accent-color:var(--green);width:16px;height:16px;flex:none}
+  .opt.sel{background:var(--green-bg);border-color:var(--green)}
+  .opt.good{background:#eef8ef;border-color:#8ecb96}
+  .opt.bad{background:#fbecea;border-color:#e3a8a1}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row2{grid-template-columns:1fr}}
+  .fb{margin-top:10px;font-size:13px;border-radius:10px;padding:10px 14px;line-height:1.55;display:none}
+  .fb.show{display:block}
+  .fb.ok{background:#eef8ef;border:1px solid #bfe3c3;color:#2f7d3a}
+  .fb.no{background:#fbecea;border:1px solid #eecac5;color:#b23b30}
+  .fb.info{background:#eaf3fa;border:1px solid #bcd9ec;color:#25607f}
+  .stepfoot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+  .chk{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer}
+  .chk input{width:19px;height:19px;accent-color:var(--green)}
+  /* score */
+  .scorebox{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:linear-gradient(120deg,#eef8ef,#f6fbf0);
+    border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px;margin-top:8px}
+  .scoredial{width:82px;height:82px;border-radius:50%;flex:none;display:grid;place-items:center;
+    background:conic-gradient(var(--impact) var(--p,0deg),#e3efd8 0);position:relative}
+  .scoredial::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+  .scoredial b{position:relative;z-index:1;font-size:18px;font-weight:800;color:var(--green-d)}
+  .scoreinfo .st{font-weight:800;font-size:15px;color:var(--ink)}
+  .scoreinfo .sd{font-size:13px;color:var(--muted);margin-top:2px}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:4px}
+  .modebadge{font-size:11.5px;color:var(--muted)}
+  .modebadge b{color:var(--green-d)}
+  .backlink{font-size:13px;font-weight:700;color:var(--green-d)}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:20px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">IA</span> <b data-i18n="t_brand">TP Intelligence</b> <span data-i18n="t_brand2">artificielle</span></div>
+  <div class="sub" data-i18n="t_sub">Travaux pratiques guidés · 5 étapes manipulées</div>
+  <div class="right">
+    <span class="chip">M7 · IA · <span data-i18n="t_lab_chip">TP</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="g0">IA</div>
+    <div>
+      <h1 data-i18n="t_title">TP guidé — Intelligence artificielle</h1>
+      <div class="tag" data-i18n="t_tag">Manipulez le modèle TomCast et le classifieur de vision, étape par étape</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="t_intro"></p>
+  <a class="backlink" href="cours-ia.html">← <span data-i18n="t_back">Revoir le cours</span></a>
+
+  <!-- PROGRESS -->
+  <div class="progwrap">
+    <div class="progbar">
+      <span class="progtxt" id="ptxt">0 / 5</span>
+      <div class="progtrack"><div class="progfill" id="pfill"></div></div>
+      <div class="progsteps" id="pdots"></div>
+    </div>
+  </div>
+
+  <!-- ETAPE 1 -->
+  <div class="card step" style="--sc:#8e6fc7">
+    <div class="head"><span class="n">1</span>
+      <div><h2 data-i18n="t_s1_h">TomCast — le cumul de DSV</h2><div class="app-of" data-i18n="t_s1_app">App · IA & TomCast</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s1_c"></div>
+    <a class="btn primary openbtn" href="J5/sim-ia-tomcast.html" target="_blank" rel="noopener">🤖 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <label class="qlabel" data-i18n="t_s1_q1">Que signifie « franchir le seuil » sur la courbe de cumul DSV ?</label>
+      <div class="opts" data-q="s1a">
+        <label class="opt"><input type="radio" name="s1a" value="0"><span data-i18n="t_s1_o1">Une date fixe du calendrier de traitement</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="1"><span data-i18n="t_s1_o2">Le jour où le cumul de DSV atteint le seuil → on traite</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="2"><span data-i18n="t_s1_o3">Le jour le plus chaud de la série</span></label>
+      </div>
+      <div class="row2" style="margin-top:12px">
+        <div><label class="qlabel" data-i18n="t_s1_q2">Seuil choisi <span class="u">15 / 20 / 25</span></label><input type="number" data-f="s1_thresh" placeholder="ex. 20"></div>
+        <div><label class="qlabel" data-i18n="t_s1_q3">Jour de franchissement <span class="u">J…</span></label><input type="text" data-f="s1_day" placeholder="ex. J9"></div>
+      </div>
+      <div class="fb" data-fb="s1a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="1"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 2 -->
+  <div class="card step" style="--sc:#3fa66a">
+    <div class="head"><span class="n">2</span>
+      <div><h2 data-i18n="t_s2_h">Décision de traitement</h2><div class="app-of" data-i18n="t_s2_app">App · verdict TomCast</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s2_c"></div>
+    <a class="btn primary openbtn" href="J5/sim-ia-tomcast.html" target="_blank" rel="noopener">⚗️ <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <label class="qlabel" data-i18n="t_s2_q1">Le cumul de DSV a franchi le seuil aujourd'hui. Que décidez-vous ?</label>
+      <div class="opts" data-q="s2a">
+        <label class="opt"><input type="radio" name="s2a" value="0"><span data-i18n="t_s2_o1">Traiter — le risque réel justifie l'intervention</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="1"><span data-i18n="t_s2_o2">Attendre encore une semaine par principe</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="2"><span data-i18n="t_s2_o3">Ne jamais traiter, l'IA se trompe toujours</span></label>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s2_q2">Justifiez votre décision en une phrase <span class="u">(champ libre)</span></label>
+      <textarea data-f="s2_justif" placeholder="…"></textarea>
+      <div class="fb" data-fb="s2a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="2"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 3 -->
+  <div class="card step" style="--sc:#3a9bd0">
+    <div class="head"><span class="n">3</span>
+      <div><h2 data-i18n="t_s3_h">Vision — lire classe & confiance</h2><div class="app-of" data-i18n="t_s3_app">App · classifieur de vision</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s3_c"></div>
+    <a class="btn primary openbtn" href="J5/sim-ia-tomcast.html" target="_blank" rel="noopener">🍃 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s3_q1">Classe prédite lue</label><input type="text" data-f="s3_class" placeholder="ex. Alternariose"></div>
+        <div><label class="qlabel" data-i18n="t_s3_q2">Confiance associée <span class="u">%</span></label><input type="number" data-f="s3_conf" placeholder="ex. 88"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s3_q3">En plus de la classe, que renvoie toujours le classifieur ?</label>
+      <div class="opts" data-q="s3a">
+        <label class="opt"><input type="radio" name="s3a" value="0"><span data-i18n="t_s3_o1">Le prix du traitement recommandé</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="1"><span data-i18n="t_s3_o2">Un score de confiance (0–100 %)</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="2"><span data-i18n="t_s3_o3">Rien d'autre — seulement la classe</span></label>
+      </div>
+      <div class="fb" data-fb="s3a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="3"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 4 -->
+  <div class="card step" style="--sc:#e0912b">
+    <div class="head"><span class="n">4</span>
+      <div><h2 data-i18n="t_s4_h">Confiance faible — l'humain tranche</h2><div class="app-of" data-i18n="t_s4_app">App · cas douteux</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s4_c"></div>
+    <a class="btn primary openbtn" href="J5/sim-ia-tomcast.html" target="_blank" rel="noopener">⚠️ <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <label class="qlabel" data-i18n="t_s4_q1">Quand faut-il que l'humain reprenne la décision ?</label>
+      <div class="opts" data-q="s4a">
+        <label class="opt"><input type="radio" name="s4a" value="0"><span data-i18n="t_s4_o1">Jamais — l'IA décide toujours seule</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="1"><span data-i18n="t_s4_o2">Quand la confiance passe sous le seuil → vérification au champ</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="2"><span data-i18n="t_s4_o3">Toujours — l'IA ne sert à rien</span></label>
+      </div>
+      <div class="row2" style="margin-top:12px">
+        <div><label class="qlabel" data-i18n="t_s4_q2">Confiance du cas douteux repéré <span class="u">%</span></label><input type="number" data-f="s4_conf" placeholder="ex. 58"></div>
+        <div><label class="qlabel" data-i18n="t_s4_q3">Pourquoi le modèle doute-t-il ?</label><input type="text" data-f="s4_why" placeholder="ex. image floue"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s4_q4">Votre décision d'agronome <span class="u">(champ libre)</span></label>
+      <textarea data-f="s4_action" placeholder="…"></textarea>
+      <div class="fb" data-fb="s4a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="4"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 5 : SYNTHESE -->
+  <div class="card step" style="--sc:#d1584e">
+    <div class="head"><span class="n">5</span>
+      <div><h2 data-i18n="t_s5_h">Synthèse — QCM auto-corrigé</h2><div class="app-of" data-i18n="t_s5_app">Évaluation · score /5</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s5_c"></div>
+    <div id="quiz"></div>
+    <label class="qlabel" style="margin-top:8px" data-i18n="t_s5_free">Ce que vous retenez de ce TP <span class="u">(champ libre)</span></label>
+    <textarea data-f="s5_takeaway" placeholder="…"></textarea>
+    <div class="btns"><button class="btn primary" id="correctBtn">✅ <span data-i18n="t_correct">Corriger le QCM</span></button></div>
+    <div class="scorebox" id="scorebox" hidden>
+      <div class="scoredial" id="dial"><b id="scoreval">0/5</b></div>
+      <div class="scoreinfo"><div class="st" id="scoretitle"></div><div class="sd" id="scoredesc"></div></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="5"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- OUTILS -->
+  <div class="card">
+    <div class="tools">
+      <div class="modebadge" data-i18n="t_mode">Mode local (localStorage) — progression sauvegardée automatiquement.</div>
+      <div class="btns" style="margin:0">
+        <button class="btn ghost" id="exportBtn">📤 <span data-i18n="t_export">Exporter le compte-rendu (JSON)</span></button>
+        <button class="btn ghost" id="resetBtn">♻️ <span data-i18n="t_reset">Réinitialiser</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="t_foot">Plateforme AgriTech Libye · EU4Skills — Domaine d6 (IA) · travaux pratiques</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  t_brand:{fr:"TP Intelligence",ar:"عمل تطبيقي · الذكاء",en:"AI Lab"},
+  t_brand2:{fr:"artificielle",ar:"الاصطناعي",en:"& vision"},
+  t_sub:{fr:"Travaux pratiques guidés · 5 étapes manipulées",ar:"عمل تطبيقي موجّه · 5 خطوات",en:"Guided lab · 5 hands-on steps"},
+  t_lab_chip:{fr:"TP",ar:"تطبيقي",en:"Lab"},
+  t_title:{fr:"TP guidé — Intelligence artificielle",ar:"عمل تطبيقي موجّه — الذكاء الاصطناعي",en:"Guided lab — Artificial intelligence"},
+  t_tag:{fr:"Manipulez le modèle TomCast et le classifieur de vision, étape par étape",ar:"استعمل نموذج TomCast ومصنّف الرؤية خطوة بخطوة",en:"Work through the TomCast model and the vision classifier, step by step"},
+  t_intro:{fr:"Ce TP vous fait <b>manipuler</b> l'IA du domaine d6. À chaque étape : une consigne, un bouton pour <b>ouvrir l'app</b> dans un nouvel onglet, une ou deux réponses à saisir, puis une case « étape terminée ». Vous réglerez le <b>modèle TomCast</b> (cumul de DSV), testerez un <b>classifieur de vision</b> (classe + <b>confiance</b>) et appliquerez la <b>règle d'or</b> : quand la confiance est faible, l'humain tranche. Votre progression est <b>sauvegardée automatiquement</b> ; à la fin, exportez votre compte-rendu.",
+    ar:"يجعلك هذا العمل التطبيقي <b>تستعمل</b> ذكاء المجال d6. في كل خطوة: تعليمة، وزرّ <b>لفتح التطبيق</b> في تبويب جديد، وإجابة أو إجابتان، ثم خانة «تمّت الخطوة». ستضبط <b>نموذج TomCast</b> (تراكم DSV)، وتختبر <b>مصنّف رؤية</b> (صنف + <b>ثقة</b>)، وتطبّق <b>القاعدة الذهبية</b>: عند ضعف الثقة، الإنسان يقرّر. يُحفظ تقدّمك <b>تلقائياً</b>؛ وفي النهاية صدّر تقريرك.",
+    en:"This lab makes you <b>use</b> the domain d6 AI. At each step: an instruction, a button to <b>open the app</b> in a new tab, one or two answers to enter, then a \"step done\" box. You will tune the <b>TomCast model</b> (DSV accumulation), test a <b>vision classifier</b> (class + <b>confidence</b>) and apply the <b>golden rule</b>: when confidence is low, the human decides. Your progress is <b>saved automatically</b>; at the end, export your report."},
+  t_back:{fr:"Revoir le cours",ar:"مراجعة الدرس",en:"Back to course"},
+  t_open:{fr:"Ouvrir l'app",ar:"فتح التطبيق",en:"Open the app"},
+  t_done:{fr:"Étape terminée",ar:"تمّت الخطوة",en:"Step done"},
+
+  // Step 1
+  t_s1_h:{fr:"TomCast — le cumul de DSV",ar:"TomCast — تراكم DSV",en:"TomCast — the DSV accumulation"},
+  t_s1_app:{fr:"App · IA & TomCast",ar:"تطبيق · الذكاء وTomCast",en:"App · AI & TomCast"},
+  t_s1_c:{fr:"Ouvrez l'app et, dans le bloc <b>TomCast</b>, choisissez un <b>seuil d'intervention</b> (15 / 20 / 25) et une <b>météo</b> (semaine humide ou sèche). Observez le tableau : chaque jour ajoute son <b>DSV</b> au <b>cumul</b>. Repérez le <b>jour</b> où la ligne « ⚗ TRAITER » apparaît — c'est le <b>franchissement du seuil</b>.",
+    ar:"افتح التطبيق، وفي كتلة <b>TomCast</b> اختر <b>عتبة تدخّل</b> (15 / 20 / 25) و<b>طقساً</b> (أسبوع رطب أو جاف). راقب الجدول: كل يوم يضيف <b>DSV</b> إلى <b>المجموع</b>. حدّد <b>اليوم</b> الذي يظهر فيه سطر «⚗ عالِج» — إنه <b>تجاوز العتبة</b>.",
+    en:"Open the app and, in the <b>TomCast</b> block, pick an <b>intervention threshold</b> (15 / 20 / 25) and a <b>weather</b> (wet or dry week). Watch the table: each day adds its <b>DSV</b> to the <b>cumulative total</b>. Spot the <b>day</b> the \"⚗ TREAT\" row appears — that is the <b>threshold crossing</b>."},
+  t_s1_q1:{fr:"Que signifie « franchir le seuil » sur la courbe de cumul DSV ?",ar:"ماذا يعني «تجاوز العتبة» على منحنى تراكم DSV؟",en:"What does \"crossing the threshold\" mean on the DSV accumulation curve?"},
+  t_s1_o1:{fr:"Une date fixe du calendrier de traitement",ar:"تاريخ ثابت من تقويم المعالجة",en:"A fixed date on the treatment calendar"},
+  t_s1_o2:{fr:"Le jour où le cumul de DSV atteint le seuil → on traite",ar:"اليوم الذي يبلغ فيه مجموع DSV العتبة ← نعالج",en:"The day the cumulative DSV reaches the threshold → we treat"},
+  t_s1_o3:{fr:"Le jour le plus chaud de la série",ar:"أحرّ يوم في السلسلة",en:"The hottest day of the series"},
+  t_s1_q2:{fr:"Seuil choisi",ar:"العتبة المختارة",en:"Chosen threshold"},
+  t_s1_q3:{fr:"Jour de franchissement",ar:"يوم التجاوز",en:"Crossing day"},
+  t_s1_fb_ok:{fr:"Exact. On ne traite plus « au calendrier » mais quand le cumul de DSV — piloté par l'humectation et la température — atteint le seuil.",ar:"صحيح. لم نعد نعالج «حسب التقويم» بل عندما يبلغ مجموع DSV — المحكوم بالبلل والحرارة — العتبة.",en:"Correct. We no longer treat \"by the calendar\" but when the DSV total — driven by wetness and temperature — reaches the threshold."},
+  t_s1_fb_no:{fr:"Le franchissement, c'est le jour où le cumul de DSV atteint le seuil et déclenche l'alerte de traitement — pas une date fixe.",ar:"التجاوز هو اليوم الذي يبلغ فيه مجموع DSV العتبة ويُطلق إنذار المعالجة — لا تاريخ ثابت.",en:"The crossing is the day the DSV total reaches the threshold and triggers the spray alert — not a fixed date."},
+
+  // Step 2
+  t_s2_h:{fr:"Décision de traitement",ar:"قرار المعالجة",en:"Treatment decision"},
+  t_s2_app:{fr:"App · verdict TomCast",ar:"تطبيق · حُكم TomCast",en:"App · TomCast verdict"},
+  t_s2_c:{fr:"Comparez, dans les cartes de l'app, le nombre de <b>traitements TomCast</b> à celui du <b>calendrier fixe</b>. En semaine humide, le cumul grimpe vite : d'après le <b>DSV</b>, décidez si l'on <b>traite ou non</b> et justifiez avec la donnée observée.",
+    ar:"قارن في بطاقات التطبيق عدد <b>معالجات TomCast</b> بعدد <b>التقويم الثابت</b>. في الأسبوع الرطب يرتفع المجموع بسرعة: بناءً على <b>DSV</b>، قرّر هل <b>نعالج أم لا</b> وبرّر بالبيانات الملاحَظة.",
+    en:"Compare, in the app cards, the number of <b>TomCast treatments</b> with the <b>fixed calendar</b>. In a wet week the total climbs fast: from the <b>DSV</b>, decide whether to <b>treat or not</b> and justify with the observed data."},
+  t_s2_q1:{fr:"Le cumul de DSV a franchi le seuil aujourd'hui. Que décidez-vous ?",ar:"بلغ مجموع DSV العتبة اليوم. ماذا تقرّر؟",en:"The DSV total crossed the threshold today. What do you decide?"},
+  t_s2_o1:{fr:"Traiter — le risque réel justifie l'intervention",ar:"عالِج — الخطر الحقيقي يبرّر التدخّل",en:"Treat — the real risk justifies the intervention"},
+  t_s2_o2:{fr:"Attendre encore une semaine par principe",ar:"الانتظار أسبوعاً آخر مبدئياً",en:"Wait another week on principle"},
+  t_s2_o3:{fr:"Ne jamais traiter, l'IA se trompe toujours",ar:"عدم المعالجة أبداً، الذكاء يخطئ دائماً",en:"Never treat, the AI is always wrong"},
+  t_s2_q2:{fr:"Justifiez votre décision en une phrase",ar:"برّر قرارك في جملة",en:"Justify your decision in one sentence"},
+  t_s2_fb_ok:{fr:"Exact : au franchissement du seuil, le risque de maladie est réel et documenté par le cumul de DSV — traiter est la décision fondée sur la donnée.",ar:"صحيح: عند تجاوز العتبة يكون خطر المرض حقيقياً وموثّقاً بمجموع DSV — المعالجة هي القرار المبني على البيانات.",en:"Correct: at the crossing the disease risk is real and documented by the DSV total — treating is the data-based decision."},
+  t_s2_fb_no:{fr:"Au franchissement du seuil, attendre laisse passer la fenêtre d'infection. TomCast dit précisément quand traiter : au seuil.",ar:"عند تجاوز العتبة، الانتظار يفوّت نافذة العدوى. يقول TomCast بدقة متى نعالج: عند العتبة.",en:"At the crossing, waiting misses the infection window. TomCast says exactly when to treat: at the threshold."},
+
+  // Step 3
+  t_s3_h:{fr:"Vision — lire classe & confiance",ar:"الرؤية — قراءة الصنف والثقة",en:"Vision — read class & confidence"},
+  t_s3_app:{fr:"App · classifieur de vision",ar:"تطبيق · مصنّف الرؤية",en:"App · vision classifier"},
+  t_s3_c:{fr:"Dans le bloc <b>Classifieur de vision</b>, cliquez une feuille. Le modèle renvoie une <b>classe</b> (saine, mildiou, alternariose, carence) et une <b>confiance</b>. Choisissez une feuille bien reconnue et notez sa <b>classe</b> et son <b>score de confiance</b>.",
+    ar:"في كتلة <b>مصنّف الرؤية</b>، انقر ورقة. يعيد النموذج <b>صنفاً</b> (سليمة، بياض زغبي، ألترناريا، نقص) و<b>ثقة</b>. اختر ورقة مُتعرَّفاً عليها جيداً وسجّل <b>صنفها</b> و<b>درجة ثقتها</b>.",
+    en:"In the <b>Vision classifier</b> block, click a leaf. The model returns a <b>class</b> (healthy, mildew, alternaria, deficiency) and a <b>confidence</b>. Pick a well-recognised leaf and note its <b>class</b> and its <b>confidence score</b>."},
+  t_s3_q1:{fr:"Classe prédite lue",ar:"الصنف المتنبَّأ به",en:"Predicted class read"},
+  t_s3_q2:{fr:"Confiance associée",ar:"الثقة المرافقة",en:"Attached confidence"},
+  t_s3_q3:{fr:"En plus de la classe, que renvoie toujours le classifieur ?",ar:"إضافةً إلى الصنف، ماذا يعيد المصنّف دوماً؟",en:"Besides the class, what does the classifier always return?"},
+  t_s3_o1:{fr:"Le prix du traitement recommandé",ar:"سعر المعالجة الموصى بها",en:"The price of the recommended treatment"},
+  t_s3_o2:{fr:"Un score de confiance (0–100 %)",ar:"درجة ثقة (0–100٪)",en:"A confidence score (0–100%)"},
+  t_s3_o3:{fr:"Rien d'autre — seulement la classe",ar:"لا شيء آخر — الصنف فقط",en:"Nothing else — only the class"},
+  t_s3_fb_ok:{fr:"Exact : une prédiction utile s'accompagne toujours d'une <b>confiance</b>. Sans elle, ce n'est qu'une opinion — la confiance rend la prédiction pilotable.",ar:"صحيح: التنبّؤ المفيد يُرافَق دوماً بـ<b>ثقة</b>. بدونها هو مجرّد رأي — الثقة تجعل التنبّؤ قابلاً للإدارة.",en:"Correct: a useful prediction always comes with a <b>confidence</b>. Without it, it is just an opinion — confidence makes the prediction actionable."},
+  t_s3_fb_no:{fr:"Le classifieur renvoie une classe ET un score de confiance (0–100 %) qui dit à quel point il est sûr de lui.",ar:"يعيد المصنّف صنفاً وأيضاً درجة ثقة (0–100٪) تبيّن مدى تأكّده.",en:"The classifier returns a class AND a confidence score (0–100%) saying how sure it is."},
+  t_s3_fb_range:{fr:" La confiance saisie doit être un pourcentage entre 0 et 100 — vérifiez la lecture.",ar:" يجب أن تكون الثقة المُدخَلة نسبة بين 0 و100 — تحقّق من القراءة.",en:" The confidence entered should be a percentage between 0 and 100 — check the reading."},
+
+  // Step 4
+  t_s4_h:{fr:"Confiance faible — l'humain tranche",ar:"ثقة منخفضة — الإنسان يقرّر",en:"Low confidence — the human decides"},
+  t_s4_app:{fr:"App · cas douteux",ar:"تطبيق · حالة مشكوك فيها",en:"App · doubtful case"},
+  t_s4_c:{fr:"Cliquez les feuilles jusqu'à en trouver une où le modèle <b>doute</b> ou <b>se trompe</b> (confiance basse, image floue, ou carence confondue avec une maladie). Notez sa <b>confiance</b>, pourquoi le modèle doute, puis décidez ce que fait l'<b>agronome</b>.",
+    ar:"انقر الأوراق حتى تجد واحدة <b>يشكّ</b> فيها النموذج أو <b>يخطئ</b> (ثقة منخفضة، صورة ضبابية، أو نقص يُخلَط بمرض). سجّل <b>ثقتها</b>، ولماذا يشكّ النموذج، ثم قرّر ما يفعله <b>المهندس الزراعي</b>.",
+    en:"Click leaves until you find one where the model <b>doubts</b> or is <b>wrong</b> (low confidence, blurry image, or a deficiency confused with a disease). Note its <b>confidence</b>, why the model doubts, then decide what the <b>agronomist</b> does."},
+  t_s4_q1:{fr:"Quand faut-il que l'humain reprenne la décision ?",ar:"متى يجب أن يستعيد الإنسان القرار؟",en:"When should the human take the decision back?"},
+  t_s4_o1:{fr:"Jamais — l'IA décide toujours seule",ar:"أبداً — الذكاء يقرّر وحده دوماً",en:"Never — the AI always decides alone"},
+  t_s4_o2:{fr:"Quand la confiance passe sous le seuil → vérification au champ",ar:"عندما تنخفض الثقة دون العتبة ← تحقّق في الحقل",en:"When confidence drops below the threshold → field check"},
+  t_s4_o3:{fr:"Toujours — l'IA ne sert à rien",ar:"دائماً — الذكاء لا فائدة منه",en:"Always — the AI is useless"},
+  t_s4_q2:{fr:"Confiance du cas douteux repéré",ar:"ثقة الحالة المشكوك فيها",en:"Confidence of the doubtful case"},
+  t_s4_q3:{fr:"Pourquoi le modèle doute-t-il ?",ar:"لماذا يشكّ النموذج؟",en:"Why does the model doubt?"},
+  t_s4_q4:{fr:"Votre décision d'agronome",ar:"قرارك كمهندس زراعي",en:"Your agronomist's decision"},
+  t_s4_fb_ok:{fr:"Exact : c'est la <b>règle d'or</b>. Sous un seuil de confiance, l'IA passe la main — l'agronome vérifie au champ avant de décider.",ar:"صحيح: هذه هي <b>القاعدة الذهبية</b>. تحت عتبة ثقة، يُسلّم الذكاء القرار — يتحقّق المهندس في الحقل قبل القرار.",en:"Correct: this is the <b>golden rule</b>. Below a confidence threshold, the AI hands over — the agronomist checks in the field before deciding."},
+  t_s4_fb_no:{fr:"Ni « toujours l'IA » ni « jamais l'IA » : la règle d'or est que l'humain tranche quand la confiance est faible.",ar:"لا «الذكاء دوماً» ولا «الذكاء أبداً»: القاعدة الذهبية أن يقرّر الإنسان عند ضعف الثقة.",en:"Neither \"always the AI\" nor \"never the AI\": the golden rule is that the human decides when confidence is low."},
+
+  // Step 5 quiz
+  t_s5_h:{fr:"Synthèse — QCM auto-corrigé",ar:"التركيب — اختبار ذاتي التصحيح",en:"Synthesis — self-marked quiz"},
+  t_s5_app:{fr:"Évaluation · score /5",ar:"تقييم · النتيجة /5",en:"Assessment · score /5"},
+  t_s5_c:{fr:"Répondez aux cinq questions puis cliquez sur <b>Corriger</b>. Votre score et vos réponses sont enregistrés.",ar:"أجب عن الأسئلة الخمسة ثم اضغط <b>تصحيح</b>. تُحفظ نتيجتك وإجاباتك.",en:"Answer the five questions then click <b>Correct</b>. Your score and answers are saved."},
+  t_s5_free:{fr:"Ce que vous retenez de ce TP",ar:"ما تحتفظ به من هذا العمل التطبيقي",en:"Your takeaway from this lab"},
+  t_correct:{fr:"Corriger le QCM",ar:"تصحيح الاختبار",en:"Correct the quiz"},
+
+  q1:{fr:"Comment le DSV quotidien de TomCast est-il calculé ?",ar:"كيف تُحسب قيمة DSV اليومية في TomCast؟",en:"How is TomCast's daily DSV computed?"},
+  q1a:{fr:"À partir des heures d'humectation foliaire et de la température moyenne",ar:"من ساعات بلل الأوراق ومتوسّط الحرارة",en:"From leaf wetness hours and mean temperature"},
+  q1b:{fr:"À partir du prix des intrants",ar:"من سعر المدخلات",en:"From the price of inputs"},
+  q1c:{fr:"En comptant les jours du calendrier",ar:"بعدّ أيام التقويم",en:"By counting calendar days"},
+  q2:{fr:"Une prédiction de vision à 58 % de confiance sur une image floue…",ar:"تنبّؤ رؤية بثقة 58٪ على صورة ضبابية…",en:"A vision prediction at 58% confidence on a blurry image…"},
+  q2a:{fr:"est toujours juste, c'est une IA",ar:"صحيح دائماً، إنه ذكاء اصطناعي",en:"is always right, it's an AI"},
+  q2b:{fr:"est fragile : à vérifier avant toute décision",ar:"هشّ: يجب التحقّق قبل أي قرار",en:"is fragile: verify before any decision"},
+  q2c:{fr:"doit être ignorée sans autre examen",ar:"يجب تجاهله دون أي فحص آخر",en:"must be ignored with no further check"},
+  q3:{fr:"Quelle est la « règle d'or » d'un usage responsable de l'IA ?",ar:"ما هي «القاعدة الذهبية» للاستعمال المسؤول للذكاء؟",en:"What is the \"golden rule\" of responsible AI use?"},
+  q3a:{fr:"L'IA remplace l'agronome",ar:"الذكاء يعوّض المهندس الزراعي",en:"AI replaces the agronomist"},
+  q3b:{fr:"Quand la confiance est faible, l'humain tranche",ar:"عند ضعف الثقة، الإنسان يقرّر",en:"When confidence is low, the human decides"},
+  q3c:{fr:"On suit toujours la prédiction, quelle qu'elle soit",ar:"نتبع التنبّؤ دائماً مهما كان",en:"Always follow the prediction, whatever it is"},
+  q4:{fr:"Qu'est-ce qui distingue TomCast d'un classifieur de vision ?",ar:"ما الذي يميّز TomCast عن مصنّف الرؤية؟",en:"What sets TomCast apart from a vision classifier?"},
+  q4a:{fr:"TomCast est un modèle agro-climatique explicable (météo → DSV) ; la vision est un réseau de neurones sur images",ar:"TomCast نموذج مناخي-زراعي قابل للتفسير (طقس ← DSV)؛ والرؤية شبكة عصبية على الصور",en:"TomCast is an explainable agro-climatic model (weather → DSV); vision is a neural network on images"},
+  q4b:{fr:"Les deux font exactement la même chose",ar:"كلاهما يفعل الشيء نفسه تماماً",en:"Both do exactly the same thing"},
+  q4c:{fr:"TomCast analyse des photos de feuilles",ar:"TomCast يحلّل صور الأوراق",en:"TomCast analyses leaf photos"},
+  q5:{fr:"Un modèle entraîné à l'étranger, appliqué tel quel en Libye…",ar:"نموذج مُدرَّب في الخارج، مُطبَّق كما هو في ليبيا…",en:"A model trained abroad, applied as-is in Libya…"},
+  q5a:{fr:"fonctionne parfaitement partout",ar:"يعمل بامتياز في كل مكان",en:"works perfectly everywhere"},
+  q5b:{fr:"peut se tromper sur les cultures et sols locaux — ré-entraînement nécessaire",ar:"قد يُخطئ على المحاصيل والتربة المحلية — يلزم إعادة التدريب",en:"may err on local crops and soils — retraining needed"},
+  q5c:{fr:"n'a besoin d'aucune donnée",ar:"لا يحتاج أي بيانات",en:"needs no data at all"},
+
+  t_score_ex:{fr:"Excellent — concepts maîtrisés !",ar:"ممتاز — المفاهيم متمكَّنة!",en:"Excellent — concepts mastered!"},
+  t_score_ok:{fr:"Bien — quelques points à revoir.",ar:"جيّد — بعض النقاط للمراجعة.",en:"Good — a few points to revisit."},
+  t_score_lo:{fr:"À revoir — relisez le cours puis recommencez.",ar:"يحتاج مراجعة — أعد قراءة الدرس ثم أعد المحاولة.",en:"Needs work — reread the course then retry."},
+  t_score_desc:{fr:"Réponses correctes sur 5 questions de synthèse.",ar:"إجابات صحيحة من 5 أسئلة تركيبية.",en:"Correct answers out of 5 synthesis questions."},
+
+  t_mode:{fr:"Mode local (localStorage) — progression sauvegardée automatiquement.",ar:"وضع محلي (localStorage) — التقدّم محفوظ تلقائياً.",en:"Local mode (localStorage) — progress saved automatically."},
+  t_export:{fr:"Exporter le compte-rendu (JSON)",ar:"تصدير التقرير (JSON)",en:"Export report (JSON)"},
+  t_reset:{fr:"Réinitialiser",ar:"إعادة الضبط",en:"Reset"},
+  t_reset_confirm:{fr:"Effacer toutes vos réponses et repartir de zéro ?",ar:"مسح جميع إجاباتك والبدء من جديد؟",en:"Erase all your answers and start over?"},
+  t_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Domaine d6 (IA) · travaux pratiques",ar:"منصّة أجريتك ليبيا · EU4Skills — المجال d6 (الذكاء) · عمل تطبيقي",en:"AgriTech Libya Platform · EU4Skills — Domain d6 (AI) · practical work"}
+});
+
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const LKEY="tp_ia_v1";
+const QUIZ=[
+  {id:"q1",correct:0,opts:["q1a","q1b","q1c"]},
+  {id:"q2",correct:1,opts:["q2a","q2b","q2c"]},
+  {id:"q3",correct:1,opts:["q3a","q3b","q3c"]},
+  {id:"q4",correct:0,opts:["q4a","q4b","q4c"]},
+  {id:"q5",correct:1,opts:["q5a","q5b","q5c"]}
+];
+// correct radio answers for step MCQs
+const STEPQ={s1a:1,s2a:0,s3a:1,s4a:1};
+
+let STATE=load();
+function load(){try{return JSON.parse(localStorage.getItem(LKEY))||blank();}catch(e){return blank();}}
+function blank(){return{radios:{},fields:{},done:{},quiz:{},score:null,corrected:false};}
+function save(){STATE.updatedAt=new Date().toISOString();localStorage.setItem(LKEY,JSON.stringify(STATE));}
+
+/* ---- build quiz ---- */
+function buildQuiz(){
+  const box=$('#quiz');box.innerHTML='';
+  QUIZ.forEach((q,qi)=>{
+    const blk=document.createElement('div');blk.className='qblock';
+    const lab=document.createElement('label');lab.className='qlabel';
+    lab.textContent=(qi+1)+'. '+I18N.t(q.id);blk.appendChild(lab);
+    const opts=document.createElement('div');opts.className='opts';opts.dataset.quiz=q.id;
+    q.opts.forEach((ok,oi)=>{
+      const l=document.createElement('label');l.className='opt';
+      const inp=document.createElement('input');inp.type='radio';inp.name='qz_'+q.id;inp.value=oi;
+      if(STATE.quiz[q.id]===oi){inp.checked=true;l.classList.add('sel');}
+      inp.addEventListener('change',()=>{STATE.quiz[q.id]=oi;opts.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));l.classList.add('sel');save();});
+      const sp=document.createElement('span');sp.textContent=I18N.t(ok);
+      l.appendChild(inp);l.appendChild(sp);opts.appendChild(l);
+    });
+    blk.appendChild(opts);box.appendChild(blk);
+  });
+}
+
+/* ---- restore inputs ---- */
+function restore(){
+  // radios (steps)
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q, val=STATE.radios[name];
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.checked=(String(val)===r.value);
+      r.closest('.opt').classList.toggle('sel',r.checked);
+    });
+  });
+  // text/number/textarea fields
+  $$('[data-f]').forEach(f=>{if(STATE.fields[f.dataset.f]!=null)f.value=STATE.fields[f.dataset.f];});
+  // done checkboxes
+  $$('[data-done]').forEach(c=>{c.checked=!!STATE.done[c.dataset.done];});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+}
+
+/* ---- wire inputs ---- */
+function wire(){
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q;
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.addEventListener('change',()=>{
+        STATE.radios[name]=+r.value;
+        g.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+        r.closest('.opt').classList.add('sel');
+        feedbackStep(name);save();
+      });
+    });
+  });
+  $$('[data-f]').forEach(f=>f.addEventListener('input',()=>{STATE.fields[f.dataset.f]=f.value;save();}));
+  $$('[data-done]').forEach(c=>c.addEventListener('change',()=>{STATE.done[c.dataset.done]=c.checked;save();updateProgress();}));
+}
+
+/* ---- per-step feedback ---- */
+function feedbackStep(name){
+  const fb=$('.fb[data-fb="'+name+'"]');if(!fb)return;
+  const val=STATE.radios[name], ok=(val===STEPQ[name]);
+  let key=name.replace(/a$/,'')+ (ok?'_fb_ok':'_fb_no'); // s1 -> t_s1_fb_ok
+  key='t_'+key;
+  let msg=I18N.t(key);
+  // step 3 extra range check on confidence
+  if(name==='s3a'&&ok){
+    const c=parseFloat(STATE.fields.s3_conf);
+    if(!isNaN(c)&&(c<0||c>100))msg+=I18N.t('t_s3_fb_range');
+  }
+  fb.innerHTML=msg;
+  fb.className='fb show '+(ok?'ok':'no');
+}
+
+/* ---- progress ---- */
+function updateProgress(){
+  const done=[1,2,3,4,5].filter(i=>STATE.done[i]).length;
+  $('#pfill').style.width=(done/5*100)+'%';
+  $('#ptxt').textContent=done+' / 5';
+  const dots=$('#pdots');dots.innerHTML='';
+  for(let i=1;i<=5;i++){const d=document.createElement('div');d.className='dot'+(STATE.done[i]?' done':'');dots.appendChild(d);}
+}
+
+/* ---- correct quiz ---- */
+function correctQuiz(){
+  let score=0;
+  QUIZ.forEach(q=>{
+    const g=$('.opts[data-quiz="'+q.id+'"]');
+    const ans=STATE.quiz[q.id];
+    g.querySelectorAll('.opt').forEach((l,oi)=>{
+      l.classList.remove('good','bad');
+      if(oi===q.correct)l.classList.add('good');
+      else if(oi===ans)l.classList.add('bad');
+    });
+    if(ans===q.correct)score++;
+  });
+  STATE.score=score;STATE.corrected=true;save();
+  showScore(score,true);
+}
+function showScore(score,scroll){
+  const box=$('#scorebox');box.hidden=false;
+  $('#scoreval').textContent=score+'/5';
+  $('#dial').style.setProperty('--p',(score/5*360)+'deg');
+  const tk=score>=5?'t_score_ex':score>=3?'t_score_ok':'t_score_lo';
+  $('#scoretitle').textContent=I18N.t(tk);
+  $('#scoredesc').textContent=score+' / 5 — '+I18N.t('t_score_desc');
+  if(scroll)box.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ---- export ---- */
+function doExport(){
+  const rep={
+    format:"agritech-tp-report",module:"M7",domain:"d6",tp:"ia",version:"tp_ia_v1",
+    lang:I18N.lang,exportedAt:new Date().toISOString(),
+    stepsCompleted:[1,2,3,4,5].filter(i=>STATE.done[i]),
+    answers:{
+      step1:{threshold_meaning_choice:STATE.radios.s1a,threshold:STATE.fields.s1_thresh||"",crossing_day:STATE.fields.s1_day||""},
+      step2:{treatment_choice:STATE.radios.s2a,justification:STATE.fields.s2_justif||""},
+      step3:{predicted_class:STATE.fields.s3_class||"",confidence_pct:STATE.fields.s3_conf||"",classifier_output_choice:STATE.radios.s3a},
+      step4:{human_decides_choice:STATE.radios.s4a,doubt_confidence_pct:STATE.fields.s4_conf||"",doubt_reason:STATE.fields.s4_why||"",agronomist_action:STATE.fields.s4_action||""},
+      step5:{quiz:STATE.quiz,takeaway:STATE.fields.s5_takeaway||""}
+    },
+    quizScore:STATE.score,quizMax:5
+  };
+  const name="tp_ia_"+(new Date().toISOString().slice(0,10))+".json";
+  if(window.Store&&Store.download)Store.download(name,JSON.stringify(rep,null,2),'application/json');
+  else{const a=document.createElement('a');a.href='data:application/json,'+encodeURIComponent(JSON.stringify(rep,null,2));a.download=name;a.click();}
+}
+
+/* ---- reset ---- */
+function doReset(){
+  if(!confirm(I18N.t('t_reset_confirm')))return;
+  STATE=blank();localStorage.removeItem(LKEY);
+  $$('.fb').forEach(f=>f.className='fb');
+  $('#scorebox').hidden=true;
+  buildQuiz();restore();
+}
+
+/* ---- i18n re-render ---- */
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{
+  applyHTML();buildQuiz();
+  // re-show step feedback in new language
+  ['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+});
+
+$('#correctBtn').addEventListener('click',correctQuiz);
+$('#exportBtn').addEventListener('click',doExport);
+$('#resetBtn').addEventListener('click',doReset);
+
+buildQuiz();wire();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();restore();
+['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

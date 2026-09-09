@@ -1,0 +1,6 @@
+parcel,index,date,mean,min,max,std,p10,p50,p90,cloud_pct,source
+Pivot Nord,NDVI,2026-03-05,0.412,0.180,0.610,0.078,0.310,0.415,0.520,4,sentinel-2-l2a
+Pivot Nord,NDVI,2026-03-20,0.538,0.260,0.720,0.081,0.430,0.540,0.640,8,sentinel-2-l2a
+Pivot Nord,NDVI,2026-04-04,0.671,0.400,0.810,0.070,0.580,0.675,0.760,2,sentinel-2-l2a
+Pivot Nord,NDRE,2026-04-04,0.311,0.180,0.420,0.048,0.250,0.312,0.372,2,sentinel-2-l2a
+Parcelle Est,NDVI,2026-04-04,0.352,0.150,0.520,0.065,0.270,0.350,0.440,2,sentinel-2-l2a

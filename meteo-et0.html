@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Station météo & ET₀ — FAO-56 Penman-Monteith</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:960px;margin:-4px 0 4px;font-size:14px}
+  .lead b{color:var(--ink)}
+  .toolrow{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  select,input[type=range],input[type=number]{font:inherit}
+  select{border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:#fff;color:var(--ink);font-weight:600;min-width:120px}
+  select:focus,input:focus{outline:none;border-color:var(--green)}
+  input[type=number]{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink);font-weight:600;width:92px}
+  input[type=range]{width:150px;accent-color:var(--green)}
+  .rngval{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:13px}
+  .grow{flex:1}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+  .note{font-size:12.5px;color:var(--muted);background:var(--green-bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-top:12px}
+  .maprow{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:6px}
+  .maprow .fld label span.def{color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0}
+  .chartwrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 8px 4px}
+  svg.chart{width:100%;height:auto;display:block;touch-action:none}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 6px 2px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:15px;height:3px;border-radius:2px;display:inline-block}
+  .legend i.sq{width:12px;height:12px;border-radius:3px}
+  .legend i.dash{height:0;border-top:2px dashed currentColor;width:15px}
+  .hoverbox{font-size:13px;color:var(--muted);padding:9px 12px;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;margin-top:10px;min-height:20px}
+  .hoverbox b{color:var(--ink)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+  .kpi{background:var(--green-bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .kpi .l{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+  .kpi .v{font-size:1.5rem;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .kpi .v small{font-size:.8rem;font-weight:700;color:var(--muted)}
+  .kpi .x{color:var(--faint);font-size:11px;margin-top:3px}
+  .kpi.good{background:#eef8ef;border-color:#bfe3c3}.kpi.good .v{color:var(--impact)}
+  .kpi.warn{background:#fdf3e3;border-color:#f0d9ac}.kpi.warn .v{color:#b5701a}
+  .kpi.cool{background:#eaf3fb;border-color:#bcdcf1}.kpi.cool .v{color:var(--capture)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .smallgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:720px){.smallgrid{grid-template-columns:1fr}}
+  .smallgrid .name{font-weight:800;font-size:13.5px;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .smallgrid .name .now{margin-inline-start:auto;font-family:"JetBrains Mono",monospace;font-weight:700}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:12.5px;background:#0e1512;color:#d7e3cd;border-radius:9px;padding:11px 14px;overflow:auto;margin:2px 0 4px;line-height:1.7}
+  .defrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+  .def{background:var(--green-bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px}
+  .def b{color:var(--green-d);font-family:"JetBrains Mono",monospace} .def .u{color:var(--muted)}
+  .guide p{font-size:13px;color:var(--muted);line-height:1.75;margin:0 0 9px}
+  .guide b{color:var(--ink)}
+  .modal{position:fixed;inset:0;background:rgba(30,40,20,.45);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
+  .modal.on{display:flex}
+  .modal .box{background:#fff;border-radius:16px;max-width:680px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal .hd{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .modal .hd b{font-size:15px}.modal .hd .x{margin-inline-start:auto;cursor:pointer;color:var(--muted);font-size:22px;line-height:1}
+  .modal .bd{padding:18px 20px}
+  pre.code{background:#0e1512;color:#d7e3cd;border-radius:10px;padding:14px 16px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:12px;line-height:1.6}
+  .modcap{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--green-d)}
+  .daypick{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">MÉT</span> <b data-i18n="w_brand">Station</b> <span data-i18n="w_brand2">météo & ET₀</span></div>
+  <div class="sub" data-i18n="w_sub">Eau & Irrigation · FAO-56 Penman-Monteith · Hargreaves</div>
+  <div class="right">
+    <span class="chip" id="modeChip">M4</span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="w_lead"></p>
+
+  <!-- ===== Controls ===== -->
+  <div class="card">
+    <div class="toolrow">
+      <div class="fld">
+        <label><span data-i18n="w_lat"></span> · <span class="rngval" id="latv">29°N</span></label>
+        <input type="range" id="lat" min="20" max="35" step="0.5" value="29">
+      </div>
+      <div class="fld">
+        <label data-i18n="w_elev"></label>
+        <input type="number" id="elev" min="0" max="1000" step="10" value="150">
+      </div>
+      <div class="fld">
+        <label data-i18n="w_windh"></label>
+        <select id="windh"><option value="2">2 m</option><option value="10" selected>10 m</option></select>
+      </div>
+      <div class="fld">
+        <label data-i18n="w_radsrc"></label>
+        <select id="radsrc"><option value="hs" selected>Hargreaves</option><option value="meas" data-i18n="w_rad_meas"></option></select>
+      </div>
+      <div class="fld">
+        <label><span data-i18n="w_krs"></span> · <span class="rngval" id="krsv">0.16</span></label>
+        <input type="range" id="krs" min="0.14" max="0.20" step="0.01" value="0.16">
+      </div>
+      <div class="fld">
+        <label><span data-i18n="w_tbase"></span> · <span class="rngval" id="tbasev">10°C</span></label>
+        <input type="range" id="tbase" min="0" max="15" step="1" value="10">
+      </div>
+      <div class="grow"></div>
+      <div class="fld">
+        <label>&nbsp;</label>
+        <div class="btns">
+          <button class="btn ghost" onclick="doImport()">📥 <span data-i18n="import"></span></button>
+          <button class="btn ghost" onclick="doExport()">📤 <span data-i18n="export"></span></button>
+          <button class="btn ghost" onclick="openFmt()">❓ <span data-i18n="format_help"></span></button>
+          <button class="btn ghost" onclick="loadDemo()">↺ <span data-i18n="w_demo"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- column mapping (sub-hourly station files) -->
+    <div id="mapBox" hidden>
+      <div class="note" style="margin-bottom:2px"><b data-i18n="w_map_title"></b> — <span data-i18n="w_map_desc"></span></div>
+      <div class="maprow">
+        <div class="fld"><label>🌡️ <span data-i18n="w_c_t"></span></label><select id="mapT"></select></div>
+        <div class="fld"><label>💧 <span data-i18n="w_c_hr"></span></label><select id="mapHR"></select></div>
+        <div class="fld"><label>🌬️ <span data-i18n="w_c_wind"></span></label><select id="mapWind"></select></div>
+        <div class="fld"><label>🌧️ <span data-i18n="w_c_rain"></span></label><select id="mapRain"></select></div>
+        <div class="fld"><label>☀️ <span data-i18n="w_c_rad"></span></label><select id="mapRad"></select></div>
+        <div class="fld"><label>📊 <span data-i18n="w_c_p"></span></label><select id="mapP"></select></div>
+      </div>
+    </div>
+    <div class="note" id="srcNote"></div>
+  </div>
+
+  <!-- ===== KPIs ===== -->
+  <div class="card">
+    <h2>📊 <span data-i18n="w_kpi_title"></span></h2>
+    <div class="kpis" id="kpis"></div>
+  </div>
+
+  <!-- ===== Temperature ===== -->
+  <div class="card">
+    <h2>🌡️ <span data-i18n="w_temp_title"></span></h2>
+    <div class="chartwrap"><svg class="chart" id="svgT" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="legend" id="legT"></div>
+    <div class="hoverbox" id="hovT"></div>
+  </div>
+
+  <!-- ===== ET0 ===== -->
+  <div class="card">
+    <h2>🌱 <span data-i18n="w_et0_title"></span></h2>
+    <div class="sub muted" style="font-size:12.5px;margin:-6px 0 12px" data-i18n="w_et0_sub"></div>
+    <div class="chartwrap"><svg class="chart" id="svgE" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="legend" id="legE"></div>
+    <div class="hoverbox" id="hovE"></div>
+  </div>
+
+  <!-- ===== Small multiples ===== -->
+  <div class="card">
+    <h2>📈 <span data-i18n="w_multi_title"></span></h2>
+    <div class="smallgrid">
+      <div><div class="name">💧 <span data-i18n="w_c_hr"></span><span class="now" id="nowHR"></span></div>
+        <div class="chartwrap"><svg class="chart" id="svgHR" viewBox="0 0 440 150" preserveAspectRatio="xMidYMid meet"></svg></div></div>
+      <div><div class="name">🌬️ <span data-i18n="w_c_wind"></span><span class="now" id="nowW"></span></div>
+        <div class="chartwrap"><svg class="chart" id="svgW" viewBox="0 0 440 150" preserveAspectRatio="xMidYMid meet"></svg></div></div>
+      <div><div class="name">📊 <span data-i18n="w_c_p"></span><span class="now" id="nowP"></span></div>
+        <div class="chartwrap"><svg class="chart" id="svgP" viewBox="0 0 440 150" preserveAspectRatio="xMidYMid meet"></svg></div></div>
+      <div><div class="name">🌧️ <span data-i18n="w_rain_cum"></span><span class="now" id="nowR"></span></div>
+        <div class="chartwrap"><svg class="chart" id="svgR" viewBox="0 0 440 150" preserveAspectRatio="xMidYMid meet"></svg></div></div>
+    </div>
+  </div>
+
+  <!-- ===== Method ===== -->
+  <div class="card">
+    <h2>📐 <span data-i18n="w_method_title"></span></h2>
+    <div class="daypick" style="margin-bottom:10px">
+      <span data-i18n="w_method_day"></span>
+      <select id="methDay" style="min-width:150px"></select>
+    </div>
+    <div class="formula">ET₀ = [ 0.408·Δ·(R<sub>n</sub>−G) + γ·(900/(T+273))·u₂·(e<sub>s</sub>−e<sub>a</sub>) ] / [ Δ + γ·(1 + 0.34·u₂) ]</div>
+    <div class="defrow" id="defs"></div>
+    <p class="lead" style="margin-top:14px" data-i18n-html="w_method_txt"></p>
+  </div>
+
+  <!-- ===== Pedagogy ===== -->
+  <div class="grid2">
+    <div class="card guide">
+      <h2>📖 <span data-i18n="w_edu_title"></span></h2>
+      <p data-i18n-html="w_e1"></p>
+      <p data-i18n-html="w_e2"></p>
+      <p data-i18n-html="w_e3"></p>
+    </div>
+    <div class="card guide">
+      <h2>🔗 <span data-i18n="w_link_title"></span></h2>
+      <p data-i18n-html="w_l1"></p>
+      <p data-i18n-html="w_l2"></p>
+      <p data-i18n-html="w_l3"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Format modal ===== -->
+<div class="modal" id="fmt" onclick="if(event.target===this)closeFmt()">
+  <div class="box">
+    <div class="hd"><span class="modcap" data-i18n="format_help"></span><b data-i18n="w_fmt_title"></b><span class="x" onclick="closeFmt()">×</span></div>
+    <div class="bd">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px" data-i18n-html="w_fmt_desc"></p>
+      <div class="modcap" style="margin-bottom:6px" data-i18n="w_fmt_a1"></div>
+      <pre class="code" id="fmtA1"></pre>
+      <div class="modcap" style="margin:14px 0 6px" data-i18n="w_fmt_clean"></div>
+      <pre class="code" id="fmtClean"></pre>
+      <div class="note" data-i18n="w_fmt_note"></div>
+    </div>
+  </div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+/* =====================================================================
+   Station météo & ET₀ (FAO-56) — module M4 · Eau & Irrigation
+   Autonome, double-mode, sur theme.css + i18n.js + store.js
+   ===================================================================== */
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+
+Object.assign(I18N.DICT,{
+  w_brand:{fr:"Station",ar:"محطة",en:"Station"},
+  w_brand2:{fr:"météo & ET₀",ar:"الطقس وET₀",en:"weather & ET₀"},
+  w_sub:{fr:"Eau & Irrigation · FAO-56 Penman-Monteith · Hargreaves",ar:"الماء والري · FAO-56 بنمان-مونتيث · هارغريفز",en:"Water & Irrigation · FAO-56 Penman-Monteith · Hargreaves"},
+  w_lead:{fr:"La météo <b>pilote l'irrigation</b> : c'est l'atmosphère qui vide le réservoir-sol. Ce module <b>lit vos fichiers de station</b> (le vrai format des stations J4), agrège les pas de 10 min en journées, trace les <b>séries météo</b> et calcule l'<b>évapotranspiration de référence ET₀</b> par la méthode <b>FAO-56 Penman-Monteith</b> — avec repli <b>Hargreaves</b> quand le rayonnement manque. Importez un fichier ou explorez la démo embarquée.",
+          ar:"الطقس <b>يقود الري</b>: الغلاف الجوي هو ما يُفرغ خزّان التربة. تقرأ هذه الوحدة <b>ملفات محطتك</b> (صيغة محطات J4 الحقيقية)، وتجمّع خطوات الـ10 دقائق إلى أيام، وترسم <b>سلاسل الطقس</b> وتحسب <b>التبخّر-النتح المرجعي ET₀</b> بطريقة <b>FAO-56 بنمان-مونتيث</b> — مع بديل <b>هارغريفز</b> عند غياب الإشعاع. استورد ملفاً أو استكشف البيانات التجريبية.",
+          en:"Weather <b>drives irrigation</b>: the atmosphere empties the soil reservoir. This module <b>reads your station files</b> (the real J4 station format), aggregates 10-min steps into days, plots the <b>weather series</b> and computes the <b>reference evapotranspiration ET₀</b> by <b>FAO-56 Penman-Monteith</b> — with a <b>Hargreaves</b> fallback when radiation is missing. Import a file or explore the built-in demo."},
+  w_lat:{fr:"Latitude",ar:"خط العرض",en:"Latitude"},
+  w_elev:{fr:"Altitude (m)",ar:"الارتفاع (م)",en:"Elevation (m)"},
+  w_windh:{fr:"Hauteur anémomètre",ar:"ارتفاع مقياس الرياح",en:"Anemometer height"},
+  w_radsrc:{fr:"Source rayonnement",ar:"مصدر الإشعاع",en:"Radiation source"},
+  w_rad_meas:{fr:"Colonne mesurée",ar:"عمود مقيس",en:"Measured column"},
+  w_krs:{fr:"Coef. krs",ar:"معامل krs",en:"krs coef."},
+  w_tbase:{fr:"Base GDD",ar:"أساس GDD",en:"GDD base"},
+  w_demo:{fr:"Démo",ar:"تجريبي",en:"Demo"},
+  w_map_title:{fr:"Mappage des colonnes",ar:"ربط الأعمدة",en:"Column mapping"},
+  w_map_desc:{fr:"les capteurs varient d'une station à l'autre : indiquez quelle colonne porte chaque variable.",ar:"تختلف المجسات بين المحطات: حدّد أي عمود يحمل كل متغيّر.",en:"sensors differ between stations: tell which column carries each variable."},
+  w_c_t:{fr:"Température (°C)",ar:"الحرارة (°م)",en:"Temperature (°C)"},
+  w_c_hr:{fr:"Humidité relative (%)",ar:"الرطوبة النسبية (%)",en:"Relative humidity (%)"},
+  w_c_wind:{fr:"Vent (m/s)",ar:"الرياح (م/ث)",en:"Wind (m/s)"},
+  w_c_rain:{fr:"Pluie (mm)",ar:"المطر (مم)",en:"Rain (mm)"},
+  w_c_rad:{fr:"Rayonnement (W/m²)",ar:"الإشعاع (و/م²)",en:"Radiation (W/m²)"},
+  w_c_p:{fr:"Pression (hPa)",ar:"الضغط (hPa)",en:"Pressure (hPa)"},
+  w_none:{fr:"— (aucune)",ar:"— (لا شيء)",en:"— (none)"},
+  w_kpi_title:{fr:"Synthèse de la période",ar:"ملخّص الفترة",en:"Period summary"},
+  w_temp_title:{fr:"Température — min / moyenne / max par jour",ar:"الحرارة — الدنيا/المتوسط/العظمى يومياً",en:"Temperature — daily min / mean / max"},
+  w_et0_title:{fr:"Évapotranspiration de référence ET₀",ar:"التبخّر-النتح المرجعي ET₀",en:"Reference evapotranspiration ET₀"},
+  w_et0_sub:{fr:"ET₀ journalière (Penman-Monteith & Hargreaves) et cumul sur la période — c'est la « demande » d'eau de l'atmosphère.",ar:"ET₀ اليومي (بنمان-مونتيث وهارغريفز) والتراكم خلال الفترة — إنه «طلب» الغلاف الجوي للماء.",en:"Daily ET₀ (Penman-Monteith & Hargreaves) and running total — the atmosphere's water 'demand'."},
+  w_multi_title:{fr:"Humidité · Vent · Pression · Pluie",ar:"الرطوبة · الرياح · الضغط · المطر",en:"Humidity · Wind · Pressure · Rain"},
+  w_rain_cum:{fr:"Pluie cumulée (mm)",ar:"المطر المتراكم (مم)",en:"Cumulative rain (mm)"},
+  w_method_title:{fr:"Méthode — ET₀ FAO-56 Penman-Monteith, pas à pas",ar:"الطريقة — ET₀ FAO-56 بنمان-مونتيث خطوة بخطوة",en:"Method — FAO-56 Penman-Monteith, step by step"},
+  w_method_day:{fr:"Jour détaillé :",ar:"اليوم المفصّل:",en:"Detailed day:"},
+  w_method_txt:{fr:"<b>Penman-Monteith</b> combine le terme <b>énergétique</b> (rayonnement net R<sub>n</sub> qui fournit l'énergie d'évaporation) et le terme <b>aérodynamique</b> (déficit de saturation e<sub>s</sub>−e<sub>a</sub> et vent u₂ qui emportent la vapeur). Quand le <b>rayonnement solaire R<sub>s</sub> n'est pas mesuré</b>, on l'estime par <b>Hargreaves-Samani</b> : R<sub>s</sub> = k<sub>rs</sub>·√(T<sub>max</sub>−T<sub>min</sub>)·R<sub>a</sub>, où R<sub>a</sub> (rayonnement extraterrestre) se calcule exactement depuis la <b>latitude</b> et le <b>jour julien</b>. Le repli <b>ET₀ Hargreaves</b> = 0.0023·(T<sub>moy</sub>+17.8)·√(T<sub>max</sub>−T<sub>min</sub>)·R<sub>a</sub> ne demande que la température.",
+                ar:"يجمع <b>بنمان-مونتيث</b> بين الحد <b>الطاقي</b> (الإشعاع الصافي R<sub>n</sub> الذي يوفّر طاقة التبخّر) والحد <b>الديناميكي الهوائي</b> (عجز التشبّع e<sub>s</sub>−e<sub>a</sub> والرياح u₂ اللذان يحملان البخار). عند <b>غياب قياس الإشعاع الشمسي R<sub>s</sub></b> يُقدَّر بـ<b>هارغريفز-ساماني</b>: R<sub>s</sub> = k<sub>rs</sub>·√(T<sub>عظمى</sub>−T<sub>دنيا</sub>)·R<sub>a</sub>، حيث يُحسب R<sub>a</sub> (الإشعاع خارج الغلاف) بدقّة من <b>خط العرض</b> و<b>اليوم اليولياني</b>. البديل <b>ET₀ هارغريفز</b> = 0.0023·(T<sub>متوسط</sub>+17.8)·√(T<sub>عظمى</sub>−T<sub>دنيا</sub>)·R<sub>a</sub> لا يتطلب سوى الحرارة.",
+                en:"<b>Penman-Monteith</b> combines the <b>energy</b> term (net radiation R<sub>n</sub>, the energy source for evaporation) and the <b>aerodynamic</b> term (saturation deficit e<sub>s</sub>−e<sub>a</sub> and wind u₂ that carry vapour away). When <b>solar radiation R<sub>s</sub> is not measured</b>, it is estimated by <b>Hargreaves-Samani</b>: R<sub>s</sub> = k<sub>rs</sub>·√(T<sub>max</sub>−T<sub>min</sub>)·R<sub>a</sub>, where R<sub>a</sub> (extraterrestrial radiation) follows exactly from <b>latitude</b> and <b>Julian day</b>. The <b>Hargreaves ET₀</b> fallback = 0.0023·(T<sub>mean</sub>+17.8)·√(T<sub>max</sub>−T<sub>min</sub>)·R<sub>a</sub> needs only temperature."},
+  w_edu_title:{fr:"À quoi sert l'ET₀ ?",ar:"ما فائدة ET₀؟",en:"What is ET₀ for?"},
+  w_e1:{fr:"<b>ET₀</b> est l'évapotranspiration d'un gazon de référence bien alimenté en eau : c'est un <b>« mètre-étalon » climatique</b>, exprimé en mm/jour, indépendant de la culture.",ar:"<b>ET₀</b> هو التبخّر-النتح لعشب مرجعي جيّد الري: إنه <b>«معيار» مناخي</b> بوحدة مم/يوم، مستقل عن المحصول.",en:"<b>ET₀</b> is the evapotranspiration of a well-watered reference grass: a climatic <b>'yardstick'</b> in mm/day, independent of the crop."},
+  w_e2:{fr:"On en déduit la <b>demande réelle</b> d'une culture : ET<sub>c</sub> = K<sub>c</sub> · ET₀. Le coefficient cultural K<sub>c</sub> dépend de l'espèce et du stade. C'est le besoin brut à couvrir par la pluie + l'irrigation.",ar:"ومنه نستنتج <b>الطلب الفعلي</b> للمحصول: ET<sub>c</sub> = K<sub>c</sub> · ET₀. معامل المحصول K<sub>c</sub> يعتمد على النوع والمرحلة. إنه الحاجة الإجمالية التي يغطّيها المطر + الري.",en:"From it we derive a crop's <b>actual demand</b>: ET<sub>c</sub> = K<sub>c</sub> · ET₀. The crop coefficient K<sub>c</sub> depends on species and stage. This is the gross need to be met by rain + irrigation."},
+  w_e3:{fr:"Les <b>GDD</b> (degrés-jours de croissance) cumulent la chaleur utile au-dessus d'une base : ils <b>datent les stades</b> (levée, floraison, récolte) mieux que le calendrier.",ar:"<b>GDD</b> (درجات-أيام النمو) تراكم الحرارة المفيدة فوق أساس: تُحدّد <b>مواعيد المراحل</b> (الإنبات، الإزهار، الحصاد) أفضل من التقويم.",en:"<b>GDD</b> (growing degree-days) accumulate useful heat above a base: they <b>time crop stages</b> (emergence, flowering, harvest) better than the calendar."},
+  w_link_title:{fr:"Penman-Monteith vs Hargreaves & le pilotage",ar:"بنمان-مونتيث مقابل هارغريفز والتحكم",en:"Penman-Monteith vs Hargreaves & scheduling"},
+  w_l1:{fr:"<b>Penman-Monteith</b> est la référence FAO : physique complète, mais gourmande en données (T, HR, vent, rayonnement). <b>Hargreaves</b> n'exige que les températures — idéal quand une station ne mesure pas le rayonnement, fréquent en Libye.",ar:"<b>بنمان-مونتيث</b> هو مرجع الفاو: فيزياء كاملة لكنه يتطلب بيانات كثيرة (حرارة، رطوبة، رياح، إشعاع). <b>هارغريفز</b> لا يتطلب سوى الحرارة — مثالي عندما لا تقيس المحطة الإشعاع، وهو شائع في ليبيا.",en:"<b>Penman-Monteith</b> is the FAO reference: full physics but data-hungry (T, RH, wind, radiation). <b>Hargreaves</b> needs only temperatures — ideal when a station has no radiation sensor, common in Libya."},
+  w_l2:{fr:"L'ET₀ alimente directement le <b>réservoir-sol</b> (bilan FAO-56) : chaque jour, le sol perd ET<sub>c</sub>=K<sub>c</sub>·ET₀. Quand l'épuisement atteint le seuil RAW, il faut irriguer.",ar:"يغذّي ET₀ مباشرةً <b>خزّان التربة</b> (ميزان FAO-56): كل يوم تفقد التربة ET<sub>c</sub>=K<sub>c</sub>·ET₀. عندما يبلغ الاستنزاف عتبة RAW يجب الري.",en:"ET₀ feeds straight into the <b>soil reservoir</b> (FAO-56 balance): each day the soil loses ET<sub>c</sub>=K<sub>c</sub>·ET₀. When depletion reaches the RAW threshold, irrigation is due."},
+  w_l3:{fr:"Le <b>planificateur d'irrigation</b> combine cette demande ET₀ avec la pluie et la réserve utile pour décider <b>quand</b> et <b>combien</b> irriguer. La météo est donc le tout premier maillon de la chaîne.",ar:"يجمع <b>مخطّط الري</b> بين طلب ET₀ والمطر والمخزون المتاح لتقرير <b>متى</b> و<b>كم</b> يُروى. فالطقس هو الحلقة الأولى في السلسلة.",en:"The <b>irrigation planner</b> combines this ET₀ demand with rain and available water to decide <b>when</b> and <b>how much</b> to irrigate. Weather is thus the very first link in the chain."},
+  w_fmt_title:{fr:"Formats d'import acceptés",ar:"صيغ الاستيراد المقبولة",en:"Accepted import formats"},
+  w_fmt_desc:{fr:"Deux formats CSV. <b>(1) Station brute</b> : en-tête <code>Date/Heure,A1-WS1,…</code> au pas de ~10 min (date <code>JJ/MM/AAAA HH:MM:SS</code>) — l'app propose un <b>mappage de colonnes</b> et agrège en journées. <b>(2) Format propre</b> déjà journalier, réimportable tel que l'export.",
+              ar:"صيغتا CSV. <b>(1) محطة خام</b>: ترويسة <code>Date/Heure,A1-WS1,…</code> بخطوة ~10 دقائق (تاريخ <code>يوم/شهر/سنة ساعة:دقيقة:ثانية</code>) — يقترح التطبيق <b>ربط الأعمدة</b> ويجمّع إلى أيام. <b>(2) صيغة نظيفة</b> يومية جاهزة، قابلة لإعادة الاستيراد كالتصدير.",
+              en:"Two CSV formats. <b>(1) Raw station</b>: header <code>Date/Heure,A1-WS1,…</code> at ~10-min step (date <code>DD/MM/YYYY HH:MM:SS</code>) — the app offers a <b>column mapping</b> and aggregates to days. <b>(2) Clean format</b> already daily, re-importable like the export."},
+  w_fmt_a1:{fr:"CSV STATION BRUTE (A1)",ar:"CSV محطة خام (A1)",en:"RAW STATION CSV (A1)"},
+  w_fmt_clean:{fr:"CSV PROPRE (JOURNALIER)",ar:"CSV نظيف (يومي)",en:"CLEAN CSV (DAILY)"},
+  w_fmt_note:{fr:"Défauts de mappage station A1 : T=A1-T1, HR=A1-HR1, vent=A1-WS1, pluie=A1-R1, pression=A1-B. Les gros fichiers (dizaines de milliers de lignes) sont agrégés ; l'affichage échantillonne si besoin.",
+              ar:"الافتراضات لمحطة A1: T=A1-T1، HR=A1-HR1، رياح=A1-WS1، مطر=A1-R1، ضغط=A1-B. الملفات الكبيرة (عشرات آلاف الأسطر) تُجمَّع؛ والعرض يأخذ عيّنة عند الحاجة.",
+              en:"A1 station default mapping: T=A1-T1, RH=A1-HR1, wind=A1-WS1, rain=A1-R1, pressure=A1-B. Large files (tens of thousands of rows) are aggregated; display is sampled if needed."},
+  w_src_demo:{fr:"Source : démo embarquée « Station A1 · Sarir » (7 jours au pas 10 min, généré à partir du format réel J4).",ar:"المصدر: بيانات تجريبية «محطة A1 · السرير» (7 أيام بخطوة 10 دقائق، مولّدة من صيغة J4 الحقيقية).",en:"Source: built-in demo 'Station A1 · Sarir' (7 days at 10-min step, generated from the real J4 format)."},
+  w_src_file:{fr:"Source : fichier importé",ar:"المصدر: ملف مستورد",en:"Source: imported file"},
+  w_src_n:{fr:"jours",ar:"أيام",en:"days"},
+  w_src_samp:{fr:"relevés",ar:"قياسات",en:"records"},
+  // KPI labels
+  k_tmin:{fr:"T min",ar:"الحرارة الدنيا",en:"T min"},
+  k_tmean:{fr:"T moyenne",ar:"الحرارة المتوسطة",en:"Mean T"},
+  k_tmax:{fr:"T max",ar:"الحرارة العظمى",en:"T max"},
+  k_amp:{fr:"Amplitude therm.",ar:"المدى الحراري",en:"Thermal range"},
+  k_rh:{fr:"HR moyenne",ar:"الرطوبة المتوسطة",en:"Mean RH"},
+  k_wind:{fr:"Vent moyen",ar:"الرياح المتوسطة",en:"Mean wind"},
+  k_rain:{fr:"Pluie totale",ar:"إجمالي المطر",en:"Total rain"},
+  k_et0:{fr:"ET₀ cumulée (PM)",ar:"ET₀ المتراكم (PM)",en:"Total ET₀ (PM)"},
+  k_et0d:{fr:"ET₀ moy/jour",ar:"ET₀ متوسط/يوم",en:"Mean ET₀/day"},
+  k_gdd:{fr:"GDD cumulés",ar:"GDD متراكمة",en:"Total GDD"},
+  // legends
+  lg_tmin:{fr:"T min",ar:"الحرارة الدنيا",en:"T min"},
+  lg_tmax:{fr:"T max",ar:"الحرارة العظمى",en:"T max"},
+  lg_tmean:{fr:"T moyenne",ar:"المتوسط",en:"T mean"},
+  lg_pm:{fr:"ET₀ Penman-Monteith",ar:"ET₀ بنمان-مونتيث",en:"ET₀ Penman-Monteith"},
+  lg_hs:{fr:"ET₀ Hargreaves",ar:"ET₀ هارغريفز",en:"ET₀ Hargreaves"},
+  lg_cum:{fr:"Cumul ET₀",ar:"تراكم ET₀",en:"ET₀ cumulative"},
+  d_day:{fr:"Jour",ar:"يوم",en:"Day"},
+  m_delta:{fr:"Pente pression vap. Δ",ar:"ميل ضغط البخار Δ",en:"Vap. pressure slope Δ"},
+  m_gamma:{fr:"Const. psychro. γ",ar:"الثابت السيكرومتري γ",en:"Psychrometric γ"},
+  m_es:{fr:"Pression sat. e_s",ar:"ضغط التشبّع e_s",en:"Sat. pressure e_s"},
+  m_ea:{fr:"Pression réelle e_a",ar:"الضغط الفعلي e_a",en:"Actual pressure e_a"},
+  m_u2:{fr:"Vent à 2 m u₂",ar:"الرياح عند 2م u₂",en:"Wind at 2 m u₂"},
+  m_ra:{fr:"Rayon. extra. R_a",ar:"الإشعاع الخارجي R_a",en:"Extraterr. R_a"},
+  m_rs:{fr:"Rayon. solaire R_s",ar:"الإشعاع الشمسي R_s",en:"Solar R_s"},
+  m_rn:{fr:"Rayon. net R_n",ar:"الإشعاع الصافي R_n",en:"Net radiation R_n"},
+  m_et0:{fr:"ET₀ Penman-Monteith",ar:"ET₀ بنمان-مونتيث",en:"ET₀ Penman-Monteith"},
+  m_et0h:{fr:"ET₀ Hargreaves",ar:"ET₀ هارغريفز",en:"ET₀ Hargreaves"},
+  m_none:{fr:"Données insuffisantes pour cette journée.",ar:"بيانات غير كافية لهذا اليوم.",en:"Not enough data for this day."}
+});
+
+/* ================= state ================= */
+let RAW=null;                 // {header:[], rows:[[]]} sub-hourly
+let MAP={T:-1,HR:-1,wind:-1,rain:-1,rad:-1,P:-1};
+let DAILY=[];                 // [{date,tmin,tmax,tmean,rh,wind,rain,rad,et0,et0h,gdd,cum,gddCum,...}]
+let hasSub=false;
+let srcLabel='demo', srcSamples=0;
+const SAT=(T)=>0.6108*Math.exp(17.27*T/(T+237.3));   // e0(T) kPa
+
+/* ================= DEMO (A1 raw, generated from real J4 format) ============ */
+function generateDemo(){
+  const header=["Date/Heure","A1-WS1","A1-WS2","A1-HR1","A1-T1","A1-Volt","A1-R1","A1-B","A1-WD1","A1-B1"];
+  const rows=[]; const days=7, step=10, per=24*60/step;
+  const start=new Date(2026,4,18,0,0,0);      // 18 May 2026 (month 0-based)
+  let seed=42; const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
+  for(let d=0; d<days; d++){
+    const tAvg=27+d*0.35, amp=7.5+ (rnd()*1.5);   // hot dry, slow warming
+    for(let s=0; s<per; s++){
+      const dt=new Date(start.getTime()+((d*per+s)*step)*60000);
+      const hod=dt.getHours()+dt.getMinutes()/60;
+      const T=tAvg + amp*Math.cos(2*Math.PI*(hod-15)/24) + (rnd()-0.5)*0.6;
+      let HR=88 - (T-16)*2.6 + (rnd()-0.5)*4; HR=Math.max(9,Math.min(96,HR));
+      let ws1=Math.max(0, 2.2 + 2.4*Math.sin(2*Math.PI*(hod-13)/24) + (rnd()-0.5)*1.4);
+      const ws2=+(ws1*(1.4+rnd()*0.5)).toFixed(1);
+      const wd=+(rnd()*360).toFixed(2);
+      let r1=0; if(d===4 && hod>15.4 && hod<17.2) r1=+(rnd()*3.2).toFixed(1);   // one small shower
+      const B=1013 + 3.4*Math.sin(2*Math.PI*(hod-9)/24) - d*0.4 + (rnd()-0.5)*0.5;
+      rows.push([fmtDMY(dt), +ws1.toFixed(1), ws2, +HR.toFixed(2), +T.toFixed(2), 12.2, r1, +B.toFixed(1), wd, +(B+10).toFixed(1)]);
+    }
+  }
+  return {header,rows};
+}
+function fmtDMY(dt){
+  const p=n=>String(n).padStart(2,'0');
+  return `${p(dt.getDate())}/${p(dt.getMonth()+1)}/${dt.getFullYear()} ${p(dt.getHours())}:${p(dt.getMinutes())}:${p(dt.getSeconds())}`;
+}
+
+/* ================= parsing ================= */
+function parseDate(s){
+  s=String(s||'').trim();
+  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+  if(m) return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+(m[6]||0));
+  const m2=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);         // ISO / clean daily date
+  if(m2) return new Date(+m2[1],+m2[2]-1,+m2[3]);
+  const t=Date.parse(s); return isNaN(t)?null:new Date(t);
+}
+function splitCSV(txt){
+  return txt.split(/\r?\n/).filter(l=>l.trim() && !l.trim().startsWith('#'))
+            .map(l=>l.split(',').map(c=>c.trim().replace(/^"|"$/g,'')));
+}
+function num(x){ const v=parseFloat(x); return isFinite(v)?v:null; }
+
+/* auto-guess column mapping from header names */
+function guessMap(header){
+  const find=(...res)=>{ for(const re of res){ const i=header.findIndex(h=>re.test(h)); if(i>=0) return i; } return -1; };
+  return {
+    T:    find(/(^|-)T\d?$/i,/temp/i),
+    HR:   find(/(^|-)HR\d?$/i,/humid/i,/(^|-)RH\d?$/i),
+    wind: find(/(^|-)WS1$/i,/(^|-)WS\d?$/i,/wind|vent/i),
+    rain: find(/(^|-)R1$/i,/rain|pluie|precip/i),
+    rad:  find(/rad|solar|rayon|(^|-)SR$/i),
+    P:    find(/(^|-)B$/i,/press|(^|-)P$/i)
+  };
+}
+
+/* ================= aggregation ================= */
+function dayKey(d){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function buildDaily(){
+  if(!RAW){ DAILY=[]; return; }
+  const g={};
+  for(const r of RAW.rows){
+    const d=parseDate(r[0]); if(!d) continue;
+    const k=dayKey(d);
+    let o=g[k]; if(!o){ o=g[k]={date:new Date(d.getFullYear(),d.getMonth(),d.getDate()),Ts:[],HR:[],W:[],Rad:[],Pr:[],rain:0}; }
+    if(MAP.T>=0){ const v=num(r[MAP.T]); if(v!=null) o.Ts.push(v); }
+    if(MAP.HR>=0){ const v=num(r[MAP.HR]); if(v!=null) o.HR.push(v); }
+    if(MAP.wind>=0){ const v=num(r[MAP.wind]); if(v!=null && v>=0) o.W.push(v); }
+    if(MAP.rad>=0){ const v=num(r[MAP.rad]); if(v!=null && v>=0) o.Rad.push(v); }
+    if(MAP.P>=0){ const v=num(r[MAP.P]); if(v!=null && v>500) o.Pr.push(v); }   // hPa
+    if(MAP.rain>=0){ const v=num(r[MAP.rain]); if(v!=null && v>=0) o.rain+=v; }
+  }
+  const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+  DAILY=Object.values(g).filter(o=>o.Ts.length).sort((a,b)=>a.date-b.date).map(o=>{
+    const press=avg(o.Pr);
+    return {date:o.date,
+      tmin:Math.min(...o.Ts), tmax:Math.max(...o.Ts), tmean:avg(o.Ts),
+      rh:avg(o.HR), wind:avg(o.W), rad:avg(o.Rad), rain:+o.rain.toFixed(1),
+      press:press, pkpa:press!=null?press/10:null};
+  });
+}
+
+/* ================= ET0 FAO-56 ================= */
+function doy(date){ const s=Date.UTC(date.getFullYear(),0,0); return Math.floor((Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())-s)/864e5); }
+function computeET0(row, P){
+  const {tmin,tmax,tmean,rh,wind}=row;
+  if(tmin==null||tmax==null||tmean==null){ return null; }
+  const latR=P.lat*Math.PI/180, J=doy(row.date);
+  // extraterrestrial radiation Ra (MJ/m²/day)
+  const dr=1+0.033*Math.cos(2*Math.PI*J/365);
+  const dec=0.409*Math.sin(2*Math.PI*J/365-1.39);
+  let ws=-Math.tan(latR)*Math.tan(dec); ws=Math.acos(Math.max(-1,Math.min(1,ws)));
+  const Ra=(24*60/Math.PI)*0.0820*dr*(ws*Math.sin(latR)*Math.sin(dec)+Math.cos(latR)*Math.cos(dec)*Math.sin(ws));
+  const dT=Math.max(0,tmax-tmin);
+  // solar radiation Rs
+  let Rs;
+  if(P.radsrc==='meas' && row.rad!=null){ Rs=row.rad*0.0864; }        // mean W/m² over the day -> MJ/m²/day
+  else { Rs=P.krs*Math.sqrt(dT)*Ra; }
+  const Rso=(0.75+2e-5*P.elev)*Ra;
+  // vapour pressures
+  const es=(SAT(tmax)+SAT(tmin))/2;
+  const ea = rh!=null ? es*rh/100 : SAT(tmin);
+  // net radiation
+  const alb=0.23, Rns=(1-alb)*Rs;
+  const sig=4.903e-9;
+  const Rnl=sig*((Math.pow(tmax+273.16,4)+Math.pow(tmin+273.16,4))/2)*(0.34-0.14*Math.sqrt(Math.max(0,ea)))*(1.35*Math.min(1,Rs/(Rso||1))-0.35);
+  const Rn=Rns-Rnl;
+  // slope & psychrometric
+  const D=4098*(0.6108*Math.exp(17.27*tmean/(tmean+237.3)))/Math.pow(tmean+237.3,2);
+  const Pr = row.pkpa!=null ? row.pkpa : 101.3*Math.pow((293-0.0065*P.elev)/293,5.26);
+  const g=0.000665*Pr;
+  // wind at 2 m
+  const uz = wind!=null?wind:2;
+  const u2 = P.windh===2 ? uz : uz*4.87/Math.log(67.8*P.windh-5.42);
+  // Penman-Monteith
+  const et0=(0.408*D*Rn + g*(900/(tmean+273))*u2*(es-ea))/(D+g*(1+0.34*u2));
+  const et0h=0.0023*(tmean+17.8)*Math.sqrt(dT)*Ra*0.408;
+  return {Ra:+Ra.toFixed(2),Rs:+Rs.toFixed(2),Rn:+Rn.toFixed(2),es:+es.toFixed(3),ea:+ea.toFixed(3),
+          D:+D.toFixed(4),g:+g.toFixed(4),u2:+u2.toFixed(2),
+          et0:Math.max(0,+et0.toFixed(2)), et0h:Math.max(0,+et0h.toFixed(2))};
+}
+
+/* ================= compute all ================= */
+function computeAll(){
+  const P=params();
+  if(hasSub) buildDaily();
+  let cum=0,gddCum=0;
+  DAILY.forEach(r=>{
+    // pressure (kPa) for PM if pressure column present (sub-hourly path stores mean B via aggregate? add here)
+    const e=computeET0(r,P);
+    if(e){ Object.assign(r,e); } else { r.et0=null; r.et0h=null; }
+    cum += r.et0||0; r.cum=+cum.toFixed(2);
+    const gdd=Math.max(0,(r.tmax+r.tmin)/2 - P.tbase); gddCum+=gdd; r.gdd=+gdd.toFixed(1); r.gddCum=+gddCum.toFixed(1);
+  });
+  render();
+}
+function params(){
+  return {lat:+$('lat').value, elev:+$('elev').value, windh:+$('windh').value,
+          radsrc:$('radsrc').value, krs:+$('krs').value, tbase:+$('tbase').value};
+}
+
+/* ================= load / import / export ================= */
+function loadDemo(){
+  RAW=generateDemo(); hasSub=true; MAP=guessMap(RAW.header);
+  srcLabel='demo'; srcSamples=RAW.rows.length;
+  fillMapping(); $('mapBox').hidden=false; computeAll();
+}
+function fillMapping(){
+  const opts=(sel,idx)=>{ sel.innerHTML=''; const none=document.createElement('option'); none.value=-1; none.textContent=I18N.t('w_none'); sel.appendChild(none);
+    RAW.header.forEach((h,i)=>{ if(i===0) return; const o=document.createElement('option'); o.value=i; o.textContent=h; sel.appendChild(o); });
+    sel.value=idx; };
+  opts($('mapT'),MAP.T); opts($('mapHR'),MAP.HR); opts($('mapWind'),MAP.wind);
+  opts($('mapRain'),MAP.rain); opts($('mapRad'),MAP.rad); opts($('mapP'),MAP.P);
+}
+function readMapping(){ MAP={T:+$('mapT').value,HR:+$('mapHR').value,wind:+$('mapWind').value,rain:+$('mapRain').value,rad:+$('mapRad').value,P:+$('mapP').value}; }
+function doImport(){
+  Store.pickFile('.csv',(txt,name)=>{
+    try{
+      const rows=splitCSV(txt); if(rows.length<2) throw new Error('CSV vide');
+      const header=rows[0], low=header.map(h=>h.toLowerCase());
+      const isClean = low.includes('date') && (low.includes('tmin')||low.includes('tmean')||low.includes('tmax'));
+      if(isClean){
+        const ix=n=>low.indexOf(n);
+        DAILY=rows.slice(1).map(c=>{
+          const d=parseDate(c[ix('date')]); if(!d) return null;
+          const tmin=num(c[ix('tmin')]), tmax=num(c[ix('tmax')]);
+          let tmean=ix('tmean')>=0?num(c[ix('tmean')]):null; if(tmean==null&&tmin!=null&&tmax!=null) tmean=(tmin+tmax)/2;
+          return {date:new Date(d.getFullYear(),d.getMonth(),d.getDate()),tmin,tmax,tmean,
+                  rh:ix('rh')>=0?num(c[ix('rh')]):null, wind:ix('wind')>=0?num(c[ix('wind')]):null,
+                  rad:ix('rad')>=0?num(c[ix('rad')]):null, rain:ix('rain')>=0?(num(c[ix('rain')])||0):0};
+        }).filter(x=>x&&x.tmin!=null&&x.tmax!=null).sort((a,b)=>a.date-b.date);
+        if(!DAILY.length) throw new Error('Aucune ligne journalière valide');
+        hasSub=false; RAW=null; $('mapBox').hidden=true;
+        srcLabel=name; srcSamples=DAILY.length; computeAll();
+      } else {
+        RAW={header,rows:rows.slice(1)}; hasSub=true; MAP=guessMap(header);
+        srcLabel=name; srcSamples=RAW.rows.length;
+        fillMapping(); $('mapBox').hidden=false; computeAll();
+      }
+    }catch(e){ alert('⚠ '+e.message); }
+  });
+}
+function doExport(){
+  if(!DAILY.length) return;
+  const P=params();
+  const csv=['date,tmin,tmax,tmean,rh,wind,rad,rain,et0_pm,et0_hs,gdd'];
+  DAILY.forEach(r=>{
+    const iso=r.date.toISOString().slice(0,10);
+    csv.push([iso,f(r.tmin),f(r.tmax),f(r.tmean),f(r.rh),f(r.wind),f(r.rad),f(r.rain),f(r.et0),f(r.et0h),f(r.gdd)].join(','));
+  });
+  function f(v){ return v==null?'':(+v).toFixed(2); }
+  const totRain=DAILY.reduce((a,r)=>a+(r.rain||0),0);
+  const meta={format:'weather-et0-fao56',lat:P.lat,elevation:P.elev,anemometer_h:P.windh,krs:P.krs,radiation:P.radsrc,gdd_base:P.tbase,
+    days:DAILY.length,samples:srcSamples,
+    totals:{et0_pm_mm:+DAILY.reduce((a,r)=>a+(r.et0||0),0).toFixed(1),
+            et0_hs_mm:+DAILY.reduce((a,r)=>a+(r.et0h||0),0).toFixed(1),
+            rain_mm:+totRain.toFixed(1), gdd:DAILY.length?DAILY[DAILY.length-1].gddCum:0},
+    series:DAILY.map(r=>({date:r.date.toISOString().slice(0,10),tmin:r.tmin,tmax:r.tmax,tmean:r.tmean,rh:r.rh,wind:r.wind,rad:r.rad,rain:r.rain,et0_pm:r.et0,et0_hs:r.et0h,gdd:r.gdd}))};
+  Store.download('meteo_et0_fao56.csv',csv.join('\n'),'text/csv');
+  Store.download('meteo_et0_fao56.json',JSON.stringify(meta,null,2),'application/json');
+}
+
+/* ================= render ================= */
+function render(){
+  if(!DAILY.length){ return; }
+  drawKPIs(); drawTemp(); drawET0(); drawSmall(); fillMethDay(); drawMethod();
+  const n=DAILY.length;
+  $('srcNote').innerHTML = (srcLabel==='demo'?I18N.t('w_src_demo'):I18N.t('w_src_file')+' : <b>'+srcLabel+'</b>')
+    + ` — ${n} ${I18N.t('w_src_n')} · ${srcSamples} ${I18N.t('w_src_samp')}`;
+}
+function svgEl(t,a){ const e=document.createElementNS(NS,t); for(const k in a)e.setAttribute(k,a[k]); return e; }
+function fmtD(d){ return d.toLocaleDateString(I18N.lang==='ar'?'ar':I18N.lang,{month:'short',day:'numeric'}); }
+
+function kpi(cls,l,v,u,x){ return `<div class="kpi ${cls||''}"><div class="l">${l}</div><div class="v">${v}<small>${u||''}</small></div><div class="x">${x||''}</div></div>`; }
+function drawKPIs(){
+  const T=DAILY.filter(r=>r.tmean!=null);
+  const tmin=Math.min(...T.map(r=>r.tmin)), tmax=Math.max(...T.map(r=>r.tmax));
+  const tmean=T.reduce((a,r)=>a+r.tmean,0)/T.length;
+  const rhArr=DAILY.filter(r=>r.rh!=null), wArr=DAILY.filter(r=>r.wind!=null);
+  const rh=rhArr.length?rhArr.reduce((a,r)=>a+r.rh,0)/rhArr.length:null;
+  const wind=wArr.length?wArr.reduce((a,r)=>a+r.wind,0)/wArr.length:null;
+  const rain=DAILY.reduce((a,r)=>a+(r.rain||0),0);
+  const et0=DAILY.reduce((a,r)=>a+(r.et0||0),0);
+  const gdd=DAILY[DAILY.length-1].gddCum;
+  $('kpis').innerHTML=
+    kpi('cool',I18N.t('k_tmin'),tmin.toFixed(1),' °C','')+
+    kpi('',I18N.t('k_tmean'),tmean.toFixed(1),' °C','')+
+    kpi('warn',I18N.t('k_tmax'),tmax.toFixed(1),' °C','')+
+    kpi('',I18N.t('k_amp'),(tmax-tmin).toFixed(1),' °C','min→max')+
+    kpi('cool',I18N.t('k_rh'),rh!=null?rh.toFixed(0):'—',' %','')+
+    kpi('',I18N.t('k_wind'),wind!=null?wind.toFixed(1):'—',' m/s','')+
+    kpi(rain>0?'good':'',I18N.t('k_rain'),rain.toFixed(1),' mm','')+
+    kpi('good',I18N.t('k_et0'),et0.toFixed(0),' mm',(et0/DAILY.length).toFixed(1)+' '+I18N.t('k_et0d'))+
+    kpi('warn',I18N.t('k_gdd'),gdd.toFixed(0),' °C·j','base '+params().tbase+'°');
+}
+
+/* generic axis frame */
+function frame(svg,W,H){ svg.innerHTML=''; return {W,H,x0:44,x1:W-14,y0:14,y1:H-30}; }
+function yGrid(svg,F,vmin,vmax,unit,color){
+  const rng=vmax-vmin||1; const step=niceStep(rng);
+  for(let v=Math.ceil(vmin/step)*step; v<=vmax+1e-9; v+=step){
+    const y=F.y1-(v-vmin)/rng*(F.y1-F.y0);
+    svg.appendChild(svgEl('line',{x1:F.x0,y1:y,x2:F.x1,y2:y,stroke:'#eef3e5','stroke-width':1}));
+    const t=svgEl('text',{x:F.x0-7,y:y+4,'text-anchor':'end',fill:color||'#9aa890','font-size':10}); t.textContent=(+v.toFixed(1))+(unit||''); svg.appendChild(t);
+  }
+}
+function niceStep(rng){ const raw=rng/5; const p=Math.pow(10,Math.floor(Math.log10(raw))); const n=raw/p; return (n<1.5?1:n<3?2:n<7?5:10)*p; }
+function xLabels(svg,F,rows){
+  const n=rows.length, sx=i=>F.x0+(n<2?0.5:i/(n-1))*(F.x1-F.x0);
+  const stepI=Math.max(1,Math.ceil(n/8));
+  rows.forEach((r,i)=>{ if(i%stepI && i!==n-1) return;
+    const t=svgEl('text',{x:sx(i),y:F.y1+16,'text-anchor':'middle',fill:'#9aa890','font-size':10}); t.textContent=fmtD(r.date); svg.appendChild(t); });
+  return sx;
+}
+
+function drawTemp(){
+  const svg=$('svgT'),F=frame(svg,900,300); const rows=DAILY;
+  let vmin=Math.min(...rows.map(r=>r.tmin))-2, vmax=Math.max(...rows.map(r=>r.tmax))+2;
+  yGrid(svg,F,vmin,vmax,'°');
+  const sx=xLabels(svg,F,rows), rng=vmax-vmin, sy=v=>F.y1-(v-vmin)/rng*(F.y1-F.y0);
+  // min-max band
+  let up='',dn='';
+  rows.forEach((r,i)=>{ up+=(i?'L':'M')+sx(i).toFixed(1)+' '+sy(r.tmax).toFixed(1)+' '; });
+  for(let i=rows.length-1;i>=0;i--){ dn+='L'+sx(i).toFixed(1)+' '+sy(rows[i].tmin).toFixed(1)+' '; }
+  svg.appendChild(svgEl('path',{d:up+dn+'Z',fill:'rgba(224,145,43,.13)'}));
+  const line=(get,col,w,dash)=>{ let p=''; rows.forEach((r,i)=>p+=(i?'L':'M')+sx(i).toFixed(1)+' '+sy(get(r)).toFixed(1)+' ');
+    svg.appendChild(svgEl('path',Object.assign({d:p,fill:'none',stroke:col,'stroke-width':w,'stroke-linejoin':'round'},dash?{'stroke-dasharray':dash}:{}))); };
+  line(r=>r.tmax,'#d1584e',1.6,'5 4'); line(r=>r.tmin,'#3a9bd0',1.6,'5 4'); line(r=>r.tmean,'#e0912b',2.6);
+  $('legT').innerHTML=`<span style="color:#d1584e"><i class="dash" style="color:#d1584e"></i>${I18N.t('lg_tmax')}</span>`+
+    `<span style="color:#e0912b"><i style="background:#e0912b"></i>${I18N.t('lg_tmean')}</span>`+
+    `<span style="color:#3a9bd0"><i class="dash" style="color:#3a9bd0"></i>${I18N.t('lg_tmin')}</span>`;
+  hover(svg,F,rows,sx,i=>{ const r=rows[i]; return `<b>${fmtD(r.date)}</b> — ${I18N.t('lg_tmin')} <b>${r.tmin.toFixed(1)}°</b> · ${I18N.t('lg_tmean')} <b>${r.tmean.toFixed(1)}°</b> · ${I18N.t('lg_tmax')} <b>${r.tmax.toFixed(1)}°</b>`; },'hovT');
+}
+
+function drawET0(){
+  const svg=$('svgE'),F=frame(svg,900,300); const rows=DAILY.filter(r=>r.et0!=null);
+  if(!rows.length){ return; }
+  const vmax=Math.max(...rows.map(r=>Math.max(r.et0,r.et0h)))*1.2;
+  yGrid(svg,F,0,vmax,'');
+  const sx=xLabels(svg,F,rows), sy=v=>F.y1-(v/vmax)*(F.y1-F.y0);
+  // cumulative on right axis
+  const cmax=rows[rows.length-1].cum*1.05||1, syc=v=>F.y1-(v/cmax)*(F.y1-F.y0);
+  let ca='M'+sx(0)+' '+syc(0)+' '; rows.forEach((r,i)=>ca+='L'+sx(i).toFixed(1)+' '+syc(r.cum).toFixed(1)+' '); ca+='L'+sx(rows.length-1)+' '+syc(0)+' Z';
+  svg.appendChild(svgEl('path',{d:ca,fill:'rgba(63,166,106,.10)'}));
+  let cl=''; rows.forEach((r,i)=>cl+=(i?'L':'M')+sx(i).toFixed(1)+' '+syc(r.cum).toFixed(1)+' ');
+  svg.appendChild(svgEl('path',{d:cl,fill:'none',stroke:'#3fa66a','stroke-width':1.6,'stroke-dasharray':'2 3'}));
+  { const t=svgEl('text',{x:F.x1,y:syc(rows[rows.length-1].cum)-4,'text-anchor':'end',fill:'#3fa66a','font-size':10,'font-weight':700}); t.textContent=rows[rows.length-1].cum.toFixed(0)+' mm'; svg.appendChild(t); }
+  const line=(get,col,w,dash)=>{ let p=''; rows.forEach((r,i)=>p+=(i?'L':'M')+sx(i).toFixed(1)+' '+sy(get(r)).toFixed(1)+' ');
+    svg.appendChild(svgEl('path',Object.assign({d:p,fill:'none',stroke:col,'stroke-width':w,'stroke-linejoin':'round'},dash?{'stroke-dasharray':dash}:{}))); };
+  line(r=>r.et0h,'#e0912b',1.8,'5 4'); line(r=>r.et0,'#2f7f52',2.8);
+  rows.forEach((r,i)=>svg.appendChild(svgEl('circle',{cx:sx(i),cy:sy(r.et0),r:2.6,fill:'#2f7f52'})));
+  $('legE').innerHTML=`<span style="color:#2f7f52"><i style="background:#2f7f52"></i>${I18N.t('lg_pm')}</span>`+
+    `<span style="color:#e0912b"><i class="dash" style="color:#e0912b"></i>${I18N.t('lg_hs')}</span>`+
+    `<span style="color:#3fa66a"><i class="dash" style="color:#3fa66a"></i>${I18N.t('lg_cum')}</span>`;
+  hover(svg,F,rows,sx,i=>{ const r=rows[i]; return `<b>${fmtD(r.date)}</b> — ${I18N.t('lg_pm')} <b>${r.et0.toFixed(2)} mm</b> · ${I18N.t('lg_hs')} <b>${r.et0h.toFixed(2)} mm</b> · ${I18N.t('lg_cum')} <b>${r.cum.toFixed(1)} mm</b>`; },'hovE');
+}
+
+function smallLine(svgId,get,col,unit,area){
+  const svg=$(svgId),F=frame(svg,440,150); const rows=DAILY.filter(r=>get(r)!=null);
+  if(!rows.length){ svg.appendChild(svgEl('text',{x:220,y:75,'text-anchor':'middle',fill:'#9aa890','font-size':12})).textContent='—'; return null; }
+  let vmin=Math.min(...rows.map(get)), vmax=Math.max(...rows.map(get)); const pad=(vmax-vmin)*0.15||1; vmin-=pad; vmax+=pad;
+  yGrid(svg,F,vmin,vmax,unit==='%'?'%':'');
+  const sx=xLabels(svg,F,rows), rng=vmax-vmin, sy=v=>F.y1-(v-vmin)/rng*(F.y1-F.y0);
+  if(area){ let a='M'+sx(0)+' '+F.y1+' '; rows.forEach((r,i)=>a+='L'+sx(i).toFixed(1)+' '+sy(get(r)).toFixed(1)+' '); a+='L'+sx(rows.length-1)+' '+F.y1+' Z';
+    svg.appendChild(svgEl('path',{d:a,fill:col,'fill-opacity':0.13})); }
+  let p=''; rows.forEach((r,i)=>p+=(i?'L':'M')+sx(i).toFixed(1)+' '+sy(get(r)).toFixed(1)+' ');
+  svg.appendChild(svgEl('path',{d:p,fill:'none',stroke:col,'stroke-width':2.2,'stroke-linejoin':'round'}));
+  return rows[rows.length-1];
+}
+function drawSmall(){
+  const lastHR=smallLine('svgHR',r=>r.rh,'#3a9bd0','%');
+  const lastW=smallLine('svgW',r=>r.wind,'#8e6fc7','');
+  const lastP=smallLine('svgP',r=>r.press!=null?r.press:null,'#5a8f2c','');
+  // rain: cumulative area
+  DAILY.reduce((a,r)=>{ r._rc=+(a+(r.rain||0)).toFixed(1); return r._rc; },0);
+  const lastR=smallLine('svgR',r=>r._rc,'#3a9bd0','','area');
+  $('nowHR').textContent=lastHR&&lastHR.rh!=null?lastHR.rh.toFixed(0)+' %':'—';
+  $('nowW').textContent=lastW&&lastW.wind!=null?lastW.wind.toFixed(1)+' m/s':'—';
+  $('nowP').textContent=lastP&&lastP.press!=null?lastP.press.toFixed(0)+' hPa':'—';
+  const tot=DAILY.reduce((a,r)=>a+(r.rain||0),0); $('nowR').textContent=tot.toFixed(1)+' mm';
+}
+
+function hover(svg,F,rows,sx,fn,boxId){
+  const hl=svgEl('rect',{x:F.x0,y:F.y0,width:F.x1-F.x0,height:F.y1-F.y0,fill:'transparent'}); hl.style.cursor='crosshair'; svg.appendChild(hl);
+  const cur=svgEl('line',{stroke:'#7cb342','stroke-width':1,opacity:0,y1:F.y0,y2:F.y1}); svg.appendChild(cur);
+  function move(ev){ const rc=svg.getBoundingClientRect(); const px=(ev.clientX-rc.left)/rc.width*F.W;
+    let i=Math.round((px-F.x0)/(F.x1-F.x0)*(rows.length-1)); i=Math.max(0,Math.min(rows.length-1,i));
+    cur.setAttribute('x1',sx(i)); cur.setAttribute('x2',sx(i)); cur.setAttribute('opacity',.5);
+    $(boxId).innerHTML=fn(i); }
+  hl.addEventListener('mousemove',move);
+  hl.addEventListener('touchmove',e=>{if(e.touches[0])move(e.touches[0]);},{passive:true});
+}
+
+/* ================= method block ================= */
+function fillMethDay(){
+  const sel=$('methDay'); const keep=sel.value; sel.innerHTML='';
+  DAILY.forEach((r,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=fmtD(r.date); sel.appendChild(o); });
+  // default: day with max ET0
+  let best=0,bv=-1; DAILY.forEach((r,i)=>{ if((r.et0||0)>bv){bv=r.et0||0;best=i;} });
+  sel.value=keep!==''&&keep!=null&&DAILY[keep]?keep:best;
+}
+function drawMethod(){
+  const i=+$('methDay').value; const r=DAILY[i]; if(!r||r.et0==null){ $('defs').innerHTML=`<div class="def">${I18N.t('m_none')}</div>`; return; }
+  const D=(l,v,u)=>`<div class="def"><b>${l}</b> = ${v} <span class="u">${u||''}</span><br><span class="u">${l}</span></div>`;
+  $('defs').innerHTML=
+    `<div class="def"><b>Δ</b> = ${r.D} <span class="u">kPa/°C</span><br><span class="u">${I18N.t('m_delta')}</span></div>`+
+    `<div class="def"><b>γ</b> = ${r.g} <span class="u">kPa/°C</span><br><span class="u">${I18N.t('m_gamma')}</span></div>`+
+    `<div class="def"><b>e_s</b> = ${r.es} <span class="u">kPa</span><br><span class="u">${I18N.t('m_es')}</span></div>`+
+    `<div class="def"><b>e_a</b> = ${r.ea} <span class="u">kPa</span><br><span class="u">${I18N.t('m_ea')}</span></div>`+
+    `<div class="def"><b>u₂</b> = ${r.u2} <span class="u">m/s</span><br><span class="u">${I18N.t('m_u2')}</span></div>`+
+    `<div class="def"><b>R_a</b> = ${r.Ra} <span class="u">MJ/m²·j</span><br><span class="u">${I18N.t('m_ra')}</span></div>`+
+    `<div class="def"><b>R_s</b> = ${r.Rs} <span class="u">MJ/m²·j</span><br><span class="u">${I18N.t('m_rs')}</span></div>`+
+    `<div class="def"><b>R_n</b> = ${r.Rn} <span class="u">MJ/m²·j</span><br><span class="u">${I18N.t('m_rn')}</span></div>`+
+    `<div class="def" style="background:#eef8ef;border-color:#bfe3c3"><b style="color:#2f7f52">ET₀</b> = ${r.et0} <span class="u">mm/j</span><br><span class="u">${I18N.t('m_et0')}</span></div>`+
+    `<div class="def" style="background:#fdf3e3;border-color:#f0d9ac"><b style="color:#b5701a">ET₀ᴴ</b> = ${r.et0h} <span class="u">mm/j</span><br><span class="u">${I18N.t('m_et0h')}</span></div>`;
+}
+
+/* ================= format modal ================= */
+function openFmt(){
+  $('fmtA1').textContent="Date/Heure,A1-WS1,A1-WS2,A1-HR1,A1-T1,A1-Volt,A1-R1,A1-B,A1-WD1,A1-B1\n22/05/2026 19:14:52,0,0,38.86,26.78,12.2,0,1022.9,4.36,1032.9\n22/05/2026 19:34:53,0.1,8.9,40.02,26.76,12.2,4.2,1023.1,2.18,1033.1";
+  $('fmtClean').textContent="date,tmin,tmax,tmean,rh,wind,rad,rain\n2026-05-18,18.4,34.1,26.2,42,2.8,,0\n2026-05-19,19.1,35.0,27.0,39,3.1,,0";
+  $('fmt').classList.add('on');
+}
+function closeFmt(){ $('fmt').classList.remove('on'); }
+
+/* ================= wiring ================= */
+['lat','krs','tbase'].forEach(id=>$(id).addEventListener('input',()=>{ syncReadouts(); computeAll(); }));
+['elev','windh','radsrc'].forEach(id=>$(id).addEventListener('change',computeAll));
+['mapT','mapHR','mapWind','mapRain','mapRad','mapP'].forEach(id=>$(id).addEventListener('change',()=>{ readMapping(); computeAll(); }));
+$('methDay').addEventListener('change',drawMethod);
+function syncReadouts(){ $('latv').textContent=(+$('lat').value)+'°N'; $('krsv').textContent=(+$('krs').value).toFixed(2); $('tbasev').textContent=(+$('tbase').value)+'°C'; }
+function applyHTML(){ document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html'))); }
+document.addEventListener('i18n:changed',()=>{ applyHTML(); if(RAW) fillMapping(); computeAll(); });
+
+/* ================= boot ================= */
+syncReadouts();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+loadDemo();
+if(window.Store&&Store.detect){ Store.detect().then(()=>{ $('modeChip').textContent = Store.serverMode?'M4 · '+(I18N.lang==='ar'?'خادم':'server'):'M4'; }); }
+</script>
+</body>
+</html>

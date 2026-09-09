@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cours — Météo, Eau & Irrigation · d4</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:940px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  .wrap{max-width:1080px}
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .d4{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#2f8fca,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;box-shadow:var(--shadow)}
+  .hero h1{font-size:24px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}
+  .toc a{font-size:12.5px;font-weight:600;color:var(--green-d);background:var(--green-bg);
+    border:1px solid var(--line);border-radius:20px;padding:5px 13px}
+  .toc a:hover{border-color:var(--green);background:#e7f2d8}
+  .obj{background:linear-gradient(180deg,#eef6fb,#f2fbf3);border:1px solid #bfd9e8;border-radius:14px;padding:16px 20px}
+  .obj h2{color:var(--impact)}
+  .obj ul{margin:6px 0 0;padding-inline-start:20px;columns:2;column-gap:28px}
+  @media(max-width:720px){.obj ul{columns:1}}
+  .obj li{margin:5px 0;font-size:13.5px;color:var(--ink);break-inside:avoid}
+  .card h2{font-size:17px}
+  .card h3{font-size:14.5px;font-weight:800;color:var(--green-d);margin:14px 0 6px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--green);
+    color:#fff;font-size:13px;font-weight:800;flex:none}
+  p.par{color:var(--ink);font-size:14px;line-height:1.65;margin:8px 0;max-width:940px}
+  p.par b{color:var(--green-d)}
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:12px 0}
+  .concept{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .concept .sym{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:15px}
+  .concept .nm{font-weight:700;font-size:13px;margin:2px 0 4px;color:var(--ink)}
+  .concept .ds{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .concept .u{font-family:"JetBrains Mono",monospace;color:var(--info);font-size:11.5px}
+  .retenir{background:#fdf7ea;border:1px solid #f0d9ac;border-inline-start:4px solid var(--info);
+    border-radius:11px;padding:12px 16px;margin:14px 0;font-size:13.5px;color:var(--ink);line-height:1.6}
+  .retenir .h{font-weight:800;color:#b5701a;text-transform:uppercase;font-size:11px;letter-spacing:.05em;display:block;margin-bottom:4px}
+  body[dir="rtl"] .retenir{border-inline-start:1px solid #f0d9ac;border-inline-end:4px solid var(--info)}
+  .water{background:#eef5fb;border-color:#c4dbec;border-inline-start-color:#2f8fca}
+  .water .h{color:#2277ad}
+  body[dir="rtl"] .water{border-inline-end-color:#2f8fca}
+  .fig{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0}
+  .fig svg{width:100%;height:auto;display:block;direction:ltr}
+  .figcap{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+  .figcap b{color:var(--ink)}
+  table.t{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:start}
+  table.t th{background:var(--green-bg);color:var(--green-d);font-weight:700;font-size:12px}
+  table.t td b{color:var(--ink)}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:13px;background:#0e1512;color:#d7e3cd;
+    border-radius:10px;padding:12px 16px;overflow:auto;margin:10px 0}
+  .formula .hl{color:#a5d16e;font-weight:700}
+  .formula .bl{color:#7fc4e8;font-weight:700}
+  .appgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:6px}
+  .appcard{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:13px;
+    padding:15px 17px;transition:.16s;border-inline-start:4px solid var(--ac,var(--green))}
+  .appcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(60,80,40,.15);border-color:var(--ac,var(--green))}
+  body[dir="rtl"] .appcard{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--ac,var(--green))}
+  .appcard .ico{font-size:26px}
+  .appcard h4{font-size:14.5px;font-weight:800;margin:6px 0 4px;color:var(--ink)}
+  .appcard p{font-size:12.5px;color:var(--muted);flex:1;line-height:1.5;margin-bottom:10px}
+  .appcard .go{font-size:12.5px;font-weight:700;color:var(--green-d)}
+  .tpbanner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;
+    background:linear-gradient(120deg,#2f8fca,#3fa66a);color:#fff;border-radius:15px;padding:20px 24px;margin-top:18px}
+  .tpbanner .tt{font-size:18px;font-weight:800}
+  .tpbanner .dd{font-size:13px;opacity:.92;margin-top:3px;max-width:560px}
+  .tpbanner .btn{background:#fff;color:var(--green-d)}
+  .tpbanner .btn:hover{background:#eef8ef}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:22px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">EAU</span> <b data-i18n="c_brand">Météo, Eau</b> <span data-i18n="c_brand2">& Irrigation</span></div>
+  <div class="sub" data-i18n="c_sub">Cours · ET₀, bilan hydrique, besoin d'irrigation, qualité de l'eau</div>
+  <div class="right">
+    <span class="chip">d4 · <span data-i18n="c_course_chip">Cours</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="d4">EAU</div>
+    <div>
+      <h1 data-i18n="c_title">Météo, Eau & Irrigation</h1>
+      <div class="tag" data-i18n="c_tag">Domaine d4 · de la demande climatique de la culture au litre réellement pompé</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="c_intro"></p>
+
+  <nav class="toc">
+    <a href="#s1" data-i18n="c_toc1">1 · Demande (ET₀·Kc)</a>
+    <a href="#s2" data-i18n="c_toc2">2 · Bilan & besoin</a>
+    <a href="#s3" data-i18n="c_toc3">3 · Planifier</a>
+    <a href="#s4" data-i18n="c_toc4">4 · Qualité & pompage</a>
+    <a href="#apps" data-i18n="c_toc5">Applications</a>
+  </nav>
+
+  <!-- OBJECTIFS -->
+  <div class="card obj">
+    <h2>🎯 <span data-i18n="c_obj_h">Objectifs pédagogiques</span></h2>
+    <ul>
+      <li data-i18n="c_obj1">Calculer l'évapotranspiration de référence ET₀ (Penman-Monteith FAO-56) et son repli Hargreaves.</li>
+      <li data-i18n="c_obj2">Passer de ET₀ à la demande de la culture avec le coefficient cultural Kc par stade (ETc = Kc·ET₀).</li>
+      <li data-i18n="c_obj3">Construire le bilan hydrique : pluie efficace, besoin net puis besoin brut selon l'efficience.</li>
+      <li data-i18n="c_obj4">Convertir un besoin en mm en volume d'eau (10 m³ par mm et par hectare).</li>
+      <li data-i18n="c_obj5">Établir un planning décadaire et le re-planifier sous forage plafonné (déficit contrôlé, RDI).</li>
+      <li data-i18n="c_obj6">Juger la qualité d'une eau d'irrigation (CE, SAR, RSC) et estimer l'énergie et le coût de pompage.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 1 : DEMANDE -->
+  <div class="card" id="s1">
+    <h2><span class="num">1</span> <span data-i18n="c_s1_h">La demande en eau : de ET₀ à ETc</span></h2>
+    <p class="par" data-i18n-html="c_s1_p1"></p>
+
+    <h3 data-i18n="c_s1_h2">L'évapotranspiration de référence ET₀ (Penman-Monteith FAO-56)</h3>
+    <p class="par" data-i18n-html="c_s1_p2"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 300" role="img">
+        <defs>
+          <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0 0 L9 4.5 L0 9 z" fill="#3fa66a"/>
+          </marker>
+        </defs>
+        <!-- central ET0 box -->
+        <rect x="300" y="110" width="160" height="80" rx="14" fill="#2f8fca"/>
+        <text x="380" y="145" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">ET₀</text>
+        <text data-i18n="c_fig1_unit" x="380" y="170" font-size="12" fill="#dff0fb" text-anchor="middle">mm / jour</text>
+        <!-- factor boxes -->
+        <g font-size="12.5" font-weight="700">
+          <!-- radiation (top-left) -->
+          <circle cx="120" cy="55" r="20" fill="#f4c542"/>
+          <g stroke="#e0a81f" stroke-width="2"><line x1="120" y1="20" x2="120" y2="8"/><line x1="120" y1="90" x2="120" y2="102"/><line x1="85" y1="55" x2="73" y2="55"/><line x1="155" y1="55" x2="167" y2="55"/></g>
+          <text data-i18n="c_fig1_rad" x="120" y="128" fill="#b5701a" text-anchor="middle">Rayonnement Rn</text>
+          <!-- temperature (bottom-left) -->
+          <rect x="96" y="200" width="48" height="44" rx="10" fill="#f2ddd6" stroke="#d1584e"/>
+          <text x="120" y="228" font-size="17" fill="#d1584e" text-anchor="middle">T°</text>
+          <text data-i18n="c_fig1_temp" x="120" y="264" fill="#b23b30" text-anchor="middle">Température</text>
+          <!-- humidity (top-right) -->
+          <rect x="616" y="34" width="48" height="44" rx="10" fill="#dcecf7" stroke="#2f8fca"/>
+          <text x="640" y="62" font-size="15" fill="#2277ad" text-anchor="middle">HR</text>
+          <text data-i18n="c_fig1_hr" x="640" y="98" fill="#2277ad" text-anchor="middle">Humidité de l'air</text>
+          <!-- wind (bottom-right) -->
+          <g stroke="#5a8f2c" stroke-width="2.4" fill="none"><path d="M604 214 q28 -10 40 0 q10 8 -2 14"/><path d="M604 230 q34 -8 48 2 q10 8 -4 14"/></g>
+          <text data-i18n="c_fig1_wind" x="636" y="270" font-size="12.5" font-weight="700" fill="#3d6a1e" text-anchor="middle">Vent u₂</text>
+        </g>
+        <!-- arrows into ET0 -->
+        <g stroke="#3fa66a" stroke-width="2.4" fill="none" marker-end="url(#arw)">
+          <path d="M150 70 C230 95 250 120 298 130"/>
+          <path d="M150 218 C220 200 250 180 298 165"/>
+          <path d="M612 60 C520 90 500 120 462 132"/>
+          <path d="M604 222 C520 205 500 180 462 168"/>
+        </g>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig1_cap"></div>
+    </div>
+
+    <p class="par" data-i18n-html="c_s1_p3"></p>
+    <div class="formula" data-i18n-html="c_s1_harg"></div>
+
+    <h3 data-i18n="c_s1_h3">Le coefficient cultural Kc et ETc</h3>
+    <p class="par" data-i18n-html="c_s1_p4"></p>
+    <div class="formula">ETc = <span class="hl">Kc</span> · <span class="bl">ET₀</span></div>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 320" role="img">
+        <!-- axes -->
+        <line x1="70" y1="40" x2="70" y2="270" stroke="#c8d3b8" stroke-width="1.5"/>
+        <line x1="70" y1="270" x2="720" y2="270" stroke="#c8d3b8" stroke-width="1.5"/>
+        <!-- y ticks Kc -->
+        <g font-size="10.5" fill="#9aa890" text-anchor="end">
+          <text x="62" y="197">0.4</text><text x="62" y="151">0.7</text><text x="62" y="63">1.15</text>
+        </g>
+        <g stroke="#eef3e5" stroke-width="1">
+          <line x1="70" y1="59" x2="720" y2="59"/><line x1="70" y1="197" x2="720" y2="197"/>
+        </g>
+        <!-- stage separators -->
+        <g stroke="#dfe7d3" stroke-width="1" stroke-dasharray="4 4">
+          <line x1="230" y1="40" x2="230" y2="270"/><line x1="380" y1="40" x2="380" y2="270"/><line x1="560" y1="40" x2="560" y2="270"/>
+        </g>
+        <!-- Kc curve: initial flat, development rise, mid plateau, late decline -->
+        <polyline points="90,197 230,197 380,59 560,59 700,160" fill="none" stroke="#3fa66a" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <g fill="#2f7d3a">
+          <circle cx="90" cy="197" r="4"/><circle cx="230" cy="197" r="4"/><circle cx="380" cy="59" r="4"/><circle cx="560" cy="59" r="4"/><circle cx="700" cy="160" r="4"/>
+        </g>
+        <!-- stage labels -->
+        <g font-size="11.5" font-weight="700" text-anchor="middle">
+          <text data-i18n="c_fig2_ini" x="150" y="292" fill="#6f7d64">Initial</text>
+          <text data-i18n="c_fig2_dev" x="305" y="292" fill="#6f7d64">Développement</text>
+          <text data-i18n="c_fig2_mid" x="470" y="292" fill="#6f7d64">Mi-saison</text>
+          <text data-i18n="c_fig2_late" x="630" y="292" fill="#6f7d64">Arrière-saison</text>
+        </g>
+        <text data-i18n="c_fig2_y" x="22" y="150" font-size="12" font-weight="700" fill="#6f7d64" transform="rotate(-90 22 150)" text-anchor="middle">Coefficient cultural Kc</text>
+        <text data-i18n="c_fig2_x" x="395" y="312" font-size="11.5" font-weight="700" fill="#8a9580" text-anchor="middle">Cycle de la culture →</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig2_cap"></div>
+    </div>
+
+    <div class="cgrid">
+      <div class="concept"><div class="sym">Kc ≈ 0,4</div><div class="nm" data-i18n="c_kc_ini_n">Stade initial</div><div class="ds" data-i18n="c_kc_ini_d">Sol nu à peine couvert : évaporation dominante.</div></div>
+      <div class="concept"><div class="sym">Kc ↗</div><div class="nm" data-i18n="c_kc_dev_n">Développement</div><div class="ds" data-i18n="c_kc_dev_d">Le couvert grandit, la transpiration monte.</div></div>
+      <div class="concept"><div class="sym">Kc ≈ 1,15</div><div class="nm" data-i18n="c_kc_mid_n">Mi-saison</div><div class="ds" data-i18n="c_kc_mid_d">Couvert plein, demande maximale.</div></div>
+      <div class="concept"><div class="sym">Kc ↘</div><div class="nm" data-i18n="c_kc_late_n">Arrière-saison</div><div class="ds" data-i18n="c_kc_late_d">Maturation/sénescence, la demande retombe.</div></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s1_ret"></span></div>
+  </div>
+
+  <!-- SECTION 2 : BILAN & BESOIN -->
+  <div class="card" id="s2">
+    <h2><span class="num">2</span> <span data-i18n="c_s2_h">Le bilan hydrique et le besoin d'irrigation</span></h2>
+    <p class="par" data-i18n-html="c_s2_p1"></p>
+
+    <h3 data-i18n="c_s2_h2">Pluie efficace et besoin net</h3>
+    <p class="par" data-i18n-html="c_s2_p2"></p>
+    <div class="formula"><span data-i18n="c_f_net_lbl">Besoin net</span> = <span class="bl">ETc</span> − <span class="hl">P<sub>eff</sub></span></div>
+
+    <h3 data-i18n="c_s2_h3">De net à brut : l'efficience du système</h3>
+    <p class="par" data-i18n-html="c_s2_p3"></p>
+    <div class="formula"><span data-i18n="c_f_gross_lbl">Besoin brut</span> = <span class="bl">Besoin net</span> / <span class="hl">Efficience</span></div>
+    <table class="t">
+      <thead><tr><th data-i18n="c_tbl_sys">Système d'irrigation</th><th data-i18n="c_tbl_eff">Efficience typique</th><th data-i18n="c_tbl_note">Remarque</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="c_sys_drip"><b>Goutte-à-goutte</b></td><td><b>≈ 90 %</b></td><td data-i18n="c_sys_drip_d">Apport localisé, pertes minimales.</td></tr>
+        <tr><td data-i18n="c_sys_spr"><b>Aspersion</b></td><td><b>≈ 75 %</b></td><td data-i18n="c_sys_spr_d">Pertes par évaporation et vent.</td></tr>
+        <tr><td data-i18n="c_sys_grav"><b>Gravitaire (surface)</b></td><td><b>≈ 55 %</b></td><td data-i18n="c_sys_grav_d">Percolation et ruissellement importants.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 data-i18n="c_s2_h4">Des millimètres aux mètres cubes</h3>
+    <p class="par" data-i18n-html="c_s2_p4"></p>
+    <div class="formula"><span class="hl">1 mm</span> <span data-i18n="c_f_vol_on">sur</span> <span class="bl">1 ha</span> = <span class="hl">10 m³</span> &nbsp;→&nbsp; V (m³) = <span data-i18n="c_f_vol_lbl">besoin brut</span> (mm) · 10 · <span data-i18n="c_f_vol_area">surface</span> (ha)</div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s2_ret"></span></div>
+  </div>
+
+  <!-- SECTION 3 : PLANIFIER -->
+  <div class="card" id="s3">
+    <h2><span class="num">3</span> <span data-i18n="c_s3_h">Planifier l'irrigation à la décade</span></h2>
+    <p class="par" data-i18n-html="c_s3_p1"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 300" role="img">
+        <defs>
+          <pattern id="def" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <rect width="7" height="7" fill="#f2c9c3"/><line x1="0" y1="0" x2="0" y2="7" stroke="#d1584e" stroke-width="1.6"/>
+          </pattern>
+        </defs>
+        <line x1="60" y1="250" x2="740" y2="250" stroke="#c8d3b8" stroke-width="1.5"/>
+        <!-- plafond forage line P=95 -> y=126.5 -->
+        <line x1="60" y1="127" x2="740" y2="127" stroke="#d1584e" stroke-width="2" stroke-dasharray="7 5"/>
+        <text data-i18n="c_fig3_cap_line" x="66" y="120" font-size="11" font-weight="700" fill="#b23b30">Plafond forage (débit max)</text>
+        <!-- bars -->
+        <g>
+          <!-- i=0 v25 -->
+          <rect x="80"  y="217.5" width="48" height="32.5" rx="3" fill="#3fa66a"/>
+          <!-- i=1 v50 -->
+          <rect x="154" y="185"   width="48" height="65"   rx="3" fill="#3fa66a"/>
+          <!-- i=2 v75 -->
+          <rect x="228" y="152.5" width="48" height="97.5" rx="3" fill="#3fa66a"/>
+          <!-- i=3 v105 -> green to plafond(127), deficit 113.5..127 -->
+          <rect x="302" y="127"   width="48" height="123"  rx="3" fill="#3fa66a"/>
+          <rect x="302" y="113.5" width="48" height="13.5" fill="url(#def)"/>
+          <!-- i=4 v125 peak -->
+          <rect x="376" y="127"   width="48" height="123"  rx="3" fill="#3fa66a"/>
+          <rect x="376" y="87.5"  width="48" height="39.5" fill="url(#def)"/>
+          <!-- i=5 v115 -->
+          <rect x="450" y="127"   width="48" height="123"  rx="3" fill="#3fa66a"/>
+          <rect x="450" y="100.5" width="48" height="26.5" fill="url(#def)"/>
+          <!-- i=6 v85 -->
+          <rect x="524" y="139.5" width="48" height="110.5" rx="3" fill="#3fa66a"/>
+          <!-- i=7 v55 -->
+          <rect x="598" y="178.5" width="48" height="71.5" rx="3" fill="#3fa66a"/>
+          <!-- i=8 v35 -->
+          <rect x="672" y="204.5" width="48" height="45.5" rx="3" fill="#3fa66a"/>
+        </g>
+        <!-- decade labels -->
+        <g font-size="10.5" fill="#8a9580" text-anchor="middle">
+          <text x="104" y="266">D1</text><text x="178" y="266">D2</text><text x="252" y="266">D3</text>
+          <text x="326" y="266">D4</text><text x="400" y="266">D5</text><text x="474" y="266">D6</text>
+          <text x="548" y="266">D7</text><text x="622" y="266">D8</text><text x="696" y="266">D9</text>
+        </g>
+        <text data-i18n="c_fig3_defbadge" x="400" y="72" font-size="11.5" font-weight="800" fill="#b23b30" text-anchor="middle">Déficit contrôlé (RDI) sur le pic</text>
+        <text data-i18n="c_fig3_ylabel" x="22" y="150" font-size="11.5" font-weight="700" fill="#6f7d64" transform="rotate(-90 22 150)" text-anchor="middle">Besoin brut / décade (mm)</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig3_cap"></div>
+    </div>
+
+    <h3 data-i18n="c_s3_h2">Forage plafonné et déficit contrôlé (RDI)</h3>
+    <p class="par" data-i18n-html="c_s3_p2"></p>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s3_ret"></span></div>
+  </div>
+
+  <!-- SECTION 4 : QUALITE & POMPAGE -->
+  <div class="card" id="s4">
+    <h2><span class="num">4</span> <span data-i18n="c_s4_h">Qualité de l'eau d'irrigation & énergie de pompage</span></h2>
+    <p class="par" data-i18n-html="c_s4_p1"></p>
+
+    <h3 data-i18n="c_s4_h2">CE, SAR et RSC : le risque de salinisation</h3>
+    <div class="cgrid">
+      <div class="concept"><div class="sym">CE</div><div class="nm" data-i18n="c_ce_n">Conductivité électrique</div><div class="ds" data-i18n="c_ce_d">Mesure la salinité totale de l'eau. <span class="u">dS/m</span></div></div>
+      <div class="concept"><div class="sym">SAR</div><div class="nm" data-i18n="c_sar_n">Sodium Adsorption Ratio</div><div class="ds" data-i18n="c_sar_d">Risque de dégradation de la structure du sol (sodium). <span class="u">—</span></div></div>
+      <div class="concept"><div class="sym">RSC</div><div class="nm" data-i18n="c_rsc_n">Carbonate de sodium résiduel</div><div class="ds" data-i18n="c_rsc_d">Excès de carbonates → risque alcalin. <span class="u">meq/L</span></div></div>
+    </div>
+    <div class="formula">SAR = <span class="bl">Na⁺</span> / √( (<span class="hl">Ca²⁺</span> + <span class="hl">Mg²⁺</span>) / 2 )</div>
+    <table class="t">
+      <thead><tr><th data-i18n="c_tbl_ce">CE (dS/m)</th><th data-i18n="c_tbl_class">Classe de salinité</th><th data-i18n="c_tbl_risk">Risque pour la culture</th></tr></thead>
+      <tbody>
+        <tr><td>&lt; 0,7</td><td data-i18n="c_ce_low">Faible</td><td data-i18n="c_ce_low_d">Eau utilisable sans restriction.</td></tr>
+        <tr><td>0,7 – 3,0</td><td data-i18n="c_ce_mid">Modérée</td><td data-i18n="c_ce_mid_d">Restriction légère à modérée ; choisir des cultures tolérantes.</td></tr>
+        <tr><td>&gt; 3,0</td><td data-i18n="c_ce_high">Forte</td><td data-i18n="c_ce_high_d">Restriction sévère ; lessivage et drainage indispensables.</td></tr>
+      </tbody>
+    </table>
+    <div class="retenir water"><span class="h" data-i18n="c_ret_salt">Point clé — salinité</span><span data-i18n-html="c_s4_ret1"></span></div>
+
+    <h3 data-i18n="c_s4_h3">L'énergie de pompage : HMT, rendement, coût</h3>
+    <p class="par" data-i18n-html="c_s4_p2"></p>
+    <div class="formula">P (kW) = <span class="bl">ρ·g·Q·HMT</span> / <span class="hl">η</span> &nbsp;·&nbsp; 10⁻³ &nbsp;&nbsp;|&nbsp;&nbsp; E (kWh) = P · t &nbsp;&nbsp;|&nbsp;&nbsp; <span data-i18n="c_f_cost">Coût</span> = E · <span data-i18n="c_f_price">prix kWh</span></div>
+    <div class="cgrid">
+      <div class="concept"><div class="sym">HMT</div><div class="nm" data-i18n="c_hmt_n">Hauteur manométrique totale</div><div class="ds" data-i18n="c_hmt_d">Profondeur dynamique + refoulement + pertes de charge. <span class="u">m</span></div></div>
+      <div class="concept"><div class="sym">η</div><div class="nm" data-i18n="c_eta_n">Rendement groupe</div><div class="ds" data-i18n="c_eta_d">Pompe × moteur : chaque perte augmente la facture. <span class="u">%</span></div></div>
+      <div class="concept"><div class="sym">Q</div><div class="nm" data-i18n="c_q_n">Débit pompé</div><div class="ds" data-i18n="c_q_d">Volume horaire relevé au compteur. <span class="u">m³/h</span></div></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s4_ret2"></span></div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="card" id="apps">
+    <h2>🧭 <span data-i18n="c_apps_h">Applications de ce domaine</span></h2>
+    <p class="lead" data-i18n="c_apps_p">Mettez en pratique le cours avec les applications interactives de la plateforme :</p>
+    <div class="appgrid">
+      <a class="appcard" style="--ac:#2f8fca" href="meteo-et0.html">
+        <div class="ico">🌤️</div><h4 data-i18n="c_app_et0">Météo & ET₀</h4>
+        <p data-i18n="c_app_et0_d">Calculer l'ET₀ Penman-Monteith / Hargreaves à partir des variables climatiques.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#3fa66a" href="planificateur-irrigation.html">
+        <div class="ico">📅</div><h4 data-i18n="c_app_plan">Planificateur d'irrigation</h4>
+        <p data-i18n="c_app_plan_d">Bilan décadaire, besoin net/brut, re-planification sous forage plafonné.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#5a8f2c" href="J3/pilotage-irrigation.html">
+        <div class="ico">🎛️</div><h4 data-i18n="c_app_pil">Pilotage d'irrigation</h4>
+        <p data-i18n="c_app_pil_d">Déclencher l'arrosage sur seuils sol/culture et suivre le tour d'eau.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#8e6fc7" href="J5/sim-qualite-eau.html">
+        <div class="ico">🧪</div><h4 data-i18n="c_app_qual">Qualité de l'eau</h4>
+        <p data-i18n="c_app_qual_d">Évaluer CE, SAR et RSC d'une eau et son aptitude à l'irrigation.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#e0912b" href="J5/sim-pompage.html">
+        <div class="ico">⚡</div><h4 data-i18n="c_app_pump">Simulateur de pompage</h4>
+        <p data-i18n="c_app_pump_d">HMT, rendement, énergie et coût du pompage d'un volume donné.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+    </div>
+
+    <div class="tpbanner">
+      <div>
+        <div class="tt">🧪 <span data-i18n="c_tp_t">TP guidé — Météo, Eau & Irrigation</span></div>
+        <div class="dd" data-i18n="c_tp_d">Cinq étapes pas-à-pas qui vous font manipuler ces applications, avec questions, auto-correction et compte-rendu exportable.</div>
+      </div>
+      <a class="btn" href="tp-eau-irrigation.html"><span data-i18n="c_tp_go">Commencer le TP</span> →</a>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="c_foot">Plateforme AgriTech Libye · EU4Skills — Domaine d4 · support de cours</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  c_brand:{fr:"Météo, Eau",ar:"المناخ والماء",en:"Weather, Water"},
+  c_brand2:{fr:"& Irrigation",ar:"والري",en:"& Irrigation"},
+  c_sub:{fr:"Cours · ET₀, bilan hydrique, besoin d'irrigation, qualité de l'eau",ar:"درس · ET₀، الميزان المائي، حاجة الري، جودة الماء",en:"Course · ET₀, water balance, irrigation need, water quality"},
+  c_course_chip:{fr:"Cours",ar:"درس",en:"Course"},
+  c_title:{fr:"Météo, Eau & Irrigation",ar:"المناخ والماء والري",en:"Weather, Water & Irrigation"},
+  c_tag:{fr:"Domaine d4 · de la demande climatique de la culture au litre réellement pompé",ar:"المجال d4 · من الطلب المناخي للمحصول إلى اللتر المضخوخ فعلاً",en:"Domain d4 · from the crop's climatic demand to the litre actually pumped"},
+  c_intro:{fr:"Irriguer juste, c'est apporter <b>ni trop ni trop peu</b> : trop gaspille une eau souterraine rare et sale les sols, trop peu compromet le rendement. Ce cours construit la chaîne complète — de la <b>demande climatique</b> (ET₀) à la <b>demande de la culture</b> (ETc), du <b>bilan hydrique</b> au <b>besoin brut</b> réellement pompé, jusqu'au <b>planning décadaire</b> sous contrainte de forage, à la <b>qualité de l'eau</b> et au <b>coût énergétique</b>. Chaque notion renvoie à une application où vous la manipulerez.",
+    ar:"الري الصحيح هو تقديم <b>لا كثيراً ولا قليلاً</b>: الكثير يبدّد ماءً جوفياً نادراً ويملّح التربة، والقليل يضرّ بالمردود. يبني هذا الدرس السلسلة كاملة — من <b>الطلب المناخي</b> (ET₀) إلى <b>طلب المحصول</b> (ETc)، ومن <b>الميزان المائي</b> إلى <b>الحاجة الإجمالية</b> المضخوخة فعلاً، وصولاً إلى <b>الجدولة العشرية</b> تحت قيد البئر، و<b>جودة الماء</b> و<b>الكلفة الطاقية</b>. كل مفهوم يحيل إلى تطبيق تستعمله.",
+    en:"Irrigating well means giving <b>neither too much nor too little</b>: too much wastes scarce groundwater and salts the soil, too little cuts yield. This course builds the full chain — from the <b>climatic demand</b> (ET₀) to the <b>crop demand</b> (ETc), from the <b>water balance</b> to the <b>gross need</b> actually pumped, on to the <b>ten-day schedule</b> under borehole limits, <b>water quality</b> and <b>energy cost</b>. Each notion links to an app where you will practise it."},
+  c_toc1:{fr:"1 · Demande (ET₀·Kc)",ar:"1 · الطلب (ET₀·Kc)",en:"1 · Demand (ET₀·Kc)"},
+  c_toc2:{fr:"2 · Bilan & besoin",ar:"2 · الميزان والحاجة",en:"2 · Balance & need"},
+  c_toc3:{fr:"3 · Planifier",ar:"3 · الجدولة",en:"3 · Planning"},
+  c_toc4:{fr:"4 · Qualité & pompage",ar:"4 · الجودة والضخ",en:"4 · Quality & pumping"},
+  c_toc5:{fr:"Applications",ar:"التطبيقات",en:"Apps"},
+
+  c_obj_h:{fr:"Objectifs pédagogiques",ar:"الأهداف التعليمية",en:"Learning objectives"},
+  c_obj1:{fr:"Calculer l'évapotranspiration de référence ET₀ (Penman-Monteith FAO-56) et son repli Hargreaves.",ar:"حساب التبخّر-النتح المرجعي ET₀ (بنمان-مونتيث FAO-56) وبديله هارغريفز.",en:"Compute the reference evapotranspiration ET₀ (Penman-Monteith FAO-56) and its Hargreaves fallback."},
+  c_obj2:{fr:"Passer de ET₀ à la demande de la culture avec le coefficient cultural Kc par stade (ETc = Kc·ET₀).",ar:"الانتقال من ET₀ إلى طلب المحصول بمعامل المحصول Kc حسب الطور (ETc = Kc·ET₀).",en:"Move from ET₀ to crop demand with the crop coefficient Kc per stage (ETc = Kc·ET₀)."},
+  c_obj3:{fr:"Construire le bilan hydrique : pluie efficace, besoin net puis besoin brut selon l'efficience.",ar:"بناء الميزان المائي: المطر الفعّال، الحاجة الصافية ثم الإجمالية حسب الكفاءة.",en:"Build the water balance: effective rain, net need then gross need by efficiency."},
+  c_obj4:{fr:"Convertir un besoin en mm en volume d'eau (10 m³ par mm et par hectare).",ar:"تحويل الحاجة بالملم إلى حجم ماء (10 م³ لكل ملم ولكل هكتار).",en:"Convert a need in mm into a water volume (10 m³ per mm and per hectare)."},
+  c_obj5:{fr:"Établir un planning décadaire et le re-planifier sous forage plafonné (déficit contrôlé, RDI).",ar:"وضع جدولة عشرية وإعادة جدولتها تحت بئر محدود (عجز محكوم، RDI).",en:"Draw up a ten-day schedule and re-plan it under a capped borehole (controlled deficit, RDI)."},
+  c_obj6:{fr:"Juger la qualité d'une eau d'irrigation (CE, SAR, RSC) et estimer l'énergie et le coût de pompage.",ar:"تقييم جودة ماء الري (CE، SAR، RSC) وتقدير طاقة وكلفة الضخ.",en:"Judge an irrigation water's quality (CE, SAR, RSC) and estimate pumping energy and cost."},
+
+  c_ret:{fr:"À retenir",ar:"للتذكّر",en:"Remember"},
+  c_ret_salt:{fr:"Point clé — salinité",ar:"نقطة مفتاحية — الملوحة",en:"Key point — salinity"},
+
+  // Section 1
+  c_s1_h:{fr:"La demande en eau : de ET₀ à ETc",ar:"الطلب على الماء: من ET₀ إلى ETc",en:"Water demand: from ET₀ to ETc"},
+  c_s1_p1:{fr:"Une culture perd de l'eau par <b>évaporation</b> du sol et par <b>transpiration</b> des feuilles : c'est l'<b>évapotranspiration</b>. Toute la gestion de l'irrigation consiste à estimer cette perte, puis à décider ce qu'il faut réapprovisionner. On procède en deux temps : d'abord la demande <b>climatique</b> d'une culture de référence (le gazon), l'ET₀ ; ensuite on l'ajuste à la culture réelle par un coefficient.",
+    ar:"يفقد المحصول الماء بـ<b>تبخّر</b> التربة و<b>نتح</b> الأوراق: هذا هو <b>التبخّر-النتح</b>. وإدارة الري كلها تقدير هذا الفقد ثم تقرير ما يجب تعويضه. نعمل على مرحلتين: أولاً الطلب <b>المناخي</b> لمحصول مرجعي (العشب)، أي ET₀؛ ثم نعدّله للمحصول الحقيقي بمعامل.",
+    en:"A crop loses water by <b>evaporation</b> from the soil and <b>transpiration</b> from the leaves: this is <b>evapotranspiration</b>. All of irrigation management is estimating that loss, then deciding what to replenish. It goes in two steps: first the <b>climatic</b> demand of a reference crop (grass), ET₀; then it is adjusted to the real crop by a coefficient."},
+  c_s1_h2:{fr:"L'évapotranspiration de référence ET₀ (Penman-Monteith FAO-56)",ar:"التبخّر-النتح المرجعي ET₀ (بنمان-مونتيث FAO-56)",en:"Reference evapotranspiration ET₀ (Penman-Monteith FAO-56)"},
+  c_s1_p2:{fr:"La méthode de référence mondiale est <b>Penman-Monteith FAO-56</b>. Elle combine un bilan d'<b>énergie</b> (le rayonnement qui fournit la chaleur de vaporisation) et un terme <b>aérodynamique</b> (le vent et le déficit d'humidité qui emportent la vapeur). Ses variables d'entrée sont la <b>température</b>, l'<b>humidité relative</b>, la <b>vitesse du vent</b> à 2 m et le <b>rayonnement net</b>.",
+    ar:"الطريقة المرجعية عالمياً هي <b>بنمان-مونتيث FAO-56</b>. تجمع بين ميزان <b>الطاقة</b> (الإشعاع الذي يوفّر حرارة التبخّر) وحدّ <b>ديناميكي هوائي</b> (الرياح ونقص الرطوبة اللذان يحملان البخار). ومدخلاتها هي <b>الحرارة</b> و<b>الرطوبة النسبية</b> و<b>سرعة الرياح</b> على 2 م و<b>الإشعاع الصافي</b>.",
+    en:"The world reference method is <b>Penman-Monteith FAO-56</b>. It combines an <b>energy</b> balance (radiation supplying the heat of vaporisation) and an <b>aerodynamic</b> term (wind and humidity deficit carrying the vapour away). Its inputs are <b>temperature</b>, <b>relative humidity</b>, <b>wind speed</b> at 2 m and <b>net radiation</b>."},
+  c_fig1_unit:{fr:"mm / jour",ar:"ملم / يوم",en:"mm / day"},
+  c_fig1_cap:{fr:"<b>Les quatre moteurs de l'ET₀.</b> Rayonnement et température apportent l'énergie ; humidité et vent contrôlent l'évacuation de la vapeur. Penman-Monteith les combine en une seule valeur en mm/jour.",
+    ar:"<b>محرّكات ET₀ الأربعة.</b> الإشعاع والحرارة يوفّران الطاقة؛ والرطوبة والرياح تتحكّمان في تصريف البخار. بنمان-مونتيث يجمعها في قيمة واحدة بالملم/يوم.",
+    en:"<b>The four drivers of ET₀.</b> Radiation and temperature supply the energy; humidity and wind control how the vapour is carried off. Penman-Monteith combines them into a single value in mm/day."},
+  c_fig1_rad:{fr:"Rayonnement Rn",ar:"الإشعاع Rn",en:"Radiation Rn"},
+  c_fig1_temp:{fr:"Température",ar:"الحرارة",en:"Temperature"},
+  c_fig1_hr:{fr:"Humidité de l'air",ar:"رطوبة الهواء",en:"Air humidity"},
+  c_fig1_wind:{fr:"Vent u₂",ar:"الرياح u₂",en:"Wind u₂"},
+  c_s1_p3:{fr:"Quand toutes ces variables ne sont pas disponibles (station sommaire, données manquantes), on utilise un <b>repli de Hargreaves</b> qui n'exige que les températures min/max et le rayonnement extraterrestre — moins précis mais robuste et suffisant pour dégrossir un bilan.",
+    ar:"عندما لا تتوفّر كل هذه المتغيّرات (محطة بسيطة، بيانات ناقصة)، نستعمل <b>بديل هارغريفز</b> الذي لا يتطلّب إلا الحرارتين الدنيا/القصوى والإشعاع الكوني — أقلّ دقّة لكنه متين ويكفي لتقدير أوّلي للميزان.",
+    en:"When not all these variables are available (basic station, missing data), a <b>Hargreaves fallback</b> is used, needing only min/max temperatures and extraterrestrial radiation — less accurate but robust and enough for a first estimate."},
+  c_s1_harg:{fr:"ET₀(Hargreaves) = <span class=\"hl\">0.0023</span> · Ra · (Tmoy + 17.8) · √(<span class=\"bl\">Tmax − Tmin</span>)",
+    ar:"ET₀(هارغريفز) = <span class=\"hl\">0.0023</span> · Ra · (Tمتوسط + 17.8) · √(<span class=\"bl\">Tقصوى − Tدنيا</span>)",
+    en:"ET₀(Hargreaves) = <span class=\"hl\">0.0023</span> · Ra · (Tmean + 17.8) · √(<span class=\"bl\">Tmax − Tmin</span>)"},
+  c_s1_h3:{fr:"Le coefficient cultural Kc et ETc",ar:"معامل المحصول Kc و ETc",en:"The crop coefficient Kc and ETc"},
+  c_s1_p4:{fr:"L'ET₀ décrit un gazon de référence, pas votre culture. Le <b>coefficient cultural Kc</b> fait le pont : il dépend de l'espèce et surtout du <b>stade de développement</b>. On multiplie simplement ET₀ par Kc pour obtenir l'<b>évapotranspiration de la culture ETc</b>, la vraie demande à couvrir.",
+    ar:"يصف ET₀ عشباً مرجعياً لا محصولك. و<b>معامل المحصول Kc</b> يقيم الجسر: يعتمد على النوع وخاصةً على <b>طور النموّ</b>. نضرب ببساطة ET₀ في Kc لنحصل على <b>تبخّر-نتح المحصول ETc</b>، الطلب الحقيقي الواجب تغطيته.",
+    en:"ET₀ describes a reference grass, not your crop. The <b>crop coefficient Kc</b> bridges the gap: it depends on the species and above all the <b>growth stage</b>. You simply multiply ET₀ by Kc to get the <b>crop evapotranspiration ETc</b>, the real demand to cover."},
+  c_fig2_ini:{fr:"Initial",ar:"ابتدائي",en:"Initial"},
+  c_fig2_dev:{fr:"Développement",ar:"نموّ",en:"Development"},
+  c_fig2_mid:{fr:"Mi-saison",ar:"منتصف الموسم",en:"Mid-season"},
+  c_fig2_late:{fr:"Arrière-saison",ar:"آخر الموسم",en:"Late season"},
+  c_fig2_y:{fr:"Coefficient cultural Kc",ar:"معامل المحصول Kc",en:"Crop coefficient Kc"},
+  c_fig2_x:{fr:"Cycle de la culture →",ar:"دورة المحصول →",en:"Crop cycle →"},
+  c_fig2_cap:{fr:"<b>Courbe de Kc en quatre stades.</b> Bas au départ (sol nu), Kc monte pendant le développement, plafonne à mi-saison (couvert plein) puis redescend à la maturation. ETc suit cette courbe multipliée par l'ET₀ du jour.",
+    ar:"<b>منحنى Kc بأربعة أطوار.</b> منخفض في البداية (تربة عارية)، يرتفع Kc أثناء النموّ، ويبلغ ذروته في منتصف الموسم (غطاء كامل) ثم ينخفض عند النضج. ETc يتبع هذا المنحنى مضروباً في ET₀ اليومي.",
+    en:"<b>Four-stage Kc curve.</b> Low at the start (bare soil), Kc rises during development, peaks at mid-season (full canopy) then falls at maturity. ETc follows this curve multiplied by the day's ET₀."},
+  c_kc_ini_n:{fr:"Stade initial",ar:"الطور الابتدائي",en:"Initial stage"},
+  c_kc_ini_d:{fr:"Sol nu à peine couvert : évaporation dominante.",ar:"تربة عارية بالكاد مغطّاة: التبخّر هو الغالب.",en:"Bare, barely covered soil: evaporation dominates."},
+  c_kc_dev_n:{fr:"Développement",ar:"النموّ",en:"Development"},
+  c_kc_dev_d:{fr:"Le couvert grandit, la transpiration monte.",ar:"يتّسع الغطاء ويرتفع النتح.",en:"The canopy grows, transpiration rises."},
+  c_kc_mid_n:{fr:"Mi-saison",ar:"منتصف الموسم",en:"Mid-season"},
+  c_kc_mid_d:{fr:"Couvert plein, demande maximale.",ar:"غطاء كامل، طلب أقصى.",en:"Full canopy, maximum demand."},
+  c_kc_late_n:{fr:"Arrière-saison",ar:"آخر الموسم",en:"Late season"},
+  c_kc_late_d:{fr:"Maturation/sénescence, la demande retombe.",ar:"نضج/شيخوخة، ينخفض الطلب.",en:"Ripening/senescence, demand falls."},
+  c_s1_ret:{fr:"Deux étapes, jamais une seule : <b>ET₀</b> vient du <b>climat</b> (station météo), <b>Kc</b> vient de la <b>culture et de son stade</b>. Leur produit <b>ETc = Kc·ET₀</b> est la demande à satisfaire — c'est le point de départ de tout calcul d'irrigation.",
+    ar:"مرحلتان لا واحدة: <b>ET₀</b> من <b>المناخ</b> (محطة الأرصاد)، و<b>Kc</b> من <b>المحصول وطوره</b>. وجداؤهما <b>ETc = Kc·ET₀</b> هو الطلب الواجب تلبيته — وهو نقطة انطلاق كل حساب ريّ.",
+    en:"Two steps, never one: <b>ET₀</b> comes from the <b>climate</b> (weather station), <b>Kc</b> comes from the <b>crop and its stage</b>. Their product <b>ETc = Kc·ET₀</b> is the demand to meet — the starting point of every irrigation calculation."},
+
+  // Section 2
+  c_s2_h:{fr:"Le bilan hydrique et le besoin d'irrigation",ar:"الميزان المائي وحاجة الري",en:"The water balance and irrigation need"},
+  c_s2_p1:{fr:"L'irrigation ne doit apporter que <b>ce que la pluie ne couvre pas</b>. Le bilan hydrique compare, sur une période, ce que la culture consomme (ETc) et ce que la nature fournit gratuitement (la pluie). Ce qui manque devient le <b>besoin d'irrigation</b> — mais attention, il faut ensuite tenir compte des pertes du système d'arrosage.",
+    ar:"يجب ألّا يقدّم الريّ إلا <b>ما لا يغطّيه المطر</b>. يقارن الميزان المائي، عبر مدّة، ما يستهلكه المحصول (ETc) بما توفّره الطبيعة مجاناً (المطر). والنقص يصبح <b>حاجة الري</b> — لكن يجب بعد ذلك مراعاة خسائر نظام السقي.",
+    en:"Irrigation should supply only <b>what rain does not cover</b>. The water balance compares, over a period, what the crop consumes (ETc) and what nature supplies for free (rain). The shortfall becomes the <b>irrigation need</b> — but you must then account for the watering system's losses."},
+  c_s2_h2:{fr:"Pluie efficace et besoin net",ar:"المطر الفعّال والحاجة الصافية",en:"Effective rain and net need"},
+  c_s2_p2:{fr:"Toute la pluie ne profite pas à la culture : une part ruisselle ou percole hors de la zone racinaire. La fraction réellement utile est la <b>pluie efficace P<sub>eff</sub></b>. Le <b>besoin net</b> est ce qui reste à apporter à la plante, dans le sol :",
+    ar:"لا يستفيد المحصول من كل المطر: جزء ينساب أو يتسرّب خارج منطقة الجذور. الجزء المفيد فعلاً هو <b>المطر الفعّال P<sub>eff</sub></b>. و<b>الحاجة الصافية</b> هي ما يبقى تقديمه للنبات في التربة:",
+    en:"Not all rain benefits the crop: some runs off or percolates below the root zone. The truly useful fraction is the <b>effective rain P<sub>eff</sub></b>. The <b>net need</b> is what remains to deliver to the plant, in the soil:"},
+  c_f_net_lbl:{fr:"Besoin net",ar:"الحاجة الصافية",en:"Net need"},
+  c_s2_h3:{fr:"De net à brut : l'efficience du système",ar:"من الصافية إلى الإجمالية: كفاءة النظام",en:"From net to gross: system efficiency"},
+  c_s2_p3:{fr:"Aucun système n'amène 100 % de l'eau à la racine : il y a des pertes par évaporation, vent, percolation, fuites. On divise donc le besoin net par l'<b>efficience</b> du système pour obtenir le <b>besoin brut</b>, c'est-à-dire le volume réellement à pomper.",
+    ar:"لا يوصل أي نظام 100٪ من الماء إلى الجذر: هناك خسائر بالتبخّر والرياح والتسرّب والتسرّبات. لذلك نقسم الحاجة الصافية على <b>كفاءة</b> النظام لنحصل على <b>الحاجة الإجمالية</b>، أي الحجم الواجب ضخّه فعلاً.",
+    en:"No system delivers 100 % of water to the root: there are losses by evaporation, wind, percolation, leaks. So we divide the net need by the system's <b>efficiency</b> to get the <b>gross need</b>, i.e. the volume actually to pump."},
+  c_f_gross_lbl:{fr:"Besoin brut",ar:"الحاجة الإجمالية",en:"Gross need"},
+  c_tbl_sys:{fr:"Système d'irrigation",ar:"نظام الري",en:"Irrigation system"},
+  c_tbl_eff:{fr:"Efficience typique",ar:"الكفاءة النموذجية",en:"Typical efficiency"},
+  c_tbl_note:{fr:"Remarque",ar:"ملاحظة",en:"Note"},
+  c_sys_drip:{fr:"Goutte-à-goutte",ar:"التنقيط",en:"Drip"},
+  c_sys_drip_d:{fr:"Apport localisé, pertes minimales.",ar:"إمداد موضعي، خسائر دنيا.",en:"Localised supply, minimal losses."},
+  c_sys_spr:{fr:"Aspersion",ar:"الرشّ",en:"Sprinkler"},
+  c_sys_spr_d:{fr:"Pertes par évaporation et vent.",ar:"خسائر بالتبخّر والرياح.",en:"Losses by evaporation and wind."},
+  c_sys_grav:{fr:"Gravitaire (surface)",ar:"بالجاذبية (سطحي)",en:"Gravity (surface)"},
+  c_sys_grav_d:{fr:"Percolation et ruissellement importants.",ar:"تسرّب وجريان سطحي كبيران.",en:"Large percolation and runoff."},
+  c_s2_h4:{fr:"Des millimètres aux mètres cubes",ar:"من الملّيمترات إلى الأمتار المكعّبة",en:"From millimetres to cubic metres"},
+  c_s2_p4:{fr:"Le besoin s'exprime en <b>mm</b> (hauteur d'eau), mais on pompe et on facture des <b>m³</b>. La conversion est simple et universelle : 1 mm d'eau étalé sur 1 hectare fait 10 m³.",
+    ar:"تُعبَّر الحاجة بالـ<b>ملم</b> (ارتفاع ماء)، لكننا نضخّ ونفوتر بالـ<b>م³</b>. والتحويل بسيط وشامل: 1 ملم من الماء موزّع على هكتار = 10 م³.",
+    en:"The need is expressed in <b>mm</b> (water depth), but you pump and pay for <b>m³</b>. The conversion is simple and universal: 1 mm of water spread over 1 hectare is 10 m³."},
+  c_f_vol_on:{fr:"sur",ar:"على",en:"over"},
+  c_f_vol_lbl:{fr:"besoin brut",ar:"الحاجة الإجمالية",en:"gross need"},
+  c_f_vol_area:{fr:"surface",ar:"المساحة",en:"area"},
+  c_s2_ret:{fr:"La chaîne complète tient en une ligne : <b>ETc − P<sub>eff</sub> = net</b>, puis <b>net / efficience = brut</b>, puis <b>× 10 × ha = m³</b>. Un même besoin net coûte bien plus d'eau en gravitaire (55 %) qu'en goutte-à-goutte (90 %) : l'efficience est le premier levier d'économie.",
+    ar:"السلسلة كاملة في سطر: <b>ETc − P<sub>eff</sub> = صافية</b>، ثم <b>صافية / كفاءة = إجمالية</b>، ثم <b>× 10 × هكتار = م³</b>. الحاجة الصافية نفسها تكلّف ماءً أكثر بكثير بالجاذبية (55٪) منها بالتنقيط (90٪): الكفاءة هي أول رافعة اقتصاد.",
+    en:"The full chain fits on one line: <b>ETc − P<sub>eff</sub> = net</b>, then <b>net / efficiency = gross</b>, then <b>× 10 × ha = m³</b>. The same net need costs far more water by gravity (55 %) than by drip (90 %): efficiency is the first lever of saving."},
+
+  // Section 3
+  c_s3_h:{fr:"Planifier l'irrigation à la décade",ar:"جدولة الري بالعشرة أيام",en:"Planning irrigation by ten-day period"},
+  c_s3_p1:{fr:"On ne pilote pas l'irrigation jour par jour à la main : on l'organise en <b>décades</b> (périodes de dix jours), l'unité classique des calendriers agro-météo. Pour chaque décade on estime le besoin brut, et on obtient un <b>planning</b> qui monte avec le développement de la culture puis redescend en fin de cycle — comme le montre le calendrier ci-dessous.",
+    ar:"لا تُدار الري يدوياً يوماً بيوم: تُنظَّم بـ<b>عشرات الأيام</b> (فترات عشرة أيام)، الوحدة الكلاسيكية للتقاويم الزراعية-المناخية. لكل عشرة أيام نقدّر الحاجة الإجمالية، فنحصل على <b>جدولة</b> ترتفع مع نموّ المحصول ثم تنخفض في آخر الدورة — كما يبيّن التقويم أدناه.",
+    en:"Irrigation is not steered day by day by hand: it is organised into <b>ten-day periods</b> (decades), the classic unit of agro-meteorological calendars. For each period the gross need is estimated, giving a <b>schedule</b> that rises with crop development then falls at the end of the cycle — as the calendar below shows."},
+  c_fig3_cap_line:{fr:"Plafond forage (débit max)",ar:"سقف البئر (أقصى تدفّق)",en:"Borehole cap (max flow)"},
+  c_fig3_defbadge:{fr:"Déficit contrôlé (RDI) sur le pic",ar:"عجز محكوم (RDI) عند الذروة",en:"Controlled deficit (RDI) at the peak"},
+  c_fig3_ylabel:{fr:"Besoin brut / décade (mm)",ar:"الحاجة الإجمالية / عشرة أيام (ملم)",en:"Gross need / decade (mm)"},
+  c_fig3_cap:{fr:"<b>Calendrier décadaire du besoin brut.</b> Les barres suivent le cycle de la culture. Quand le pic dépasse le plafond du forage (ligne rouge), la part hachurée ne peut pas être apportée : c'est là qu'intervient le déficit contrôlé.",
+    ar:"<b>تقويم عشري للحاجة الإجمالية.</b> الأعمدة تتبع دورة المحصول. وعندما تتجاوز الذروة سقف البئر (الخط الأحمر)، لا يمكن تقديم الجزء المظلَّل: وهنا يتدخّل العجز المحكوم.",
+    en:"<b>Ten-day calendar of gross need.</b> The bars follow the crop cycle. When the peak exceeds the borehole cap (red line), the hatched part cannot be supplied: this is where controlled deficit steps in."},
+  c_s3_h2:{fr:"Forage plafonné et déficit contrôlé (RDI)",ar:"البئر المحدود والعجز المحكوم (RDI)",en:"Capped borehole and controlled deficit (RDI)"},
+  c_s3_p2:{fr:"Un forage a un <b>débit maximal</b> : aux décades de pointe, la demande brute peut dépasser ce que la pompe fournit. Plutôt que d'échouer, on applique une stratégie de <b>déficit hydrique contrôlé (RDI, Regulated Deficit Irrigation)</b> : on accepte volontairement un léger sous-arrosage aux stades <b>les moins sensibles</b>, pour rester sous le plafond sans sacrifier les stades critiques (floraison, remplissage).",
+    ar:"للبئر <b>تدفّق أقصى</b>: في عشرات الذروة قد يتجاوز الطلب الإجمالي ما توفّره المضخّة. وبدل الفشل، نطبّق استراتيجية <b>الري بالعجز المحكوم (RDI)</b>: نقبل طوعاً نقص سقي طفيفاً في الأطوار <b>الأقلّ حساسية</b>، للبقاء تحت السقف دون التضحية بالأطوار الحرجة (الإزهار، الامتلاء).",
+    en:"A borehole has a <b>maximum flow</b>: at peak periods, gross demand may exceed what the pump delivers. Rather than fail, we apply a <b>Regulated Deficit Irrigation (RDI)</b> strategy: deliberately accepting slight under-watering at the <b>least sensitive</b> stages, to stay under the cap without sacrificing the critical stages (flowering, filling)."},
+  c_s3_ret:{fr:"Planifier, ce n'est pas seulement additionner des besoins : c'est les <b>faire tenir dans une contrainte</b> (débit du forage, main-d'œuvre, énergie). Le RDI est l'outil qui répartit intelligemment un déficit inévitable vers les moments où la culture le supporte le mieux.",
+    ar:"الجدولة ليست جمع حاجات فقط: بل <b>إدخالها في قيد</b> (تدفّق البئر، اليد العاملة، الطاقة). و RDI هو الأداة التي توزّع بذكاء عجزاً حتمياً نحو اللحظات التي يتحمّلها المحصول أفضل.",
+    en:"Planning is not just adding up needs: it is <b>fitting them into a constraint</b> (borehole flow, labour, energy). RDI is the tool that intelligently steers an unavoidable deficit towards the moments the crop tolerates best."},
+
+  // Section 4
+  c_s4_h:{fr:"Qualité de l'eau d'irrigation & énergie de pompage",ar:"جودة ماء الري وطاقة الضخ",en:"Irrigation water quality & pumping energy"},
+  c_s4_p1:{fr:"Deux questions décident si un forage est réellement exploitable au-delà du seul débit : <b>quelle est la qualité de l'eau</b> (elle peut saliniser le sol) et <b>combien coûte-t-il de la remonter</b> (l'énergie). En Libye, où l'eau est profonde et parfois saumâtre, ces deux facteurs sont souvent plus limitants que la ressource elle-même.",
+    ar:"سؤالان يقرّران إن كان البئر قابلاً للاستغلال فعلاً بعد التدفّق وحده: <b>ما جودة الماء</b> (قد يملّح التربة) و<b>كم يكلّف رفعه</b> (الطاقة). في ليبيا، حيث الماء عميق وأحياناً مسوّس، غالباً ما يكون هذان العاملان أكثر تقييداً من المورد نفسه.",
+    en:"Two questions decide whether a borehole is really usable beyond flow alone: <b>what is the water quality</b> (it can salt the soil) and <b>how much does it cost to lift</b> (energy). In Libya, where water is deep and sometimes brackish, these two factors are often more limiting than the resource itself."},
+  c_s4_h2:{fr:"CE, SAR et RSC : le risque de salinisation",ar:"CE و SAR و RSC: خطر التملّح",en:"CE, SAR and RSC: the salinisation risk"},
+  c_ce_n:{fr:"Conductivité électrique",ar:"الناقلية الكهربائية",en:"Electrical conductivity"},
+  c_ce_d:{fr:"Mesure la salinité totale de l'eau.",ar:"تقيس الملوحة الكلية للماء.",en:"Measures the water's total salinity."},
+  c_sar_n:{fr:"Sodium Adsorption Ratio",ar:"نسبة امتصاص الصوديوم",en:"Sodium Adsorption Ratio"},
+  c_sar_d:{fr:"Risque de dégradation de la structure du sol (sodium).",ar:"خطر تدهور بنية التربة (الصوديوم).",en:"Risk of soil structure breakdown (sodium)."},
+  c_rsc_n:{fr:"Carbonate de sodium résiduel",ar:"كربونات الصوديوم المتبقّية",en:"Residual sodium carbonate"},
+  c_rsc_d:{fr:"Excès de carbonates → risque alcalin.",ar:"فائض كربونات ← خطر قلوي.",en:"Carbonate excess → alkaline risk."},
+  c_tbl_ce:{fr:"CE (dS/m)",ar:"CE (دس/م)",en:"CE (dS/m)"},
+  c_tbl_class:{fr:"Classe de salinité",ar:"صنف الملوحة",en:"Salinity class"},
+  c_tbl_risk:{fr:"Risque pour la culture",ar:"الخطر على المحصول",en:"Risk to the crop"},
+  c_ce_low:{fr:"Faible",ar:"منخفضة",en:"Low"},
+  c_ce_low_d:{fr:"Eau utilisable sans restriction.",ar:"ماء قابل للاستعمال بلا قيود.",en:"Water usable without restriction."},
+  c_ce_mid:{fr:"Modérée",ar:"متوسّطة",en:"Moderate"},
+  c_ce_mid_d:{fr:"Restriction légère à modérée ; choisir des cultures tolérantes.",ar:"قيد خفيف إلى متوسّط؛ اختيار محاصيل متحمّلة.",en:"Slight to moderate restriction; choose tolerant crops."},
+  c_ce_high:{fr:"Forte",ar:"عالية",en:"High"},
+  c_ce_high_d:{fr:"Restriction sévère ; lessivage et drainage indispensables.",ar:"قيد شديد؛ الغسل والصرف ضروريان.",en:"Severe restriction; leaching and drainage essential."},
+  c_s4_ret1:{fr:"La <b>CE</b> dit combien l'eau est salée ; le <b>SAR</b> dit si le sodium va <b>dégrader la structure du sol</b>. Une eau à la fois salée et sodique impose lessivage, drainage et cultures tolérantes — sans quoi la salinisation rend la parcelle stérile en quelques saisons.",
+    ar:"<b>CE</b> تقول كم الماء مالح؛ و<b>SAR</b> يقول إن كان الصوديوم سيُ<b>دهور بنية التربة</b>. الماء المالح والصودي معاً يفرض الغسل والصرف والمحاصيل المتحمّلة — وإلّا فالتملّح يعقّم القطعة في مواسم قليلة.",
+    en:"<b>CE</b> tells how salty the water is; <b>SAR</b> tells whether sodium will <b>degrade the soil structure</b>. Water that is both salty and sodic demands leaching, drainage and tolerant crops — otherwise salinisation sterilises the plot within a few seasons."},
+  c_s4_h3:{fr:"L'énergie de pompage : HMT, rendement, coût",ar:"طاقة الضخ: HMT، المردود، الكلفة",en:"Pumping energy: TDH, efficiency, cost"},
+  c_s4_p2:{fr:"Remonter l'eau coûte de l'énergie, proportionnelle au débit et surtout à la <b>hauteur manométrique totale (HMT)</b> — la somme de la profondeur de pompage dynamique, de la hauteur de refoulement et des pertes de charge. Un mauvais <b>rendement</b> du groupe motopompe gonfle la facture. Le coût final se déduit directement de l'énergie et du prix du kWh.",
+    ar:"رفع الماء يكلّف طاقة تتناسب مع التدفّق وخاصةً مع <b>الارتفاع المانومتري الكلي (HMT)</b> — مجموع عمق الضخ الديناميكي وارتفاع الدفع وخسائر الحمل. ورداءة <b>مردود</b> مجموعة المضخّة تضخّم الفاتورة. والكلفة النهائية تُستنتج مباشرة من الطاقة وسعر الكيلوواط-ساعة.",
+    en:"Lifting water costs energy, proportional to flow and above all to the <b>total dynamic head (TDH)</b> — the sum of the dynamic pumping depth, the discharge height and the head losses. A poor motor-pump <b>efficiency</b> inflates the bill. The final cost follows directly from the energy and the price per kWh."},
+  c_f_cost:{fr:"Coût",ar:"الكلفة",en:"Cost"},
+  c_f_price:{fr:"prix kWh",ar:"سعر ك.و.س",en:"kWh price"},
+  c_hmt_n:{fr:"Hauteur manométrique totale",ar:"الارتفاع المانومتري الكلي",en:"Total dynamic head"},
+  c_hmt_d:{fr:"Profondeur dynamique + refoulement + pertes de charge.",ar:"العمق الديناميكي + الدفع + خسائر الحمل.",en:"Dynamic depth + discharge + head losses."},
+  c_eta_n:{fr:"Rendement groupe",ar:"مردود المجموعة",en:"Unit efficiency"},
+  c_eta_d:{fr:"Pompe × moteur : chaque perte augmente la facture.",ar:"المضخّة × المحرّك: كل خسارة تزيد الفاتورة.",en:"Pump × motor: each loss raises the bill."},
+  c_q_n:{fr:"Débit pompé",ar:"التدفّق المضخوخ",en:"Pumped flow"},
+  c_q_d:{fr:"Volume horaire relevé au compteur.",ar:"الحجم الساعي المقروء على العدّاد.",en:"Hourly volume read on the meter."},
+  c_s4_ret2:{fr:"Le coût de l'eau pompée est piloté par la <b>HMT</b> et le <b>rendement</b>, pas seulement par le prix de l'énergie. Baisser la HMT (limiter le rabattement, dimensionner les conduites) et entretenir un bon rendement sont, avec l'efficience d'irrigation, les vrais leviers d'une eau abordable et durable.",
+    ar:"كلفة الماء المضخوخ تحكمها <b>HMT</b> و<b>المردود</b>، لا سعر الطاقة وحده. خفض HMT (تحديد الهبوط، تحجيم الأنابيب) وصيانة مردود جيّد هما، مع كفاءة الري، الرافعات الحقيقية لماء ميسور ومستدام.",
+    en:"The cost of pumped water is driven by <b>TDH</b> and <b>efficiency</b>, not just the energy price. Lowering TDH (limiting drawdown, sizing the pipes) and keeping good efficiency are, together with irrigation efficiency, the real levers of affordable and sustainable water."},
+
+  // Apps
+  c_apps_h:{fr:"Applications de ce domaine",ar:"تطبيقات هذا المجال",en:"Apps for this domain"},
+  c_apps_p:{fr:"Mettez en pratique le cours avec les applications interactives de la plateforme :",ar:"طبّق الدرس عبر التطبيقات التفاعلية للمنصّة:",en:"Put the course into practice with the platform's interactive apps:"},
+  c_open:{fr:"Ouvrir →",ar:"فتح →",en:"Open →"},
+  c_app_et0:{fr:"Météo & ET₀",ar:"المناخ و ET₀",en:"Weather & ET₀"},
+  c_app_et0_d:{fr:"Calculer l'ET₀ Penman-Monteith / Hargreaves à partir des variables climatiques.",ar:"حساب ET₀ بنمان-مونتيث/هارغريفز من المتغيّرات المناخية.",en:"Compute ET₀ Penman-Monteith / Hargreaves from climate variables."},
+  c_app_plan:{fr:"Planificateur d'irrigation",ar:"مخطِّط الري",en:"Irrigation planner"},
+  c_app_plan_d:{fr:"Bilan décadaire, besoin net/brut, re-planification sous forage plafonné.",ar:"ميزان عشري، حاجة صافية/إجمالية، إعادة جدولة تحت بئر محدود.",en:"Ten-day balance, net/gross need, re-planning under a capped borehole."},
+  c_app_pil:{fr:"Pilotage d'irrigation",ar:"التحكّم في الري",en:"Irrigation control"},
+  c_app_pil_d:{fr:"Déclencher l'arrosage sur seuils sol/culture et suivre le tour d'eau.",ar:"تشغيل السقي على عتبات التربة/المحصول ومتابعة دورة الماء.",en:"Trigger watering on soil/crop thresholds and track the water turn."},
+  c_app_qual:{fr:"Qualité de l'eau",ar:"جودة الماء",en:"Water quality"},
+  c_app_qual_d:{fr:"Évaluer CE, SAR et RSC d'une eau et son aptitude à l'irrigation.",ar:"تقييم CE و SAR و RSC لماء وصلاحيته للري.",en:"Assess a water's CE, SAR and RSC and its fitness for irrigation."},
+  c_app_pump:{fr:"Simulateur de pompage",ar:"محاكي الضخ",en:"Pumping simulator"},
+  c_app_pump_d:{fr:"HMT, rendement, énergie et coût du pompage d'un volume donné.",ar:"HMT، المردود، الطاقة وكلفة ضخّ حجم معطى.",en:"TDH, efficiency, energy and cost of pumping a given volume."},
+  c_tp_t:{fr:"TP guidé — Météo, Eau & Irrigation",ar:"عمل تطبيقي موجّه — المناخ والماء والري",en:"Guided lab — Weather, Water & Irrigation"},
+  c_tp_d:{fr:"Cinq étapes pas-à-pas qui vous font manipuler ces applications, avec questions, auto-correction et compte-rendu exportable.",ar:"خمس خطوات تدريجية تجعلك تستعمل هذه التطبيقات، مع أسئلة وتصحيح تلقائي وتقرير قابل للتصدير.",en:"Five step-by-step stages that make you use these apps, with questions, self-correction and an exportable report."},
+  c_tp_go:{fr:"Commencer le TP",ar:"ابدأ العمل التطبيقي",en:"Start the lab"},
+  c_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Domaine d4 · support de cours",ar:"منصّة أجريتك ليبيا · EU4Skills — المجال d4 · مادة الدرس",en:"AgriTech Libya Platform · EU4Skills — Domain d4 · course material"}
+});
+
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',applyHTML);
+
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

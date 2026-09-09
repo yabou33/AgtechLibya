@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="qe_title">Qualité de l'eau d'irrigation</title>
+<style>
+:root{
+  --bg:#0e1512;--panel:#16201b;--panel-2:#1c2a23;--line:#2b3a30;--line-2:#38493d;
+  --ink:#e8efe6;--muted:#8fa596;--faint:#5f7568;
+  --water:#2ea8d8;--water-d:#1c7fa8;--soil:#c9a24b;
+  --good:#5fb15a;--warn:#d99a2b;--bad:#d1584e;
+  --shadow:0 6px 22px rgba(0,0,0,.35);--r:12px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.45}
+.tabnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit}
+a{color:var(--water)}
+.topbar{display:flex;align-items:center;gap:14px;padding:12px 20px;background:linear-gradient(180deg,#16201b,#111a15);border-bottom:1px solid var(--line)}
+.logo{width:34px;height:34px;border-radius:9px;flex:none;background:radial-gradient(120% 120% at 30% 20%,#2ea8d8,#155e7d);display:grid;place-items:center;box-shadow:0 0 0 1px rgba(46,168,216,.4) inset}
+.logo svg{width:20px;height:20px}
+.brand .t1{font-weight:700;font-size:.98rem}
+.brand .t2{color:var(--muted);font-size:.74rem}
+.spacer{flex:1}
+.mod-badge{font-size:.72rem;color:var(--soil);border:1px solid rgba(201,162,75,.4);background:rgba(201,162,75,.1);padding:4px 11px;border-radius:20px;font-weight:700}
+/* langue */
+.langbox{display:inline-flex;gap:4px;margin-inline-end:10px}
+.langbox button{border:1px solid var(--line,#d8e4c8);background:#fff;color:var(--muted,#6f7d64);border-radius:7px;padding:4px 9px;font:inherit;font-size:.75rem;font-weight:700;cursor:pointer;line-height:1}
+.langbox button:hover{border-color:#7cb342}
+.langbox button.on{background:#7cb342;color:#fff;border-color:#7cb342}
+
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+.lead{color:var(--muted);font-size:.9rem;max-width:760px;margin-bottom:22px}
+.lead b{color:var(--ink)}
+
+.grid{display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
+.card h2{margin:0 0 4px;font-size:1rem}
+.card .sub{color:var(--muted);font-size:.78rem;margin-bottom:14px}
+
+.fld{margin-bottom:13px}
+.fld label{display:flex;justify-content:space-between;color:var(--muted);font-size:.78rem;margin-bottom:5px}
+.fld label .u{color:var(--faint)}
+.fld input,.fld select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#0e1713;color:var(--ink);font:inherit;font-size:.92rem}
+.fld input:focus,.fld select:focus{outline:2px solid var(--water-d);border-color:var(--water)}
+.row{display:flex;gap:11px}.row>*{flex:1}
+.preset-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.preset{font-size:.76rem;padding:6px 11px;border:1px solid var(--line);border-radius:8px;background:#18241d;color:var(--ink);cursor:pointer}
+.preset:hover{border-color:var(--water-d)}
+
+.res-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;margin-bottom:18px}
+.rc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px;position:relative;overflow:hidden}
+.rc::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--tone,var(--water))}
+.rc .rc-l{color:var(--muted);font-size:.76rem}
+.rc .rc-v{font-size:1.85rem;font-weight:800;line-height:1.1;margin-top:3px;color:var(--tone,var(--ink))}
+.rc .rc-v small{font-size:.82rem;font-weight:500;color:var(--muted);margin-inline-start:3px}
+.rc .rc-x{color:var(--muted);font-size:.74rem;margin-top:5px}
+
+.banner{display:flex;gap:11px;align-items:flex-start;padding:13px 14px;border-radius:11px;font-size:.86rem;margin-bottom:14px;border:1px solid}
+.banner svg{width:19px;height:19px;flex:none;margin-top:1px}
+.banner.warn{background:rgba(217,154,43,.12);border-color:rgba(217,154,43,.5);color:#e9be6f}
+.banner.good{background:rgba(95,177,90,.12);border-color:rgba(95,177,90,.45);color:#8fd08a}
+.banner.bad{background:rgba(209,88,78,.14);border-color:rgba(209,88,78,.5);color:#e79086}
+.banner b{display:block;color:var(--ink);margin-bottom:2px}
+
+.riskbar{margin:6px 0 18px}
+.riskbar .rb-t{display:flex;justify-content:space-between;font-size:.76rem;color:var(--muted);margin-bottom:6px}
+.riskbar .track{position:relative;height:30px;border-radius:8px;overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(90deg,#1f3a2a 0 33%,#3a3320 33% 66%,#3a2420 66% 100%)}
+.riskbar .cur{position:absolute;top:-4px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--ink);transform:translateX(-7px)}
+.riskbar .zones{display:flex;justify-content:space-between;font-size:.68rem;color:var(--faint);margin-top:5px}
+.riskbar .zones b{color:var(--muted)}
+
+.tbl{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:4px}
+.tbl th{text-align:start;color:var(--muted);font-weight:600;font-size:.74rem;padding:8px 10px;border-bottom:1px solid var(--line)}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--line)}
+.tbl .flag{font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:700}
+.flag.ok{background:rgba(95,177,90,.16);color:#8fd08a}
+.flag.mid{background:rgba(217,154,43,.16);color:#e9be6f}
+.flag.hi{background:rgba(209,88,78,.16);color:#e79086}
+
+.formula{background:#0e1713;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:.82rem;color:var(--muted);margin-top:6px}
+.formula code{color:#7cc7e6;font-family:"Cascadia Code",Consolas,monospace}
+.formula .step{padding:3px 0;border-bottom:1px dashed var(--line)}
+.formula .step:last-child{border-bottom:0}
+.formula b{color:var(--ink)}
+
+.mission{background:linear-gradient(180deg,#1a2a33,#141f27);border:1px solid var(--water-d);border-radius:14px;padding:18px 20px;margin-top:8px}
+.mission h2{margin:0 0 4px;font-size:1rem;color:#9fd8ee}
+.mission .sub{color:var(--muted);font-size:.8rem;margin-bottom:14px}
+.q{margin-bottom:14px}
+.q .qt{font-size:.9rem;margin-bottom:8px}
+.q .qt b{color:var(--water)}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:#0e1713;cursor:pointer;font-size:.86rem}
+.opt:hover{border-color:var(--line-2)}
+.opt.sel{border-color:var(--water);background:#12242c}
+.opt.correct{border-color:var(--good);background:rgba(95,177,90,.12)}
+.opt.wrong{border-color:var(--bad);background:rgba(209,88,78,.12)}
+.opt .mk{width:20px;height:20px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-size:.7rem;flex:none}
+.opt.correct .mk{background:var(--good);border-color:var(--good);color:#04202c}
+.opt.wrong .mk{background:var(--bad);border-color:var(--bad);color:#fff}
+.explain{font-size:.82rem;color:var(--muted);margin-top:8px;padding:10px 12px;background:#0e1713;border-radius:8px;border-left:3px solid var(--water);display:none}
+.explain.show{display:block}
+.tbtn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:9px;border:1px solid var(--line);background:#18241d;color:var(--ink);font-size:.86rem;cursor:pointer}
+.tbtn:hover{border-color:var(--water-d)}
+.tbtn.primary{background:linear-gradient(180deg,#2ea8d8,#1c7fa8);border-color:#2ea8d8;color:#04202c;font-weight:700}
+.score{font-size:.86rem;color:var(--muted);margin-top:10px}
+.score b{color:var(--good);font-size:1.05rem}
+.note{font-size:.74rem;color:var(--faint);margin-top:14px}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../platform/public/assets/css/skin-sim.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12Z" fill="#bfe8fb"/></svg></div>
+  <div class="brand">
+    <div class="t1" data-i18n="qe_brand1">Qualité de l'eau d'irrigation</div>
+    <div class="t2" data-i18n="qe_brand2">FAO Ayers &amp; Westcot · CE · SAR · fraction de lessivage</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="langbox">
+    <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+    <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+    <button data-lang="en" onclick="I18N.set('en')">EN</button>
+  </div>
+  <div class="mod-badge" data-i18n="qe_badge">M5 · Jour 5 matin</div>
+</div>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="qe_lead"></p>
+
+  <div class="grid">
+    <!-- INPUT -->
+    <div>
+      <div class="card">
+        <h2 data-i18n="qe_analysis_h2">Analyse de l'eau</h2>
+        <div class="sub" data-i18n="qe_analysis_sub">Valeurs d'un bulletin d'analyse type</div>
+
+        <div class="preset-row">
+          <button class="preset" onclick="preset('puits')" data-i18n="qe_preset_puits">Puits Cap Bon</button>
+          <button class="preset" onclick="preset('forage')" data-i18n="qe_preset_forage">Forage profond</button>
+          <button class="preset" onclick="preset('saumatre')" data-i18n="qe_preset_saumatre">Nappe saumâtre</button>
+        </div>
+
+        <div class="fld">
+          <label><span data-i18n="qe_lbl_ce">Conductivité électrique CE</span><span class="u">dS/m</span></label>
+          <input id="ecw" type="number" step="0.1" value="1.2">
+        </div>
+        <div class="row">
+          <div class="fld">
+            <label>Na⁺<span class="u">meq/L</span></label>
+            <input id="na" type="number" step="0.1" value="6">
+          </div>
+          <div class="fld">
+            <label>Ca²⁺<span class="u">meq/L</span></label>
+            <input id="ca" type="number" step="0.1" value="4">
+          </div>
+          <div class="fld">
+            <label>Mg²⁺<span class="u">meq/L</span></label>
+            <input id="mg" type="number" step="0.1" value="2">
+          </div>
+        </div>
+        <div class="row">
+          <div class="fld">
+            <label>Cl⁻<span class="u">meq/L</span></label>
+            <input id="cl" type="number" step="0.1" value="7">
+          </div>
+          <div class="fld">
+            <label><span data-i18n="qe_lbl_b">Bore B</span><span class="u">mg/L</span></label>
+            <input id="b" type="number" step="0.1" value="0.5">
+          </div>
+        </div>
+
+        <h2 style="margin-top:8px" data-i18n="qe_soilcrop_h2">Sol &amp; culture</h2>
+        <div class="sub" data-i18n="qe_soilcrop_sub">Pour la fraction de lessivage</div>
+        <div class="fld">
+          <label data-i18n="qe_lbl_crop">Culture (tolérance à la salinité)</label>
+          <select id="crop"></select>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 data-i18n="qe_calc_h2">Comment c'est calculé</h2>
+        <div class="formula" id="steps"></div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div>
+      <div class="res-cards">
+        <div class="rc" id="rc-ce">
+          <div class="rc-l" data-i18n="qe_rc_ce">Salinité — CE eau</div>
+          <div class="rc-v tabnum" id="v-ce">–</div>
+          <div class="rc-x" id="x-ce"></div>
+        </div>
+        <div class="rc" id="rc-sar">
+          <div class="rc-l">SAR</div>
+          <div class="rc-v tabnum" id="v-sar">–</div>
+          <div class="rc-x" id="x-sar"></div>
+        </div>
+        <div class="rc" id="rc-lr">
+          <div class="rc-l" data-i18n="qe_rc_lr">Fraction de lessivage</div>
+          <div class="rc-v tabnum" id="v-lr">–</div>
+          <div class="rc-x" id="x-lr"></div>
+        </div>
+        <div class="rc" id="rc-tds">
+          <div class="rc-l" data-i18n="qe_rc_tds">Sels dissous TDS</div>
+          <div class="rc-v tabnum" id="v-tds">–</div>
+          <div class="rc-x">≈ CE × 640</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 data-i18n="qe_verdict_h2">Verdict d'aptitude</h2>
+        <div class="sub" data-i18n="qe_verdict_sub">Restrictions d'usage selon FAO 29 (Ayers &amp; Westcot, 1985)</div>
+        <div id="verdict"></div>
+
+        <div class="riskbar">
+          <div class="rb-t"><span data-i18n="qe_risk_label">Risque de sodicité (SAR × CE)</span><span id="rb-label">–</span></div>
+          <div class="track"><div class="cur" id="rb-cur" style="left:20%"></div></div>
+          <div class="zones"><b data-i18n="qe_zone_none">Aucun</b><b data-i18n="qe_zone_mid">Léger à modéré</b><b data-i18n="qe_zone_sev">Sévère</b></div>
+        </div>
+
+        <table class="tbl">
+          <thead><tr><th data-i18n="qe_th_param">Paramètre</th><th data-i18n="qe_th_value">Valeur</th><th data-i18n="qe_th_fao">Seuil FAO</th><th data-i18n="qe_th_risk">Risque</th></tr></thead>
+          <tbody id="tblbody"></tbody>
+        </table>
+      </div>
+
+      <!-- MISSION -->
+      <div class="mission">
+        <h2 data-i18n="qe_mission_h2">Mission — décision d'irrigation</h2>
+        <div class="sub" data-i18n="qe_mission_sub">Basé sur l'analyse ci-dessus. Répondez, puis validez.</div>
+
+        <div class="q" id="q1">
+          <div class="qt" data-i18n-html="qe_q1"></div>
+          <div class="opts">
+            <div class="opt" data-q="1" data-a="0"><span class="mk"></span><span data-i18n="qe_q1a0"></span></div>
+            <div class="opt" data-q="1" data-a="1"><span class="mk"></span><span data-i18n="qe_q1a1"></span></div>
+            <div class="opt" data-q="1" data-a="2"><span class="mk"></span><span data-i18n="qe_q1a2"></span></div>
+          </div>
+          <div class="explain" id="e1"></div>
+        </div>
+
+        <div class="q" id="q2">
+          <div class="qt" data-i18n-html="qe_q2"></div>
+          <div class="opts">
+            <div class="opt" data-q="2" data-a="0"><span class="mk"></span><span data-i18n="qe_q2a0"></span></div>
+            <div class="opt" data-q="2" data-a="1"><span class="mk"></span><span data-i18n="qe_q2a1"></span></div>
+            <div class="opt" data-q="2" data-a="2"><span class="mk"></span><span data-i18n="qe_q2a2"></span></div>
+          </div>
+          <div class="explain" id="e2"></div>
+        </div>
+
+        <button class="tbtn primary" onclick="grade()" data-i18n="qe_validate">Valider mes réponses</button>
+        <div class="score" id="scorebox"></div>
+      </div>
+
+      <p class="note" data-i18n="qe_note">Formules : SAR = Na / √((Ca+Mg)/2) · TDS ≈ 640·CE · LR = CEeau / (5·CEe − CEeau) · seuils : FAO Irrigation &amp; Drainage Paper 29.</p>
+    </div>
+  </div>
+</div>
+
+<script src="../platform/public/assets/i18n/i18n.js"></script>
+<script src="../platform/public/assets/js/crops.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const fmt=(x,d=2)=>isFinite(x)?x.toFixed(d):'–';
+
+Object.assign(I18N.DICT,{
+  qe_title:{fr:"Qualité de l'eau d'irrigation",en:"Irrigation water quality",ar:"جودة مياه الري"},
+  qe_brand1:{fr:"Qualité de l'eau d'irrigation",en:"Irrigation water quality",ar:"جودة مياه الري"},
+  qe_brand2:{fr:"FAO Ayers & Westcot · CE · SAR · fraction de lessivage",en:"FAO Ayers & Westcot · EC · SAR · leaching fraction",ar:"FAO آيرز وويستكوت · CE · SAR · نسبة الغسل"},
+  qe_badge:{fr:"M5 · Jour 5 matin",en:"M5 · Day 5 morning",ar:"الوحدة 5 · صباح اليوم 5"},
+  qe_lead:{fr:"Avant d'installer un système d'irrigation, on analyse l'eau. Saisissez une analyse de laboratoire : le simulateur calcule la <b>salinité (CE)</b>, le <b>SAR</b>, le risque toxique et la <b>fraction de lessivage</b> nécessaire selon les tables FAO 29. C'est « l'analyse à 200 dinars qui évite l'échec à 200 000 dinars ».",
+    en:"Before installing an irrigation system, you analyse the water. Enter a laboratory analysis: the simulator computes <b>salinity (EC)</b>, <b>SAR</b>, toxicity risk and the required <b>leaching fraction</b> using the FAO 29 tables. It's “the 200-dinar analysis that prevents the 200,000-dinar failure”.",
+    ar:"قبل تركيب نظام ري، نحلّل الماء. أدخل نتائج تحليل مخبري: يحسب المحاكي <b>الملوحة (CE)</b> و<b>SAR</b> وخطر السميّة و<b>نسبة الغسل</b> اللازمة وفق جداول FAO 29. إنه «التحليل بـ200 دينار الذي يتفادى فشلاً بـ200000 دينار»."},
+  qe_analysis_h2:{fr:"Analyse de l'eau",en:"Water analysis",ar:"تحليل الماء"},
+  qe_analysis_sub:{fr:"Valeurs d'un bulletin d'analyse type",en:"Values from a typical analysis report",ar:"قيم من تقرير تحليل نموذجي"},
+  qe_preset_puits:{fr:"Puits Cap Bon",en:"Cap Bon well",ar:"بئر كاب بون"},
+  qe_preset_forage:{fr:"Forage profond",en:"Deep borehole",ar:"حفر عميق"},
+  qe_preset_saumatre:{fr:"Nappe saumâtre",en:"Brackish aquifer",ar:"طبقة مياه شبه مالحة"},
+  qe_lbl_ce:{fr:"Conductivité électrique CE",en:"Electrical conductivity EC",ar:"التوصيل الكهربائي CE"},
+  qe_lbl_b:{fr:"Bore B",en:"Boron B",ar:"بورون B"},
+  qe_soilcrop_h2:{fr:"Sol & culture",en:"Soil & crop",ar:"التربة والمحصول"},
+  qe_soilcrop_sub:{fr:"Pour la fraction de lessivage",en:"For the leaching fraction",ar:"لأجل نسبة الغسل"},
+  qe_lbl_crop:{fr:"Culture (tolérance à la salinité)",en:"Crop (salinity tolerance)",ar:"المحصول (تحمّل الملوحة)"},
+  qe_crop_olive:{fr:"Olivier — CEe seuil 2.7 (tolérant)",en:"Olive — CEe threshold 2.7 (tolerant)",ar:"زيتون — عتبة CEe 2.7 (متحمّل)"},
+  qe_crop_tomato:{fr:"Tomate — CEe seuil 2.5",en:"Tomato — CEe threshold 2.5",ar:"طماطم — عتبة CEe 2.5"},
+  qe_crop_date:{fr:"Palmier dattier — CEe seuil 4.0 (très tolérant)",en:"Date palm — CEe threshold 4.0 (very tolerant)",ar:"نخيل — عتبة CEe 4.0 (شديد التحمّل)"},
+  qe_crop_orange:{fr:"Oranger — CEe seuil 1.7 (sensible)",en:"Orange — CEe threshold 1.7 (sensitive)",ar:"برتقال — عتبة CEe 1.7 (حسّاس)"},
+  qe_crop_wheat:{fr:"Blé — CEe seuil 6.0",en:"Wheat — CEe threshold 6.0",ar:"قمح — عتبة CEe 6.0"},
+  qe_calc_h2:{fr:"Comment c'est calculé",en:"How it's computed",ar:"كيف يُحسب"},
+  qe_rc_ce:{fr:"Salinité — CE eau",en:"Salinity — water EC",ar:"الملوحة — CE الماء"},
+  qe_rc_lr:{fr:"Fraction de lessivage",en:"Leaching fraction",ar:"نسبة الغسل"},
+  qe_rc_tds:{fr:"Sels dissous TDS",en:"Dissolved salts TDS",ar:"الأملاح الذائبة TDS"},
+  qe_verdict_h2:{fr:"Verdict d'aptitude",en:"Suitability verdict",ar:"حكم الصلاحية"},
+  qe_verdict_sub:{fr:"Restrictions d'usage selon FAO 29 (Ayers & Westcot, 1985)",en:"Usage restrictions per FAO 29 (Ayers & Westcot, 1985)",ar:"قيود الاستخدام وفق FAO 29 (آيرز وويستكوت، 1985)"},
+  qe_risk_label:{fr:"Risque de sodicité (SAR × CE)",en:"Sodicity risk (SAR × EC)",ar:"خطر الصوديّة (SAR × CE)"},
+  qe_zone_none:{fr:"Aucun",en:"None",ar:"لا شيء"},
+  qe_zone_mid:{fr:"Léger à modéré",en:"Slight to moderate",ar:"خفيف إلى متوسط"},
+  qe_zone_sev:{fr:"Sévère",en:"Severe",ar:"شديد"},
+  qe_th_param:{fr:"Paramètre",en:"Parameter",ar:"المعيار"},
+  qe_th_value:{fr:"Valeur",en:"Value",ar:"القيمة"},
+  qe_th_fao:{fr:"Seuil FAO",en:"FAO threshold",ar:"عتبة FAO"},
+  qe_th_risk:{fr:"Risque",en:"Risk",ar:"الخطر"},
+  qe_mission_h2:{fr:"Mission — décision d'irrigation",en:"Mission — irrigation decision",ar:"المهمة — قرار الري"},
+  qe_mission_sub:{fr:"Basé sur l'analyse ci-dessus. Répondez, puis validez.",en:"Based on the analysis above. Answer, then submit.",ar:"بناءً على التحليل أعلاه. أجب ثم تحقّق."},
+  qe_q1:{fr:"<b>Q1.</b> Avec cette eau et cette culture, quelle est la première mesure à prendre ?",en:"<b>Q1.</b> With this water and this crop, what is the first measure to take?",ar:"<b>س1.</b> بهذا الماء وهذا المحصول، ما أول إجراء يجب اتخاذه؟"},
+  qe_q1a0:{fr:"Irriguer normalement, l'eau est bonne",en:"Irrigate normally, the water is good",ar:"الري بشكل عادي، الماء جيد"},
+  qe_q1a1:{fr:"Appliquer la fraction de lessivage calculée à chaque irrigation",en:"Apply the computed leaching fraction at every irrigation",ar:"تطبيق نسبة الغسل المحسوبة عند كل رية"},
+  qe_q1a2:{fr:"Diluer l'eau avec de l'eau de pluie uniquement",en:"Dilute the water with rainwater only",ar:"تخفيف الماء بماء المطر فقط"},
+  qe_q2:{fr:"<b>Q2.</b> Le SAR est élevé mais la CE est faible. Quel est le danger ?",en:"<b>Q2.</b> The SAR is high but the EC is low. What is the danger?",ar:"<b>س2.</b> SAR مرتفع لكن CE منخفض. ما الخطر؟"},
+  qe_q2a0:{fr:"Aucun, une CE faible protège toujours le sol",en:"None, a low EC always protects the soil",ar:"لا خطر، انخفاض CE يحمي التربة دائماً"},
+  qe_q2a1:{fr:"Dégradation de la structure : dispersion des argiles, baisse d'infiltration",en:"Structure degradation: clay dispersion, reduced infiltration",ar:"تدهور البنية: تشتّت الطين وانخفاض التسرّب"},
+  qe_q2a2:{fr:"Excès de bore uniquement",en:"Boron excess only",ar:"فائض البورون فقط"},
+  qe_validate:{fr:"Valider mes réponses",en:"Submit my answers",ar:"التحقّق من إجاباتي"},
+  qe_note:{fr:"Formules : SAR = Na / √((Ca+Mg)/2) · TDS ≈ 640·CE · LR = CEeau / (5·CEe − CEeau) · seuils : FAO Irrigation & Drainage Paper 29.",
+    en:"Formulas: SAR = Na / √((Ca+Mg)/2) · TDS ≈ 640·EC · LR = ECw / (5·ECe − ECw) · thresholds: FAO Irrigation & Drainage Paper 29.",
+    ar:"الصيغ: SAR = Na / √((Ca+Mg)/2) · TDS ≈ 640·CE · LR = CEالماء / (5·CEe − CEالماء) · العتبات: FAO Irrigation & Drainage Paper 29."},
+  // JS — cartes
+  qe_x_ce_none:{fr:"Aucune restriction",en:"No restriction",ar:"لا قيود"},
+  qe_x_ce_mid:{fr:"Restriction légère à modérée",en:"Slight to moderate restriction",ar:"قيود خفيفة إلى متوسطة"},
+  qe_x_ce_sev:{fr:"Restriction sévère",en:"Severe restriction",ar:"قيود شديدة"},
+  qe_x_sar_low:{fr:"Faible",en:"Low",ar:"منخفض"},
+  qe_x_sar_mid:{fr:"Moyen",en:"Medium",ar:"متوسط"},
+  qe_x_sar_hi:{fr:"Élevé — risque structure",en:"High — structure risk",ar:"مرتفع — خطر على البنية"},
+  qe_x_lr_min:{fr:"Lessivage minime",en:"Minimal leaching",ar:"غسل ضئيل"},
+  qe_x_lr_mid:{fr:"Lessivage à prévoir",en:"Leaching to plan for",ar:"غسل متوقّع"},
+  qe_x_lr_hi:{fr:"Lessivage important",en:"Significant leaching",ar:"غسل كبير"},
+  // JS — verdict
+  qe_v_good_t:{fr:"Eau adaptée",en:"Suitable water",ar:"ماء مناسب"},
+  qe_v_good_x:{fr:"Utilisable sans précaution particulière pour cette culture.",en:"Usable with no particular precaution for this crop.",ar:"قابل للاستخدام دون احتياطات خاصة لهذا المحصول."},
+  qe_v_bad_t:{fr:"Eau à risque élevé",en:"High-risk water",ar:"ماء عالي الخطورة"},
+  qe_v_bad_x:{fr:"Restriction sévère : lessivage obligatoire, choix de culture tolérante, surveillance de la CEe du sol.",
+    en:"Severe restriction: mandatory leaching, choose a tolerant crop, monitor the soil ECe.",
+    ar:"قيود شديدة: الغسل إلزامي، واختيار محصول متحمّل، ومراقبة CEe للتربة."},
+  qe_v_warn_t:{fr:"Eau utilisable avec gestion",en:"Water usable with management",ar:"ماء صالح مع إدارة"},
+  qe_v_warn_x:{fr:"Restriction légère à modérée : appliquer la fraction de lessivage, éviter l'aspersion foliaire, préférer le goutte-à-goutte.",
+    en:"Slight to moderate restriction: apply the leaching fraction, avoid foliar sprinkling, prefer drip.",
+    ar:"قيود خفيفة إلى متوسطة: طبّق نسبة الغسل، تجنّب الرش الورقي، وفضّل التنقيط."},
+  // JS — tableau
+  qe_tr_ce:{fr:"Salinité (CE)",en:"Salinity (EC)",ar:"الملوحة (CE)"},
+  qe_tr_cl:{fr:"Chlorures (Cl⁻)",en:"Chlorides (Cl⁻)",ar:"الكلوريدات (Cl⁻)"},
+  qe_tr_b:{fr:"Bore (B)",en:"Boron (B)",ar:"البورون (B)"},
+  qe_thr_ce:{fr:"< 0.7 aucun · 0.7–3 modéré",en:"< 0.7 none · 0.7–3 moderate",ar:"< 0.7 لا شيء · 0.7–3 متوسط"},
+  qe_thr_sar:{fr:"< 3 faible · 3–9 moyen",en:"< 3 low · 3–9 medium",ar:"< 3 منخفض · 3–9 متوسط"},
+  qe_thr_cl:{fr:"< 4 aucun · 4–10 modéré",en:"< 4 none · 4–10 moderate",ar:"< 4 لا شيء · 4–10 متوسط"},
+  qe_flag_ok:{fr:"OK",en:"OK",ar:"جيد"},
+  qe_flag_mid:{fr:"Modéré",en:"Moderate",ar:"متوسط"},
+  qe_flag_hi:{fr:"Élevé",en:"High",ar:"مرتفع"},
+  // JS — étapes de calcul
+  qe_step_cee:{fr:"CEe seuil",en:"CEe threshold",ar:"عتبة CEe"},
+  qe_step_culture:{fr:"culture",en:"crop",ar:"المحصول"},
+  qe_step_note:{fr:"Une LR de {p} % signifie qu'il faut appliquer {p} % d'eau en plus du besoin net pour évacuer les sels.",
+    en:"An LR of {p} % means you must apply {p} % more water than the net requirement to flush the salts.",
+    ar:"نسبة غسل {p}% تعني وجوب إضافة {p}% ماء زيادة على الحاجة الصافية لطرد الأملاح."},
+  // JS — validation
+  qe_e1:{fr:"La fraction de lessivage calculée ({p} %) doit être ajoutée à chaque irrigation pour empêcher l'accumulation de sels dans la zone racinaire. La dilution pluie seule est rarement suffisante en zone aride.",
+    en:"The computed leaching fraction ({p} %) must be added at every irrigation to prevent salt build-up in the root zone. Rain dilution alone is rarely enough in arid areas.",
+    ar:"يجب إضافة نسبة الغسل المحسوبة ({p}%) عند كل رية لمنع تراكم الأملاح في منطقة الجذور. نادراً ما يكفي التخفيف بالمطر وحده في المناطق الجافة."},
+  qe_e2:{fr:"Une eau peu salée (CE basse) mais riche en sodium disperse les argiles : le sol se colmate, l'eau n'infiltre plus. C'est le piège classique — la CE basse ne protège pas contre la sodicité, au contraire elle l'aggrave.",
+    en:"Water low in salinity (low EC) but rich in sodium disperses the clays: the soil seals up and water no longer infiltrates. It's the classic trap — a low EC does not protect against sodicity, it actually worsens it.",
+    ar:"الماء قليل الملوحة (CE منخفض) لكنه غني بالصوديوم يشتّت الطين: تنسدّ التربة ولا يعود الماء يتسرّب. إنه الفخّ الكلاسيكي — انخفاض CE لا يحمي من الصوديّة بل يفاقمها."},
+  qe_score:{fr:"Score :",en:"Score:",ar:"النتيجة:"},
+  qe_score_ok:{fr:"✓ décision correcte",en:"✓ correct decision",ar:"✓ قرار صحيح"},
+  qe_score_no:{fr:"— relisez les explications",en:"— re-read the explanations",ar:"— أعد قراءة الشروح"}
+});
+
+const PRESETS={
+  puits:{ecw:1.2,na:6,ca:4,mg:2,cl:7,b:0.5},
+  forage:{ecw:0.6,na:2,ca:3,mg:1.5,cl:2,b:0.2},
+  saumatre:{ecw:3.8,na:22,ca:6,mg:4,cl:26,b:1.4}
+};
+function preset(k){const p=PRESETS[k];for(const key in p)$(key).value=p[key];calc();}
+
+const ICON={
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>',
+  good:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+  bad:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg>'
+};
+
+function calc(){
+  const ecw=+$('ecw').value, na=+$('na').value, ca=+$('ca').value, mg=+$('mg').value,
+        cl=+$('cl').value, b=+$('b').value;
+  const crop=CROPS.byId($('crop').value), cee=crop?crop.CEe:2.0;
+
+  const sar=(ca+mg)<=0?NaN:na/Math.sqrt((ca+mg)/2);
+  const tds=640*ecw;
+  // LR : CEeau / (5·CEe − CEeau), CEe = seuil de tolérance culture
+  const lr=(5*cee-ecw)>0? ecw/(5*cee-ecw):NaN;
+
+  // cards
+  setCard('ce',fmt(ecw,2),'dS/m', ecw<0.7?'good':ecw<3?'warn':'bad',
+    ecw<0.7?I18N.t('qe_x_ce_none'):ecw<3?I18N.t('qe_x_ce_mid'):I18N.t('qe_x_ce_sev'));
+  setCard('sar',fmt(sar,1),'', sar<3?'good':sar<9?'warn':'bad',
+    sar<3?I18N.t('qe_x_sar_low'):sar<9?I18N.t('qe_x_sar_mid'):I18N.t('qe_x_sar_hi'));
+  setCard('lr',lr>0?fmt(lr*100,0):'0','%', lr<0.1?'good':lr<0.2?'warn':'bad',
+    lr<0.1?I18N.t('qe_x_lr_min'):lr<0.2?I18N.t('qe_x_lr_mid'):I18N.t('qe_x_lr_hi'));
+  setCard('tds',fmt(tds,0),'mg/L','water','');
+
+  // risk bar : SAR combiné à CE (Ayers-Westcot fig.)
+  let riskPos=20,riskLbl=I18N.t('qe_zone_none');
+  const combo=sar*(1/Math.max(ecw,0.1));
+  if(sar>6 && ecw<1.2){riskPos=82;riskLbl=I18N.t('qe_zone_sev');}
+  else if(sar>3 && ecw<2){riskPos=52;riskLbl=I18N.t('qe_zone_mid');}
+  else {riskPos=18;riskLbl=I18N.t('qe_zone_none');}
+  $('rb-cur').style.left=riskPos+'%';
+  $('rb-label').textContent=riskLbl;
+
+  // verdict
+  let vtone='good',vt=I18N.t('qe_v_good_t'),vx=I18N.t('qe_v_good_x');
+  if(ecw>=3 || sar>=9){vtone='bad';vt=I18N.t('qe_v_bad_t');vx=I18N.t('qe_v_bad_x');}
+  else if(ecw>=0.7 || sar>=3 || b>1){vtone='warn';vt=I18N.t('qe_v_warn_t');vx=I18N.t('qe_v_warn_x');}
+  $('verdict').innerHTML=`<div class="banner ${vtone}">${ICON[vtone]}<div><b>${vt}</b>${vx}</div></div>`;
+
+  // table
+  const rows=[
+    [I18N.t('qe_tr_ce'),fmt(ecw,2)+' dS/m',I18N.t('qe_thr_ce'), flag(ecw,0.7,3)],
+    ['SAR',fmt(sar,1),I18N.t('qe_thr_sar'), flag(sar,3,9)],
+    [I18N.t('qe_tr_cl'),fmt(cl,1)+' meq/L',I18N.t('qe_thr_cl'), flag(cl,4,10)],
+    [I18N.t('qe_tr_b'),fmt(b,2)+' mg/L',I18N.t('qe_thr_ce'), flag(b,0.7,3)]
+  ];
+  $('tblbody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td class="tabnum">${r[1]}</td><td style="color:var(--faint)">${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+
+  // steps
+  const lrPct=lr>0?fmt(lr*100,0):'0';
+  $('steps').innerHTML=`
+    <div class="step"><b>SAR</b> = Na / √((Ca+Mg)/2) = ${na} / √((${ca}+${mg})/2) = <code>${fmt(sar,1)}</code></div>
+    <div class="step"><b>TDS</b> ≈ 640 × CE = 640 × ${ecw} = <code>${fmt(tds,0)} mg/L</code></div>
+    <div class="step"><b>${I18N.t('qe_step_cee')}</b> ${I18N.t('qe_step_culture')} (${crop?CROPS.name(crop.id,I18N.lang):'–'}) = <code>${cee.toFixed(1)} dS/m</code></div>
+    <div class="step"><b>LR</b> = CE / (5·CEe − CE) = ${ecw} / (5×${cee.toFixed(1)} − ${ecw}) = <code>${lr>0?lrPct+' %':'0'}</code></div>
+    <div class="step" style="color:var(--faint)">${I18N.t('qe_step_note').replaceAll('{p}',lrPct)}</div>`;
+
+  // store for mission grading
+  window._state={ecw,sar,lr,b};
+}
+function setCard(id,v,u,tone,x){
+  $('v-'+id).innerHTML=v+(u?` <small>${u}</small>`:'');
+  const xe=$('x-'+id); if(xe) xe.textContent=x;
+  const c=$('rc-'+id);
+  const col=tone==='good'?'var(--good)':tone==='warn'?'var(--warn)':tone==='bad'?'var(--bad)':'var(--water)';
+  c.style.setProperty('--tone',col);
+}
+function flag(v,lo,hi){
+  if(v<lo)return `<span class="flag ok">${I18N.t('qe_flag_ok')}</span>`;
+  if(v<hi)return `<span class="flag mid">${I18N.t('qe_flag_mid')}</span>`;
+  return `<span class="flag hi">${I18N.t('qe_flag_hi')}</span>`;
+}
+
+// mission
+let sel={};
+document.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
+  const q=o.dataset.q;
+  document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(x=>x.classList.remove('sel'));
+  o.classList.add('sel');
+  sel[q]=+o.dataset.a;
+}));
+function grade(){
+  const s=window._state||{};
+  const ans={1:1,2:1};
+  let score=0;
+  [1,2].forEach(q=>{
+    const opts=document.querySelectorAll(`.opt[data-q="${q}"]`);
+    opts.forEach(o=>{o.classList.remove('correct','wrong');
+      const a=+o.dataset.a;
+      if(a===ans[q])o.classList.add('correct');
+      else if(sel[q]===a)o.classList.add('wrong');
+    });
+    if(sel[q]===ans[q])score++;
+  });
+  const lrPct=s.lr>0?(s.lr*100).toFixed(0):'0';
+  $('e1').classList.add('show');
+  $('e1').textContent=I18N.t('qe_e1').replaceAll('{p}',lrPct);
+  $('e2').classList.add('show');
+  $('e2').textContent=I18N.t('qe_e2');
+  $('scorebox').innerHTML=`${I18N.t('qe_score')} <b>${score}/2</b> ${score===2?I18N.t('qe_score_ok'):I18N.t('qe_score_no')}`;
+}
+
+['ecw','na','ca','mg','cl','b','crop'].forEach(id=>$(id).addEventListener('input',calc));
+
+// Remplit le <select> culture (groupé par famille, noms trilingues, suffixe = seuil CEe)
+function fillCrops(){
+  const sel=$('crop'), cur=sel.value||'tomato';
+  CROPS.fillSelect(sel,{lang:I18N.lang,value:cur,suffix:c=>'CEe '+c.CEe});
+}
+
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{applyHTML();fillCrops();calc();});
+
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+fillCrops();
+calc();
+</script>
+</body>
+</html>

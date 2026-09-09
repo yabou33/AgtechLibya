@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TP guidé — Sol & capteurs IoT · M3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .wrap{max-width:940px}
+  .lead{color:var(--muted);max-width:900px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  /* hero */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#5a8f2c,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:var(--shadow)}
+  .hero h1{font-size:23px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  /* progress */
+  .progwrap{position:sticky;top:63px;z-index:900;background:var(--paper);padding:10px 0 4px;margin-bottom:4px}
+  .progbar{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:12px 18px}
+  .progtrack{flex:1;height:12px;border-radius:8px;background:var(--green-bg);overflow:hidden;border:1px solid var(--line)}
+  .progfill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--impact));transition:width .35s}
+  .progtxt{font-weight:800;font-size:13.5px;color:var(--green-d);white-space:nowrap;font-variant-numeric:tabular-nums;direction:ltr}
+  .progsteps{display:flex;gap:6px}
+  .dot{width:13px;height:13px;border-radius:50%;background:var(--green-bg);border:1.5px solid var(--line)}
+  .dot.done{background:var(--green);border-color:var(--green-d)}
+  @media(max-width:620px){.progsteps{display:none}}
+  /* step card */
+  .step{border-inline-start:4px solid var(--sc,var(--green))}
+  body[dir="rtl"] .step{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--sc,var(--green))}
+  .step .head{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .step .n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--sc,var(--green));
+    color:#fff;font-size:16px;font-weight:800;flex:none}
+  .step h2{font-size:16.5px;margin:0}
+  .step .app-of{font-size:11.5px;color:var(--muted);font-weight:600}
+  .consigne{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 15px;margin:10px 0;
+    font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .consigne b{color:var(--green-d)}
+  .openbtn{margin:8px 0 4px}
+  .qblock{margin-top:14px}
+  .qlabel{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:7px;display:block}
+  .qlabel .u{font-weight:600;color:var(--muted);font-size:12px}
+  input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;
+    font:inherit;color:var(--ink);background:#fff}
+  input:focus,textarea:focus{outline:none;border-color:var(--green)}
+  textarea{min-height:66px;resize:vertical}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;
+    font-size:13.5px;background:#fff;transition:.14s}
+  .opt:hover{border-color:var(--green)}
+  .opt input{accent-color:var(--green);width:16px;height:16px;flex:none}
+  .opt.sel{background:var(--green-bg);border-color:var(--green)}
+  .opt.good{background:#eef8ef;border-color:#8ecb96}
+  .opt.bad{background:#fbecea;border-color:#e3a8a1}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row2{grid-template-columns:1fr}}
+  .fb{margin-top:10px;font-size:13px;border-radius:10px;padding:10px 14px;line-height:1.55;display:none}
+  .fb.show{display:block}
+  .fb.ok{background:#eef8ef;border:1px solid #bfe3c3;color:#2f7d3a}
+  .fb.no{background:#fbecea;border:1px solid #eecac5;color:#b23b30}
+  .fb.info{background:#eaf3fa;border:1px solid #bcd9ec;color:#25607f}
+  .stepfoot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+  .chk{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer}
+  .chk input{width:19px;height:19px;accent-color:var(--green)}
+  /* score */
+  .scorebox{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:linear-gradient(120deg,#eef8ef,#f6fbf0);
+    border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px;margin-top:8px}
+  .scoredial{width:82px;height:82px;border-radius:50%;flex:none;display:grid;place-items:center;
+    background:conic-gradient(var(--impact) var(--p,0deg),#e3efd8 0);position:relative}
+  .scoredial::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+  .scoredial b{position:relative;z-index:1;font-size:18px;font-weight:800;color:var(--green-d)}
+  .scoreinfo .st{font-weight:800;font-size:15px;color:var(--ink)}
+  .scoreinfo .sd{font-size:13px;color:var(--muted);margin-top:2px}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:4px}
+  .modebadge{font-size:11.5px;color:var(--muted)}
+  .modebadge b{color:var(--green-d)}
+  .backlink{font-size:13px;font-weight:700;color:var(--green-d)}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:20px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">M3</span> <b data-i18n="t_brand">TP Sol</b> <span data-i18n="t_brand2">& capteurs</span></div>
+  <div class="sub" data-i18n="t_sub">Travaux pratiques guidés · 5 étapes manipulées</div>
+  <div class="right">
+    <span class="chip">M3 · <span data-i18n="t_lab_chip">TP</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="g0">M3</div>
+    <div>
+      <h1 data-i18n="t_title">TP guidé — Sol & capteurs IoT</h1>
+      <div class="tag" data-i18n="t_tag">Manipulez les applications du domaine, étape par étape</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="t_intro"></p>
+  <a class="backlink" href="cours-sol-capteurs.html">← <span data-i18n="t_back">Revoir le cours</span></a>
+
+  <!-- PROGRESS -->
+  <div class="progwrap">
+    <div class="progbar">
+      <span class="progtxt" id="ptxt">0 / 5</span>
+      <div class="progtrack"><div class="progfill" id="pfill"></div></div>
+      <div class="progsteps" id="pdots"></div>
+    </div>
+  </div>
+
+  <!-- ETAPE 1 -->
+  <div class="card step" style="--sc:#3a9bd0">
+    <div class="head"><span class="n">1</span>
+      <div><h2 data-i18n="t_s1_h">Lire des sondes</h2><div class="app-of" data-i18n="t_s1_app">App · Sondes IoT</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s1_c"></div>
+    <a class="btn primary openbtn" href="sondes-iot.html" target="_blank" rel="noopener">📡 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s1_q1">Jour de l'épisode d'irrigation repéré</label><input type="text" data-f="s1_irr" placeholder="ex. J3 – montée brutale"></div>
+        <div><label class="qlabel" data-i18n="t_s1_q2">Jour de l'épisode de drainage repéré</label><input type="text" data-f="s1_drain" placeholder="ex. J4 – pic puis chute"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s1_q3">Une montée quasi verticale de θ correspond à…</label>
+      <div class="opts" data-q="s1a">
+        <label class="opt"><input type="radio" name="s1a" value="0"><span data-i18n="t_s1_o1">l'extraction racinaire (ET)</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="1"><span data-i18n="t_s1_o2">une irrigation ou une pluie</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="2"><span data-i18n="t_s1_o3">une panne de la sonde</span></label>
+      </div>
+      <div class="fb" data-fb="s1a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="1"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 2 -->
+  <div class="card step" style="--sc:#3fa66a">
+    <div class="head"><span class="n">2</span>
+      <div><h2 data-i18n="t_s2_h">Réserve utile du sol</h2><div class="app-of" data-i18n="t_s2_app">App · Réservoir sol</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s2_c"></div>
+    <a class="btn primary openbtn" href="reservoir-sol.html" target="_blank" rel="noopener">🪣 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s2_q1">TAW lue <span class="u">mm</span></label><input type="number" data-f="s2_taw" placeholder="ex. 120"></div>
+        <div><label class="qlabel" data-i18n="t_s2_q2">RAW lue <span class="u">mm</span></label><input type="number" data-f="s2_raw" placeholder="ex. 60"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s2_q3">À texture égale, augmenter Zr (profondeur racinaire)…</label>
+      <div class="opts" data-q="s2a">
+        <label class="opt"><input type="radio" name="s2a" value="0"><span data-i18n="t_s2_o1">diminue la TAW</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="1"><span data-i18n="t_s2_o2">augmente la TAW</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="2"><span data-i18n="t_s2_o3">ne change rien à la TAW</span></label>
+      </div>
+      <div class="fb" data-fb="s2a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="2"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 3 -->
+  <div class="card step" style="--sc:#e0912b">
+    <div class="head"><span class="n">3</span>
+      <div><h2 data-i18n="t_s3_h">Calibrer la sonde</h2><div class="app-of" data-i18n="t_s3_app">App · Calibration sonde</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s3_c"></div>
+    <a class="btn primary openbtn" href="calibration-sonde.html" target="_blank" rel="noopener">🎯 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s3_q1">Pente a obtenue</label><input type="number" step="any" data-f="s3_a" placeholder="ex. 0.92"></div>
+        <div><label class="qlabel" data-i18n="t_s3_q2">Offset b obtenu</label><input type="number" step="any" data-f="s3_b" placeholder="ex. 1.5"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s3_q3">Pourquoi calibrer la VWC brute d'une sonde ?</label>
+      <div class="opts" data-q="s3a">
+        <label class="opt"><input type="radio" name="s3a" value="0"><span data-i18n="t_s3_o1">Pour économiser la batterie du nœud</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="1"><span data-i18n="t_s3_o2">Car la relation brut→θ dépend du sol (texture, densité, sels)</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="2"><span data-i18n="t_s3_o3">Pour augmenter la fréquence de mesure</span></label>
+      </div>
+      <div class="fb" data-fb="s3a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="3"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 4 -->
+  <div class="card step" style="--sc:#8e6fc7">
+    <div class="head"><span class="n">4</span>
+      <div><h2 data-i18n="t_s4_h">Lecture de courbe — un scénario</h2><div class="app-of" data-i18n="t_s4_app">App · Simulateur de sonde</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s4_c"></div>
+    <a class="btn primary openbtn" href="J5/sim-sonde.html" target="_blank" rel="noopener">📈 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <label class="qlabel" data-i18n="t_s4_q1">Un pic de θ qui dépasse θ_FC puis retombe vite indique…</label>
+      <div class="opts" data-q="s4a">
+        <label class="opt"><input type="radio" name="s4a" value="0"><span data-i18n="t_s4_o1">une sous-irrigation (stress)</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="1"><span data-i18n="t_s4_o2">un sol parfaitement piloté</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="2"><span data-i18n="t_s4_o3">une sur-irrigation qui draine et lessive</span></label>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s4_q2">Le scénario observé, en une phrase <span class="u">(champ libre)</span></label>
+      <textarea data-f="s4_interp" placeholder="…"></textarea>
+      <div class="fb" data-fb="s4a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="4"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 5 : SYNTHESE -->
+  <div class="card step" style="--sc:#d1584e">
+    <div class="head"><span class="n">5</span>
+      <div><h2 data-i18n="t_s5_h">Synthèse — QCM auto-corrigé</h2><div class="app-of" data-i18n="t_s5_app">Évaluation · score /5</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s5_c"></div>
+    <div id="quiz"></div>
+    <label class="qlabel" style="margin-top:8px" data-i18n="t_s5_free">Ce que vous retenez de ce TP <span class="u">(champ libre)</span></label>
+    <textarea data-f="s5_takeaway" placeholder="…"></textarea>
+    <div class="btns"><button class="btn primary" id="correctBtn">✅ <span data-i18n="t_correct">Corriger le QCM</span></button></div>
+    <div class="scorebox" id="scorebox" hidden>
+      <div class="scoredial" id="dial"><b id="scoreval">0/5</b></div>
+      <div class="scoreinfo"><div class="st" id="scoretitle"></div><div class="sd" id="scoredesc"></div></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="5"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- OUTILS -->
+  <div class="card">
+    <div class="tools">
+      <div class="modebadge" data-i18n="t_mode">Mode local (localStorage) — progression sauvegardée automatiquement.</div>
+      <div class="btns" style="margin:0">
+        <button class="btn ghost" id="exportBtn">📤 <span data-i18n="t_export">Exporter le compte-rendu (JSON)</span></button>
+        <button class="btn ghost" id="resetBtn">♻️ <span data-i18n="t_reset">Réinitialiser</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="t_foot">Plateforme AgriTech Libye · EU4Skills — Module M3 · travaux pratiques</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  t_brand:{fr:"TP Sol",ar:"عمل تطبيقي تربة",en:"Soil Lab"},
+  t_brand2:{fr:"& capteurs",ar:"وأجهزة استشعار",en:"& sensors"},
+  t_sub:{fr:"Travaux pratiques guidés · 5 étapes manipulées",ar:"عمل تطبيقي موجّه · 5 خطوات",en:"Guided lab · 5 hands-on steps"},
+  t_lab_chip:{fr:"TP",ar:"تطبيقي",en:"Lab"},
+  t_title:{fr:"TP guidé — Sol & capteurs IoT",ar:"عمل تطبيقي موجّه — التربة وأجهزة الاستشعار",en:"Guided lab — Soil & IoT sensors"},
+  t_tag:{fr:"Manipulez les applications du domaine, étape par étape",ar:"استعمل تطبيقات المجال خطوة بخطوة",en:"Work through the domain's apps, step by step"},
+  t_intro:{fr:"Ce TP vous fait <b>manipuler</b> les applications du module M3. À chaque étape : une consigne, un bouton pour <b>ouvrir l'app</b> dans un nouvel onglet, une ou deux réponses à saisir, puis une case « étape terminée ». Votre progression et vos réponses sont <b>sauvegardées automatiquement</b> ; à la fin, exportez votre compte-rendu.",
+    ar:"يجعلك هذا العمل التطبيقي <b>تستعمل</b> تطبيقات الوحدة M3. في كل خطوة: تعليمة، وزرّ <b>لفتح التطبيق</b> في تبويب جديد، وإجابة أو إجابتان، ثم خانة «تمّت الخطوة». تُحفظ تقدّمك وإجاباتك <b>تلقائياً</b>؛ وفي النهاية صدّر تقريرك.",
+    en:"This lab makes you <b>use</b> the M3 module's apps. At each step: an instruction, a button to <b>open the app</b> in a new tab, one or two answers to enter, then a \"step done\" box. Your progress and answers are <b>saved automatically</b>; at the end, export your report."},
+  t_back:{fr:"Revoir le cours",ar:"مراجعة الدرس",en:"Back to course"},
+  t_open:{fr:"Ouvrir l'app",ar:"فتح التطبيق",en:"Open the app"},
+  t_done:{fr:"Étape terminée",ar:"تمّت الخطوة",en:"Step done"},
+
+  // Step 1
+  t_s1_h:{fr:"Lire des sondes",ar:"قراءة المجسّات",en:"Read the probes"},
+  t_s1_app:{fr:"App · Sondes IoT",ar:"تطبيق · مجسّات إنترنت الأشياء",en:"App · IoT probes"},
+  t_s1_c:{fr:"Ouvrez les <b>Sondes IoT</b> et chargez la <b>série de démonstration</b>. Parcourez la courbe multi-profondeur et repérez <b>un épisode d'irrigation</b> (montée brutale de θ) et <b>un épisode de drainage</b> (pic au-dessus de θ_FC qui retombe). Notez le jour de chacun.",
+    ar:"افتح <b>مجسّات إنترنت الأشياء</b> وحمّل <b>السلسلة النموذجية</b>. تصفّح المنحنى متعدّد الأعماق وحدّد <b>حدث ريّ</b> (صعود مفاجئ لـθ) و<b>حدث صرف</b> (ذروة فوق θ_FC تعود للنزول). سجّل يوم كلٍّ منهما.",
+    en:"Open <b>IoT probes</b> and load the <b>demo series</b>. Scan the multi-depth curve and spot <b>an irrigation episode</b> (sharp rise in θ) and <b>a drainage episode</b> (peak above θ_FC that falls back). Note the day of each."},
+  t_s1_q1:{fr:"Jour de l'épisode d'irrigation repéré",ar:"يوم حدث الريّ المرصود",en:"Day of the irrigation episode"},
+  t_s1_q2:{fr:"Jour de l'épisode de drainage repéré",ar:"يوم حدث الصرف المرصود",en:"Day of the drainage episode"},
+  t_s1_q3:{fr:"Une montée quasi verticale de θ correspond à…",ar:"صعود شبه عمودي لـθ يقابل…",en:"A near-vertical rise in θ corresponds to…"},
+  t_s1_o1:{fr:"l'extraction racinaire (ET)",ar:"السحب الجذري (ET)",en:"root extraction (ET)"},
+  t_s1_o2:{fr:"une irrigation ou une pluie",ar:"ريّ أو مطر",en:"an irrigation or rain"},
+  t_s1_o3:{fr:"une panne de la sonde",ar:"عطل في المجسّ",en:"a probe failure"},
+  t_s1_fb_ok:{fr:"Exact : une recharge rapide (irrigation/pluie) fait bondir θ ; l'ET, elle, la fait décroître lentement.",ar:"صحيح: التعبئة السريعة (ريّ/مطر) تقفز بـθ؛ أما ET فتخفضها ببطء.",en:"Correct: a fast recharge (irrigation/rain) makes θ jump; ET, on the other hand, makes it decline slowly."},
+  t_s1_fb_no:{fr:"Une montée brutale = apport d'eau. La décroissance lente, elle, est due à l'ET.",ar:"الصعود المفاجئ = مدخل ماء. أما الانحدار البطيء فسببه ET.",en:"A sharp rise = water input. The slow decline is due to ET."},
+
+  // Step 2
+  t_s2_h:{fr:"Réserve utile du sol",ar:"الرصيد المتاح للتربة",en:"Soil available water"},
+  t_s2_app:{fr:"App · Réservoir sol",ar:"تطبيق · خزّان التربة",en:"App · Soil reservoir"},
+  t_s2_c:{fr:"Ouvrez le <b>Réservoir sol</b>. Choisissez une <b>texture</b> (sable → argile) et réglez la <b>profondeur racinaire Zr</b>. Lisez la <b>réserve utile TAW</b> et la <b>réserve facilement utilisable RAW</b> affichées, puis notez-les.",
+    ar:"افتح <b>خزّان التربة</b>. اختر <b>بنية</b> (رمل → طين) واضبط <b>عمق الجذور Zr</b>. اقرأ <b>الرصيد المتاح TAW</b> و<b>الرصيد سهل الاستعمال RAW</b> المعروضَين، ثم سجّلهما.",
+    en:"Open the <b>Soil reservoir</b>. Pick a <b>texture</b> (sand → clay) and set the <b>rooting depth Zr</b>. Read the displayed <b>available water TAW</b> and <b>readily available water RAW</b>, then note them."},
+  t_s2_q1:{fr:"TAW lue",ar:"TAW المقروءة",en:"TAW read"},
+  t_s2_q2:{fr:"RAW lue",ar:"RAW المقروءة",en:"RAW read"},
+  t_s2_q3:{fr:"À texture égale, augmenter Zr (profondeur racinaire)…",ar:"عند بنية ثابتة، زيادة Zr (عمق الجذور)…",en:"At equal texture, increasing Zr (rooting depth)…"},
+  t_s2_o1:{fr:"diminue la TAW",ar:"تُنقص TAW",en:"decreases TAW"},
+  t_s2_o2:{fr:"augmente la TAW",ar:"تزيد TAW",en:"increases TAW"},
+  t_s2_o3:{fr:"ne change rien à la TAW",ar:"لا تغيّر TAW",en:"leaves TAW unchanged"},
+  t_s2_fb_ok:{fr:"Exact : TAW = 1000·(θ_FC−θ_WP)·Zr — la TAW croît proportionnellement à Zr. RAW = p·TAW en est une fraction.",ar:"صحيح: TAW = 1000·(θ_FC−θ_WP)·Zr — تنمو TAW تناسبياً مع Zr. وRAW = p·TAW جزء منها.",en:"Correct: TAW = 1000·(θ_FC−θ_WP)·Zr — TAW grows proportionally to Zr. RAW = p·TAW is a fraction of it."},
+  t_s2_fb_no:{fr:"Regardez la formule TAW = 1000·(θ_FC−θ_WP)·Zr : Zr est un facteur → plus de racines, plus de réserve.",ar:"انظر إلى TAW = 1000·(θ_FC−θ_WP)·Zr: Zr عامل ← جذور أعمق، رصيد أكبر.",en:"Look at TAW = 1000·(θ_FC−θ_WP)·Zr: Zr is a factor → deeper roots, more reserve."},
+  t_s2_fb_range:{fr:" Vérifiez : RAW doit être inférieure à TAW (RAW = p·TAW, avec p ≈ 0,4–0,6).",ar:" تحقّق: يجب أن تكون RAW أقلّ من TAW (RAW = p·TAW، بـ p ≈ 0.4–0.6).",en:" Check: RAW must be smaller than TAW (RAW = p·TAW, with p ≈ 0.4–0.6)."},
+
+  // Step 3
+  t_s3_h:{fr:"Calibrer la sonde",ar:"معايرة المجسّ",en:"Calibrate the probe"},
+  t_s3_app:{fr:"App · Calibration sonde",ar:"تطبيق · معايرة المجسّ",en:"App · Probe calibration"},
+  t_s3_c:{fr:"Ouvrez la <b>Calibration sonde</b> et réalisez une <b>calibration 2 points</b> : un point sol sec, un point à la capacité au champ. L'app ajuste la droite <b>θ = a·VWC_brut + b</b> ; lisez la <b>pente a</b> et l'<b>offset b</b>.",
+    ar:"افتح <b>معايرة المجسّ</b> وأجرِ <b>معايرة نقطتين</b>: نقطة تربة جافة ونقطة عند السعة الحقلية. يضبط التطبيق الخطّ <b>θ = a·VWC_خام + b</b>؛ اقرأ <b>الميل a</b> و<b>الإزاحة b</b>.",
+    en:"Open <b>Probe calibration</b> and run a <b>2-point calibration</b>: one dry-soil point, one at field capacity. The app fits the line <b>θ = a·VWC_raw + b</b>; read the <b>slope a</b> and <b>offset b</b>."},
+  t_s3_q1:{fr:"Pente a obtenue",ar:"الميل a الناتج",en:"Slope a obtained"},
+  t_s3_q2:{fr:"Offset b obtenu",ar:"الإزاحة b الناتجة",en:"Offset b obtained"},
+  t_s3_q3:{fr:"Pourquoi calibrer la VWC brute d'une sonde ?",ar:"لماذا نعاير VWC الخام لمجسّ؟",en:"Why calibrate a probe's raw VWC?"},
+  t_s3_o1:{fr:"Pour économiser la batterie du nœud",ar:"لتوفير بطارية العقدة",en:"To save the node's battery"},
+  t_s3_o2:{fr:"Car la relation brut→θ dépend du sol (texture, densité, sels)",ar:"لأن العلاقة خام→θ تعتمد على التربة (بنية، كثافة، أملاح)",en:"Because the raw→θ relation depends on the soil (texture, density, salts)"},
+  t_s3_o3:{fr:"Pour augmenter la fréquence de mesure",ar:"لزيادة تواتر القياس",en:"To increase measurement frequency"},
+  t_s3_fb_ok:{fr:"Exact : la même VWC brute ne donne pas le même θ selon le sol. Deux points de référence recalent pente a et offset b.",ar:"صحيح: نفس VWC الخام لا يعطي نفس θ حسب التربة. نقطتان مرجعيّتان تعيدان ضبط a وb.",en:"Correct: the same raw VWC does not give the same θ across soils. Two reference points recalibrate slope a and offset b."},
+  t_s3_fb_no:{fr:"La calibration corrige la relation brut→θ propre à chaque sol ; elle ne touche ni la batterie ni la cadence.",ar:"المعايرة تصحّح العلاقة خام→θ الخاصة بكل تربة؛ ولا تمسّ البطارية ولا الوتيرة.",en:"Calibration corrects the raw→θ relation specific to each soil; it affects neither battery nor cadence."},
+
+  // Step 4
+  t_s4_h:{fr:"Lecture de courbe — un scénario",ar:"قراءة منحنى — سيناريو",en:"Curve reading — a scenario"},
+  t_s4_app:{fr:"App · Simulateur de sonde",ar:"تطبيق · محاكي المجسّ",en:"App · Probe simulator"},
+  t_s4_c:{fr:"Ouvrez le <b>Simulateur de sonde</b> et jouez un scénario. <b>Observez la courbe de θ</b> : cherchez un pic qui dépasse θ_FC (sur-irrigation ?) ou un creux sous le seuil RAW (stress ?), puis interprétez.",
+    ar:"افتح <b>محاكي المجسّ</b> وشغّل سيناريو. <b>لاحظ منحنى θ</b>: ابحث عن ذروة تتجاوز θ_FC (ريّ مفرط؟) أو قعر تحت عتبة RAW (إجهاد؟)، ثم فسّر.",
+    en:"Open the <b>Probe simulator</b> and run a scenario. <b>Watch the θ curve</b>: look for a peak exceeding θ_FC (over-irrigation?) or a trough below the RAW threshold (stress?), then interpret."},
+  t_s4_q1:{fr:"Un pic de θ qui dépasse θ_FC puis retombe vite indique…",ar:"ذروة θ تتجاوز θ_FC ثم تعود بسرعة تدلّ على…",en:"A θ peak exceeding θ_FC then falling fast indicates…"},
+  t_s4_o1:{fr:"une sous-irrigation (stress)",ar:"ريّ ناقص (إجهاد)",en:"under-irrigation (stress)"},
+  t_s4_o2:{fr:"un sol parfaitement piloté",ar:"تربة مُدارة بإتقان",en:"a perfectly managed soil"},
+  t_s4_o3:{fr:"une sur-irrigation qui draine et lessive",ar:"ريّ مفرط يُصرف ويغسل",en:"over-irrigation that drains and leaches"},
+  t_s4_q2:{fr:"Le scénario observé, en une phrase",ar:"السيناريو المرصود في جملة",en:"The observed scenario in one sentence"},
+  t_s4_fb_ok:{fr:"Exact : au-delà de θ_FC, l'eau excédentaire draine sous la zone racinaire — irrigation perdue, et engrais lessivés.",ar:"صحيح: فوق θ_FC يُصرف الماء الزائد تحت منطقة الجذور — ريّ مفقود وسماد مغسول.",en:"Correct: beyond θ_FC the surplus water drains below the root zone — wasted irrigation and leached fertiliser."},
+  t_s4_fb_no:{fr:"Au-dessus de θ_FC, le sol ne peut plus retenir : l'excès draine. C'est le signe d'une sur-irrigation.",ar:"فوق θ_FC لا تستطيع التربة الاحتفاظ: الفائض يُصرف. وهذا دليل ريّ مفرط.",en:"Above θ_FC the soil can no longer hold: the excess drains. That is the sign of over-irrigation."},
+
+  // Step 5 quiz
+  t_s5_h:{fr:"Synthèse — QCM auto-corrigé",ar:"التركيب — اختبار ذاتي التصحيح",en:"Synthesis — self-marked quiz"},
+  t_s5_app:{fr:"Évaluation · score /5",ar:"تقييم · النتيجة /5",en:"Assessment · score /5"},
+  t_s5_c:{fr:"Répondez aux cinq questions puis cliquez sur <b>Corriger</b>. Votre score et vos réponses sont enregistrés.",ar:"أجب عن الأسئلة الخمسة ثم اضغط <b>تصحيح</b>. تُحفظ نتيجتك وإجاباتك.",en:"Answer the five questions then click <b>Correct</b>. Your score and answers are saved."},
+  t_s5_free:{fr:"Ce que vous retenez de ce TP",ar:"ما تحتفظ به من هذا العمل التطبيقي",en:"Your takeaway from this lab"},
+  t_correct:{fr:"Corriger le QCM",ar:"تصحيح الاختبار",en:"Correct the quiz"},
+
+  q1:{fr:"Que mesure la teneur en eau volumique θ ?",ar:"ماذا يقيس المحتوى المائي الحجمي θ؟",en:"What does volumetric water content θ measure?"},
+  q1a:{fr:"Le volume d'eau par volume de sol",ar:"حجم الماء لكل حجم تربة",en:"The water volume per volume of soil"},
+  q1b:{fr:"La température du sol",ar:"حرارة التربة",en:"The soil temperature"},
+  q1c:{fr:"La profondeur des racines",ar:"عمق الجذور",en:"The depth of the roots"},
+  q2:{fr:"Comment calcule-t-on la réserve utile TAW ?",ar:"كيف نحسب الرصيد المتاح TAW؟",en:"How is the available water TAW computed?"},
+  q2a:{fr:"1000 · (θ_FC − θ_WP) · Zr",ar:"1000 · (θ_FC − θ_WP) · Zr",en:"1000 · (θ_FC − θ_WP) · Zr"},
+  q2b:{fr:"θ_FC × température × Zr",ar:"θ_FC × الحرارة × Zr",en:"θ_FC × temperature × Zr"},
+  q2c:{fr:"La CE divisée par la porosité",ar:"الناقلية مقسومة على المسامية",en:"EC divided by porosity"},
+  q3:{fr:"Que représente le seuil RAW (= p·TAW) ?",ar:"ماذا تمثّل العتبة RAW (= p·TAW)؟",en:"What does the RAW threshold (= p·TAW) represent?"},
+  q3a:{fr:"La fraction consommable avant stress → seuil de réirrigation",ar:"الجزء القابل للاستهلاك قبل الإجهاد ← عتبة إعادة الريّ",en:"The usable fraction before stress → re-irrigation threshold"},
+  q3b:{fr:"La quantité d'eau qui draine chaque jour",ar:"كمية الماء التي تُصرف يومياً",en:"The water that drains each day"},
+  q3c:{fr:"Le point de saturation du sol",ar:"نقطة تشبّع التربة",en:"The soil saturation point"},
+  q4:{fr:"Sur une courbe de sonde, une montée brutale de θ signale…",ar:"على منحنى مجسّ، صعود مفاجئ لـθ يدلّ على…",en:"On a probe curve, a sharp rise in θ signals…"},
+  q4a:{fr:"une irrigation ou une pluie",ar:"ريّاً أو مطراً",en:"an irrigation or rain"},
+  q4b:{fr:"une évaporation intense",ar:"تبخّراً شديداً",en:"intense evaporation"},
+  q4c:{fr:"une baisse de salinité",ar:"انخفاض الملوحة",en:"a drop in salinity"},
+  q5:{fr:"Pourquoi calibrer la sonde (θ = a·VWC_brut + b) ?",ar:"لماذا نعاير المجسّ (θ = a·VWC_خام + b)؟",en:"Why calibrate the probe (θ = a·VWC_raw + b)?"},
+  q5a:{fr:"Car la valeur brute dépend du sol et doit être recalée",ar:"لأن القيمة الخام تعتمد على التربة وتحتاج إعادة ضبط",en:"Because the raw value depends on the soil and must be recalibrated"},
+  q5b:{fr:"Pour que la sonde consomme moins",ar:"لتستهلك المجسّ أقلّ",en:"So the probe consumes less"},
+  q5c:{fr:"Pour changer l'unité en degrés",ar:"لتغيير الوحدة إلى درجات",en:"To change the unit to degrees"},
+
+  t_score_ex:{fr:"Excellent — concepts maîtrisés !",ar:"ممتاز — المفاهيم متمكَّنة!",en:"Excellent — concepts mastered!"},
+  t_score_ok:{fr:"Bien — quelques points à revoir.",ar:"جيّد — بعض النقاط للمراجعة.",en:"Good — a few points to revisit."},
+  t_score_lo:{fr:"À revoir — relisez le cours puis recommencez.",ar:"يحتاج مراجعة — أعد قراءة الدرس ثم أعد المحاولة.",en:"Needs work — reread the course then retry."},
+  t_score_desc:{fr:"Réponses correctes sur 5 questions de synthèse.",ar:"إجابات صحيحة من 5 أسئلة تركيبية.",en:"Correct answers out of 5 synthesis questions."},
+
+  t_mode:{fr:"Mode local (localStorage) — progression sauvegardée automatiquement.",ar:"وضع محلي (localStorage) — التقدّم محفوظ تلقائياً.",en:"Local mode (localStorage) — progress saved automatically."},
+  t_export:{fr:"Exporter le compte-rendu (JSON)",ar:"تصدير التقرير (JSON)",en:"Export report (JSON)"},
+  t_reset:{fr:"Réinitialiser",ar:"إعادة الضبط",en:"Reset"},
+  t_reset_confirm:{fr:"Effacer toutes vos réponses et repartir de zéro ?",ar:"مسح جميع إجاباتك والبدء من جديد؟",en:"Erase all your answers and start over?"},
+  t_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Module M3 · travaux pratiques",ar:"منصّة أجريتك ليبيا · EU4Skills — الوحدة M3 · عمل تطبيقي",en:"AgriTech Libya Platform · EU4Skills — Module M3 · practical work"}
+});
+
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const LKEY="tp_sol_capteurs_v1";
+const QUIZ=[
+  {id:"q1",correct:0,opts:["q1a","q1b","q1c"]},
+  {id:"q2",correct:0,opts:["q2a","q2b","q2c"]},
+  {id:"q3",correct:0,opts:["q3a","q3b","q3c"]},
+  {id:"q4",correct:0,opts:["q4a","q4b","q4c"]},
+  {id:"q5",correct:0,opts:["q5a","q5b","q5c"]}
+];
+// correct radio answers for step MCQs
+const STEPQ={s1a:1,s2a:1,s3a:1,s4a:2};
+
+let STATE=load();
+function load(){try{return JSON.parse(localStorage.getItem(LKEY))||blank();}catch(e){return blank();}}
+function blank(){return{radios:{},fields:{},done:{},quiz:{},score:null,corrected:false};}
+function save(){STATE.updatedAt=new Date().toISOString();localStorage.setItem(LKEY,JSON.stringify(STATE));}
+
+/* ---- build quiz ---- */
+function buildQuiz(){
+  const box=$('#quiz');box.innerHTML='';
+  QUIZ.forEach((q,qi)=>{
+    const blk=document.createElement('div');blk.className='qblock';
+    const lab=document.createElement('label');lab.className='qlabel';
+    lab.textContent=(qi+1)+'. '+I18N.t(q.id);blk.appendChild(lab);
+    const opts=document.createElement('div');opts.className='opts';opts.dataset.quiz=q.id;
+    q.opts.forEach((ok,oi)=>{
+      const l=document.createElement('label');l.className='opt';
+      const inp=document.createElement('input');inp.type='radio';inp.name='qz_'+q.id;inp.value=oi;
+      if(STATE.quiz[q.id]===oi){inp.checked=true;l.classList.add('sel');}
+      inp.addEventListener('change',()=>{STATE.quiz[q.id]=oi;opts.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));l.classList.add('sel');save();});
+      const sp=document.createElement('span');sp.textContent=I18N.t(ok);
+      l.appendChild(inp);l.appendChild(sp);opts.appendChild(l);
+    });
+    blk.appendChild(opts);box.appendChild(blk);
+  });
+}
+
+/* ---- restore inputs ---- */
+function restore(){
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q, val=STATE.radios[name];
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.checked=(String(val)===r.value);
+      r.closest('.opt').classList.toggle('sel',r.checked);
+    });
+  });
+  $$('[data-f]').forEach(f=>{if(STATE.fields[f.dataset.f]!=null)f.value=STATE.fields[f.dataset.f];});
+  $$('[data-done]').forEach(c=>{c.checked=!!STATE.done[c.dataset.done];});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+}
+
+/* ---- wire inputs ---- */
+function wire(){
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q;
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.addEventListener('change',()=>{
+        STATE.radios[name]=+r.value;
+        g.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+        r.closest('.opt').classList.add('sel');
+        feedbackStep(name);save();
+      });
+    });
+  });
+  $$('[data-f]').forEach(f=>f.addEventListener('input',()=>{STATE.fields[f.dataset.f]=f.value;save();}));
+  $$('[data-done]').forEach(c=>c.addEventListener('change',()=>{STATE.done[c.dataset.done]=c.checked;save();updateProgress();}));
+}
+
+/* ---- per-step feedback ---- */
+function feedbackStep(name){
+  const fb=$('.fb[data-fb="'+name+'"]');if(!fb)return;
+  const val=STATE.radios[name], ok=(val===STEPQ[name]);
+  let key=name.replace(/a$/,'')+ (ok?'_fb_ok':'_fb_no');
+  key='t_'+key;
+  let msg=I18N.t(key);
+  // step 2 extra check: RAW must be < TAW
+  if(name==='s2a'&&ok){
+    const taw=parseFloat(STATE.fields.s2_taw), raw=parseFloat(STATE.fields.s2_raw);
+    if(!isNaN(taw)&&!isNaN(raw)&&raw>=taw)msg+=I18N.t('t_s2_fb_range');
+  }
+  fb.textContent=msg;
+  fb.className='fb show '+(ok?'ok':'no');
+}
+
+/* ---- progress ---- */
+function updateProgress(){
+  const done=[1,2,3,4,5].filter(i=>STATE.done[i]).length;
+  $('#pfill').style.width=(done/5*100)+'%';
+  $('#ptxt').textContent=done+' / 5';
+  const dots=$('#pdots');dots.innerHTML='';
+  for(let i=1;i<=5;i++){const d=document.createElement('div');d.className='dot'+(STATE.done[i]?' done':'');dots.appendChild(d);}
+}
+
+/* ---- correct quiz ---- */
+function correctQuiz(){
+  let score=0;
+  QUIZ.forEach(q=>{
+    const g=$('.opts[data-quiz="'+q.id+'"]');
+    const ans=STATE.quiz[q.id];
+    g.querySelectorAll('.opt').forEach((l,oi)=>{
+      l.classList.remove('good','bad');
+      if(oi===q.correct)l.classList.add('good');
+      else if(oi===ans)l.classList.add('bad');
+    });
+    if(ans===q.correct)score++;
+  });
+  STATE.score=score;STATE.corrected=true;save();
+  showScore(score,true);
+}
+function showScore(score,scroll){
+  const box=$('#scorebox');box.hidden=false;
+  $('#scoreval').textContent=score+'/5';
+  $('#dial').style.setProperty('--p',(score/5*360)+'deg');
+  const tk=score>=5?'t_score_ex':score>=3?'t_score_ok':'t_score_lo';
+  $('#scoretitle').textContent=I18N.t(tk);
+  $('#scoredesc').textContent=score+' / 5 — '+I18N.t('t_score_desc');
+  if(scroll)box.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ---- export ---- */
+function doExport(){
+  const rep={
+    format:"agritech-tp-report",module:"M3",tp:"sol-capteurs",version:"tp_sol_capteurs_v1",
+    lang:I18N.lang,exportedAt:new Date().toISOString(),
+    stepsCompleted:[1,2,3,4,5].filter(i=>STATE.done[i]),
+    answers:{
+      step1:{irrigation_day:STATE.fields.s1_irr||"",drainage_day:STATE.fields.s1_drain||"",rise_choice:STATE.radios.s1a},
+      step2:{TAW_mm:STATE.fields.s2_taw||"",RAW_mm:STATE.fields.s2_raw||"",zr_effect_choice:STATE.radios.s2a},
+      step3:{slope_a:STATE.fields.s3_a||"",offset_b:STATE.fields.s3_b||"",why_calibrate_choice:STATE.radios.s3a},
+      step4:{overirrigation_choice:STATE.radios.s4a,interpretation:STATE.fields.s4_interp||""},
+      step5:{quiz:STATE.quiz,takeaway:STATE.fields.s5_takeaway||""}
+    },
+    quizScore:STATE.score,quizMax:5
+  };
+  const name="tp_sol_capteurs_"+(new Date().toISOString().slice(0,10))+".json";
+  if(window.Store&&Store.download)Store.download(name,JSON.stringify(rep,null,2),'application/json');
+  else{const a=document.createElement('a');a.href='data:application/json,'+encodeURIComponent(JSON.stringify(rep,null,2));a.download=name;a.click();}
+}
+
+/* ---- reset ---- */
+function doReset(){
+  if(!confirm(I18N.t('t_reset_confirm')))return;
+  STATE=blank();localStorage.removeItem(LKEY);
+  $$('.fb').forEach(f=>f.className='fb');
+  $('#scorebox').hidden=true;
+  buildQuiz();restore();
+}
+
+/* ---- i18n re-render ---- */
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{
+  applyHTML();buildQuiz();
+  ['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+});
+
+$('#correctBtn').addEventListener('click',correctQuiz);
+$('#exportBtn').addEventListener('click',doExport);
+$('#resetBtn').addEventListener('click',doReset);
+
+buildQuiz();wire();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();restore();
+['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

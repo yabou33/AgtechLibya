@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgriManager · Cheminement de la formation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#7cb342;--green-d:#5a8f2c;--green-l:#a5d16e;--green-bg:#f1f7e9;
+  --ink:#2c3a24;--muted:#6f7d64;--faint:#9aa890;
+  --line:#d8e4c8;--card:#ffffff;--paper:#fbfcf8;
+  --capture:#3a9bd0;--data:#8e6fc7;--info:#e0912b;--decision:#d1584e;--action:#7cb342;--impact:#3fa66a;
+  --shadow:0 4px 18px rgba(60,80,40,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+[lang=ar],body[data-lang=ar]{font-family:'IBM Plex Sans Arabic',sans-serif}
+body[data-lang=ar]{direction:rtl}
+
+/* header */
+header{background:#fff;border-bottom:1px solid var(--line);padding:16px 26px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:12px}
+.es-logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--green-d));display:grid;place-items:center;color:#fff;font-weight:800;font-size:.7rem;flex:none;letter-spacing:.02em}
+.brand .bt1{font-weight:800;font-size:1.05rem}.brand .bt1 span{color:var(--green)}
+.brand .bt2{color:var(--muted);font-size:.75rem}
+.spacer{flex:1}
+.langsw{display:flex;gap:6px}
+.langsw button{font:inherit;font-size:.82rem;font-weight:600;color:var(--muted);background:transparent;border:1px solid var(--line);padding:6px 14px;border-radius:8px;cursor:pointer;transition:.15s}
+.langsw button:hover{border-color:var(--green)}
+.langsw button.on{background:var(--green);color:#fff;border-color:var(--green)}
+
+.titlebar{text-align:center;padding:26px 20px 8px}
+.titlebar h1{font-size:clamp(1.3rem,3vw,1.9rem);font-weight:800;letter-spacing:-.01em}
+.titlebar p{color:var(--muted);font-size:.95rem;margin-top:6px;max-width:720px;margin-inline:auto}
+
+.stage{max-width:1240px;margin:0 auto;padding:14px 20px 40px}
+
+/* value-chain ribbon */
+.chain{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin:18px 0 8px;position:relative}
+.chain .link{position:relative;padding:14px 10px 14px 26px;color:#fff;font-weight:700;font-size:.9rem;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,0 100%,16px 50%);display:flex;flex-direction:column;gap:2px;min-height:64px;justify-content:center}
+.chain .link:first-child{clip-path:polygon(0 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,0 100%);padding-left:16px}
+body[data-lang=ar] .chain{direction:rtl}
+.chain .link small{font-weight:500;font-size:.72rem;opacity:.9}
+.link.c1{background:var(--capture)}.link.c2{background:var(--data)}.link.c3{background:var(--info)}
+.link.c4{background:var(--decision)}.link.c5{background:var(--action)}.link.c6{background:var(--impact)}
+@media(max-width:820px){.chain{grid-template-columns:repeat(2,1fr);gap:6px}.chain .link{clip-path:none!important;border-radius:8px;padding:12px!important}}
+
+.chain-note{text-align:center;color:var(--faint);font-size:.78rem;margin-bottom:20px}
+
+/* main diagram grid: modules feed into hub */
+.diagram{display:grid;grid-template-columns:1fr 300px 1fr;gap:22px;align-items:start}
+@media(max-width:980px){.diagram{grid-template-columns:1fr}}
+
+.col-title{font-size:.78rem;font-weight:700;color:var(--green-d);text-align:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--green-l)}
+
+.mod{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:13px 15px;margin-bottom:12px;cursor:pointer;transition:.18s;position:relative;border-left:4px solid var(--mc,var(--green))}
+body[data-lang=ar] .mod{border-left:1px solid var(--line);border-right:4px solid var(--mc,var(--green))}
+.mod:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(60,80,40,.16);border-color:var(--mc,var(--green))}
+.mod.active{background:var(--green-bg);border-color:var(--mc,var(--green))}
+.mod .mh{display:flex;align-items:center;gap:10px}
+.mod .mtag{width:34px;height:34px;border-radius:9px;background:var(--mc,var(--green));color:#fff;font-weight:800;font-size:.82rem;display:grid;place-items:center;flex:none}
+.mod .mttl{font-weight:700;font-size:.9rem;line-height:1.2}
+.mod .msub{color:var(--muted);font-size:.75rem;margin-top:1px}
+.mod .micon{margin-inline-start:auto;font-size:1.25rem;opacity:.85}
+.mod .mday{position:absolute;top:10px;inset-inline-end:12px;font-size:.66rem;color:var(--faint);font-weight:600}
+
+/* hub */
+.hub{position:sticky;top:90px}
+.hub-card{background:linear-gradient(160deg,#fff,var(--green-bg));border:2px solid var(--green);border-radius:20px;box-shadow:0 10px 30px rgba(90,143,44,.18);padding:22px 20px;text-align:center}
+.hub-cloud{width:96px;height:96px;margin:0 auto 12px;border-radius:50%;background:radial-gradient(120% 120% at 40% 30%,var(--green-l),var(--green-d));display:grid;place-items:center;box-shadow:0 6px 20px rgba(90,143,44,.35)}
+.hub-cloud svg{width:52px;height:52px}
+.hub-card h2{font-size:1.15rem;font-weight:800}.hub-card h2 span{color:var(--green-d)}
+.hub-card .hsub{color:var(--muted);font-size:.8rem;margin-top:4px}
+.hub-mods{margin-top:16px;display:flex;flex-direction:column;gap:7px;text-align:start}
+body[data-lang=ar] .hub-mods{text-align:right}
+.hub-mod{display:flex;align-items:center;gap:9px;font-size:.78rem;padding:7px 10px;background:#fff;border:1px solid var(--line);border-radius:9px}
+.hub-mod .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--hc,var(--green))}
+.hub-mod b{color:var(--ink)}
+
+.legend-flow{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;color:var(--faint);font-size:.72rem}
+.legend-flow .arr{color:var(--green)}
+
+/* detail panel */
+.detail{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;margin-top:24px;min-height:120px}
+.detail.empty{color:var(--faint);text-align:center;padding:40px;font-size:.9rem}
+.detail .dh{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.detail .dtag{width:46px;height:46px;border-radius:12px;background:var(--dc,var(--green));color:#fff;font-weight:800;font-size:1.05rem;display:grid;place-items:center;flex:none}
+.detail .dttl{font-size:1.15rem;font-weight:800}
+.detail .dsub{color:var(--muted);font-size:.85rem}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:760px){.detail-grid{grid-template-columns:1fr}}
+.dcol h4{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--dc,var(--green-d));margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.dcol ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+.dcol li{font-size:.83rem;color:var(--ink);padding-inline-start:16px;position:relative;line-height:1.45}
+.dcol li::before{content:"▸";position:absolute;inset-inline-start:0;color:var(--dc,var(--green))}
+.dcol.feeds li::before{content:"→";color:var(--green-d)}
+
+.flow-tag{display:inline-block;font-size:.7rem;font-weight:700;color:#fff;background:var(--dc,var(--green));padding:3px 10px;border-radius:20px;margin-bottom:10px}
+
+footer{text-align:center;color:var(--faint);font-size:.76rem;padding:24px;border-top:1px solid var(--line);margin-top:20px}
+
+/* lang visibility */
+body[data-lang=fr] [data-l]:not([data-l~=fr]){display:none}
+body[data-lang=en] [data-l]:not([data-l~=en]){display:none}
+body[data-lang=ar] [data-l]:not([data-l~=ar]){display:none}
+</style>
+</head>
+<body data-lang="fr">
+
+<header>
+  <div class="brand">
+    <div class="es-logo">ezzayra</div>
+    <div>
+      <div class="bt1">Agri<span>Manager</span></div>
+      <div class="bt2" data-l="fr">EZZAYRA Solutions · Value Chain</div>
+      <div class="bt2" data-l="en">EZZAYRA Solutions · Value Chain</div>
+      <div class="bt2" data-l="ar">إزّايرة سولوشنز · سلسلة القيمة</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="langsw">
+    <button class="on" onclick="setLang('fr',this)">Français</button>
+    <button onclick="setLang('en',this)">English</button>
+    <button onclick="setLang('ar',this)">العربية</button>
+  </div>
+</header>
+
+<div class="titlebar">
+  <h1 data-l="fr">Le cheminement de la formation dans AgriManager</h1>
+  <h1 data-l="en">The training pathway inside AgriManager</h1>
+  <h1 data-l="ar">مسار التكوين داخل AgriManager</h1>
+  <p data-l="fr">Chaque module (M1→M9) est un maillon de la chaîne de la donnée. Tous convergent vers la plateforme AgriManager qui les relie. Cliquez sur un module.</p>
+  <p data-l="en">Each module (M1→M9) is a link in the data chain. All converge into the AgriManager platform that connects them. Click a module.</p>
+  <p data-l="ar">كل وحدة (M1→M9) حلقة في سلسلة البيانات. تتجمّع جميعها في منصة AgriManager التي تربط بينها. انقر على وحدة.</p>
+</div>
+
+<div class="stage">
+
+  <!-- VALUE CHAIN RIBBON -->
+  <div class="chain">
+    <div class="link c1"><span data-l="fr">CAPTURE</span><span data-l="en">CAPTURE</span><span data-l="ar">الالتقاط</span><small data-l="fr">Capteurs, images</small><small data-l="en">Sensors, imagery</small><small data-l="ar">مجسّات، صور</small></div>
+    <div class="link c2"><span data-l="fr">DONNÉE</span><span data-l="en">DATA</span><span data-l="ar">البيانات</span><small data-l="fr">Mesures brutes</small><small data-l="en">Raw measures</small><small data-l="ar">قياسات خام</small></div>
+    <div class="link c3"><span data-l="fr">INFORMATION</span><span data-l="en">INFORMATION</span><span data-l="ar">المعلومة</span><small data-l="fr">Indices, bilans</small><small data-l="en">Indices, balances</small><small data-l="ar">مؤشرات، موازين</small></div>
+    <div class="link c4"><span data-l="fr">DÉCISION</span><span data-l="en">DECISION</span><span data-l="ar">القرار</span><small data-l="fr">Seuils, modèles</small><small data-l="en">Thresholds, models</small><small data-l="ar">عتبات، نماذج</small></div>
+    <div class="link c5"><span data-l="fr">ACTION</span><span data-l="en">ACTION</span><span data-l="ar">التنفيذ</span><small data-l="fr">Irrigation, traitement</small><small data-l="en">Irrigation, spraying</small><small data-l="ar">ريّ، معالجة</small></div>
+    <div class="link c6"><span data-l="fr">IMPACT</span><span data-l="en">IMPACT</span><span data-l="ar">الأثر</span><small data-l="fr">Rendement, économie</small><small data-l="en">Yield, savings</small><small data-l="ar">إنتاج، اقتصاد</small></div>
+  </div>
+  <div class="chain-note">
+    <span data-l="fr">Les 2 règles de M1 : (1) pas de donnée sans décision derrière · (2) la boucle prime sur la carte</span>
+    <span data-l="en">M1's 2 rules: (1) no data without a decision behind it · (2) the loop beats the map</span>
+    <span data-l="ar">قاعدتا الوحدة الأولى: (1) لا بيانات بلا قرار وراءها · (2) الحلقة أهم من الخريطة</span>
+  </div>
+
+  <!-- DIAGRAM -->
+  <div class="diagram">
+
+    <!-- LEFT: capture & data modules -->
+    <div>
+      <div class="col-title" data-l="fr">Terrain → Donnée</div>
+      <div class="col-title" data-l="en">Field → Data</div>
+      <div class="col-title" data-l="ar">الميدان ← البيانات</div>
+
+      <div class="mod" style="--mc:var(--capture)" data-mod="m2">
+        <div class="mday">J2</div>
+        <div class="mh"><div class="mtag">M2</div>
+          <div><div class="mttl" data-l="fr">Télédétection</div><div class="mttl" data-l="en">Remote sensing</div><div class="mttl" data-l="ar">الاستشعار عن بُعد</div>
+          <div class="msub" data-l="fr">Satellite · NDVI · GPS</div><div class="msub" data-l="en">Satellite · NDVI · GPS</div><div class="msub" data-l="ar">أقمار · NDVI · GPS</div></div>
+          <div class="micon">🛰️</div></div>
+      </div>
+
+      <div class="mod" style="--mc:var(--capture)" data-mod="m3">
+        <div class="mday">J3</div>
+        <div class="mh"><div class="mtag">M3</div>
+          <div><div class="mttl" data-l="fr">IoT &amp; capteurs de sol</div><div class="mttl" data-l="en">IoT &amp; soil sensors</div><div class="mttl" data-l="ar">إنترنت الأشياء والمجسّات</div>
+          <div class="msub" data-l="fr">Sondes · réseau · énergie</div><div class="msub" data-l="en">Probes · network · energy</div><div class="msub" data-l="ar">مجسّات · شبكة · طاقة</div></div>
+          <div class="micon">📡</div></div>
+      </div>
+
+      <div class="mod" style="--mc:var(--info)" data-mod="m4">
+        <div class="mday">J4</div>
+        <div class="mh"><div class="mtag">M4</div>
+          <div><div class="mttl" data-l="fr">Station météo &amp; ET₀</div><div class="mttl" data-l="en">Weather station &amp; ET₀</div><div class="mttl" data-l="ar">المحطة الجوية وET₀</div>
+          <div class="msub" data-l="fr">Bilan hydrique FAO-56</div><div class="msub" data-l="en">FAO-56 water balance</div><div class="msub" data-l="ar">الميزان المائي FAO-56</div></div>
+          <div class="micon">🌦️</div></div>
+      </div>
+    </div>
+
+    <!-- CENTER: hub -->
+    <div class="hub">
+      <div class="hub-card">
+        <div class="hub-cloud">
+          <svg viewBox="0 0 48 48" fill="none"><path d="M14 34h20a8 8 0 0 0 1-16 11 11 0 0 0-21-3 7 7 0 0 0 0 19Z" fill="#fff" opacity=".95"/><path d="M22 20c0 0 4-4 4-8m0 8c0 0 4-2 6-2" stroke="#5a8f2c" stroke-width="2" stroke-linecap="round"/><circle cx="24" cy="24" r="3" fill="#7cb342"/></svg>
+        </div>
+        <h2>Agri<span>Manager</span></h2>
+        <div class="hsub" data-l="fr">La plateforme qui relie tout</div>
+        <div class="hsub" data-l="en">The platform that connects it all</div>
+        <div class="hsub" data-l="ar">المنصّة التي تربط كل شيء</div>
+
+        <div class="hub-mods">
+          <div class="hub-mod" style="--hc:var(--decision)"><span class="dot"></span><span data-l="fr"><b>M5</b> — Pilotage irrigation</span><span data-l="en"><b>M5</b> — Irrigation control</span><span data-l="ar"><b>M5</b> — إدارة الريّ</span></div>
+          <div class="hub-mod" style="--hc:var(--action)"><span class="dot"></span><span data-l="fr"><b>M6</b> — FMIS (cockpit)</span><span data-l="en"><b>M6</b> — FMIS (cockpit)</span><span data-l="ar"><b>M6</b> — نظام إدارة المزرعة</span></div>
+          <div class="hub-mod" style="--hc:var(--data)"><span class="dot"></span><span data-l="fr"><b>M7</b> — Intelligence artificielle</span><span data-l="en"><b>M7</b> — Artificial intelligence</span><span data-l="ar"><b>M7</b> — الذكاء الاصطناعي</span></div>
+        </div>
+        <div class="legend-flow">
+          <span data-l="fr">Blocs</span><span data-l="en">Blocks</span><span data-l="ar">الكتل</span>
+          <span class="arr">⇄</span>
+          <span data-l="fr">Plateforme</span><span data-l="en">Platform</span><span data-l="ar">المنصّة</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: decision, action, impact modules -->
+    <div>
+      <div class="col-title" data-l="fr">Décision → Action → Impact</div>
+      <div class="col-title" data-l="en">Decision → Action → Impact</div>
+      <div class="col-title" data-l="ar">القرار ← التنفيذ ← الأثر</div>
+
+      <div class="mod" style="--mc:var(--decision)" data-mod="m5">
+        <div class="mday">J5–J6</div>
+        <div class="mh"><div class="mtag">M5</div>
+          <div><div class="mttl" data-l="fr">Irrigation intelligente</div><div class="mttl" data-l="en">Smart irrigation</div><div class="mttl" data-l="ar">الريّ الذكي</div>
+          <div class="msub" data-l="fr">Qualité eau · courbes · seuils</div><div class="msub" data-l="en">Water quality · curves · thresholds</div><div class="msub" data-l="ar">جودة الماء · منحنيات · عتبات</div></div>
+          <div class="micon">💧</div></div>
+      </div>
+
+      <div class="mod" style="--mc:var(--action)" data-mod="m6">
+        <div class="mday">J7</div>
+        <div class="mh"><div class="mtag">M6</div>
+          <div><div class="mttl" data-l="fr">FMIS — gestion de ferme</div><div class="mttl" data-l="en">FMIS — farm management</div><div class="mttl" data-l="ar">نظام إدارة المزرعة</div>
+          <div class="msub" data-l="fr">Coûts · traçabilité · AgriScore</div><div class="msub" data-l="en">Costs · traceability · AgriScore</div><div class="msub" data-l="ar">تكاليف · تتبّع · AgriScore</div></div>
+          <div class="micon">🏭</div></div>
+      </div>
+
+      <div class="mod" style="--mc:var(--data)" data-mod="m7">
+        <div class="mday">J7</div>
+        <div class="mh"><div class="mtag">M7</div>
+          <div><div class="mttl" data-l="fr">Intelligence artificielle</div><div class="mttl" data-l="en">Artificial intelligence</div><div class="mttl" data-l="ar">الذكاء الاصطناعي</div>
+          <div class="msub" data-l="fr">Vision · TomCast · prédiction</div><div class="msub" data-l="en">Vision · TomCast · prediction</div><div class="msub" data-l="ar">رؤية · TomCast · تنبّؤ</div></div>
+          <div class="micon">🤖</div></div>
+      </div>
+
+      <div class="mod" style="--mc:var(--impact)" data-mod="m8">
+        <div class="mday">J8</div>
+        <div class="mh"><div class="mtag">M8<br>M9</div>
+          <div><div class="mttl" data-l="fr">Curriculum &amp; plan d'action</div><div class="mttl" data-l="en">Curriculum &amp; action plan</div><div class="mttl" data-l="ar">المنهج وخطة العمل</div>
+          <div class="msub" data-l="fr">Transfert vers vos cours</div><div class="msub" data-l="en">Transfer into your courses</div><div class="msub" data-l="ar">النقل إلى مقرّراتكم</div></div>
+          <div class="micon">🎓</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- M1 anchor bar -->
+  <div class="mod" style="--mc:var(--green-d);margin-top:16px;cursor:pointer" data-mod="m1">
+    <div class="mday">J1</div>
+    <div class="mh"><div class="mtag" style="background:var(--green-d)">M1</div>
+      <div><div class="mttl" data-l="fr">M1 — Introduction à l'agriculture intelligente · le socle qui cadre toute la semaine</div>
+      <div class="mttl" data-l="en">M1 — Introduction to smart agriculture · the foundation framing the whole week</div>
+      <div class="mttl" data-l="ar">M1 — مدخل إلى الزراعة الذكية · الأساس الذي يؤطّر الأسبوع كاملاً</div>
+      <div class="msub" data-l="fr">La chaîne de la donnée · les 6 blocs · Poulina vs SICAM · écosystème libyen</div>
+      <div class="msub" data-l="en">The data chain · the 6 blocks · Poulina vs SICAM · Libyan ecosystem</div>
+      <div class="msub" data-l="ar">سلسلة البيانات · الكتل الستّ · Poulina مقابل SICAM · المنظومة الليبية</div></div>
+      <div class="micon">🧭</div></div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="detail empty" id="detail">
+    <span data-l="fr">Cliquez sur un module ci-dessus pour voir ce qu'il capte, ce qu'il alimente dans AgriManager, et le lien avec la visite de terrain.</span>
+    <span data-l="en">Click a module above to see what it captures, what it feeds into AgriManager, and the link to the field visit.</span>
+    <span data-l="ar">انقر على وحدة أعلاه لمعرفة ما تلتقطه، وما تُغذّيه في AgriManager، وارتباطه بالزيارة الميدانية.</span>
+  </div>
+
+</div>
+
+<footer>
+  <span data-l="fr">EU4Skills · Composante 3 — Économie verte et bleue · Expertise France — Libye · Formation Smart Agriculture &amp; Water Management, Tunis 2026</span>
+  <span data-l="en">EU4Skills · Component 3 — Green &amp; Blue Economy · Expertise France — Libya · Smart Agriculture &amp; Water Management training, Tunis 2026</span>
+  <span data-l="ar">EU4Skills · المكوّن الثالث — الاقتصاد الأخضر والأزرق · Expertise France — ليبيا · تكوين الزراعة الذكية وإدارة المياه، تونس 2026</span>
+</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+let LANG='fr';
+function setLang(l,btn){
+  LANG=l;document.body.dataset.lang=l;
+  document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr';
+  document.querySelectorAll('.langsw button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  if(current)renderDetail(current);
+}
+
+// module data : {tag, color, title{}, chain{}, captures{}, feeds{}, visit{}}
+const MODS={
+  m1:{tag:'M1',color:'var(--green-d)',flow:{fr:'Socle',en:'Foundation',ar:'الأساس'},
+    title:{fr:'Introduction à l\'agriculture intelligente',en:'Introduction to smart agriculture',ar:'مدخل إلى الزراعة الذكية'},
+    sub:{fr:'Jour 1 · le cadre de toute la semaine',en:'Day 1 · the frame for the whole week',ar:'اليوم 1 · إطار الأسبوع كله'},
+    a:{t:{fr:'Ce qu\'on pose',en:'What it sets',ar:'ما تُرسيه'},items:{
+      fr:['La chaîne CAPTURE→IMPACT','Les 6 blocs technologiques','2 règles : donnée→décision, boucle>carte'],
+      en:['The CAPTURE→IMPACT chain','The 6 technology blocks','2 rules: data→decision, loop>map'],
+      ar:['سلسلة الالتقاط→الأثر','الكتل التقنية الستّ','قاعدتان: بيانات→قرار، الحلقة>الخريطة']}},
+    b:{t:{fr:'Dans AgriManager',en:'In AgriManager',ar:'في AgriManager'},items:{
+      fr:['Donne la carte mentale de la plateforme','Situe chaque bloc sur la chaîne','Poulina vs SICAM : 2 stratégies'],
+      en:['Gives the platform\'s mental map','Places each block on the chain','Poulina vs SICAM: 2 strategies'],
+      ar:['يمنح الخريطة الذهنية للمنصّة','يضع كل كتلة على السلسلة','Poulina مقابل SICAM: استراتيجيتان']}},
+    c:{t:{fr:'Lien visite / cours',en:'Visit / course link',ar:'رابط الزيارة/المقرّر'},items:{
+      fr:['Poster écosystème libyen (ancre du coaching)','« La station enregistre déjà — vous lirez ses courbes »'],
+      en:['Libyan ecosystem poster (coaching anchor)','"The station is already recording — you\'ll read its curves"'],
+      ar:['ملصق المنظومة الليبية (مرجع المرافقة)','«المحطة تسجّل مسبقاً — ستقرؤون منحنياتها»']}}},
+
+  m2:{tag:'M2',color:'var(--capture)',flow:{fr:'Capture — vue du ciel',en:'Capture — from the sky',ar:'التقاط — من السماء'},
+    title:{fr:'Télédétection &amp; observation de la Terre',en:'Remote sensing &amp; Earth observation',ar:'الاستشعار عن بُعد ومراقبة الأرض'},
+    sub:{fr:'Jour 2 · satellite, NDVI, GPS',en:'Day 2 · satellite, NDVI, GPS',ar:'اليوم 2 · أقمار، NDVI، GPS'},
+    a:{t:{fr:'Ce qu\'il capte',en:'What it captures',ar:'ما تلتقطه'},items:{
+      fr:['Images Sentinel-2 (gratuit) / THR','NDVI, NDWI, NDRE par parcelle','Géoréférencement GPS/GNSS'],
+      en:['Sentinel-2 (free) / VHR imagery','NDVI, NDWI, NDRE per parcel','GPS/GNSS georeferencing'],
+      ar:['صور Sentinel-2 (مجاني)/عالية الدقة','NDVI وNDWI وNDRE لكل قطعة','التحديد الجغرافي GPS/GNSS']}},
+    b:{t:{fr:'Alimente dans AgriManager',en:'Feeds into AgriManager',ar:'يُغذّي في AgriManager'},items:{
+      fr:['Module Satellite (NDVI quotidien)','Bloc agriculture de précision','Détecte le stress avant l\'œil'],
+      en:['Satellite module (daily NDVI)','Precision-agriculture block','Spots stress before the eye'],
+      ar:['وحدة الأقمار (NDVI يومي)','كتلة الزراعة الدقيقة','يكشف الإجهاد قبل العين']}},
+    c:{t:{fr:'Lien visite / cours',en:'Visit / course link',ar:'رابط الزيارة/المقرّر'},items:{
+      fr:['Cas B-14 : « vous marcherez dessus mardi »','Pipeline zéro-budget : Sentinel-2 + QGIS'],
+      en:['Case B-14: "you\'ll walk on it Tuesday"','Zero-budget pipeline: Sentinel-2 + QGIS'],
+      ar:['حالة B-14: «ستمشون عليها الثلاثاء»','مسار بلا ميزانية: Sentinel-2 + QGIS']}}},
+
+  m3:{tag:'M3',color:'var(--capture)',flow:{fr:'Capture — au sol',en:'Capture — on the ground',ar:'التقاط — على الأرض'},
+    title:{fr:'IoT — capteurs de sol &amp; réseaux',en:'IoT — soil sensors &amp; networks',ar:'إنترنت الأشياء — مجسّات وشبكات'},
+    sub:{fr:'Jour 3 · sondes, LoRaWAN, énergie',en:'Day 3 · probes, LoRaWAN, energy',ar:'اليوم 3 · مجسّات، LoRaWAN، طاقة'},
+    a:{t:{fr:'Ce qu\'il capte',en:'What it captures',ar:'ما تلتقطه'},items:{
+      fr:['Humidité multi-profondeur (sonde capacitive)','CE / salinité, débit + pression','Nœud pédagogique ESP32 ~100 €'],
+      en:['Multi-depth moisture (capacitive probe)','EC / salinity, flow + pressure','ESP32 teaching node ~€100'],
+      ar:['رطوبة متعددة الأعماق (مجس سعوي)','ناقلية/ملوحة، تدفّق + ضغط','عقدة تعليمية ESP32 ~100€']}},
+    b:{t:{fr:'Alimente dans AgriManager',en:'Feeds into AgriManager',ar:'يُغذّي في AgriManager'},items:{
+      fr:['Bloc capteurs de sol','Architecture NŒUD→GATEWAY→PLATEFORME→TÉLÉPHONE','Alerte avant le symptôme'],
+      en:['Soil-sensors block','NODE→GATEWAY→PLATFORM→PHONE architecture','Alert before the symptom'],
+      ar:['كتلة مجسّات التربة','بنية عقدة→بوابة→منصّة→هاتف','تنبيه قبل ظهور العَرَض']}},
+    c:{t:{fr:'Lien visite / cours',en:'Visit / course link',ar:'رابط الزيارة/المقرّر'},items:{
+      fr:['Station S2 sondes de sol (Zitouna)','Mini-labo IoT universitaire budgété','Piézomètre 150 € (pont géologie)'],
+      en:['Soil-sensor station S2 (Zitouna)','Budgeted university IoT mini-lab','€150 piezometer (geology bridge)'],
+      ar:['محطة S2 مجسّات التربة (زيتونة)','مختبر IoT جامعي مصغّر مموّل','بيزومتر 150€ (جسر الجيولوجيا)']}}},
+
+  m4:{tag:'M4',color:'var(--info)',flow:{fr:'Donnée → Information',en:'Data → Information',ar:'بيانات ← معلومة'},
+    title:{fr:'Station météo, ET₀ &amp; bilan hydrique',en:'Weather station, ET₀ &amp; water balance',ar:'المحطة الجوية، ET₀ والميزان المائي'},
+    sub:{fr:'Jour 4 · FAO-56 Penman-Monteith',en:'Day 4 · FAO-56 Penman-Monteith',ar:'اليوم 4 · FAO-56 بنمان-مونتيث'},
+    a:{t:{fr:'Ce qu\'il transforme',en:'What it turns',ar:'ما تحوّله'},items:{
+      fr:['Météo brute → ET₀ (Penman-Monteith)','ETc = ET₀ × Kc','Bilan décadaire, RFU/TAW'],
+      en:['Raw weather → ET₀ (Penman-Monteith)','ETc = ET₀ × Kc','Ten-day balance, RFU/TAW'],
+      ar:['طقس خام ← ET₀ (بنمان-مونتيث)','ETc = ET₀ × Kc','ميزان عشري، RFU/TAW']}},
+    b:{t:{fr:'Alimente dans AgriManager',en:'Feeds into AgriManager',ar:'يُغذّي في AgriManager'},items:{
+      fr:['Module station météo','Calcul du besoin en eau (COMBIEN)','Modèles dérivés : GDD, TomCast'],
+      en:['Weather-station module','Water-need calculation (HOW MUCH)','Derived models: GDD, TomCast'],
+      ar:['وحدة المحطة الجوية','حساب الحاجة المائية (كَمْ)','نماذج مشتقّة: GDD، TomCast']}},
+    c:{t:{fr:'Lien visite / cours',en:'Visit / course link',ar:'رابط الزيارة/المقرّر'},items:{
+      fr:['Station S1 météo (audit terrain)','« Le bilan dit COMBIEN, la sonde dira QUAND »','200 mm pluie ≠ 200 mm recharge'],
+      en:['Weather station S1 (field audit)','"Balance says HOW MUCH, probe says WHEN"','200 mm rain ≠ 200 mm recharge'],
+      ar:['محطة S1 الأرصاد (تدقيق ميداني)','«الميزان يقول كَمْ، المجس يقول متى»','200 مم مطر ≠ 200 مم تغذية']}}},
+
+  m5:{tag:'M5',color:'var(--decision)',flow:{fr:'Information → Décision',en:'Information → Decision',ar:'معلومة ← قرار'},
+    title:{fr:'Irrigation intelligente (module phare)',en:'Smart irrigation (flagship module)',ar:'الريّ الذكي (الوحدة المحورية)'},
+    sub:{fr:'Jours 5–6 · cadre la visite de terrain',en:'Days 5–6 · frames the field visit',ar:'اليومان 5–6 · يؤطّران الزيارة'},
+    a:{t:{fr:'Ce qu\'il décide',en:'What it decides',ar:'ما يقرّره'},items:{
+      fr:['Qualité d\'eau : CE, SAR, lessivage','Lecture de courbes de sonde','Seuils par culture · RDI'],
+      en:['Water quality: EC, SAR, leaching','Probe-curve reading','Per-crop thresholds · RDI'],
+      ar:['جودة الماء: CE، SAR، غسل','قراءة منحنيات المجس','عتبات حسب المحصول · RDI']}},
+    b:{t:{fr:'Cœur d\'AgriManager',en:'Core of AgriManager',ar:'قلب AgriManager'},items:{
+      fr:['Module pilotage irrigation (IGS)','Programmation secteurs · télécommande · alertes','Croise M2+M3+M4 pour décider'],
+      en:['Irrigation-control module (IGS)','Sector programming · remote · alerts','Combines M2+M3+M4 to decide'],
+      ar:['وحدة إدارة الريّ (IGS)','برمجة القطاعات · تحكّم عن بُعد · تنبيهات','يجمع M2+M3+M4 لاتخاذ القرار']}},
+    c:{t:{fr:'Lien visite / cours',en:'Visit / course link',ar:'رابط الزيارة/المقرّر'},items:{
+      fr:['Station S3 contrôle irrigation (Zitouna)','Démo plateforme = l\'écran vu en salle de contrôle','Intervenant : Bechir Ben Brike'],
+      en:['Irrigation-control station S3 (Zitouna)','Platform demo = the control-room screen','Speaker: Bechir Ben Brike'],
+      ar:['محطة S3 التحكّم في الريّ (زيتونة)','عرض المنصّة = شاشة غرفة التحكّم','المتحدث: بشير بن بريكة']}}},
+
+  m6:{tag:'M6',color:'var(--action)',flow:{fr:'Décision → Action',en:'Decision → Action',ar:'قرار ← تنفيذ'},
+    title:{fr:'FMIS — le cockpit de la ferme',en:'FMIS — the farm cockpit',ar:'نظام إدارة المزرعة — قمرة القيادة'},
+    sub:{fr:'Jour 7 matin · où tout aboutit',en:'Day 7 morning · where it all lands',ar:'صباح اليوم 7 · حيث يتجمّع كل شيء'},
+    a:{t:{fr:'Ce qu\'il pilote',en:'What it runs',ar:'ما يديره'},items:{
+      fr:['Parcelles, opérations, intrants, main-d\'œuvre','Coûts &amp; coût de production','Traçabilité export · AgriScore'],
+      en:['Parcels, operations, inputs, labour','Costs &amp; cost of production','Export traceability · AgriScore'],
+      ar:['قطع، عمليات، مدخلات، يد عاملة','تكاليف وتكلفة الإنتاج','تتبّع التصدير · AgriScore']}},
+    b:{t:{fr:'Le hub d\'AgriManager',en:'AgriManager\'s hub',ar:'محور AgriManager'},items:{
+      fr:['Agrège TOUTES les données des modules','Cas Poulina : 43 fermes · SICAM : 2 614 parcelles','Registre forages = actif FMIS'],
+      en:['Aggregates ALL module data','Poulina: 43 farms · SICAM: 2,614 parcels','Borehole register = FMIS asset'],
+      ar:['يجمع كل بيانات الوحدات','Poulina: 43 مزرعة · SICAM: 2614 قطعة','سجل الآبار = أصل في النظام']}},
+    c:{t:{fr:'Lien visite / cours',en:'Visit / course link',ar:'رابط الزيارة/المقرّر'},items:{
+      fr:['Station S4 logiciel de gestion (Zitouna)','Traçabilité des lots (pépinière Mabrouka)','TP : trouver la culture déficitaire'],
+      en:['Management-software station S4 (Zitouna)','Batch traceability (Mabrouka nursery)','Lab: find the loss-making crop'],
+      ar:['محطة S4 برنامج الإدارة (زيتونة)','تتبّع الدفعات (مشتل مبروكة)','تطبيق: إيجاد المحصول الخاسر']}}},
+
+  m7:{tag:'M7',color:'var(--data)',flow:{fr:'La couche intelligente',en:'The intelligent layer',ar:'الطبقة الذكية'},
+    title:{fr:'Intelligence artificielle',en:'Artificial intelligence',ar:'الذكاء الاصطناعي'},
+    sub:{fr:'Jour 7 après-midi · Pr. W. Barhoumi',en:'Day 7 afternoon · Prof. W. Barhoumi',ar:'مساء اليوم 7 · أ. و. البرهومي'},
+    a:{t:{fr:'Ce qu\'elle ajoute',en:'What it adds',ar:'ما يضيفه'},items:{
+      fr:['Détection maladies par vision (ATLAS)','Prédiction de rendement','TomCast, classification satellitaire'],
+      en:['Disease detection by vision (ATLAS)','Yield prediction','TomCast, satellite classification'],
+      ar:['كشف الأمراض بالرؤية (ATLAS)','التنبّؤ بالمحصول','TomCast، تصنيف الأقمار']}},
+    b:{t:{fr:'Se nourrit d\'AgriManager',en:'Feeds on AgriManager',ar:'يتغذّى من AgriManager'},items:{
+      fr:['Données FMIS (M6) = matériel d\'entraînement','Prolonge M2 (classification)','Limites : explicabilité, coût/ha'],
+      en:['FMIS data (M6) = training material','Extends M2 (classification)','Limits: explainability, cost/ha'],
+      ar:['بيانات FMIS (M6) = مادة تدريب','يمدّد M2 (التصنيف)','حدود: قابلية التفسير، التكلفة/هكتار']}},
+    c:{t:{fr:'Lien visite / cours',en:'Visit / course link',ar:'رابط الزيارة/المقرّر'},items:{
+      fr:['Question d\'examen : quand un robot est-il justifié ?','Cas géologie : prévision piézométrique','L\'humain tranche sous confiance faible'],
+      en:['Exam question: when is a robot justified?','Geology case: piezometric forecasting','Human decides under low confidence'],
+      ar:['سؤال الامتحان: متى يُبرَّر الروبوت؟','حالة جيولوجيا: تنبّؤ بيزومتري','الإنسان يقرّر عند ضعف الثقة']}}},
+
+  m8:{tag:'M8·M9',color:'var(--impact)',flow:{fr:'Action → Impact durable',en:'Action → Lasting impact',ar:'تنفيذ ← أثر مستدام'},
+    title:{fr:'Curriculum &amp; plan d\'action',en:'Curriculum &amp; action plan',ar:'المنهج وخطة العمل'},
+    sub:{fr:'Jour 8 · le transfert vers vos cours',en:'Day 8 · transfer into your courses',ar:'اليوم 8 · النقل إلى مقرّراتكم'},
+    a:{t:{fr:'Ce qu\'on produit',en:'What it produces',ar:'ما يُنتَج'},items:{
+      fr:['Analyse des écarts (gap map)','Plan d\'action par université','Mini-labo IoT budgété'],
+      en:['Gap analysis (gap map)','Action plan per university','Budgeted IoT mini-lab'],
+      ar:['تحليل الفجوات','خطة عمل لكل جامعة','مختبر IoT مصغّر مموّل']}},
+    b:{t:{fr:'Ce qui reste après',en:'What remains after',ar:'ما يبقى بعدها'},items:{
+      fr:['Boîte à outils : 14 ressources','Glossaire trilingue','Phase de coaching (suite M8–M9)'],
+      en:['Toolkit: 14 resources','Trilingual glossary','Coaching phase (M8–M9 continued)'],
+      ar:['حقيبة أدوات: 14 مورداً','مسرد ثلاثي اللغة','مرحلة المرافقة (تتمّة M8–M9)']}},
+    c:{t:{fr:'Lien visite / cours',en:'Visit / course link',ar:'رابط الزيارة/المقرّر'},items:{
+      fr:['Reprend le poster écosystème (M1)','« Ce que je ferai autrement dès la rentrée »','Post-test + certificats'],
+      en:['Reuses the ecosystem poster (M1)','"What I\'ll do differently next term"','Post-test + certificates'],
+      ar:['يستعيد ملصق المنظومة (M1)','«ما سأفعله مختلفاً مع الدخول»','اختبار بعدي + شهادات']}}}
+};
+
+let current=null;
+document.querySelectorAll('.mod').forEach(m=>m.addEventListener('click',()=>{
+  document.querySelectorAll('.mod').forEach(x=>x.classList.remove('active'));
+  m.classList.add('active');
+  current=m.dataset.mod;
+  renderDetail(current);
+  $('detail').scrollIntoView({behavior:'smooth',block:'nearest'});
+}));
+
+function renderDetail(key){
+  const d=MODS[key];const L=LANG;
+  const col=(c)=>`<div class="dcol ${c===d.b?'feeds':''}"><h4>${c.t[L]}</h4><ul>${c.items[L].map(i=>`<li>${i}</li>`).join('')}</ul></div>`;
+  $('detail').classList.remove('empty');
+  $('detail').style.setProperty('--dc',d.color);
+  $('detail').innerHTML=`
+    <div class="flow-tag">${d.flow[L]}</div>
+    <div class="dh">
+      <div class="dtag">${d.tag}</div>
+      <div><div class="dttl">${d.title[L]}</div><div class="dsub">${d.sub[L]}</div></div>
+    </div>
+    <div class="detail-grid">${col(d.a)}${col(d.b)}${col(d.c)}</div>`;
+}
+</script>
+</body>
+</html>

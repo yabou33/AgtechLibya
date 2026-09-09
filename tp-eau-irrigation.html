@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TP guidé — Météo, Eau & Irrigation · d4</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .wrap{max-width:940px}
+  .lead{color:var(--muted);max-width:900px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .d4{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#2f8fca,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;box-shadow:var(--shadow)}
+  .hero h1{font-size:23px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  .progwrap{position:sticky;top:63px;z-index:900;background:var(--paper);padding:10px 0 4px;margin-bottom:4px}
+  .progbar{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:12px 18px}
+  .progtrack{flex:1;height:12px;border-radius:8px;background:var(--green-bg);overflow:hidden;border:1px solid var(--line)}
+  .progfill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--impact));transition:width .35s}
+  .progtxt{font-weight:800;font-size:13.5px;color:var(--green-d);white-space:nowrap;font-variant-numeric:tabular-nums;direction:ltr}
+  .progsteps{display:flex;gap:6px}
+  .dot{width:13px;height:13px;border-radius:50%;background:var(--green-bg);border:1.5px solid var(--line)}
+  .dot.done{background:var(--green);border-color:var(--green-d)}
+  @media(max-width:620px){.progsteps{display:none}}
+  .step{border-inline-start:4px solid var(--sc,var(--green))}
+  body[dir="rtl"] .step{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--sc,var(--green))}
+  .step .head{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .step .n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--sc,var(--green));
+    color:#fff;font-size:16px;font-weight:800;flex:none}
+  .step h2{font-size:16.5px;margin:0}
+  .step .app-of{font-size:11.5px;color:var(--muted);font-weight:600}
+  .consigne{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 15px;margin:10px 0;
+    font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .consigne b{color:var(--green-d)}
+  .openbtn{margin:8px 0 4px}
+  .qblock{margin-top:14px}
+  .qlabel{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:7px;display:block}
+  .qlabel .u{font-weight:600;color:var(--muted);font-size:12px}
+  input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;
+    font:inherit;color:var(--ink);background:#fff}
+  input:focus,textarea:focus{outline:none;border-color:var(--green)}
+  textarea{min-height:66px;resize:vertical}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;
+    font-size:13.5px;background:#fff;transition:.14s}
+  .opt:hover{border-color:var(--green)}
+  .opt input{accent-color:var(--green);width:16px;height:16px;flex:none}
+  .opt.sel{background:var(--green-bg);border-color:var(--green)}
+  .opt.good{background:#eef8ef;border-color:#8ecb96}
+  .opt.bad{background:#fbecea;border-color:#e3a8a1}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row2{grid-template-columns:1fr}}
+  .fb{margin-top:10px;font-size:13px;border-radius:10px;padding:10px 14px;line-height:1.55;display:none}
+  .fb.show{display:block}
+  .fb.ok{background:#eef8ef;border:1px solid #bfe3c3;color:#2f7d3a}
+  .fb.no{background:#fbecea;border:1px solid #eecac5;color:#b23b30}
+  .fb.info{background:#eaf3fa;border:1px solid #bcd9ec;color:#25607f}
+  .stepfoot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+  .chk{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer}
+  .chk input{width:19px;height:19px;accent-color:var(--green)}
+  .scorebox{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:linear-gradient(120deg,#eef8ef,#f6fbf0);
+    border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px;margin-top:8px}
+  .scoredial{width:82px;height:82px;border-radius:50%;flex:none;display:grid;place-items:center;
+    background:conic-gradient(var(--impact) var(--p,0deg),#e3efd8 0);position:relative}
+  .scoredial::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+  .scoredial b{position:relative;z-index:1;font-size:18px;font-weight:800;color:var(--green-d)}
+  .scoreinfo .st{font-weight:800;font-size:15px;color:var(--ink)}
+  .scoreinfo .sd{font-size:13px;color:var(--muted);margin-top:2px}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:4px}
+  .modebadge{font-size:11.5px;color:var(--muted)}
+  .modebadge b{color:var(--green-d)}
+  .backlink{font-size:13px;font-weight:700;color:var(--green-d)}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:20px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">EAU</span> <b data-i18n="t_brand">TP Eau</b> <span data-i18n="t_brand2">& Irrigation</span></div>
+  <div class="sub" data-i18n="t_sub">Travaux pratiques guidés · 5 étapes manipulées</div>
+  <div class="right">
+    <span class="chip">d4 · <span data-i18n="t_lab_chip">TP</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="d4">EAU</div>
+    <div>
+      <h1 data-i18n="t_title">TP guidé — Météo, Eau & Irrigation</h1>
+      <div class="tag" data-i18n="t_tag">Manipulez les applications du domaine, étape par étape</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="t_intro"></p>
+  <a class="backlink" href="cours-eau-irrigation.html">← <span data-i18n="t_back">Revoir le cours</span></a>
+
+  <!-- PROGRESS -->
+  <div class="progwrap">
+    <div class="progbar">
+      <span class="progtxt" id="ptxt">0 / 5</span>
+      <div class="progtrack"><div class="progfill" id="pfill"></div></div>
+      <div class="progsteps" id="pdots"></div>
+    </div>
+  </div>
+
+  <!-- ETAPE 1 -->
+  <div class="card step" style="--sc:#2f8fca">
+    <div class="head"><span class="n">1</span>
+      <div><h2 data-i18n="t_s1_h">Calculer l'ET₀</h2><div class="app-of" data-i18n="t_s1_app">App · Météo & ET₀</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s1_c"></div>
+    <a class="btn primary openbtn" href="meteo-et0.html" target="_blank" rel="noopener">🌤️ <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s1_q1">ET₀ moyenne lue <span class="u">mm/j</span></label><input type="number" step="0.1" data-f="s1_et0" placeholder="ex. 5.8"></div>
+        <div><label class="qlabel" data-i18n="t_s1_q2">Méthode utilisée</label><input type="text" data-f="s1_method" placeholder="Penman-Monteith / Hargreaves"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s1_q3">Quelle variable N'entre PAS dans Penman-Monteith ?</label>
+      <div class="opts" data-q="s1a">
+        <label class="opt"><input type="radio" name="s1a" value="0"><span data-i18n="t_s1_o1">Le rayonnement net</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="1"><span data-i18n="t_s1_o2">La vitesse du vent</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="2"><span data-i18n="t_s1_o3">Le pH du sol</span></label>
+      </div>
+      <div class="fb" data-fb="s1a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="1"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 2 -->
+  <div class="card step" style="--sc:#3fa66a">
+    <div class="head"><span class="n">2</span>
+      <div><h2 data-i18n="t_s2_h">Planifier le besoin brut</h2><div class="app-of" data-i18n="t_s2_app">App · Planificateur d'irrigation</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s2_c"></div>
+    <a class="btn primary openbtn" href="planificateur-irrigation.html" target="_blank" rel="noopener">📅 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s2_q1">Besoin brut du cycle relevé <span class="u">mm</span></label><input type="number" data-f="s2_gross" placeholder="ex. 620"></div>
+        <div><label class="qlabel" data-i18n="t_s2_q2">Efficience du système choisi <span class="u">%</span></label><input type="number" data-f="s2_eff" placeholder="90 / 75 / 55"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s2_q3">En activant le « forage plafonné », que devient la demande au pic ?</label>
+      <div class="opts" data-q="s2a">
+        <label class="opt"><input type="radio" name="s2a" value="0"><span data-i18n="t_s2_o1">Elle passe entièrement, le plafond ne change rien</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="1"><span data-i18n="t_s2_o2">Un déficit contrôlé apparaît car la demande dépasse le débit max</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="2"><span data-i18n="t_s2_o3">La demande devient nulle</span></label>
+      </div>
+      <div class="fb" data-fb="s2a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="2"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 3 -->
+  <div class="card step" style="--sc:#8e6fc7">
+    <div class="head"><span class="n">3</span>
+      <div><h2 data-i18n="t_s3_h">Évaluer la qualité de l'eau</h2><div class="app-of" data-i18n="t_s3_app">App · Qualité de l'eau</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s3_c"></div>
+    <a class="btn primary openbtn" href="J5/sim-qualite-eau.html" target="_blank" rel="noopener">🧪 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s3_q1">CE relevée <span class="u">dS/m</span></label><input type="number" step="0.1" data-f="s3_ce" placeholder="ex. 2.4"></div>
+        <div><label class="qlabel" data-i18n="t_s3_q2">SAR relevé</label><input type="number" step="0.1" data-f="s3_sar" placeholder="ex. 8"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s3_q3">Que mesure principalement le SAR ?</label>
+      <div class="opts" data-q="s3a">
+        <label class="opt"><input type="radio" name="s3a" value="0"><span data-i18n="t_s3_o1">La salinité totale de l'eau</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="1"><span data-i18n="t_s3_o2">Le risque de dégradation de la structure du sol par le sodium</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="2"><span data-i18n="t_s3_o3">La température de l'eau</span></label>
+      </div>
+      <div class="fb" data-fb="s3a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="3"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 4 -->
+  <div class="card step" style="--sc:#e0912b">
+    <div class="head"><span class="n">4</span>
+      <div><h2 data-i18n="t_s4_h">Énergie & coût de pompage</h2><div class="app-of" data-i18n="t_s4_app">App · Simulateur de pompage</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s4_c"></div>
+    <a class="btn primary openbtn" href="J5/sim-pompage.html" target="_blank" rel="noopener">⚡ <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s4_q1">Énergie relevée <span class="u">kWh</span></label><input type="number" data-f="s4_energy" placeholder="ex. 1200"></div>
+        <div><label class="qlabel" data-i18n="t_s4_q2">Coût estimé <span class="u">(devise libre)</span></label><input type="text" data-f="s4_cost" placeholder="ex. …"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s4_q3">Si la HMT augmente (nappe plus profonde), l'énergie de pompage…</label>
+      <div class="opts" data-q="s4a">
+        <label class="opt"><input type="radio" name="s4a" value="0"><span data-i18n="t_s4_o1">diminue</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="1"><span data-i18n="t_s4_o2">reste identique</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="2"><span data-i18n="t_s4_o3">augmente proportionnellement</span></label>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s4_q4">Votre interprétation en une phrase <span class="u">(champ libre)</span></label>
+      <textarea data-f="s4_interp" placeholder="…"></textarea>
+      <div class="fb" data-fb="s4a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="4"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 5 : SYNTHESE -->
+  <div class="card step" style="--sc:#d1584e">
+    <div class="head"><span class="n">5</span>
+      <div><h2 data-i18n="t_s5_h">Synthèse — QCM auto-corrigé</h2><div class="app-of" data-i18n="t_s5_app">Évaluation · score /5</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s5_c"></div>
+    <div id="quiz"></div>
+    <label class="qlabel" style="margin-top:8px" data-i18n="t_s5_free">Ce que vous retenez de ce TP <span class="u">(champ libre)</span></label>
+    <textarea data-f="s5_takeaway" placeholder="…"></textarea>
+    <div class="btns"><button class="btn primary" id="correctBtn">✅ <span data-i18n="t_correct">Corriger le QCM</span></button></div>
+    <div class="scorebox" id="scorebox" hidden>
+      <div class="scoredial" id="dial"><b id="scoreval">0/5</b></div>
+      <div class="scoreinfo"><div class="st" id="scoretitle"></div><div class="sd" id="scoredesc"></div></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="5"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- OUTILS -->
+  <div class="card">
+    <div class="tools">
+      <div class="modebadge" data-i18n="t_mode">Mode local (localStorage) — progression sauvegardée automatiquement.</div>
+      <div class="btns" style="margin:0">
+        <button class="btn ghost" id="exportBtn">📤 <span data-i18n="t_export">Exporter le compte-rendu (JSON)</span></button>
+        <button class="btn ghost" id="resetBtn">♻️ <span data-i18n="t_reset">Réinitialiser</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="t_foot">Plateforme AgriTech Libye · EU4Skills — Domaine d4 · travaux pratiques</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  t_brand:{fr:"TP Eau",ar:"عمل تطبيقي ماء",en:"Water Lab"},
+  t_brand2:{fr:"& Irrigation",ar:"وريّ",en:"& Irrigation"},
+  t_sub:{fr:"Travaux pratiques guidés · 5 étapes manipulées",ar:"عمل تطبيقي موجّه · 5 خطوات",en:"Guided lab · 5 hands-on steps"},
+  t_lab_chip:{fr:"TP",ar:"تطبيقي",en:"Lab"},
+  t_title:{fr:"TP guidé — Météo, Eau & Irrigation",ar:"عمل تطبيقي موجّه — المناخ والماء والري",en:"Guided lab — Weather, Water & Irrigation"},
+  t_tag:{fr:"Manipulez les applications du domaine, étape par étape",ar:"استعمل تطبيقات المجال خطوة بخطوة",en:"Work through the domain's apps, step by step"},
+  t_intro:{fr:"Ce TP vous fait <b>manipuler</b> les applications du domaine d4. À chaque étape : une consigne, un bouton pour <b>ouvrir l'app</b> dans un nouvel onglet, une ou deux réponses à saisir, puis une case « étape terminée ». Votre progression et vos réponses sont <b>sauvegardées automatiquement</b> ; à la fin, exportez votre compte-rendu.",
+    ar:"يجعلك هذا العمل التطبيقي <b>تستعمل</b> تطبيقات المجال d4. في كل خطوة: تعليمة، وزرّ <b>لفتح التطبيق</b> في تبويب جديد، وإجابة أو إجابتان، ثم خانة «تمّت الخطوة». تُحفظ تقدّمك وإجاباتك <b>تلقائياً</b>؛ وفي النهاية صدّر تقريرك.",
+    en:"This lab makes you <b>use</b> the domain d4 apps. At each step: an instruction, a button to <b>open the app</b> in a new tab, one or two answers to enter, then a \"step done\" box. Your progress and answers are <b>saved automatically</b>; at the end, export your report."},
+  t_back:{fr:"Revoir le cours",ar:"مراجعة الدرس",en:"Back to course"},
+  t_open:{fr:"Ouvrir l'app",ar:"فتح التطبيق",en:"Open the app"},
+  t_done:{fr:"Étape terminée",ar:"تمّت الخطوة",en:"Step done"},
+
+  // Step 1
+  t_s1_h:{fr:"Calculer l'ET₀",ar:"حساب ET₀",en:"Compute ET₀"},
+  t_s1_app:{fr:"App · Météo & ET₀",ar:"تطبيق · المناخ و ET₀",en:"App · Weather & ET₀"},
+  t_s1_c:{fr:"Ouvrez l'app Météo & ET₀ et <b>chargez la démo</b>. Laissez le calcul <b>Penman-Monteith</b> s'exécuter, puis lisez l'<b>ET₀ moyenne</b> (mm/jour) affichée et notez-la.",
+    ar:"افتح تطبيق المناخ و ET₀ و<b>حمّل النموذج</b>. اترك حساب <b>بنمان-مونتيث</b> يُنفَّذ، ثم اقرأ <b>ET₀ المتوسّط</b> (ملم/يوم) المعروض وسجّله.",
+    en:"Open the Weather & ET₀ app and <b>load the demo</b>. Let the <b>Penman-Monteith</b> computation run, then read the displayed <b>mean ET₀</b> (mm/day) and note it."},
+  t_s1_q1:{fr:"ET₀ moyenne lue",ar:"ET₀ المتوسّط المقروء",en:"Mean ET₀ read"},
+  t_s1_q2:{fr:"Méthode utilisée",ar:"الطريقة المستعملة",en:"Method used"},
+  t_s1_q3:{fr:"Quelle variable N'entre PAS dans Penman-Monteith ?",ar:"أي متغيّر لا يدخل في بنمان-مونتيث؟",en:"Which variable does NOT enter Penman-Monteith?"},
+  t_s1_o1:{fr:"Le rayonnement net",ar:"الإشعاع الصافي",en:"Net radiation"},
+  t_s1_o2:{fr:"La vitesse du vent",ar:"سرعة الرياح",en:"Wind speed"},
+  t_s1_o3:{fr:"Le pH du sol",ar:"حموضة التربة (pH)",en:"Soil pH"},
+  t_s1_fb_ok:{fr:"Exact : Penman-Monteith combine rayonnement, température, humidité et vent — le pH du sol n'a rien à y faire.",ar:"صحيح: بنمان-مونتيث يجمع الإشعاع والحرارة والرطوبة والرياح — وحموضة التربة لا شأن لها.",en:"Correct: Penman-Monteith combines radiation, temperature, humidity and wind — soil pH has no role."},
+  t_s1_fb_no:{fr:"Non : rayonnement, vent et humidité sont bien des entrées ; le pH du sol, non.",ar:"لا: الإشعاع والرياح والرطوبة مدخلات؛ أما حموضة التربة فلا.",en:"No: radiation, wind and humidity are inputs; soil pH is not."},
+  t_s1_fb_range:{fr:" La valeur d'ET₀ saisie est inhabituelle (attendu ≈ 2–12 mm/j) — vérifiez la lecture.",ar:" قيمة ET₀ المُدخَلة غير معتادة (المتوقّع ≈ 2–12 ملم/يوم) — تحقّق من القراءة.",en:" Your ET₀ value is unusual (expected ≈ 2–12 mm/day) — check the reading."},
+
+  // Step 2
+  t_s2_h:{fr:"Planifier le besoin brut",ar:"جدولة الحاجة الإجمالية",en:"Plan the gross need"},
+  t_s2_app:{fr:"App · Planificateur d'irrigation",ar:"تطبيق · مخطِّط الري",en:"App · Irrigation planner"},
+  t_s2_c:{fr:"Ouvrez le planificateur, choisissez une <b>culture</b> et un <b>climat</b>, et laissez-le bâtir le planning décadaire. Lisez le <b>besoin brut du cycle</b> (mm) et notez-le. Activez ensuite le <b>« forage plafonné »</b> et observez le déficit qui apparaît au pic.",
+    ar:"افتح المخطِّط، اختر <b>محصولاً</b> و<b>مناخاً</b>، ودعه يبني الجدولة العشرية. اقرأ <b>الحاجة الإجمالية للدورة</b> (ملم) وسجّلها. ثم فعّل <b>«البئر المحدود»</b> ولاحظ العجز الذي يظهر عند الذروة.",
+    en:"Open the planner, choose a <b>crop</b> and a <b>climate</b>, and let it build the ten-day schedule. Read the <b>gross need for the cycle</b> (mm) and note it. Then switch on the <b>\"capped borehole\"</b> and watch the deficit appear at the peak."},
+  t_s2_q1:{fr:"Besoin brut du cycle relevé",ar:"الحاجة الإجمالية للدورة المسجَّلة",en:"Cycle gross need noted"},
+  t_s2_q2:{fr:"Efficience du système choisi",ar:"كفاءة النظام المختار",en:"Chosen system efficiency"},
+  t_s2_q3:{fr:"En activant le « forage plafonné », que devient la demande au pic ?",ar:"بتفعيل «البئر المحدود»، ماذا يحدث للطلب عند الذروة؟",en:"With the \"capped borehole\" on, what happens to peak demand?"},
+  t_s2_o1:{fr:"Elle passe entièrement, le plafond ne change rien",ar:"تمرّ كاملة، السقف لا يغيّر شيئاً",en:"It all passes, the cap changes nothing"},
+  t_s2_o2:{fr:"Un déficit contrôlé apparaît car la demande dépasse le débit max",ar:"يظهر عجز محكوم لأن الطلب يتجاوز التدفّق الأقصى",en:"A controlled deficit appears since demand exceeds the max flow"},
+  t_s2_o3:{fr:"La demande devient nulle",ar:"يصبح الطلب معدوماً",en:"Demand becomes zero"},
+  t_s2_fb_ok:{fr:"Exact : au pic, la demande brute peut dépasser le débit du forage → déficit contrôlé (RDI) sur les stades les moins sensibles.",ar:"صحيح: عند الذروة قد يتجاوز الطلب الإجمالي تدفّق البئر ← عجز محكوم (RDI) على الأطوار الأقلّ حساسية.",en:"Correct: at the peak, gross demand may exceed the borehole flow → controlled deficit (RDI) on the least sensitive stages."},
+  t_s2_fb_no:{fr:"Non : le plafond borne le débit ; quand la demande le dépasse, un déficit contrôlé apparaît.",ar:"لا: السقف يحدّ التدفّق؛ وحين يتجاوزه الطلب يظهر عجز محكوم.",en:"No: the cap limits the flow; when demand exceeds it, a controlled deficit appears."},
+
+  // Step 3
+  t_s3_h:{fr:"Évaluer la qualité de l'eau",ar:"تقييم جودة الماء",en:"Assess water quality"},
+  t_s3_app:{fr:"App · Qualité de l'eau",ar:"تطبيق · جودة الماء",en:"App · Water quality"},
+  t_s3_c:{fr:"Ouvrez le simulateur de qualité d'eau et <b>évaluez une eau</b> : renseignez ou chargez ses ions, lisez la <b>CE</b> et le <b>SAR</b>, puis lisez le <b>verdict</b> d'aptitude à l'irrigation.",
+    ar:"افتح محاكي جودة الماء و<b>قيّم ماءً</b>: أدخل أو حمّل أيوناته، اقرأ <b>CE</b> و<b>SAR</b>، ثم اقرأ <b>الحكم</b> على صلاحيته للري.",
+    en:"Open the water-quality simulator and <b>assess a water</b>: enter or load its ions, read the <b>CE</b> and <b>SAR</b>, then read the irrigation-fitness <b>verdict</b>."},
+  t_s3_q1:{fr:"CE relevée",ar:"CE المقروءة",en:"CE read"},
+  t_s3_q2:{fr:"SAR relevé",ar:"SAR المقروء",en:"SAR read"},
+  t_s3_q3:{fr:"Que mesure principalement le SAR ?",ar:"ماذا يقيس SAR أساساً؟",en:"What does SAR mainly measure?"},
+  t_s3_o1:{fr:"La salinité totale de l'eau",ar:"الملوحة الكلية للماء",en:"The water's total salinity"},
+  t_s3_o2:{fr:"Le risque de dégradation de la structure du sol par le sodium",ar:"خطر تدهور بنية التربة بالصوديوم",en:"The risk of soil structure damage by sodium"},
+  t_s3_o3:{fr:"La température de l'eau",ar:"حرارة الماء",en:"The water temperature"},
+  t_s3_fb_ok:{fr:"Exact : le SAR mesure le risque sodique (structure du sol) ; c'est la CE qui mesure la salinité totale.",ar:"صحيح: SAR يقيس الخطر الصودي (بنية التربة)؛ أما CE فتقيس الملوحة الكلية.",en:"Correct: SAR measures the sodic risk (soil structure); it is CE that measures total salinity."},
+  t_s3_fb_no:{fr:"Non : la salinité totale, c'est la CE. Le SAR cible le sodium et la dégradation de structure.",ar:"لا: الملوحة الكلية هي CE. أما SAR فيستهدف الصوديوم وتدهور البنية.",en:"No: total salinity is CE. SAR targets sodium and structural breakdown."},
+
+  // Step 4
+  t_s4_h:{fr:"Énergie & coût de pompage",ar:"طاقة وكلفة الضخ",en:"Pumping energy & cost"},
+  t_s4_app:{fr:"App · Simulateur de pompage",ar:"تطبيق · محاكي الضخ",en:"App · Pumping simulator"},
+  t_s4_c:{fr:"Ouvrez le simulateur de pompage. Réglez la <b>HMT</b>, le <b>rendement</b> et le <b>débit</b>, faites tourner le calcul et lisez l'<b>énergie</b> (kWh) puis le <b>coût</b> du pompage. Notez-les et interprétez.",
+    ar:"افتح محاكي الضخ. اضبط <b>HMT</b> و<b>المردود</b> و<b>التدفّق</b>، شغّل الحساب واقرأ <b>الطاقة</b> (ك.و.س) ثم <b>الكلفة</b>. سجّلهما وفسّر.",
+    en:"Open the pumping simulator. Set the <b>TDH</b>, the <b>efficiency</b> and the <b>flow</b>, run the computation and read the <b>energy</b> (kWh) then the pumping <b>cost</b>. Note them and interpret."},
+  t_s4_q1:{fr:"Énergie relevée",ar:"الطاقة المقروءة",en:"Energy read"},
+  t_s4_q2:{fr:"Coût estimé",ar:"الكلفة المقدَّرة",en:"Estimated cost"},
+  t_s4_q3:{fr:"Si la HMT augmente (nappe plus profonde), l'énergie de pompage…",ar:"إذا زادت HMT (طبقة أعمق)، فإن طاقة الضخ…",en:"If TDH rises (deeper aquifer), the pumping energy…"},
+  t_s4_o1:{fr:"diminue",ar:"تنخفض",en:"decreases"},
+  t_s4_o2:{fr:"reste identique",ar:"تبقى كما هي",en:"stays the same"},
+  t_s4_o3:{fr:"augmente proportionnellement",ar:"تزيد بشكل متناسب",en:"increases proportionally"},
+  t_s4_q4:{fr:"Votre interprétation en une phrase",ar:"تفسيرك في جملة",en:"Your interpretation in one sentence"},
+  t_s4_fb_ok:{fr:"Exact : l'énergie est proportionnelle à la HMT — plus la nappe est profonde, plus le pompage coûte cher.",ar:"صحيح: الطاقة متناسبة مع HMT — كلما زاد عمق الطبقة زادت كلفة الضخ.",en:"Correct: energy is proportional to TDH — the deeper the aquifer, the costlier the pumping."},
+  t_s4_fb_no:{fr:"Non : P ∝ HMT. Une HMT plus grande augmente l'énergie et donc le coût.",ar:"لا: P ∝ HMT. زيادة HMT ترفع الطاقة وبالتالي الكلفة.",en:"No: P ∝ TDH. A larger TDH raises energy and thus cost."},
+
+  // Step 5 quiz
+  t_s5_h:{fr:"Synthèse — QCM auto-corrigé",ar:"التركيب — اختبار ذاتي التصحيح",en:"Synthesis — self-marked quiz"},
+  t_s5_app:{fr:"Évaluation · score /5",ar:"تقييم · النتيجة /5",en:"Assessment · score /5"},
+  t_s5_c:{fr:"Répondez aux cinq questions puis cliquez sur <b>Corriger</b>. Votre score et vos réponses sont enregistrés.",ar:"أجب عن الأسئلة الخمسة ثم اضغط <b>تصحيح</b>. تُحفظ نتيجتك وإجاباتك.",en:"Answer the five questions then click <b>Correct</b>. Your score and answers are saved."},
+  t_s5_free:{fr:"Ce que vous retenez de ce TP",ar:"ما تحتفظ به من هذا العمل التطبيقي",en:"Your takeaway from this lab"},
+  t_correct:{fr:"Corriger le QCM",ar:"تصحيح الاختبار",en:"Correct the quiz"},
+
+  q1:{fr:"Que représente l'ET₀ ?",ar:"ماذا يمثّل ET₀؟",en:"What does ET₀ represent?"},
+  q1a:{fr:"La demande climatique d'une culture de référence (gazon)",ar:"الطلب المناخي لمحصول مرجعي (عشب)",en:"The climatic demand of a reference crop (grass)"},
+  q1b:{fr:"La quantité de pluie tombée",ar:"كمية المطر الساقطة",en:"The amount of rain that fell"},
+  q1c:{fr:"La salinité de l'eau d'irrigation",ar:"ملوحة ماء الري",en:"The salinity of the irrigation water"},
+  q2:{fr:"Comment obtient-on la demande de la culture ETc ?",ar:"كيف نحصل على طلب المحصول ETc؟",en:"How is the crop demand ETc obtained?"},
+  q2a:{fr:"ETc = Kc · ET₀ (coefficient cultural × référence)",ar:"ETc = Kc · ET₀ (معامل المحصول × المرجعي)",en:"ETc = Kc · ET₀ (crop coefficient × reference)"},
+  q2b:{fr:"ETc = ET₀ − pluie",ar:"ETc = ET₀ − المطر",en:"ETc = ET₀ − rain"},
+  q2c:{fr:"ETc = ET₀ / surface",ar:"ETc = ET₀ / المساحة",en:"ETc = ET₀ / area"},
+  q3:{fr:"Comment passe-t-on du besoin net au besoin brut ?",ar:"كيف ننتقل من الحاجة الصافية إلى الإجمالية؟",en:"How do we go from net need to gross need?"},
+  q3a:{fr:"En le multipliant par la pluie efficace",ar:"بضربها في المطر الفعّال",en:"By multiplying by effective rain"},
+  q3b:{fr:"En le divisant par l'efficience du système",ar:"بقسمتها على كفاءة النظام",en:"By dividing by the system efficiency"},
+  q3c:{fr:"En le divisant par la surface",ar:"بقسمتها على المساحة",en:"By dividing by the area"},
+  q4:{fr:"Le goutte-à-goutte (≈90 %) vs le gravitaire (≈55 %) : que change l'efficience ?",ar:"التنقيط (≈90٪) مقابل الجاذبية (≈55٪): ما الذي تغيّره الكفاءة؟",en:"Drip (≈90 %) vs gravity (≈55 %): what does efficiency change?"},
+  q4a:{fr:"À besoin net égal, le gravitaire exige plus d'eau brute",ar:"عند حاجة صافية متساوية، تتطلّب الجاذبية ماءً إجمالياً أكثر",en:"For the same net need, gravity requires more gross water"},
+  q4b:{fr:"L'efficience ne change pas le volume à pomper",ar:"الكفاءة لا تغيّر الحجم الواجب ضخّه",en:"Efficiency does not change the volume to pump"},
+  q4c:{fr:"Le goutte-à-goutte gaspille plus d'eau",ar:"التنقيط يبدّد ماءً أكثر",en:"Drip wastes more water"},
+  q5:{fr:"Qu'est-ce que le déficit contrôlé (RDI) ?",ar:"ما هو العجز المحكوم (RDI)؟",en:"What is regulated deficit irrigation (RDI)?"},
+  q5a:{fr:"Sous-arroser volontairement aux stades peu sensibles pour tenir sous une contrainte",ar:"نقص السقي طوعاً في الأطوار قليلة الحساسية للبقاء تحت قيد",en:"Deliberately under-watering at insensitive stages to stay within a constraint"},
+  q5b:{fr:"Arroser toujours au maximum quel que soit le débit",ar:"السقي دائماً بالحدّ الأقصى مهما كان التدفّق",en:"Always watering to the maximum whatever the flow"},
+  q5c:{fr:"Arrêter toute irrigation pour la saison",ar:"إيقاف كل ري للموسم",en:"Stopping all irrigation for the season"},
+
+  t_score_ex:{fr:"Excellent — concepts maîtrisés !",ar:"ممتاز — المفاهيم متمكَّنة!",en:"Excellent — concepts mastered!"},
+  t_score_ok:{fr:"Bien — quelques points à revoir.",ar:"جيّد — بعض النقاط للمراجعة.",en:"Good — a few points to revisit."},
+  t_score_lo:{fr:"À revoir — relisez le cours puis recommencez.",ar:"يحتاج مراجعة — أعد قراءة الدرس ثم أعد المحاولة.",en:"Needs work — reread the course then retry."},
+  t_score_desc:{fr:"Réponses correctes sur 5 questions de synthèse.",ar:"إجابات صحيحة من 5 أسئلة تركيبية.",en:"Correct answers out of 5 synthesis questions."},
+
+  t_mode:{fr:"Mode local (localStorage) — progression sauvegardée automatiquement.",ar:"وضع محلي (localStorage) — التقدّم محفوظ تلقائياً.",en:"Local mode (localStorage) — progress saved automatically."},
+  t_export:{fr:"Exporter le compte-rendu (JSON)",ar:"تصدير التقرير (JSON)",en:"Export report (JSON)"},
+  t_reset:{fr:"Réinitialiser",ar:"إعادة الضبط",en:"Reset"},
+  t_reset_confirm:{fr:"Effacer toutes vos réponses et repartir de zéro ?",ar:"مسح جميع إجاباتك والبدء من جديد؟",en:"Erase all your answers and start over?"},
+  t_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Domaine d4 · travaux pratiques",ar:"منصّة أجريتك ليبيا · EU4Skills — المجال d4 · عمل تطبيقي",en:"AgriTech Libya Platform · EU4Skills — Domain d4 · practical work"}
+});
+
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const LKEY="tp_eau_irrigation_v1";
+const QUIZ=[
+  {id:"q1",correct:0,opts:["q1a","q1b","q1c"]},
+  {id:"q2",correct:0,opts:["q2a","q2b","q2c"]},
+  {id:"q3",correct:1,opts:["q3a","q3b","q3c"]},
+  {id:"q4",correct:0,opts:["q4a","q4b","q4c"]},
+  {id:"q5",correct:0,opts:["q5a","q5b","q5c"]}
+];
+// correct radio answers for step MCQs
+const STEPQ={s1a:2,s2a:1,s3a:1,s4a:2};
+
+let STATE=load();
+function load(){try{return JSON.parse(localStorage.getItem(LKEY))||blank();}catch(e){return blank();}}
+function blank(){return{radios:{},fields:{},done:{},quiz:{},score:null,corrected:false};}
+function save(){STATE.updatedAt=new Date().toISOString();localStorage.setItem(LKEY,JSON.stringify(STATE));}
+
+/* ---- build quiz ---- */
+function buildQuiz(){
+  const box=$('#quiz');box.innerHTML='';
+  QUIZ.forEach((q,qi)=>{
+    const blk=document.createElement('div');blk.className='qblock';
+    const lab=document.createElement('label');lab.className='qlabel';
+    lab.textContent=(qi+1)+'. '+I18N.t(q.id);blk.appendChild(lab);
+    const opts=document.createElement('div');opts.className='opts';opts.dataset.quiz=q.id;
+    q.opts.forEach((ok,oi)=>{
+      const l=document.createElement('label');l.className='opt';
+      const inp=document.createElement('input');inp.type='radio';inp.name='qz_'+q.id;inp.value=oi;
+      if(STATE.quiz[q.id]===oi){inp.checked=true;l.classList.add('sel');}
+      inp.addEventListener('change',()=>{STATE.quiz[q.id]=oi;opts.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));l.classList.add('sel');save();});
+      const sp=document.createElement('span');sp.textContent=I18N.t(ok);
+      l.appendChild(inp);l.appendChild(sp);opts.appendChild(l);
+    });
+    blk.appendChild(opts);box.appendChild(blk);
+  });
+}
+
+/* ---- restore inputs ---- */
+function restore(){
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q, val=STATE.radios[name];
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.checked=(String(val)===r.value);
+      r.closest('.opt').classList.toggle('sel',r.checked);
+    });
+  });
+  $$('[data-f]').forEach(f=>{if(STATE.fields[f.dataset.f]!=null)f.value=STATE.fields[f.dataset.f];});
+  $$('[data-done]').forEach(c=>{c.checked=!!STATE.done[c.dataset.done];});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+}
+
+/* ---- wire inputs ---- */
+function wire(){
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q;
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.addEventListener('change',()=>{
+        STATE.radios[name]=+r.value;
+        g.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+        r.closest('.opt').classList.add('sel');
+        feedbackStep(name);save();
+      });
+    });
+  });
+  $$('[data-f]').forEach(f=>f.addEventListener('input',()=>{STATE.fields[f.dataset.f]=f.value;save();}));
+  $$('[data-done]').forEach(c=>c.addEventListener('change',()=>{STATE.done[c.dataset.done]=c.checked;save();updateProgress();}));
+}
+
+/* ---- per-step feedback ---- */
+function feedbackStep(name){
+  const fb=$('.fb[data-fb="'+name+'"]');if(!fb)return;
+  const val=STATE.radios[name], ok=(val===STEPQ[name]);
+  let key=name.replace(/a$/,'')+ (ok?'_fb_ok':'_fb_no');
+  key='t_'+key;
+  let msg=I18N.t(key);
+  // step 1 extra range check on ET0
+  if(name==='s1a'&&ok){
+    const e=parseFloat(STATE.fields.s1_et0);
+    if(!isNaN(e)&&(e<2||e>12))msg+=I18N.t('t_s1_fb_range');
+  }
+  fb.textContent=msg;
+  fb.className='fb show '+(ok?'ok':'no');
+}
+
+/* ---- progress ---- */
+function updateProgress(){
+  const done=[1,2,3,4,5].filter(i=>STATE.done[i]).length;
+  $('#pfill').style.width=(done/5*100)+'%';
+  $('#ptxt').textContent=done+' / 5';
+  const dots=$('#pdots');dots.innerHTML='';
+  for(let i=1;i<=5;i++){const d=document.createElement('div');d.className='dot'+(STATE.done[i]?' done':'');dots.appendChild(d);}
+}
+
+/* ---- correct quiz ---- */
+function correctQuiz(){
+  let score=0;
+  QUIZ.forEach(q=>{
+    const g=$('.opts[data-quiz="'+q.id+'"]');
+    const ans=STATE.quiz[q.id];
+    g.querySelectorAll('.opt').forEach((l,oi)=>{
+      l.classList.remove('good','bad');
+      if(oi===q.correct)l.classList.add('good');
+      else if(oi===ans)l.classList.add('bad');
+    });
+    if(ans===q.correct)score++;
+  });
+  STATE.score=score;STATE.corrected=true;save();
+  showScore(score,true);
+}
+function showScore(score,scroll){
+  const box=$('#scorebox');box.hidden=false;
+  $('#scoreval').textContent=score+'/5';
+  $('#dial').style.setProperty('--p',(score/5*360)+'deg');
+  const tk=score>=5?'t_score_ex':score>=3?'t_score_ok':'t_score_lo';
+  $('#scoretitle').textContent=I18N.t(tk);
+  $('#scoredesc').textContent=score+' / 5 — '+I18N.t('t_score_desc');
+  if(scroll)box.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ---- export ---- */
+function doExport(){
+  const rep={
+    format:"agritech-tp-report",module:"d4",tp:"eau-irrigation",version:"tp_eau_irrigation_v1",
+    lang:I18N.lang,exportedAt:new Date().toISOString(),
+    stepsCompleted:[1,2,3,4,5].filter(i=>STATE.done[i]),
+    answers:{
+      step1:{et0_mm_day:STATE.fields.s1_et0||"",method:STATE.fields.s1_method||"",variable_choice:STATE.radios.s1a},
+      step2:{gross_need_mm:STATE.fields.s2_gross||"",efficiency_pct:STATE.fields.s2_eff||"",cap_choice:STATE.radios.s2a},
+      step3:{ce_ds_m:STATE.fields.s3_ce||"",sar:STATE.fields.s3_sar||"",sar_meaning_choice:STATE.radios.s3a},
+      step4:{energy_kwh:STATE.fields.s4_energy||"",cost:STATE.fields.s4_cost||"",hmt_choice:STATE.radios.s4a,interpretation:STATE.fields.s4_interp||""},
+      step5:{quiz:STATE.quiz,takeaway:STATE.fields.s5_takeaway||""}
+    },
+    quizScore:STATE.score,quizMax:5
+  };
+  const name="tp_eau_irrigation_"+(new Date().toISOString().slice(0,10))+".json";
+  if(window.Store&&Store.download)Store.download(name,JSON.stringify(rep,null,2),'application/json');
+  else{const a=document.createElement('a');a.href='data:application/json,'+encodeURIComponent(JSON.stringify(rep,null,2));a.download=name;a.click();}
+}
+
+/* ---- reset ---- */
+function doReset(){
+  if(!confirm(I18N.t('t_reset_confirm')))return;
+  STATE=blank();localStorage.removeItem(LKEY);
+  $$('.fb').forEach(f=>f.className='fb');
+  $('#scorebox').hidden=true;
+  buildQuiz();restore();
+}
+
+/* ---- i18n re-render ---- */
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{
+  applyHTML();buildQuiz();
+  ['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+});
+
+$('#correctBtn').addEventListener('click',correctQuiz);
+$('#exportBtn').addEventListener('click',doExport);
+$('#resetBtn').addEventListener('click',doReset);
+
+buildQuiz();wire();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();restore();
+['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

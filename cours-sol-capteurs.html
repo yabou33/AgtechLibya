@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cours — Sol & capteurs IoT · M3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:940px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  .wrap{max-width:1080px}
+  /* --- bandeau titre --- */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#5a8f2c,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:var(--shadow)}
+  .hero h1{font-size:24px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}
+  .toc a{font-size:12.5px;font-weight:600;color:var(--green-d);background:var(--green-bg);
+    border:1px solid var(--line);border-radius:20px;padding:5px 13px}
+  .toc a:hover{border-color:var(--green);background:#e7f2d8}
+  /* --- objectifs --- */
+  .obj{background:linear-gradient(180deg,#eef8ef,#f6fbf0);border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px}
+  .obj h2{color:var(--impact)}
+  .obj ul{margin:6px 0 0;padding-inline-start:20px;columns:2;column-gap:28px}
+  @media(max-width:720px){.obj ul{columns:1}}
+  .obj li{margin:5px 0;font-size:13.5px;color:var(--ink);break-inside:avoid}
+  /* --- sections --- */
+  .card h2{font-size:17px}
+  .card h3{font-size:14.5px;font-weight:800;color:var(--green-d);margin:14px 0 6px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--green);
+    color:#fff;font-size:13px;font-weight:800;flex:none}
+  p.par{color:var(--ink);font-size:14px;line-height:1.65;margin:8px 0;max-width:940px}
+  p.par b{color:var(--green-d)}
+  /* --- concepts grid --- */
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:12px 0}
+  .concept{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .concept .sym{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:15px}
+  .concept .nm{font-weight:700;font-size:13px;margin:2px 0 4px;color:var(--ink)}
+  .concept .ds{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .concept .u{font-family:"JetBrains Mono",monospace;color:var(--info);font-size:11.5px}
+  /* --- à retenir --- */
+  .retenir{background:#fdf7ea;border:1px solid #f0d9ac;border-inline-start:4px solid var(--info);
+    border-radius:11px;padding:12px 16px;margin:14px 0;font-size:13.5px;color:var(--ink);line-height:1.6}
+  .retenir .h{font-weight:800;color:#b5701a;text-transform:uppercase;font-size:11px;letter-spacing:.05em;display:block;margin-bottom:4px}
+  body[dir="rtl"] .retenir{border-inline-start:1px solid #f0d9ac;border-inline-end:4px solid var(--info)}
+  .fossil{background:#eaf3fa;border-color:#bcd9ec;border-inline-start-color:var(--capture)}
+  .fossil .h{color:var(--capture)}
+  body[dir="rtl"] .fossil{border-inline-end-color:var(--capture)}
+  /* --- figures --- */
+  .fig{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0}
+  .fig svg{width:100%;height:auto;display:block;direction:ltr}
+  .figcap{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+  .figcap b{color:var(--ink)}
+  /* --- capteurs grid --- */
+  .sysgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+  .sys{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:#fff;border-top:4px solid var(--sc,var(--green))}
+  .sys .nm{font-weight:800;font-size:14px;color:var(--ink)}
+  .sys .sub{font-size:11.5px;color:var(--muted);margin:2px 0 6px}
+  .sys .ds{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .sys .badge{margin-top:8px;font-size:10px}
+  /* --- table --- */
+  table.t{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:start}
+  table.t th{background:var(--green-bg);color:var(--green-d);font-weight:700;font-size:12px}
+  table.t td b{color:var(--ink)}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:13px;background:#0e1512;color:#d7e3cd;
+    border-radius:10px;padding:12px 16px;overflow:auto;margin:10px 0}
+  .formula .hl{color:#a5d16e;font-weight:700}
+  /* --- apps --- */
+  .appgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:6px}
+  .appcard{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:13px;
+    padding:15px 17px;transition:.16s;border-inline-start:4px solid var(--ac,var(--green))}
+  .appcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(60,80,40,.15);border-color:var(--ac,var(--green))}
+  body[dir="rtl"] .appcard{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--ac,var(--green))}
+  .appcard .ico{font-size:26px}
+  .appcard h4{font-size:14.5px;font-weight:800;margin:6px 0 4px;color:var(--ink)}
+  .appcard p{font-size:12.5px;color:var(--muted);flex:1;line-height:1.5;margin-bottom:10px}
+  .appcard .go{font-size:12.5px;font-weight:700;color:var(--green-d)}
+  .tpbanner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;
+    background:linear-gradient(120deg,#5a8f2c,#3fa66a);color:#fff;border-radius:15px;padding:20px 24px;margin-top:18px}
+  .tpbanner .tt{font-size:18px;font-weight:800}
+  .tpbanner .dd{font-size:13px;opacity:.92;margin-top:3px;max-width:560px}
+  .tpbanner .btn{background:#fff;color:var(--green-d)}
+  .tpbanner .btn:hover{background:#eef8ef}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:22px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">M3</span> <b data-i18n="c_brand">Sol</b> <span data-i18n="c_brand2">& capteurs IoT</span></div>
+  <div class="sub" data-i18n="c_sub">Cours · eau du sol, réserve utile, sondes capacitives</div>
+  <div class="right">
+    <span class="chip">M3 · <span data-i18n="c_course_chip">Cours</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="g0">M3</div>
+    <div>
+      <h1 data-i18n="c_title">Le sol comme réservoir & les capteurs qui le lisent</h1>
+      <div class="tag" data-i18n="c_tag">Module IoT · mesurer l'eau du sol pour piloter l'irrigation au plus juste</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="c_intro"></p>
+
+  <nav class="toc">
+    <a href="#s1" data-i18n="c_toc1">1 · L'eau dans le sol</a>
+    <a href="#s2" data-i18n="c_toc2">2 · Bilan FAO-56</a>
+    <a href="#s3" data-i18n="c_toc3">3 · Les capteurs</a>
+    <a href="#s4" data-i18n="c_toc4">4 · Lire les courbes</a>
+    <a href="#apps" data-i18n="c_toc5">Applications</a>
+  </nav>
+
+  <!-- OBJECTIFS -->
+  <div class="card obj">
+    <h2>🎯 <span data-i18n="c_obj_h">Objectifs pédagogiques</span></h2>
+    <ul>
+      <li data-i18n="c_obj1">Définir la teneur en eau volumique θ et l'effet de la texture du sol.</li>
+      <li data-i18n="c_obj2">Situer capacité au champ θFC et point de flétrissement θWP.</li>
+      <li data-i18n="c_obj3">Calculer la réserve utile TAW et le seuil RAW (MAD).</li>
+      <li data-i18n="c_obj4">Comprendre le bilan FAO-56 : ETc, épuisement Dr, stress et drainage.</li>
+      <li data-i18n="c_obj5">Décrire une sonde capacitive/FDR multi-profondeur et son réseau.</li>
+      <li data-i18n="c_obj6">Lire une courbe de sonde : irrigation, drainage, recharge, stress, salinité.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 1 : L'EAU DANS LE SOL -->
+  <div class="card" id="s1">
+    <h2><span class="num">1</span> <span data-i18n="c_s1_h">L'eau dans le sol : le sol est un réservoir</span></h2>
+    <p class="par" data-i18n-html="c_s1_p1"></p>
+
+    <h3 data-i18n="c_s1_h2">Texture, capacité au champ et point de flétrissement</h3>
+    <p class="par" data-i18n-html="c_s1_p2"></p>
+
+    <div class="cgrid">
+      <div class="concept"><div class="sym">θ</div><div class="nm" data-i18n="c_th_n">Teneur en eau volumique</div><div class="ds" data-i18n="c_th_d">Volume d'eau par volume de sol. <span class="u">m³/m³ (%)</span></div></div>
+      <div class="concept"><div class="sym">θ_FC</div><div class="nm" data-i18n="c_fc_n">Capacité au champ</div><div class="ds" data-i18n="c_fc_d">Ce que le sol retient après drainage. <span class="u">m³/m³</span></div></div>
+      <div class="concept"><div class="sym">θ_WP</div><div class="nm" data-i18n="c_wp_n">Point de flétrissement</div><div class="ds" data-i18n="c_wp_d">En-dessous, la plante ne peut plus extraire. <span class="u">m³/m³</span></div></div>
+      <div class="concept"><div class="sym">Zr</div><div class="nm" data-i18n="c_zr_n">Profondeur racinaire</div><div class="ds" data-i18n="c_zr_d">Épaisseur de sol explorée par les racines. <span class="u">m</span></div></div>
+    </div>
+
+    <h3 data-i18n="c_s1_h3">Réserve utile (TAW) et réserve facilement utilisable (RAW)</h3>
+    <p class="par" data-i18n-html="c_s1_p3"></p>
+    <div class="formula">TAW = 1000 · (<span class="hl">θ_FC − θ_WP</span>) · Zr &nbsp;&nbsp;·&nbsp;&nbsp; RAW = <span class="hl">p</span> · TAW</div>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 340" role="img">
+        <defs>
+          <linearGradient id="gWater" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#7fc4e8"/><stop offset="1" stop-color="#4a9fd0"/>
+          </linearGradient>
+          <pattern id="drain" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" fill="#eaf3fa"/><line x1="0" y1="0" x2="0" y2="8" stroke="#bcd9ec" stroke-width="2"/>
+          </pattern>
+        </defs>
+        <!-- tank outline -->
+        <rect x="250" y="40" width="170" height="252" rx="6" fill="#fff" stroke="#9aa890" stroke-width="2"/>
+        <!-- drainage zone (above FC) -->
+        <rect x="252" y="42" width="166" height="44" fill="url(#drain)"/>
+        <!-- available water FC->WP filled -->
+        <rect x="252" y="86" width="166" height="166" fill="url(#gWater)"/>
+        <!-- RAW zone highlight (FC -> RAW threshold) -->
+        <rect x="252" y="86" width="166" height="66" fill="#2f7fb5" opacity="0.22"/>
+        <!-- unavailable water below WP -->
+        <rect x="252" y="252" width="166" height="38" fill="#cbb994" opacity="0.55"/>
+        <!-- FC line -->
+        <line x1="240" y1="86" x2="430" y2="86" stroke="#2f7d3a" stroke-width="2" stroke-dasharray="6 4"/>
+        <!-- RAW threshold line (refill point) -->
+        <line x1="240" y1="152" x2="430" y2="152" stroke="#b5701a" stroke-width="2" stroke-dasharray="5 4"/>
+        <!-- WP line -->
+        <line x1="240" y1="252" x2="430" y2="252" stroke="#b23b30" stroke-width="2" stroke-dasharray="6 4"/>
+        <!-- brackets right: TAW -->
+        <line x1="470" y1="86" x2="470" y2="252" stroke="#5a8f2c" stroke-width="1.6"/>
+        <line x1="464" y1="86" x2="476" y2="86" stroke="#5a8f2c" stroke-width="1.6"/>
+        <line x1="464" y1="252" x2="476" y2="252" stroke="#5a8f2c" stroke-width="1.6"/>
+        <!-- brackets: RAW -->
+        <line x1="446" y1="86" x2="446" y2="152" stroke="#b5701a" stroke-width="1.6"/>
+        <line x1="440" y1="86" x2="452" y2="86" stroke="#b5701a" stroke-width="1.6"/>
+        <line x1="440" y1="152" x2="452" y2="152" stroke="#b5701a" stroke-width="1.6"/>
+        <!-- labels left -->
+        <text data-i18n="c_fig1_drain" x="60" y="68" font-size="12" font-weight="700" fill="#5f7fa0">Eau gravitaire → draine</text>
+        <text data-i18n="c_fig1_fc" x="60" y="90" font-size="12" font-weight="700" fill="#2f7d3a">θ_FC · capacité au champ</text>
+        <text data-i18n="c_fig1_raw" x="60" y="156" font-size="12" font-weight="700" fill="#b5701a">seuil RAW · réirriguer</text>
+        <text data-i18n="c_fig1_wp" x="60" y="256" font-size="12" font-weight="700" fill="#b23b30">θ_WP · flétrissement</text>
+        <text data-i18n="c_fig1_dead" x="60" y="284" font-size="11.5" font-weight="600" fill="#8a7444">eau non disponible</text>
+        <!-- labels right -->
+        <text data-i18n="c_fig1_taw" x="484" y="172" font-size="12.5" font-weight="800" fill="#5a8f2c">TAW</text>
+        <text data-i18n="c_fig1_rawb" x="484" y="122" font-size="12" font-weight="800" fill="#b5701a">RAW</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig1_cap"></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s1_ret"></span></div>
+  </div>
+
+  <!-- SECTION 2 : BILAN FAO-56 -->
+  <div class="card" id="s2">
+    <h2><span class="num">2</span> <span data-i18n="c_s2_h">Le bilan hydrique FAO-56 en bref</span></h2>
+    <p class="par" data-i18n-html="c_s2_p1"></p>
+
+    <div class="formula">ETc = <span class="hl">Ks</span> · Kc · ET₀ &nbsp;&nbsp;·&nbsp;&nbsp; Dr(j) = Dr(j−1) + ETc − (P + I) &nbsp;&nbsp;·&nbsp;&nbsp; stress si <span class="hl">Dr &gt; RAW</span></div>
+    <p class="par" data-i18n-html="c_s2_p2"></p>
+
+    <table class="t">
+      <thead><tr><th data-i18n="c_tbl_q">Grandeur</th><th data-i18n="c_tbl_read">Signification</th><th data-i18n="c_tbl_get">Repère</th></tr></thead>
+      <tbody>
+        <tr><td><b>Dr</b></td><td data-i18n="c_tbl_r1b">Épuisement de la zone racinaire (déficit / FC)</td><td data-i18n="c_tbl_r1c">0 = sol à FC</td></tr>
+        <tr><td><b>Dr &gt; RAW</b></td><td data-i18n="c_tbl_r2b">La plante ferme ses stomates : Ks &lt; 1</td><td data-i18n="c_tbl_r2c">stress hydrique</td></tr>
+        <tr><td><b>Dr &gt; TAW</b></td><td data-i18n="c_tbl_r3b">Réserve épuisée : flétrissement</td><td data-i18n="c_tbl_r3c">danger</td></tr>
+        <tr><td><b>I + P &gt; Dr</b></td><td data-i18n="c_tbl_r4b">Excès au-delà de FC : drainage / lessivage</td><td data-i18n="c_tbl_r4c">perte d'eau</td></tr>
+      </tbody>
+    </table>
+    <div class="retenir"><span class="h" data-i18n="c_ret_key">Point clé — pilotage</span><span data-i18n-html="c_s2_ret"></span></div>
+  </div>
+
+  <!-- SECTION 3 : LES CAPTEURS -->
+  <div class="card" id="s3">
+    <h2><span class="num">3</span> <span data-i18n="c_s3_h">Les capteurs : sondes capacitives & FDR</span></h2>
+    <p class="par" data-i18n-html="c_s3_p1"></p>
+
+    <div class="sysgrid">
+      <div class="sys" style="--sc:#3a9bd0">
+        <div class="nm" data-i18n="c_cap_prof_n">Multi-profondeur</div>
+        <div class="sub" data-i18n="c_cap_prof_s">30 / 50 / 80 cm</div>
+        <div class="ds" data-i18n="c_cap_prof_d">Plusieurs électrodes étagées suivent le front d'humidité et la descente racinaire.</div>
+      </div>
+      <div class="sys" style="--sc:#3fa66a">
+        <div class="nm" data-i18n="c_cap_meas_n">Ce qu'on mesure</div>
+        <div class="sub" data-i18n="c_cap_meas_s">θ · CE · T°</div>
+        <div class="ds" data-i18n="c_cap_meas_d">Teneur en eau θ, conductivité électrique (salinité) et température du sol.</div>
+      </div>
+      <div class="sys" style="--sc:#e0912b">
+        <div class="nm" data-i18n="c_cap_net_n">Réseaux</div>
+        <div class="sub" data-i18n="c_cap_net_s">LoRaWAN · GSM</div>
+        <div class="ds" data-i18n="c_cap_net_d">LoRaWAN pour le longue portée basse conso ; GSM/NB-IoT là où il y a du réseau.</div>
+      </div>
+      <div class="sys" style="--sc:#8e6fc7">
+        <div class="nm" data-i18n="c_cap_node_n">Nœud ESP32</div>
+        <div class="sub" data-i18n="c_cap_node_s">≈ 100 €</div>
+        <div class="ds" data-i18n="c_cap_node_d">Microcontrôleur bon marché : lit la sonde, horodate, transmet, dort. Autonomie solaire possible.</div>
+      </div>
+    </div>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 340" role="img">
+        <!-- axes -->
+        <line x1="70" y1="30" x2="70" y2="290" stroke="#c8d3b8" stroke-width="1.5"/>
+        <line x1="70" y1="290" x2="730" y2="290" stroke="#c8d3b8" stroke-width="1.5"/>
+        <!-- FC band (drainage above) -->
+        <line x1="70" y1="70" x2="730" y2="70" stroke="#2f7d3a" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <!-- RAW refill threshold -->
+        <line x1="70" y1="210" x2="730" y2="210" stroke="#b5701a" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <!-- stress zone shading below RAW -->
+        <rect x="70" y="210" width="660" height="80" fill="#fbecea" opacity="0.6"/>
+        <!-- sawtooth soil-moisture curve -->
+        <polyline fill="none" stroke="#2f7fb5" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"
+          points="90,110 170,200 178,105 270,205 280,58 372,200 382,120 500,255 512,100 610,205 620,130 720,215"/>
+        <!-- markers -->
+        <circle cx="178" cy="105" r="5" fill="#2f7d3a"/>
+        <circle cx="280" cy="58" r="5" fill="#5f7fa0"/>
+        <circle cx="500" cy="255" r="5" fill="#b23b30"/>
+        <!-- axis titles -->
+        <text data-i18n="c_fig2_y" x="20" y="160" font-size="12" font-weight="700" fill="#6f7d64" transform="rotate(-90 20 160)" text-anchor="middle">Teneur en eau θ</text>
+        <text data-i18n="c_fig2_x" x="400" y="322" font-size="12" font-weight="700" fill="#6f7d64" text-anchor="middle">Temps (jours)</text>
+        <!-- labels -->
+        <text data-i18n="c_fig2_fc" x="76" y="62" font-size="11" font-weight="700" fill="#2f7d3a">θ_FC — au-delà : drainage</text>
+        <text data-i18n="c_fig2_raw" x="76" y="228" font-size="11" font-weight="700" fill="#b5701a">seuil RAW — réirriguer</text>
+        <text data-i18n="c_fig2_irr" x="150" y="96" font-size="10.5" font-weight="700" fill="#2f7d3a">irrigation ↑</text>
+        <text data-i18n="c_fig2_over" x="252" y="48" font-size="10.5" font-weight="700" fill="#5f7fa0">sur-irrigation</text>
+        <text data-i18n="c_fig2_stress" x="452" y="278" font-size="10.5" font-weight="700" fill="#b23b30">stress ↓</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig2_cap"></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s3_ret"></span></div>
+  </div>
+
+  <!-- SECTION 4 : LIRE LES COURBES -->
+  <div class="card" id="s4">
+    <h2><span class="num">4</span> <span data-i18n="c_s4_h">Lire les courbes & calibrer la sonde</span></h2>
+    <p class="par" data-i18n-html="c_s4_p1"></p>
+
+    <table class="t">
+      <thead><tr><th data-i18n="c_shp_h">Sur la courbe</th><th data-i18n="c_shp_r">On lit</th><th data-i18n="c_shp_m">Interprétation</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="c_shp_1a">Montée brutale</td><td data-i18n="c_shp_1b">+θ en quelques heures</td><td data-i18n="c_shp_1c">Irrigation ou pluie</td></tr>
+        <tr><td data-i18n="c_shp_2a">Palier haut puis chute rapide</td><td data-i18n="c_shp_2b">θ &gt; θ_FC transitoire</td><td data-i18n="c_shp_2c">Sur-irrigation → drainage / lessivage</td></tr>
+        <tr><td data-i18n="c_shp_3a">Décroissance lente en dents de scie</td><td data-i18n="c_shp_3b">pente d'assèchement</td><td data-i18n="c_shp_3c">Extraction racinaire (ET)</td></tr>
+        <tr><td data-i18n="c_shp_4a">Passage sous le seuil RAW</td><td data-i18n="c_shp_4b">θ &lt; RAW</td><td data-i18n="c_shp_4c">Début de stress hydrique</td></tr>
+        <tr><td data-i18n="c_shp_5a">CE qui grimpe à θ constant</td><td data-i18n="c_shp_5b">+ salinité</td><td data-i18n="c_shp_5c">Accumulation de sels → besoin de lessivage</td></tr>
+      </tbody>
+    </table>
+
+    <h3 data-i18n="c_s4_h2">Calibration : de la VWC brute au θ réel</h3>
+    <p class="par" data-i18n-html="c_s4_p2"></p>
+    <div class="formula">θ_réel = <span class="hl">a</span> · VWC_brut + <span class="hl">b</span> &nbsp;&nbsp;→&nbsp;&nbsp; a = pente, b = offset (2 points de référence)</div>
+    <div class="retenir fossil"><span class="h" data-i18n="c_ret_cal">Pourquoi calibrer</span><span data-i18n-html="c_s4_ret"></span></div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="card" id="apps">
+    <h2>🧭 <span data-i18n="c_apps_h">Applications de ce domaine</span></h2>
+    <p class="lead" data-i18n="c_apps_p">Mettez en pratique le cours avec les applications interactives de la plateforme :</p>
+    <div class="appgrid">
+      <a class="appcard" style="--ac:#3a9bd0" href="sondes-iot.html">
+        <div class="ico">📡</div><h4 data-i18n="c_app_sondes">Sondes IoT</h4>
+        <p data-i18n="c_app_sondes_d">Visualiser des séries de sondes multi-profondeur, repérer irrigation & drainage.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#3fa66a" href="reservoir-sol.html">
+        <div class="ico">🪣</div><h4 data-i18n="c_app_res">Réservoir sol</h4>
+        <p data-i18n="c_app_res_d">Régler texture et Zr, lire TAW / RAW et le remplissage du réservoir.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#e0912b" href="calibration-sonde.html">
+        <div class="ico">🎯</div><h4 data-i18n="c_app_cal">Calibration sonde</h4>
+        <p data-i18n="c_app_cal_d">Faire une calibration 2 points VWC → θ, lire pente et offset.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#8e6fc7" href="J5/sim-sonde.html">
+        <div class="ico">📈</div><h4 data-i18n="c_app_sim">Simulateur de sonde</h4>
+        <p data-i18n="c_app_sim_d">Rejouer des scénarios (sur-irrigation, stress) et lire la courbe.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+    </div>
+
+    <div class="tpbanner">
+      <div>
+        <div class="tt">🧪 <span data-i18n="c_tp_t">TP guidé — Sol & capteurs IoT</span></div>
+        <div class="dd" data-i18n="c_tp_d">Cinq étapes pas-à-pas qui vous font manipuler ces applications, avec questions, auto-correction et compte-rendu exportable.</div>
+      </div>
+      <a class="btn" href="tp-sol-capteurs.html"><span data-i18n="c_tp_go">Commencer le TP</span> →</a>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="c_foot">Plateforme AgriTech Libye · EU4Skills — Module M3 · support de cours</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  c_brand:{fr:"Sol",ar:"التربة",en:"Soil"},
+  c_brand2:{fr:"& capteurs IoT",ar:"وأجهزة الاستشعار",en:"& IoT sensors"},
+  c_sub:{fr:"Cours · eau du sol, réserve utile, sondes capacitives",ar:"درس · ماء التربة، الرصيد المائي، المجسّات السعوية",en:"Course · soil water, available water, capacitive probes"},
+  c_course_chip:{fr:"Cours",ar:"درس",en:"Course"},
+  c_title:{fr:"Le sol comme réservoir & les capteurs qui le lisent",ar:"التربة كخزّان والمجسّات التي تقرؤها",en:"The soil as a reservoir & the sensors that read it"},
+  c_tag:{fr:"Module IoT · mesurer l'eau du sol pour piloter l'irrigation au plus juste",ar:"وحدة إنترنت الأشياء · قياس ماء التربة لإدارة الري بدقّة",en:"IoT module · measure soil water to fine-tune irrigation"},
+  c_intro:{fr:"Le sol n'est pas un simple support : c'est un <b>réservoir d'eau</b> que la plante puise entre deux irrigations. Savoir <b>combien</b> d'eau il contient, <b>quand</b> la recharger et comment le <b>mesurer en continu</b> est le cœur d'un pilotage d'irrigation efficient. Ce cours pose la physique de l'eau du sol (θ, TAW, RAW), le bilan FAO-56, puis les capteurs IoT qui rendent tout cela visible — avant de renvoyer vers les applications où vous les manipulerez.",
+    ar:"التربة ليست مجرّد دعامة: إنها <b>خزّان ماء</b> تسحب منه النبتة بين ريّتين. إن معرفة <b>كم</b> تحتوي من ماء و<b>متى</b> تُعاد تعبئتها وكيف <b>تُقاس باستمرار</b> هو جوهر إدارة ريّ فعّالة. يضع هذا الدرس فيزياء ماء التربة (θ، TAW، RAW)، والميزان المائي FAO-56، ثم مجسّات إنترنت الأشياء التي تُظهر كل ذلك — قبل الإحالة إلى التطبيقات التي ستستعملها.",
+    en:"Soil is not just a support: it is a <b>water reservoir</b> the plant draws from between irrigations. Knowing <b>how much</b> water it holds, <b>when</b> to refill it and how to <b>measure it continuously</b> is the heart of efficient irrigation control. This course lays out soil-water physics (θ, TAW, RAW), the FAO-56 balance, then the IoT sensors that make it all visible — before pointing you to the apps where you will practise."},
+  c_toc1:{fr:"1 · L'eau dans le sol",ar:"1 · ماء التربة",en:"1 · Soil water"},
+  c_toc2:{fr:"2 · Bilan FAO-56",ar:"2 · الميزان FAO-56",en:"2 · FAO-56 balance"},
+  c_toc3:{fr:"3 · Les capteurs",ar:"3 · المجسّات",en:"3 · Sensors"},
+  c_toc4:{fr:"4 · Lire les courbes",ar:"4 · قراءة المنحنيات",en:"4 · Reading curves"},
+  c_toc5:{fr:"Applications",ar:"التطبيقات",en:"Apps"},
+
+  c_obj_h:{fr:"Objectifs pédagogiques",ar:"الأهداف التعليمية",en:"Learning objectives"},
+  c_obj1:{fr:"Définir la teneur en eau volumique θ et l'effet de la texture du sol.",ar:"تعريف المحتوى المائي الحجمي θ وأثر بنية التربة.",en:"Define volumetric water content θ and the effect of soil texture."},
+  c_obj2:{fr:"Situer capacité au champ θFC et point de flétrissement θWP.",ar:"تحديد السعة الحقلية θFC ونقطة الذبول θWP.",en:"Place field capacity θFC and wilting point θWP."},
+  c_obj3:{fr:"Calculer la réserve utile TAW et le seuil RAW (MAD).",ar:"حساب الرصيد المتاح TAW والعتبة RAW (MAD).",en:"Compute the available water TAW and the RAW threshold (MAD)."},
+  c_obj4:{fr:"Comprendre le bilan FAO-56 : ETc, épuisement Dr, stress et drainage.",ar:"فهم الميزان FAO-56: ETc، الاستنزاف Dr، الإجهاد والصرف.",en:"Understand the FAO-56 balance: ETc, depletion Dr, stress and drainage."},
+  c_obj5:{fr:"Décrire une sonde capacitive/FDR multi-profondeur et son réseau.",ar:"وصف مجسّ سعوي/FDR متعدّد الأعماق وشبكته.",en:"Describe a multi-depth capacitive/FDR probe and its network."},
+  c_obj6:{fr:"Lire une courbe de sonde : irrigation, drainage, recharge, stress, salinité.",ar:"قراءة منحنى المجسّ: ريّ، صرف، إعادة تعبئة، إجهاد، ملوحة.",en:"Read a probe curve: irrigation, drainage, refill, stress, salinity."},
+
+  c_ret:{fr:"À retenir",ar:"للتذكّر",en:"Remember"},
+  c_ret_key:{fr:"Point clé — pilotage",ar:"نقطة مفتاحية — الإدارة",en:"Key point — control"},
+  c_ret_cal:{fr:"Pourquoi calibrer",ar:"لماذا المعايرة",en:"Why calibrate"},
+
+  // Section 1
+  c_s1_h:{fr:"L'eau dans le sol : le sol est un réservoir",ar:"ماء التربة: التربة خزّان",en:"Soil water: the soil is a reservoir"},
+  c_s1_p1:{fr:"La <b>teneur en eau volumique θ</b> exprime le volume d'eau contenu dans un volume de sol (en m³/m³, souvent en %). Un sol saturé a tous ses pores pleins ; en se ressuyant, il ne retient que l'eau que les forces capillaires peuvent tenir contre la gravité. La <b>texture</b> — du sable grossier à l'argile fine — décide de tout : un sable retient peu mais draine vite, une argile retient beaucoup mais libère lentement.",
+    ar:"يعبّر <b>المحتوى المائي الحجمي θ</b> عن حجم الماء في حجم من التربة (م³/م³، غالباً %). التربة المشبعة كل مسامها ممتلئة؛ وعند الترشيح لا تحتفظ إلا بالماء الذي تمسكه القوى الشعرية ضدّ الجاذبية. و<b>البنية</b> — من الرمل الخشن إلى الطين الناعم — تقرّر كل شيء: الرمل يحتفظ قليلاً ويصرف بسرعة، والطين يحتفظ كثيراً ويحرّر ببطء.",
+    en:"<b>Volumetric water content θ</b> expresses the volume of water in a volume of soil (m³/m³, often %). A saturated soil has all its pores full; as it drains, it keeps only the water capillary forces can hold against gravity. <b>Texture</b> — from coarse sand to fine clay — decides everything: sand holds little but drains fast, clay holds a lot but releases slowly."},
+  c_s1_h2:{fr:"Texture, capacité au champ et point de flétrissement",ar:"البنية، السعة الحقلية ونقطة الذبول",en:"Texture, field capacity and wilting point"},
+  c_s1_p2:{fr:"Deux seuils bornent l'eau utile. La <b>capacité au champ θ_FC</b> est la teneur après ressuyage du surplus gravitaire (2–3 jours après une pluie) : au-delà, l'eau <b>draine</b> et est perdue. Le <b>point de flétrissement θ_WP</b> est la teneur en-dessous de laquelle la plante ne parvient plus à extraire l'eau : elle flétrit. Entre les deux se trouve toute l'eau que la culture peut réellement utiliser.",
+    ar:"عتبتان تحدّان الماء المفيد. <b>السعة الحقلية θ_FC</b> هي المحتوى بعد ترشيح الفائض الجاذبي (2–3 أيام بعد المطر): بعدها <b>يُصرف</b> الماء ويُفقد. و<b>نقطة الذبول θ_WP</b> هي المحتوى الذي دونه لا تستطيع النبتة سحب الماء: فتذبل. وبينهما يقع كل الماء الذي يستطيع المحصول استعماله فعلاً.",
+    en:"Two thresholds bound usable water. <b>Field capacity θ_FC</b> is the content after the gravitational surplus has drained (2–3 days after rain): beyond it, water <b>drains</b> and is lost. The <b>wilting point θ_WP</b> is the content below which the plant can no longer extract water: it wilts. Between the two lies all the water the crop can actually use."},
+  c_th_n:{fr:"Teneur en eau volumique",ar:"المحتوى المائي الحجمي",en:"Volumetric water content"},
+  c_th_d:{fr:"Volume d'eau par volume de sol.",ar:"حجم الماء لكل حجم تربة.",en:"Water volume per soil volume."},
+  c_fc_n:{fr:"Capacité au champ",ar:"السعة الحقلية",en:"Field capacity"},
+  c_fc_d:{fr:"Ce que le sol retient après drainage.",ar:"ما تحتفظ به التربة بعد الصرف.",en:"What the soil holds after drainage."},
+  c_wp_n:{fr:"Point de flétrissement",ar:"نقطة الذبول",en:"Wilting point"},
+  c_wp_d:{fr:"En-dessous, la plante ne peut plus extraire.",ar:"دونها لا تستطيع النبتة السحب.",en:"Below it, the plant can't extract."},
+  c_zr_n:{fr:"Profondeur racinaire",ar:"عمق الجذور",en:"Rooting depth"},
+  c_zr_d:{fr:"Épaisseur de sol explorée par les racines.",ar:"سُمك التربة الذي تستكشفه الجذور.",en:"Soil depth explored by roots."},
+  c_s1_h3:{fr:"Réserve utile (TAW) et réserve facilement utilisable (RAW)",ar:"الرصيد المتاح TAW والرصيد سهل الاستعمال RAW",en:"Total (TAW) and readily available water (RAW)"},
+  c_s1_p3:{fr:"La <b>réserve utile TAW</b> (Total Available Water) est le stock d'eau, en millimètres, disponible entre θ_FC et θ_WP sur la profondeur racinaire Zr : <b>TAW = 1000·(θ_FC − θ_WP)·Zr</b>. Mais on n'attend pas d'atteindre θ_WP pour réirriguer : on ne consomme qu'une fraction <b>p</b> (fraction d'épuisement admissible, MAD) avant que le stress n'apparaisse. Cela définit la <b>réserve facilement utilisable RAW = p·TAW</b> — le vrai seuil de déclenchement de l'irrigation.",
+    ar:"<b>الرصيد المتاح TAW</b> هو مخزون الماء بالمليمترات المتاح بين θ_FC وθ_WP على عمق الجذور Zr: <b>TAW = 1000·(θ_FC − θ_WP)·Zr</b>. لكننا لا ننتظر بلوغ θ_WP لإعادة الريّ: نستهلك فقط جزءاً <b>p</b> (نسبة الاستنزاف المسموحة، MAD) قبل ظهور الإجهاد. وهذا يحدّد <b>الرصيد سهل الاستعمال RAW = p·TAW</b> — عتبة إطلاق الريّ الحقيقية.",
+    en:"<b>Total Available Water TAW</b> is the water stock, in millimetres, available between θ_FC and θ_WP over the rooting depth Zr: <b>TAW = 1000·(θ_FC − θ_WP)·Zr</b>. But we don't wait to reach θ_WP to re-irrigate: only a fraction <b>p</b> (Management Allowed Depletion, MAD) is used before stress appears. This defines the <b>Readily Available Water RAW = p·TAW</b> — the real irrigation trigger threshold."},
+  c_fig1_cap:{fr:"<b>Le sol-réservoir.</b> Au-dessus de θ_FC l'eau gravitaire draine ; entre θ_FC et θ_WP se trouve la réserve utile TAW ; la fraction supérieure RAW = p·TAW est celle qu'on consomme avant de réirriguer. Sous θ_WP, l'eau reste mais n'est plus extractible.",
+    ar:"<b>التربة-الخزّان.</b> فوق θ_FC يُصرف الماء الجاذبي؛ بين θ_FC وθ_WP يقع الرصيد المتاح TAW؛ والجزء العلوي RAW = p·TAW هو ما نستهلكه قبل إعادة الريّ. تحت θ_WP يبقى الماء لكنه غير قابل للسحب.",
+    en:"<b>The soil-reservoir.</b> Above θ_FC gravitational water drains; between θ_FC and θ_WP lies the available water TAW; the upper fraction RAW = p·TAW is what we use before re-irrigating. Below θ_WP water remains but can no longer be extracted."},
+  c_fig1_drain:{fr:"Eau gravitaire → draine",ar:"ماء جاذبي ← يُصرف",en:"Gravitational water → drains"},
+  c_fig1_fc:{fr:"θ_FC · capacité au champ",ar:"θ_FC · السعة الحقلية",en:"θ_FC · field capacity"},
+  c_fig1_raw:{fr:"seuil RAW · réirriguer",ar:"عتبة RAW · إعادة الريّ",en:"RAW threshold · re-irrigate"},
+  c_fig1_wp:{fr:"θ_WP · flétrissement",ar:"θ_WP · الذبول",en:"θ_WP · wilting"},
+  c_fig1_dead:{fr:"eau non disponible",ar:"ماء غير متاح",en:"unavailable water"},
+  c_fig1_taw:{fr:"TAW",ar:"TAW",en:"TAW"},
+  c_fig1_rawb:{fr:"RAW",ar:"RAW",en:"RAW"},
+  c_s1_ret:{fr:"Le sable a une petite TAW (il faut arroser peu mais souvent) ; l'argile une grande TAW (arroser beaucoup mais rarement). Retenez la chaîne : <b>texture → θ_FC, θ_WP → TAW → RAW = seuil d'irrigation</b>. Tout le pilotage découle de ces quatre nombres.",
+    ar:"للرمل TAW صغير (نسقي قليلاً وكثيراً) وللطين TAW كبير (نسقي كثيراً ونادراً). احفظ السلسلة: <b>البنية → θ_FC، θ_WP → TAW → RAW = عتبة الريّ</b>. كل الإدارة تنبع من هذه الأرقام الأربعة.",
+    en:"Sand has a small TAW (water little but often); clay a large TAW (water a lot but rarely). Remember the chain: <b>texture → θ_FC, θ_WP → TAW → RAW = irrigation threshold</b>. All control flows from these four numbers."},
+
+  // Section 2
+  c_s2_h:{fr:"Le bilan hydrique FAO-56 en bref",ar:"الميزان المائي FAO-56 باختصار",en:"The FAO-56 water balance in brief"},
+  c_s2_p1:{fr:"Le bilan FAO-56 suit, jour après jour, l'<b>épuisement Dr</b> de la zone racinaire — l'écart, en mm, entre le sol actuel et la capacité au champ. Chaque jour on ajoute la demande évapotranspiratoire et on retranche les apports : <b>ETc = Ks·Kc·ET₀</b>, où ET₀ est la demande climatique de référence, Kc le coefficient cultural, et Ks un facteur de stress qui vaut 1 tant que la plante n'a pas soif.",
+    ar:"يتابع الميزان FAO-56 يوماً بعد يوم <b>الاستنزاف Dr</b> لمنطقة الجذور — الفرق بالمليمتر بين حالة التربة والسعة الحقلية. كل يوم نضيف الطلب التبخّري-النتحي ونطرح المدخلات: <b>ETc = Ks·Kc·ET₀</b>، حيث ET₀ الطلب المناخي المرجعي، وKc المعامل الزراعي، وKs عامل الإجهاد الذي يساوي 1 ما دامت النبتة غير عطشى.",
+    en:"The FAO-56 balance tracks, day by day, the <b>depletion Dr</b> of the root zone — the gap, in mm, between the current soil and field capacity. Each day we add evapotranspirative demand and subtract inputs: <b>ETc = Ks·Kc·ET₀</b>, where ET₀ is the reference climatic demand, Kc the crop coefficient, and Ks a stress factor that equals 1 as long as the plant is not thirsty."},
+  c_s2_p2:{fr:"Tant que <b>Dr ≤ RAW</b>, l'eau est facilement extractible et Ks = 1 : la plante transpire à plein. Dès que <b>Dr dépasse RAW</b>, la plante ferme partiellement ses stomates, Ks &lt; 1 : c'est le <b>stress hydrique</b>, avec perte de rendement. Si un apport dépasse Dr, l'excédent fait remonter le sol au-dessus de θ_FC et <b>draine</b> — eau (et engrais) perdus par lessivage.",
+    ar:"ما دام <b>Dr ≤ RAW</b> يكون الماء سهل السحب وKs = 1: تتنفّح النبتة بالكامل. وحالما <b>يتجاوز Dr قيمة RAW</b> تغلق النبتة ثغورها جزئياً، Ks &lt; 1: هذا هو <b>الإجهاد المائي</b> مع خسارة في المحصول. وإذا تجاوز مدخل ما قيمة Dr رفع الفائض التربة فوق θ_FC و<b>صُرف</b> — ماء (وسماد) مفقود بالغسل.",
+    en:"As long as <b>Dr ≤ RAW</b>, water is readily extractable and Ks = 1: the plant transpires fully. Once <b>Dr exceeds RAW</b>, the plant partly closes its stomata, Ks &lt; 1: this is <b>water stress</b>, with yield loss. If an input exceeds Dr, the surplus pushes the soil above θ_FC and <b>drains</b> — water (and fertiliser) lost to leaching."},
+  c_tbl_q:{fr:"Grandeur",ar:"المقدار",en:"Quantity"},
+  c_tbl_read:{fr:"Signification",ar:"المعنى",en:"Meaning"},
+  c_tbl_get:{fr:"Repère",ar:"العلامة",en:"Marker"},
+  c_tbl_r1b:{fr:"Épuisement de la zone racinaire (déficit / FC)",ar:"استنزاف منطقة الجذور (عجز/السعة)",en:"Root-zone depletion (deficit / FC)"},
+  c_tbl_r1c:{fr:"0 = sol à FC",ar:"0 = تربة عند FC",en:"0 = soil at FC"},
+  c_tbl_r2b:{fr:"La plante ferme ses stomates : Ks < 1",ar:"تغلق النبتة ثغورها: Ks < 1",en:"The plant closes its stomata: Ks < 1"},
+  c_tbl_r2c:{fr:"stress hydrique",ar:"إجهاد مائي",en:"water stress"},
+  c_tbl_r3b:{fr:"Réserve épuisée : flétrissement",ar:"نفاد الرصيد: ذبول",en:"Reserve exhausted: wilting"},
+  c_tbl_r3c:{fr:"danger",ar:"خطر",en:"danger"},
+  c_tbl_r4b:{fr:"Excès au-delà de FC : drainage / lessivage",ar:"فائض فوق FC: صرف/غسل",en:"Excess beyond FC: drainage / leaching"},
+  c_tbl_r4c:{fr:"perte d'eau",ar:"فقد ماء",en:"water loss"},
+  c_s2_ret:{fr:"Le pilotage idéal maintient Dr <b>entre 0 et RAW</b> : jamais au-dessus (stress), jamais négatif (drainage). La bonne dose d'irrigation, c'est simplement <b>ramener Dr à zéro</b> — soit une lame d'eau égale à l'épuisement mesuré. Les capteurs de sol donnent Dr en direct.",
+    ar:"الإدارة المثلى تُبقي Dr <b>بين 0 وRAW</b>: لا فوقها (إجهاد) ولا سالباً (صرف). والجرعة الصحيحة للريّ هي ببساطة <b>إعادة Dr إلى الصفر</b> — أي لامة ماء تساوي الاستنزاف المقيس. ومجسّات التربة تعطي Dr مباشرة.",
+    en:"Ideal control keeps Dr <b>between 0 and RAW</b>: never above (stress), never negative (drainage). The right irrigation dose is simply to <b>bring Dr back to zero</b> — a water depth equal to the measured depletion. Soil sensors give Dr live."},
+
+  // Section 3
+  c_s3_h:{fr:"Les capteurs : sondes capacitives & FDR",ar:"المجسّات: مجسّات سعوية وFDR",en:"Sensors: capacitive & FDR probes"},
+  c_s3_p1:{fr:"Une <b>sonde capacitive</b> mesure la constante diélectrique du sol, qui dépend surtout de sa teneur en eau : plus le sol est humide, plus la capacité électrique lue est forte. Les sondes <b>FDR</b> (Frequency Domain Reflectometry) exploitent le même principe à haute fréquence. On les installe en <b>multi-profondeur</b> pour suivre séparément la surface et la zone racinaire profonde, et lire où l'eau descend réellement.",
+    ar:"يقيس <b>المجسّ السعوي</b> ثابت العزل الكهربائي للتربة الذي يعتمد أساساً على محتواها المائي: كلما زادت الرطوبة زادت السعة الكهربائية المقروءة. ومجسّات <b>FDR</b> تستعمل المبدأ نفسه بتردّد عالٍ. تُركَّب <b>متعدّدة الأعماق</b> لمتابعة السطح ومنطقة الجذور العميقة كلٍّ على حدة، وقراءة أين ينزل الماء فعلاً.",
+    en:"A <b>capacitive probe</b> measures the soil's dielectric constant, which depends mainly on its water content: the wetter the soil, the higher the electrical capacitance read. <b>FDR</b> (Frequency Domain Reflectometry) probes use the same principle at high frequency. They are installed <b>multi-depth</b> to track surface and deep root zone separately, and read where water actually goes."},
+  c_cap_prof_n:{fr:"Multi-profondeur",ar:"متعدّد الأعماق",en:"Multi-depth"},
+  c_cap_prof_s:{fr:"30 / 50 / 80 cm",ar:"30 / 50 / 80 سم",en:"30 / 50 / 80 cm"},
+  c_cap_prof_d:{fr:"Plusieurs électrodes étagées suivent le front d'humidité et la descente racinaire.",ar:"عدّة أقطاب متدرّجة تتابع جبهة الرطوبة ونزول الجذور.",en:"Several stacked electrodes track the wetting front and root descent."},
+  c_cap_meas_n:{fr:"Ce qu'on mesure",ar:"ما نقيسه",en:"What we measure"},
+  c_cap_meas_s:{fr:"θ · CE · T°",ar:"θ · الناقلية · الحرارة",en:"θ · EC · T°"},
+  c_cap_meas_d:{fr:"Teneur en eau θ, conductivité électrique (salinité) et température du sol.",ar:"المحتوى المائي θ، الناقلية الكهربائية (الملوحة) وحرارة التربة.",en:"Water content θ, electrical conductivity (salinity) and soil temperature."},
+  c_cap_net_n:{fr:"Réseaux",ar:"الشبكات",en:"Networks"},
+  c_cap_net_s:{fr:"LoRaWAN · GSM",ar:"LoRaWAN · GSM",en:"LoRaWAN · GSM"},
+  c_cap_net_d:{fr:"LoRaWAN pour le longue portée basse conso ; GSM/NB-IoT là où il y a du réseau.",ar:"LoRaWAN للمدى الطويل بطاقة منخفضة؛ GSM/NB-IoT حيث تتوفّر الشبكة.",en:"LoRaWAN for long-range low-power; GSM/NB-IoT where coverage exists."},
+  c_cap_node_n:{fr:"Nœud ESP32",ar:"عقدة ESP32",en:"ESP32 node"},
+  c_cap_node_s:{fr:"≈ 100 €",ar:"≈ 100 €",en:"≈ €100"},
+  c_cap_node_d:{fr:"Microcontrôleur bon marché : lit la sonde, horodate, transmet, dort. Autonomie solaire possible.",ar:"متحكّم دقيق رخيص: يقرأ المجسّ، يؤرّخ، يرسل، ثم ينام. تشغيل شمسي ممكن.",en:"Cheap microcontroller: reads the probe, timestamps, transmits, sleeps. Solar-powered possible."},
+  c_fig2_cap:{fr:"<b>Courbe de sonde en dents de scie.</b> Chaque montée brutale = irrigation ou pluie ; la lente décroissance = extraction racinaire (ET). Un pic au-dessus de θ_FC signale du drainage ; un creux sous le seuil RAW signale le début du stress.",
+    ar:"<b>منحنى المجسّ على شكل أسنان منشار.</b> كل صعود مفاجئ = ريّ أو مطر؛ والانحدار البطيء = السحب الجذري (ET). ذروة فوق θ_FC تدلّ على الصرف؛ وقعر تحت عتبة RAW يدلّ على بداية الإجهاد.",
+    en:"<b>Sawtooth probe curve.</b> Each sharp rise = irrigation or rain; the slow decline = root extraction (ET). A peak above θ_FC signals drainage; a trough below the RAW threshold signals the onset of stress."},
+  c_fig2_y:{fr:"Teneur en eau θ",ar:"المحتوى المائي θ",en:"Water content θ"},
+  c_fig2_x:{fr:"Temps (jours)",ar:"الزمن (أيام)",en:"Time (days)"},
+  c_fig2_fc:{fr:"θ_FC — au-delà : drainage",ar:"θ_FC — بعدها: صرف",en:"θ_FC — beyond: drainage"},
+  c_fig2_raw:{fr:"seuil RAW — réirriguer",ar:"عتبة RAW — إعادة الريّ",en:"RAW threshold — re-irrigate"},
+  c_fig2_irr:{fr:"irrigation ↑",ar:"ريّ ↑",en:"irrigation ↑"},
+  c_fig2_over:{fr:"sur-irrigation",ar:"ريّ مفرط",en:"over-irrigation"},
+  c_fig2_stress:{fr:"stress ↓",ar:"إجهاد ↓",en:"stress ↓"},
+  c_s3_ret:{fr:"La valeur absolue de θ compte moins que la <b>forme</b> de la courbe : c'est en lisant les montées, les paliers et les pentes qu'on décide quand et combien irriguer. Un nœud ESP32 à ~100 € suffit à transformer un sol muet en série de données exploitable.",
+    ar:"القيمة المطلقة لـθ أقلّ أهمية من <b>شكل</b> المنحنى: بقراءة الصعود والمسطّحات والانحدارات نقرّر متى وكم نسقي. عقدة ESP32 بنحو 100 € تكفي لتحويل تربة صامتة إلى سلسلة بيانات قابلة للاستغلال.",
+    en:"The absolute value of θ matters less than the <b>shape</b> of the curve: by reading the rises, plateaus and slopes we decide when and how much to irrigate. An ESP32 node at ~€100 is enough to turn a mute soil into a usable data series."},
+
+  // Section 4
+  c_s4_h:{fr:"Lire les courbes & calibrer la sonde",ar:"قراءة المنحنيات ومعايرة المجسّ",en:"Reading curves & calibrating the probe"},
+  c_s4_p1:{fr:"Lire une courbe de sonde, c'est reconnaître des <b>signatures</b>. Une montée quasi verticale trahit une irrigation ou une pluie ; un palier qui redescend vite au-dessus de θ_FC révèle une sur-irrigation qui draine ; une décroissance régulière est l'ET qui vide le réservoir ; et un passage sous le seuil RAW annonce le stress. En parallèle, une conductivité électrique (CE) qui monte à humidité constante trahit une <b>accumulation de sels</b>.",
+    ar:"قراءة منحنى المجسّ هي التعرّف على <b>بصمات</b>. الصعود شبه العمودي يدلّ على ريّ أو مطر؛ ومسطّح ينزل بسرعة فوق θ_FC يكشف ريّاً مفرطاً يُصرف؛ والانحدار المنتظم هو ET يُفرغ الخزّان؛ والنزول تحت عتبة RAW ينذر بالإجهاد. وبالتوازي، ناقلية كهربائية (CE) ترتفع عند رطوبة ثابتة تكشف <b>تراكم أملاح</b>.",
+    en:"Reading a probe curve means recognising <b>signatures</b>. A near-vertical rise betrays irrigation or rain; a plateau falling fast above θ_FC reveals over-irrigation that drains; a steady decline is the ET emptying the reservoir; and a dip below the RAW threshold heralds stress. In parallel, an electrical conductivity (EC) rising at constant moisture reveals <b>salt accumulation</b>."},
+  c_shp_h:{fr:"Sur la courbe",ar:"على المنحنى",en:"On the curve"},
+  c_shp_r:{fr:"On lit",ar:"نقرأ",en:"We read"},
+  c_shp_m:{fr:"Interprétation",ar:"التفسير",en:"Interpretation"},
+  c_shp_1a:{fr:"Montée brutale",ar:"صعود مفاجئ",en:"Sharp rise"},
+  c_shp_1b:{fr:"+θ en quelques heures",ar:"+θ في بضع ساعات",en:"+θ within hours"},
+  c_shp_1c:{fr:"Irrigation ou pluie",ar:"ريّ أو مطر",en:"Irrigation or rain"},
+  c_shp_2a:{fr:"Palier haut puis chute rapide",ar:"مسطّح مرتفع ثم هبوط سريع",en:"High plateau then fast drop"},
+  c_shp_2b:{fr:"θ > θ_FC transitoire",ar:"θ > θ_FC مؤقّت",en:"θ > θ_FC transient"},
+  c_shp_2c:{fr:"Sur-irrigation → drainage / lessivage",ar:"ريّ مفرط ← صرف/غسل",en:"Over-irrigation → drainage / leaching"},
+  c_shp_3a:{fr:"Décroissance lente en dents de scie",ar:"انحدار بطيء على شكل أسنان منشار",en:"Slow sawtooth decline"},
+  c_shp_3b:{fr:"pente d'assèchement",ar:"ميل الجفاف",en:"drying slope"},
+  c_shp_3c:{fr:"Extraction racinaire (ET)",ar:"سحب جذري (ET)",en:"Root extraction (ET)"},
+  c_shp_4a:{fr:"Passage sous le seuil RAW",ar:"النزول تحت عتبة RAW",en:"Crossing below RAW threshold"},
+  c_shp_4b:{fr:"θ < RAW",ar:"θ < RAW",en:"θ < RAW"},
+  c_shp_4c:{fr:"Début de stress hydrique",ar:"بداية الإجهاد المائي",en:"Onset of water stress"},
+  c_shp_5a:{fr:"CE qui grimpe à θ constant",ar:"CE ترتفع عند θ ثابت",en:"EC rising at constant θ"},
+  c_shp_5b:{fr:"+ salinité",ar:"+ ملوحة",en:"+ salinity"},
+  c_shp_5c:{fr:"Accumulation de sels → besoin de lessivage",ar:"تراكم أملاح ← حاجة للغسل",en:"Salt build-up → leaching need"},
+  c_s4_h2:{fr:"Calibration : de la VWC brute au θ réel",ar:"المعايرة: من VWC الخام إلى θ الحقيقي",en:"Calibration: from raw VWC to real θ"},
+  c_s4_p2:{fr:"Une sonde sort une valeur <b>brute</b> (comptage, tension ou « VWC usine ») qui n'est pas exactement la teneur en eau réelle de <i>votre</i> sol : la relation dépend de la texture, de la densité et de la salinité. On la corrige par une <b>calibration 2 points</b> : mesurer la sonde dans le sol sec puis à la capacité au champ (ou par prélèvement gravimétrique séché à l'étuve), puis ajuster une droite <b>θ = a·VWC_brut + b</b>. La pente <b>a</b> et l'offset <b>b</b> ramènent la lecture au θ vrai.",
+    ar:"يُخرج المجسّ قيمة <b>خام</b> (عدّ أو جهد أو «VWC مصنعي») ليست تماماً المحتوى المائي الحقيقي لتربتك: فالعلاقة تعتمد على البنية والكثافة والملوحة. نصحّحها بـ<b>معايرة نقطتين</b>: قياس المجسّ في التربة الجافة ثم عند السعة الحقلية (أو بأخذ عيّنة وتجفيفها في الفرن)، ثم ضبط خطّ <b>θ = a·VWC_خام + b</b>. الميل <b>a</b> والإزاحة <b>b</b> يعيدان القراءة إلى θ الحقيقي.",
+    en:"A probe outputs a <b>raw</b> value (count, voltage or \"factory VWC\") that is not exactly your soil's real water content: the relationship depends on texture, density and salinity. It is corrected by a <b>2-point calibration</b>: read the probe in dry soil then at field capacity (or by gravimetric sampling oven-dried), then fit a line <b>θ = a·VWC_raw + b</b>. The slope <b>a</b> and offset <b>b</b> bring the reading back to the true θ."},
+  c_s4_ret:{fr:"Sans calibration, vos seuils RAW/θ_FC sont posés sur des valeurs fausses et le pilotage dérape. Deux points de référence suffisent souvent à corriger l'essentiel ; la méthode gravimétrique (peser, sécher à l'étuve, repeser) reste la référence de vérité pour caler pente et offset.",
+    ar:"بدون معايرة تُبنى عتباتك RAW/θ_FC على قيم خاطئة فتنحرف الإدارة. نقطتان مرجعيّتان تكفيان غالباً لتصحيح الأساس؛ وتبقى الطريقة الوزنية (وزن، تجفيف بالفرن، إعادة وزن) مرجع الحقيقة لضبط الميل والإزاحة.",
+    en:"Without calibration, your RAW/θ_FC thresholds sit on wrong values and control drifts. Two reference points are often enough to fix the essentials; the gravimetric method (weigh, oven-dry, reweigh) remains the ground truth for setting slope and offset."},
+
+  // Apps
+  c_apps_h:{fr:"Applications de ce domaine",ar:"تطبيقات هذا المجال",en:"Apps for this domain"},
+  c_apps_p:{fr:"Mettez en pratique le cours avec les applications interactives de la plateforme :",ar:"طبّق الدرس عبر التطبيقات التفاعلية للمنصّة:",en:"Put the course into practice with the platform's interactive apps:"},
+  c_open:{fr:"Ouvrir →",ar:"فتح →",en:"Open →"},
+  c_app_sondes:{fr:"Sondes IoT",ar:"مجسّات إنترنت الأشياء",en:"IoT probes"},
+  c_app_sondes_d:{fr:"Visualiser des séries de sondes multi-profondeur, repérer irrigation & drainage.",ar:"عرض سلاسل مجسّات متعدّدة الأعماق، وتمييز الريّ والصرف.",en:"View multi-depth probe series, spot irrigation & drainage."},
+  c_app_res:{fr:"Réservoir sol",ar:"خزّان التربة",en:"Soil reservoir"},
+  c_app_res_d:{fr:"Régler texture et Zr, lire TAW / RAW et le remplissage du réservoir.",ar:"ضبط البنية وZr، وقراءة TAW / RAW وتعبئة الخزّان.",en:"Set texture and Zr, read TAW / RAW and the reservoir fill."},
+  c_app_cal:{fr:"Calibration sonde",ar:"معايرة المجسّ",en:"Probe calibration"},
+  c_app_cal_d:{fr:"Faire une calibration 2 points VWC → θ, lire pente et offset.",ar:"إجراء معايرة نقطتين VWC → θ، وقراءة الميل والإزاحة.",en:"Run a 2-point calibration VWC → θ, read slope and offset."},
+  c_app_sim:{fr:"Simulateur de sonde",ar:"محاكي المجسّ",en:"Probe simulator"},
+  c_app_sim_d:{fr:"Rejouer des scénarios (sur-irrigation, stress) et lire la courbe.",ar:"إعادة تشغيل سيناريوهات (ريّ مفرط، إجهاد) وقراءة المنحنى.",en:"Replay scenarios (over-irrigation, stress) and read the curve."},
+  c_tp_t:{fr:"TP guidé — Sol & capteurs IoT",ar:"عمل تطبيقي موجّه — التربة وأجهزة الاستشعار",en:"Guided lab — Soil & IoT sensors"},
+  c_tp_d:{fr:"Cinq étapes pas-à-pas qui vous font manipuler ces applications, avec questions, auto-correction et compte-rendu exportable.",ar:"خمس خطوات تدريجية تجعلك تستعمل هذه التطبيقات، مع أسئلة وتصحيح تلقائي وتقرير قابل للتصدير.",en:"Five step-by-step stages that make you use these apps, with questions, self-correction and an exportable report."},
+  c_tp_go:{fr:"Commencer le TP",ar:"ابدأ العمل التطبيقي",en:"Start the lab"},
+  c_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Module M3 · support de cours",ar:"منصّة أجريتك ليبيا · EU4Skills — الوحدة M3 · مادة الدرس",en:"AgriTech Libya Platform · EU4Skills — Module M3 · course material"}
+});
+
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',applyHTML);
+
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

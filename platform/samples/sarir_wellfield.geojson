@@ -1,0 +1,595 @@
+{
+  "type": "FeatureCollection",
+  "name": "sarir_wellfield_libya",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "metadata": {
+    "source": "Data Testar.xlsx",
+    "aquifer": "Nubian Sandstone Aquifer System",
+    "region": "Sarir, SE Libya",
+    "wells": 18,
+    "piezometers": 10
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.235067,
+          27.863434
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "S1",
+        "location": "Sarir North",
+        "total_depth_m": 223.67,
+        "depth_to_water_m": 30.2,
+        "b_upper_m": 142.48,
+        "b_lower_m": 22.67,
+        "T_m2_d": 410,
+        "K_m_d": 18.085575650639612,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.209731,
+          27.863821
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "S2",
+        "location": "Sarir North",
+        "total_depth_m": 197.92,
+        "depth_to_water_m": 29,
+        "b_upper_m": 134.42,
+        "b_lower_m": 21.64,
+        "T_m2_d": 530,
+        "K_m_d": 24.491682070240294,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.184335,
+          27.864376
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "S3",
+        "location": "Sarir North",
+        "total_depth_m": 301.65,
+        "depth_to_water_m": 26.06,
+        "b_upper_m": 137.26,
+        "b_lower_m": 28.64,
+        "T_m2_d": 480,
+        "K_m_d": 16.75977653631285,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.247324,
+          27.843746
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "R1",
+        "location": "Sarir North",
+        "total_depth_m": 229.53,
+        "depth_to_water_m": 25.5,
+        "b_upper_m": 153,
+        "b_lower_m": 16.47,
+        "T_m2_d": 300,
+        "K_m_d": 18.214936247723134,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.221942,
+          27.844136
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "R2",
+        "location": "Sarir North",
+        "total_depth_m": 309.3,
+        "depth_to_water_m": 28.35,
+        "b_upper_m": 155,
+        "b_lower_m": 96,
+        "T_m2_d": 420,
+        "K_m_d": 4.375,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.196537,
+          27.844376
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "R3",
+        "location": "Sarir North",
+        "total_depth_m": 310.9,
+        "depth_to_water_m": 18.89,
+        "b_upper_m": 134,
+        "b_lower_m": 34,
+        "T_m2_d": 730,
+        "K_m_d": 21.470588235294116,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.207029,
+          27.752658
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "Q1",
+        "location": "Sarir North",
+        "total_depth_m": 241.89,
+        "depth_to_water_m": 31.9,
+        "b_upper_m": 149.1,
+        "b_lower_m": 27.89,
+        "T_m2_d": 480,
+        "K_m_d": 17.210469702402296,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.182355,
+          27.76697
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "Q2",
+        "location": "Sarir North",
+        "total_depth_m": 232,
+        "depth_to_water_m": 23.45,
+        "b_upper_m": 155.55,
+        "b_lower_m": 29,
+        "T_m2_d": 470,
+        "K_m_d": 16.20689655172414,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.156345,
+          27.754336
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "Q3",
+        "location": "Sarir North",
+        "total_depth_m": 238.28,
+        "depth_to_water_m": 27.85,
+        "b_upper_m": 144.72,
+        "b_lower_m": 52.86,
+        "T_m2_d": 610,
+        "K_m_d": 11.539916761256148,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.218931,
+          27.732722
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "P1",
+        "location": "Sarir North",
+        "total_depth_m": 223.32,
+        "depth_to_water_m": 32.4,
+        "b_upper_m": 129.64,
+        "b_lower_m": 52.27,
+        "T_m2_d": 480,
+        "K_m_d": 9.183087813277213,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.192997,
+          27.720131
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "P2",
+        "location": "Sarir North",
+        "total_depth_m": 247.29,
+        "depth_to_water_m": 34.5,
+        "b_upper_m": 150.55,
+        "b_lower_m": 40.23,
+        "T_m2_d": 610,
+        "K_m_d": 15.162813820531943,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.168156,
+          27.734379
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "P3",
+        "location": "Sarir North",
+        "total_depth_m": 235.26,
+        "depth_to_water_m": 28.83,
+        "b_upper_m": 143.22,
+        "b_lower_m": 40.35,
+        "T_m2_d": 260,
+        "K_m_d": 6.44361833952912,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.193312,
+          27.095085
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "L1",
+        "location": "SarirSouth",
+        "total_depth_m": 300.29,
+        "depth_to_water_m": 48.7,
+        "b_upper_m": 95.3,
+        "b_lower_m": 144.29,
+        "T_m2_d": 1860,
+        "K_m_d": 12.89070621664703,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.170746,
+          27.108346
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "L2",
+        "location": "SarirSouth",
+        "total_depth_m": 297.12,
+        "depth_to_water_m": 48.7,
+        "b_upper_m": 101.3,
+        "b_lower_m": 147.12,
+        "T_m2_d": 670,
+        "K_m_d": 4.55410549211528,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.146022,
+          27.094576
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "L3",
+        "location": "SarirSouth",
+        "total_depth_m": 273.6,
+        "depth_to_water_m": 48.7,
+        "b_upper_m": 101.3,
+        "b_lower_m": 123.6,
+        "T_m2_d": 840,
+        "K_m_d": 6.7961165048543695,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          21.575695,
+          27.638721
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "pw101",
+        "location": "Sarir West",
+        "total_depth_m": 446,
+        "depth_to_water_m": 89.98,
+        "b_upper_m": 69.02,
+        "b_lower_m": 247,
+        "T_m2_d": 905,
+        "K_m_d": null,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          21.562518,
+          27.638775
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "pw102",
+        "location": "Sarir West",
+        "total_depth_m": 450,
+        "depth_to_water_m": 89.84,
+        "b_upper_m": 69.16,
+        "b_lower_m": 252,
+        "T_m2_d": 675,
+        "K_m_d": 2.6785714285714284,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          21.54934,
+          27.638827
+        ]
+      },
+      "properties": {
+        "kind": "pumping_well",
+        "well_no": "pw103",
+        "location": "Sarir West",
+        "total_depth_m": 456,
+        "depth_to_water_m": 89.38,
+        "b_upper_m": 64.62,
+        "b_lower_m": 256,
+        "T_m2_d": 1470,
+        "K_m_d": 5.7421875,
+        "Q_m3_d": 3024.0000000000005
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.503056,
+          26.913582
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-32",
+        "location": "sarir deep(South)",
+        "elevation_m_amsl": 170.19,
+        "total_depth_m": 308.7,
+        "water_level_m": 96.19
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.000596,
+          27.338833
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-33",
+        "location": "sarir deep(South)",
+        "elevation_m_amsl": 127.44,
+        "total_depth_m": 295.66,
+        "water_level_m": 91.66999999999999
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          21.445641,
+          26.911861
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-34",
+        "location": "sarir deep(South)",
+        "elevation_m_amsl": 171.35,
+        "total_depth_m": 305.06,
+        "water_level_m": 106.63
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.342309,
+          27.781775
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-4",
+        "location": "sarir deep(North)",
+        "elevation_m_amsl": 104.61,
+        "total_depth_m": 316,
+        "water_level_m": 75.11
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.488694,
+          27.726111
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-5",
+        "location": "sarir deep(North)",
+        "elevation_m_amsl": 100.97,
+        "total_depth_m": 258,
+        "water_level_m": 70.02
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.0525,
+          27.692583
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-7",
+        "location": "sarir deep(North)",
+        "elevation_m_amsl": 114,
+        "total_depth_m": 323.5,
+        "water_level_m": 81.22
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.081456,
+          27.800798
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-8",
+        "location": "sarir deep(North)",
+        "elevation_m_amsl": 104.78,
+        "total_depth_m": 260,
+        "water_level_m": 75.33
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          21.456213,
+          27.592266
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-57",
+        "location": "sarir west deep",
+        "elevation_m_amsl": 150.6,
+        "total_depth_m": null,
+        "water_level_m": 90.1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          21.153471,
+          27.592985
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-58",
+        "location": "sarir west deep",
+        "elevation_m_amsl": 167.72,
+        "total_depth_m": null,
+        "water_level_m": 90.1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          21.342014,
+          27.714414
+        ]
+      },
+      "properties": {
+        "kind": "piezometer",
+        "well_no": "PZ-59",
+        "location": "sarir west deep",
+        "elevation_m_amsl": 154.48,
+        "total_depth_m": null,
+        "water_level_m": 88.79999999999998
+      }
+    }
+  ]
+}

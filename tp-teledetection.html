@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TP guidé — Télédétection · M2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .wrap{max-width:940px}
+  .lead{color:var(--muted);max-width:900px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  /* hero */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#5a8f2c,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:var(--shadow)}
+  .hero h1{font-size:23px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  /* progress */
+  .progwrap{position:sticky;top:63px;z-index:900;background:var(--paper);padding:10px 0 4px;margin-bottom:4px}
+  .progbar{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:12px 18px}
+  .progtrack{flex:1;height:12px;border-radius:8px;background:var(--green-bg);overflow:hidden;border:1px solid var(--line)}
+  .progfill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--impact));transition:width .35s}
+  .progtxt{font-weight:800;font-size:13.5px;color:var(--green-d);white-space:nowrap;font-variant-numeric:tabular-nums;direction:ltr}
+  .progsteps{display:flex;gap:6px}
+  .dot{width:13px;height:13px;border-radius:50%;background:var(--green-bg);border:1.5px solid var(--line)}
+  .dot.done{background:var(--green);border-color:var(--green-d)}
+  @media(max-width:620px){.progsteps{display:none}}
+  /* step card */
+  .step{border-inline-start:4px solid var(--sc,var(--green))}
+  body[dir="rtl"] .step{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--sc,var(--green))}
+  .step .head{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .step .n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--sc,var(--green));
+    color:#fff;font-size:16px;font-weight:800;flex:none}
+  .step h2{font-size:16.5px;margin:0}
+  .step .app-of{font-size:11.5px;color:var(--muted);font-weight:600}
+  .consigne{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 15px;margin:10px 0;
+    font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .consigne b{color:var(--green-d)}
+  .openbtn{margin:8px 0 4px}
+  .qblock{margin-top:14px}
+  .qlabel{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:7px;display:block}
+  .qlabel .u{font-weight:600;color:var(--muted);font-size:12px}
+  input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;
+    font:inherit;color:var(--ink);background:#fff}
+  input:focus,textarea:focus{outline:none;border-color:var(--green)}
+  textarea{min-height:66px;resize:vertical}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;
+    font-size:13.5px;background:#fff;transition:.14s}
+  .opt:hover{border-color:var(--green)}
+  .opt input{accent-color:var(--green);width:16px;height:16px;flex:none}
+  .opt.sel{background:var(--green-bg);border-color:var(--green)}
+  .opt.good{background:#eef8ef;border-color:#8ecb96}
+  .opt.bad{background:#fbecea;border-color:#e3a8a1}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:560px){.row2,.row3{grid-template-columns:1fr}}
+  .fb{margin-top:10px;font-size:13px;border-radius:10px;padding:10px 14px;line-height:1.55;display:none}
+  .fb.show{display:block}
+  .fb.ok{background:#eef8ef;border:1px solid #bfe3c3;color:#2f7d3a}
+  .fb.no{background:#fbecea;border:1px solid #eecac5;color:#b23b30}
+  .fb.info{background:#eaf3fa;border:1px solid #bcd9ec;color:#25607f}
+  .stepfoot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+  .chk{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer}
+  .chk input{width:19px;height:19px;accent-color:var(--green)}
+  /* score */
+  .scorebox{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:linear-gradient(120deg,#eef8ef,#f6fbf0);
+    border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px;margin-top:8px}
+  .scoredial{width:82px;height:82px;border-radius:50%;flex:none;display:grid;place-items:center;
+    background:conic-gradient(var(--impact) var(--p,0deg),#e3efd8 0);position:relative}
+  .scoredial::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+  .scoredial b{position:relative;z-index:1;font-size:18px;font-weight:800;color:var(--green-d)}
+  .scoreinfo .st{font-weight:800;font-size:15px;color:var(--ink)}
+  .scoreinfo .sd{font-size:13px;color:var(--muted);margin-top:2px}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:4px}
+  .modebadge{font-size:11.5px;color:var(--muted)}
+  .modebadge b{color:var(--green-d)}
+  .backlink{font-size:13px;font-weight:700;color:var(--green-d)}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:20px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">M2</span> <b data-i18n="t_brand">TP Télédétection</b> <span data-i18n="t_brand2">& indices</span></div>
+  <div class="sub" data-i18n="t_sub">Travaux pratiques guidés · 5 étapes manipulées</div>
+  <div class="right">
+    <span class="chip">M2 · <span data-i18n="t_lab_chip">TP</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="g0">M2</div>
+    <div>
+      <h1 data-i18n="t_title">TP guidé — Télédétection</h1>
+      <div class="tag" data-i18n="t_tag">Manipulez les applications du domaine, étape par étape</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="t_intro"></p>
+  <a class="backlink" href="cours-teledetection.html">← <span data-i18n="t_back">Revoir le cours</span></a>
+
+  <!-- PROGRESS -->
+  <div class="progwrap">
+    <div class="progbar">
+      <span class="progtxt" id="ptxt">0 / 5</span>
+      <div class="progtrack"><div class="progfill" id="pfill"></div></div>
+      <div class="progsteps" id="pdots"></div>
+    </div>
+  </div>
+
+  <!-- ETAPE 1 -->
+  <div class="card step" style="--sc:#8e6fc7">
+    <div class="head"><span class="n">1</span>
+      <div><h2 data-i18n="t_s1_h">Dessiner une parcelle</h2><div class="app-of" data-i18n="t_s1_app">App · Carto (dessin de parcelle)</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s1_c"></div>
+    <a class="btn primary openbtn" href="platform/public/apps/carto.html" target="_blank" rel="noopener">🗺️ <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s1_q2">Surface approximative <span class="u">(ha)</span></label><input type="number" data-f="s1_area" placeholder="ex. 3.5"></div>
+        <div><label class="qlabel" data-i18n="t_s1_q3">Nombre de sommets du polygone</label><input type="number" data-f="s1_verts" placeholder="ex. 6"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s1_q1">Pour des statistiques zonales, sous quel format exporter la parcelle ?</label>
+      <div class="opts" data-q="s1a">
+        <label class="opt"><input type="radio" name="s1a" value="0"><span data-i18n="t_s1_o1">Une capture d'écran PNG</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="1"><span data-i18n="t_s1_o2">Un fichier vecteur GeoJSON (contour de la parcelle)</span></label>
+        <label class="opt"><input type="radio" name="s1a" value="2"><span data-i18n="t_s1_o3">Un simple texte décrivant la parcelle</span></label>
+      </div>
+      <div class="fb" data-fb="s1a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="1"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 2 -->
+  <div class="card step" style="--sc:#3fa66a">
+    <div class="head"><span class="n">2</span>
+      <div><h2 data-i18n="t_s2_h">Charger l'imagerie & afficher le NDVI</h2><div class="app-of" data-i18n="t_s2_app">App · AgriSim Live</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s2_c"></div>
+    <a class="btn primary openbtn" href="agrisim_live.html" target="_blank" rel="noopener">🛰️ <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row2">
+        <div><label class="qlabel" data-i18n="t_s2_q1">Date de la scène Sentinel-2 choisie</label><input type="text" data-f="s2_date" placeholder="ex. 2026-08-14"></div>
+        <div><label class="qlabel" data-i18n="t_s2_q2">Couverture nuageuse <span class="u">%</span></label><input type="number" data-f="s2_cloud" placeholder="ex. 5"></div>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s2_q3">Quel indice affichez-vous pour juger la vigueur du couvert ?</label>
+      <div class="opts" data-q="s2a">
+        <label class="opt"><input type="radio" name="s2a" value="0"><span data-i18n="t_s2_o1">NDWI (teneur en eau)</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="1"><span data-i18n="t_s2_o2">NDVI (vigueur / densité du couvert)</span></label>
+        <label class="opt"><input type="radio" name="s2a" value="2"><span data-i18n="t_s2_o3">La bande bleue brute</span></label>
+      </div>
+      <div class="fb" data-fb="s2a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="2"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 3 -->
+  <div class="card step" style="--sc:#3a9bd0">
+    <div class="head"><span class="n">3</span>
+      <div><h2 data-i18n="t_s3_h">Statistiques zonales — comparer des parcelles</h2><div class="app-of" data-i18n="t_s3_app">App · AgriSim Live</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s3_c"></div>
+    <a class="btn primary openbtn" href="agrisim_live.html" target="_blank" rel="noopener">📊 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div class="row3">
+        <div><label class="qlabel" data-i18n="t_s3_q1">NDVI moyen parcelle A</label><input type="number" step="0.01" data-f="s3_p1" placeholder="ex. 0.72"></div>
+        <div><label class="qlabel" data-i18n="t_s3_q2">NDVI moyen parcelle B</label><input type="number" step="0.01" data-f="s3_p2" placeholder="ex. 0.41"></div>
+        <div><label class="qlabel" data-i18n="t_s3_q3">NDVI moyen parcelle C</label><input type="number" step="0.01" data-f="s3_p3" placeholder="ex. 0.65"></div>
+      </div>
+      <div style="margin-top:12px"><label class="qlabel" data-i18n="t_s3_q4">Parcelle au NDVI moyen le plus faible</label><input type="text" data-f="s3_weak" placeholder="ex. Parcelle B"></div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s3_q5">Cette parcelle la plus faible est…</label>
+      <div class="opts" data-q="s3a">
+        <label class="opt"><input type="radio" name="s3a" value="0"><span data-i18n="t_s3_o1">la plus vigoureuse du lot</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="1"><span data-i18n="t_s3_o2">celle à contrôler en priorité sur le terrain</span></label>
+        <label class="opt"><input type="radio" name="s3a" value="2"><span data-i18n="t_s3_o3">sans intérêt, on l'ignore</span></label>
+      </div>
+      <div class="fb" data-fb="s3a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="3"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 4 -->
+  <div class="card step" style="--sc:#e0912b">
+    <div class="head"><span class="n">4</span>
+      <div><h2 data-i18n="t_s4_h">Série temporelle — lire la saison</h2><div class="app-of" data-i18n="t_s4_app">App · AgriMap Formation</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s4_c"></div>
+    <a class="btn primary openbtn" href="AgriMap_Formation_SentinelHub.html" target="_blank" rel="noopener">🌍 <span data-i18n="t_open">Ouvrir l'app</span> ↗</a>
+    <div class="qblock">
+      <div><label class="qlabel" data-i18n="t_s4_q2">Stade phénologique lu au pic <span class="u">(champ libre)</span></label><input type="text" data-f="s4_stage" placeholder="ex. couvert maximal / floraison"></div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s4_q1">Une chute précoce du NDVI en pleine saison indique…</label>
+      <div class="opts" data-q="s4a">
+        <label class="opt"><input type="radio" name="s4a" value="0"><span data-i18n="t_s4_o1">une sénescence normale de fin de cycle</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="1"><span data-i18n="t_s4_o2">un stress à investiguer (eau, maladie, azote)</span></label>
+        <label class="opt"><input type="radio" name="s4a" value="2"><span data-i18n="t_s4_o3">une erreur systématique du satellite</span></label>
+      </div>
+      <label class="qlabel" style="margin-top:12px" data-i18n="t_s4_q3">Votre interprétation en une phrase <span class="u">(champ libre)</span></label>
+      <textarea data-f="s4_interp" placeholder="…"></textarea>
+      <div class="fb" data-fb="s4a"></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="4"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- ETAPE 5 : SYNTHESE -->
+  <div class="card step" style="--sc:#d1584e">
+    <div class="head"><span class="n">5</span>
+      <div><h2 data-i18n="t_s5_h">Synthèse — QCM auto-corrigé</h2><div class="app-of" data-i18n="t_s5_app">Évaluation · score /5</div></div>
+    </div>
+    <div class="consigne" data-i18n-html="t_s5_c"></div>
+    <div id="quiz"></div>
+    <label class="qlabel" style="margin-top:8px" data-i18n="t_s5_free">Ce que vous retenez de ce TP <span class="u">(champ libre)</span></label>
+    <textarea data-f="s5_takeaway" placeholder="…"></textarea>
+    <div class="btns"><button class="btn primary" id="correctBtn">✅ <span data-i18n="t_correct">Corriger le QCM</span></button></div>
+    <div class="scorebox" id="scorebox" hidden>
+      <div class="scoredial" id="dial"><b id="scoreval">0/5</b></div>
+      <div class="scoreinfo"><div class="st" id="scoretitle"></div><div class="sd" id="scoredesc"></div></div>
+    </div>
+    <div class="stepfoot"><label class="chk"><input type="checkbox" data-done="5"><span data-i18n="t_done">Étape terminée</span></label></div>
+  </div>
+
+  <!-- OUTILS -->
+  <div class="card">
+    <div class="tools">
+      <div class="modebadge" data-i18n="t_mode">Mode local (localStorage) — progression sauvegardée automatiquement.</div>
+      <div class="btns" style="margin:0">
+        <button class="btn ghost" id="exportBtn">📤 <span data-i18n="t_export">Exporter le compte-rendu (JSON)</span></button>
+        <button class="btn ghost" id="resetBtn">♻️ <span data-i18n="t_reset">Réinitialiser</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="t_foot">Plateforme AgriTech Libye · EU4Skills — Domaine d1 (Télédétection) · travaux pratiques</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  t_brand:{fr:"TP Télédétection",ar:"عمل تطبيقي استشعار",en:"Remote Sensing Lab"},
+  t_brand2:{fr:"& indices",ar:"والمؤشرات",en:"& indices"},
+  t_sub:{fr:"Travaux pratiques guidés · 5 étapes manipulées",ar:"عمل تطبيقي موجّه · 5 خطوات",en:"Guided lab · 5 hands-on steps"},
+  t_lab_chip:{fr:"TP",ar:"تطبيقي",en:"Lab"},
+  t_title:{fr:"TP guidé — Télédétection",ar:"عمل تطبيقي موجّه — الاستشعار عن بُعد",en:"Guided lab — Remote sensing"},
+  t_tag:{fr:"Manipulez les applications du domaine, étape par étape",ar:"استعمل تطبيقات المجال خطوة بخطوة",en:"Work through the domain's apps, step by step"},
+  t_intro:{fr:"Ce TP vous fait <b>manipuler</b> les applications du domaine Télédétection. À chaque étape : une consigne, un bouton pour <b>ouvrir l'app</b> dans un nouvel onglet, une ou deux réponses à saisir, puis une case « étape terminée ». Votre progression et vos réponses sont <b>sauvegardées automatiquement</b> ; à la fin, exportez votre compte-rendu.",
+    ar:"يجعلك هذا العمل التطبيقي <b>تستعمل</b> تطبيقات مجال الاستشعار عن بُعد. في كل خطوة: تعليمة، وزرّ <b>لفتح التطبيق</b> في تبويب جديد، وإجابة أو إجابتان، ثم خانة «تمّت الخطوة». تُحفظ تقدّمك وإجاباتك <b>تلقائياً</b>؛ وفي النهاية صدّر تقريرك.",
+    en:"This lab makes you <b>use</b> the Remote Sensing domain's apps. At each step: an instruction, a button to <b>open the app</b> in a new tab, one or two answers to enter, then a \"step done\" box. Your progress and answers are <b>saved automatically</b>; at the end, export your report."},
+  t_back:{fr:"Revoir le cours",ar:"مراجعة الدرس",en:"Back to course"},
+  t_open:{fr:"Ouvrir l'app",ar:"فتح التطبيق",en:"Open the app"},
+  t_done:{fr:"Étape terminée",ar:"تمّت الخطوة",en:"Step done"},
+
+  // Step 1
+  t_s1_h:{fr:"Dessiner une parcelle",ar:"رسم قطعة أرض",en:"Draw a field"},
+  t_s1_app:{fr:"App · Carto (dessin de parcelle)",ar:"تطبيق · الخرائط (رسم القطعة)",en:"App · Carto (field drawing)"},
+  t_s1_c:{fr:"Ouvrez l'app <b>Carto</b>, zoomez sur une zone agricole et <b>dessinez le contour d'une parcelle</b> (un polygone). Relevez sa surface approximative, puis <b>exportez-la en GeoJSON</b> : ce fichier vecteur servira de base aux statistiques zonales.",
+    ar:"افتح تطبيق <b>الخرائط</b>، وقرّب على منطقة زراعية و<b>ارسم حدود قطعة</b> (مضلّع). سجّل مساحتها التقريبية، ثم <b>صدّرها بصيغة GeoJSON</b>: سيكون هذا الملف المتّجه أساساً للإحصاءات المناطقية.",
+    en:"Open the <b>Carto</b> app, zoom to a farming area and <b>draw a field boundary</b> (a polygon). Note its approximate area, then <b>export it as GeoJSON</b>: this vector file will be the basis for zonal statistics."},
+  t_s1_q1:{fr:"Pour des statistiques zonales, sous quel format exporter la parcelle ?",ar:"لأي إحصاءات مناطقية، بأي صيغة تُصدَّر القطعة؟",en:"For zonal statistics, in which format should you export the field?"},
+  t_s1_o1:{fr:"Une capture d'écran PNG",ar:"لقطة شاشة PNG",en:"A PNG screenshot"},
+  t_s1_o2:{fr:"Un fichier vecteur GeoJSON (contour de la parcelle)",ar:"ملف متّجه GeoJSON (حدود القطعة)",en:"A GeoJSON vector file (field boundary)"},
+  t_s1_o3:{fr:"Un simple texte décrivant la parcelle",ar:"نصّ بسيط يصف القطعة",en:"A plain text describing the field"},
+  t_s1_q2:{fr:"Surface approximative",ar:"المساحة التقريبية",en:"Approximate area"},
+  t_s1_q3:{fr:"Nombre de sommets du polygone",ar:"عدد رؤوس المضلّع",en:"Number of polygon vertices"},
+  t_s1_fb_ok:{fr:"Exact. Le GeoJSON est un vecteur géoréférencé : on peut y calculer des statistiques par pixel, ce qu'une image PNG ne permet pas.",ar:"صحيح. GeoJSON متّجه مُسنَد جغرافياً: يمكن حساب إحصاءات لكل بكسل داخله، وهو ما لا تتيحه صورة PNG.",en:"Correct. GeoJSON is a geo-referenced vector: you can compute per-pixel statistics inside it, which a PNG image cannot."},
+  t_s1_fb_no:{fr:"Pour croiser la parcelle avec l'imagerie, il faut un vecteur géoréférencé : le GeoJSON.",ar:"لتقاطع القطعة مع الصور تحتاج متّجهاً مُسنَداً جغرافياً: GeoJSON.",en:"To overlay the field on imagery you need a geo-referenced vector: GeoJSON."},
+
+  // Step 2
+  t_s2_h:{fr:"Charger l'imagerie & afficher le NDVI",ar:"تحميل الصور وعرض NDVI",en:"Load imagery & display NDVI"},
+  t_s2_app:{fr:"App · AgriSim Live",ar:"تطبيق · أجريسيم مباشر",en:"App · AgriSim Live"},
+  t_s2_c:{fr:"Ouvrez <b>AgriSim Live</b> et cherchez une <b>scène Sentinel-2</b> récente et peu nuageuse sur votre zone. Affichez la couche <b>NDVI</b> et observez les contrastes de vigueur entre parcelles.",
+    ar:"افتح <b>أجريسيم مباشر</b> وابحث عن <b>مشهد Sentinel-2</b> حديث وقليل الغيوم فوق منطقتك. اعرض طبقة <b>NDVI</b> ولاحظ فوارق الحيوية بين القطع.",
+    en:"Open <b>AgriSim Live</b> and look for a recent, low-cloud <b>Sentinel-2 scene</b> over your area. Display the <b>NDVI</b> layer and observe the vigour contrasts between fields."},
+  t_s2_q1:{fr:"Date de la scène Sentinel-2 choisie",ar:"تاريخ مشهد Sentinel-2 المختار",en:"Date of the chosen Sentinel-2 scene"},
+  t_s2_q2:{fr:"Couverture nuageuse",ar:"نسبة الغيوم",en:"Cloud cover"},
+  t_s2_q3:{fr:"Quel indice affichez-vous pour juger la vigueur du couvert ?",ar:"أي مؤشر تعرض لتقييم حيوية الغطاء؟",en:"Which index do you display to judge canopy vigour?"},
+  t_s2_o1:{fr:"NDWI (teneur en eau)",ar:"NDWI (محتوى الماء)",en:"NDWI (water content)"},
+  t_s2_o2:{fr:"NDVI (vigueur / densité du couvert)",ar:"NDVI (الحيوية / كثافة الغطاء)",en:"NDVI (vigour / canopy density)"},
+  t_s2_o3:{fr:"La bande bleue brute",ar:"النطاق الأزرق الخام",en:"The raw blue band"},
+  t_s2_fb_ok:{fr:"Exact : le NDVI = (NIR−Rouge)/(NIR+Rouge) est l'indice de référence pour la vigueur du couvert.",ar:"صحيح: NDVI = (NIR−أحمر)/(NIR+أحمر) هو المؤشر المرجعي لحيوية الغطاء.",en:"Correct: NDVI = (NIR−Red)/(NIR+Red) is the reference index for canopy vigour."},
+  t_s2_fb_no:{fr:"Pour la vigueur, on affiche le NDVI. NDWI vise l'eau, et une bande brute seule ne « normalise » rien.",ar:"للحيوية نعرض NDVI. أما NDWI فللماء، والنطاق الخام وحده لا «يُطبّع» شيئاً.",en:"For vigour, display NDVI. NDWI targets water, and a single raw band normalises nothing."},
+
+  // Step 3
+  t_s3_h:{fr:"Statistiques zonales — comparer des parcelles",ar:"إحصاءات مناطقية — مقارنة القطع",en:"Zonal statistics — compare fields"},
+  t_s3_app:{fr:"App · AgriSim Live",ar:"تطبيق · أجريسيم مباشر",en:"App · AgriSim Live"},
+  t_s3_c:{fr:"Digitalisez <b>2 à 3 parcelles</b> et relevez pour chacune le <b>NDVI moyen</b> (statistique zonale). Comparez les valeurs et identifiez la <b>parcelle la plus faible</b> — la candidate prioritaire à un contrôle terrain.",
+    ar:"رقمن <b>2 إلى 3 قطع</b> وسجّل لكل منها <b>NDVI المتوسط</b> (إحصاء مناطقي). قارن القيم وحدّد <b>القطعة الأضعف</b> — المرشّحة الأولى للفحص الميداني.",
+    en:"Digitise <b>2 to 3 fields</b> and note each one's <b>mean NDVI</b> (zonal statistic). Compare the values and identify the <b>weakest field</b> — the priority candidate for a ground check."},
+  t_s3_q1:{fr:"NDVI moyen parcelle A",ar:"NDVI المتوسط للقطعة A",en:"Mean NDVI field A"},
+  t_s3_q2:{fr:"NDVI moyen parcelle B",ar:"NDVI المتوسط للقطعة B",en:"Mean NDVI field B"},
+  t_s3_q3:{fr:"NDVI moyen parcelle C",ar:"NDVI المتوسط للقطعة C",en:"Mean NDVI field C"},
+  t_s3_q4:{fr:"Parcelle au NDVI moyen le plus faible",ar:"القطعة ذات NDVI المتوسط الأدنى",en:"Field with the lowest mean NDVI"},
+  t_s3_q5:{fr:"Cette parcelle la plus faible est…",ar:"هذه القطعة الأضعف هي…",en:"This weakest field is…"},
+  t_s3_o1:{fr:"la plus vigoureuse du lot",ar:"الأكثر حيوية في المجموعة",en:"the most vigorous of the batch"},
+  t_s3_o2:{fr:"celle à contrôler en priorité sur le terrain",ar:"التي يجب فحصها أولاً في الميدان",en:"the one to check first in the field"},
+  t_s3_o3:{fr:"sans intérêt, on l'ignore",ar:"بلا أهمية، نتجاهلها",en:"of no interest, ignore it"},
+  t_s3_fb_ok:{fr:"Exact : un NDVI moyen nettement plus bas trahit une vigueur moindre — c'est la parcelle à inspecter en premier.",ar:"صحيح: NDVI متوسط أدنى بوضوح يدلّ على حيوية أقلّ — وهي القطعة التي تُفحص أولاً.",en:"Correct: a clearly lower mean NDVI betrays lower vigour — that is the field to inspect first."},
+  t_s3_fb_no:{fr:"Le NDVI le plus faible = la vigueur la plus faible : c'est cette parcelle qu'on va contrôler en priorité.",ar:"أدنى NDVI = أضعف حيوية: هذه القطعة تُفحص أولاً.",en:"The lowest NDVI = the lowest vigour: that field is the priority to check."},
+
+  // Step 4
+  t_s4_h:{fr:"Série temporelle — lire la saison",ar:"سلسلة زمنية — قراءة الموسم",en:"Time-series — read the season"},
+  t_s4_app:{fr:"App · AgriMap Formation",ar:"تطبيق · أجريماب التكوين",en:"App · AgriMap Training"},
+  t_s4_c:{fr:"Ouvrez <b>AgriMap Formation</b> et tracez le NDVI d'une parcelle <b>sur plusieurs dates</b> de la saison. Repérez la levée, le pic et la sénescence, puis <b>interprétez</b> la courbe (stade atteint, éventuel décrochage).",
+    ar:"افتح <b>أجريماب التكوين</b> وارسم NDVI لقطعة <b>عبر عدة تواريخ</b> من الموسم. حدّد الإنبات والذروة والشيخوخة، ثم <b>فسّر</b> المنحنى (المرحلة المبلوغة، أي انحراف محتمل).",
+    en:"Open <b>AgriMap Training</b> and plot a field's NDVI <b>across several dates</b> of the season. Spot emergence, peak and senescence, then <b>interpret</b> the curve (stage reached, any drop-off)."},
+  t_s4_q1:{fr:"Une chute précoce du NDVI en pleine saison indique…",ar:"انخفاض مبكّر لـ NDVI في عزّ الموسم يعني…",en:"An early NDVI drop mid-season indicates…"},
+  t_s4_o1:{fr:"une sénescence normale de fin de cycle",ar:"شيخوخة طبيعية في نهاية الدورة",en:"a normal end-of-cycle senescence"},
+  t_s4_o2:{fr:"un stress à investiguer (eau, maladie, azote)",ar:"إجهاداً يجب التحرّي عنه (ماء، مرض، نيتروجين)",en:"a stress to investigate (water, disease, nitrogen)"},
+  t_s4_o3:{fr:"une erreur systématique du satellite",ar:"خطأ منهجيّاً في القمر",en:"a systematic satellite error"},
+  t_s4_q2:{fr:"Stade phénologique lu au pic",ar:"المرحلة الفينولوجية عند الذروة",en:"Phenological stage read at the peak"},
+  t_s4_q3:{fr:"Votre interprétation en une phrase",ar:"تفسيرك في جملة",en:"Your interpretation in one sentence"},
+  t_s4_fb_ok:{fr:"Exact : un décrochage avant la sénescence normale signale un stress — le satellite le voit souvent avant l'œil.",ar:"صحيح: انحراف قبل الشيخوخة الطبيعية يشير إلى إجهاد — وكثيراً ما يراه القمر قبل العين.",en:"Correct: a drop before normal senescence signals stress — the satellite often sees it before the eye."},
+  t_s4_fb_no:{fr:"En pleine saison, une baisse anticipée n'est pas la sénescence : c'est un signal de stress à vérifier au champ.",ar:"في عزّ الموسم، الانخفاض المبكّر ليس شيخوخة: إنه إشارة إجهاد تُتحقَّق في الحقل.",en:"Mid-season, an early fall is not senescence: it is a stress signal to verify in the field."},
+
+  // Step 5 quiz
+  t_s5_h:{fr:"Synthèse — QCM auto-corrigé",ar:"التركيب — اختبار ذاتي التصحيح",en:"Synthesis — self-marked quiz"},
+  t_s5_app:{fr:"Évaluation · score /5",ar:"تقييم · النتيجة /5",en:"Assessment · score /5"},
+  t_s5_c:{fr:"Répondez aux cinq questions puis cliquez sur <b>Corriger</b>. Votre score et vos réponses sont enregistrés.",ar:"أجب عن الأسئلة الخمسة ثم اضغط <b>تصحيح</b>. تُحفظ نتيجتك وإجاباتك.",en:"Answer the five questions then click <b>Correct</b>. Your score and answers are saved."},
+  t_s5_free:{fr:"Ce que vous retenez de ce TP",ar:"ما تحتفظ به من هذا العمل التطبيقي",en:"Your takeaway from this lab"},
+  t_correct:{fr:"Corriger le QCM",ar:"تصحيح الاختبار",en:"Correct the quiz"},
+
+  q1:{fr:"Qu'est-ce que le « red-edge » ?",ar:"ما هي «الحافة الحمراء» (red-edge)؟",en:"What is the \"red-edge\"?"},
+  q1a:{fr:"La transition brutale entre le rouge absorbé et le NIR élevé, très sensible à la santé",ar:"الانتقال الحادّ بين الأحمر الممتصّ وNIR المرتفع، شديد الحساسية للصحة",en:"The abrupt transition between absorbed red and high NIR, very sensitive to health"},
+  q1b:{fr:"Le bord rouge visible d'une feuille malade",ar:"الحافة الحمراء المرئية لورقة مريضة",en:"The visible red edge of a diseased leaf"},
+  q1c:{fr:"Une bande thermique du satellite",ar:"نطاق حراري في القمر",en:"A thermal band of the satellite"},
+  q2:{fr:"Quelle est la formule du NDVI ?",ar:"ما صيغة NDVI؟",en:"What is the NDVI formula?"},
+  q2a:{fr:"(Rouge − NIR) / (Rouge × NIR)",ar:"(أحمر − NIR) / (أحمر × NIR)",en:"(Red − NIR) / (Red × NIR)"},
+  q2b:{fr:"(NIR − Rouge) / (NIR + Rouge)",ar:"(NIR − أحمر) / (NIR + أحمر)",en:"(NIR − Red) / (NIR + Red)"},
+  q2c:{fr:"(Vert + Bleu) / 2",ar:"(أخضر + أزرق) / 2",en:"(Green + Blue) / 2"},
+  q3:{fr:"Quelle est la revisite (résolution temporelle) de Sentinel-2 ?",ar:"ما هي إعادة زيارة (الدقة الزمنية) Sentinel-2؟",en:"What is Sentinel-2's revisit (temporal resolution)?"},
+  q3a:{fr:"Une image par heure",ar:"صورة كل ساعة",en:"One image per hour"},
+  q3b:{fr:"Une image par an",ar:"صورة كل عام",en:"One image per year"},
+  q3c:{fr:"Environ une image tous les 5 jours",ar:"صورة كل ~5 أيام تقريباً",en:"About one image every 5 days"},
+  q4:{fr:"En couvert dense, le NDVI sature. Quel indice privilégier pour l'azote ?",ar:"في الغطاء الكثيف يتشبّع NDVI. أي مؤشر نفضّل للنيتروجين؟",en:"In dense canopy NDVI saturates. Which index for nitrogen?"},
+  q4a:{fr:"Le NDWI",ar:"NDWI",en:"NDWI"},
+  q4b:{fr:"Le NDRE (basé sur le red-edge)",ar:"NDRE (المعتمد على الحافة الحمراء)",en:"NDRE (red-edge based)"},
+  q4c:{fr:"La bande bleue seule",ar:"النطاق الأزرق وحده",en:"The blue band alone"},
+  q5:{fr:"Quelle est la principale limite de l'imagerie optique ?",ar:"ما القيد الرئيسي للصور البصرية؟",en:"What is the main limit of optical imagery?"},
+  q5a:{fr:"Les nuages, qui masquent la surface",ar:"الغيوم التي تحجب السطح",en:"Clouds, which hide the surface"},
+  q5b:{fr:"Elle ne fonctionne qu'en hiver",ar:"لا تعمل إلا شتاءً",en:"It only works in winter"},
+  q5c:{fr:"Elle exige une licence payante",ar:"تتطلّب ترخيصاً مدفوعاً",en:"It requires a paid licence"},
+
+  t_score_ex:{fr:"Excellent — concepts maîtrisés !",ar:"ممتاز — المفاهيم متمكَّنة!",en:"Excellent — concepts mastered!"},
+  t_score_ok:{fr:"Bien — quelques points à revoir.",ar:"جيّد — بعض النقاط للمراجعة.",en:"Good — a few points to revisit."},
+  t_score_lo:{fr:"À revoir — relisez le cours puis recommencez.",ar:"يحتاج مراجعة — أعد قراءة الدرس ثم أعد المحاولة.",en:"Needs work — reread the course then retry."},
+  t_score_desc:{fr:"Réponses correctes sur 5 questions de synthèse.",ar:"إجابات صحيحة من 5 أسئلة تركيبية.",en:"Correct answers out of 5 synthesis questions."},
+
+  t_mode:{fr:"Mode local (localStorage) — progression sauvegardée automatiquement.",ar:"وضع محلي (localStorage) — التقدّم محفوظ تلقائياً.",en:"Local mode (localStorage) — progress saved automatically."},
+  t_export:{fr:"Exporter le compte-rendu (JSON)",ar:"تصدير التقرير (JSON)",en:"Export report (JSON)"},
+  t_reset:{fr:"Réinitialiser",ar:"إعادة الضبط",en:"Reset"},
+  t_reset_confirm:{fr:"Effacer toutes vos réponses et repartir de zéro ?",ar:"مسح جميع إجاباتك والبدء من جديد؟",en:"Erase all your answers and start over?"},
+  t_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Domaine d1 (Télédétection) · travaux pratiques",ar:"منصّة أجريتك ليبيا · EU4Skills — المجال d1 (الاستشعار عن بُعد) · عمل تطبيقي",en:"AgriTech Libya Platform · EU4Skills — Domain d1 (Remote sensing) · practical work"}
+});
+
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const LKEY="tp_teledetection_v1";
+const QUIZ=[
+  {id:"q1",correct:0,opts:["q1a","q1b","q1c"]},
+  {id:"q2",correct:1,opts:["q2a","q2b","q2c"]},
+  {id:"q3",correct:2,opts:["q3a","q3b","q3c"]},
+  {id:"q4",correct:1,opts:["q4a","q4b","q4c"]},
+  {id:"q5",correct:0,opts:["q5a","q5b","q5c"]}
+];
+// correct radio answers for step MCQs
+const STEPQ={s1a:1,s2a:1,s3a:1,s4a:1};
+
+let STATE=load();
+function load(){try{return JSON.parse(localStorage.getItem(LKEY))||blank();}catch(e){return blank();}}
+function blank(){return{radios:{},fields:{},done:{},quiz:{},score:null,corrected:false};}
+function save(){STATE.updatedAt=new Date().toISOString();localStorage.setItem(LKEY,JSON.stringify(STATE));}
+
+/* ---- build quiz ---- */
+function buildQuiz(){
+  const box=$('#quiz');box.innerHTML='';
+  QUIZ.forEach((q,qi)=>{
+    const blk=document.createElement('div');blk.className='qblock';
+    const lab=document.createElement('label');lab.className='qlabel';
+    lab.textContent=(qi+1)+'. '+I18N.t(q.id);blk.appendChild(lab);
+    const opts=document.createElement('div');opts.className='opts';opts.dataset.quiz=q.id;
+    q.opts.forEach((ok,oi)=>{
+      const l=document.createElement('label');l.className='opt';
+      const inp=document.createElement('input');inp.type='radio';inp.name='qz_'+q.id;inp.value=oi;
+      if(STATE.quiz[q.id]===oi){inp.checked=true;l.classList.add('sel');}
+      inp.addEventListener('change',()=>{STATE.quiz[q.id]=oi;opts.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));l.classList.add('sel');save();});
+      const sp=document.createElement('span');sp.textContent=I18N.t(ok);
+      l.appendChild(inp);l.appendChild(sp);opts.appendChild(l);
+    });
+    blk.appendChild(opts);box.appendChild(blk);
+  });
+}
+
+/* ---- restore inputs ---- */
+function restore(){
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q, val=STATE.radios[name];
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.checked=(String(val)===r.value);
+      r.closest('.opt').classList.toggle('sel',r.checked);
+    });
+  });
+  $$('[data-f]').forEach(f=>{if(STATE.fields[f.dataset.f]!=null)f.value=STATE.fields[f.dataset.f];});
+  $$('[data-done]').forEach(c=>{c.checked=!!STATE.done[c.dataset.done];});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+}
+
+/* ---- wire inputs ---- */
+function wire(){
+  $$('.opts[data-q]').forEach(g=>{
+    const name=g.dataset.q;
+    g.querySelectorAll('input[type=radio]').forEach(r=>{
+      r.addEventListener('change',()=>{
+        STATE.radios[name]=+r.value;
+        g.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+        r.closest('.opt').classList.add('sel');
+        feedbackStep(name);save();
+      });
+    });
+  });
+  $$('[data-f]').forEach(f=>f.addEventListener('input',()=>{STATE.fields[f.dataset.f]=f.value;save();}));
+  $$('[data-done]').forEach(c=>c.addEventListener('change',()=>{STATE.done[c.dataset.done]=c.checked;save();updateProgress();}));
+}
+
+/* ---- per-step feedback ---- */
+function feedbackStep(name){
+  const fb=$('.fb[data-fb="'+name+'"]');if(!fb)return;
+  const val=STATE.radios[name], ok=(val===STEPQ[name]);
+  let key=name.replace(/a$/,'')+ (ok?'_fb_ok':'_fb_no');
+  key='t_'+key;
+  let msg=I18N.t(key);
+  fb.textContent=msg;
+  fb.className='fb show '+(ok?'ok':'no');
+}
+
+/* ---- progress ---- */
+function updateProgress(){
+  const done=[1,2,3,4,5].filter(i=>STATE.done[i]).length;
+  $('#pfill').style.width=(done/5*100)+'%';
+  $('#ptxt').textContent=done+' / 5';
+  const dots=$('#pdots');dots.innerHTML='';
+  for(let i=1;i<=5;i++){const d=document.createElement('div');d.className='dot'+(STATE.done[i]?' done':'');dots.appendChild(d);}
+}
+
+/* ---- correct quiz ---- */
+function correctQuiz(){
+  let score=0;
+  QUIZ.forEach(q=>{
+    const g=$('.opts[data-quiz="'+q.id+'"]');
+    const ans=STATE.quiz[q.id];
+    g.querySelectorAll('.opt').forEach((l,oi)=>{
+      l.classList.remove('good','bad');
+      if(oi===q.correct)l.classList.add('good');
+      else if(oi===ans)l.classList.add('bad');
+    });
+    if(ans===q.correct)score++;
+  });
+  STATE.score=score;STATE.corrected=true;save();
+  showScore(score,true);
+}
+function showScore(score,scroll){
+  const box=$('#scorebox');box.hidden=false;
+  $('#scoreval').textContent=score+'/5';
+  $('#dial').style.setProperty('--p',(score/5*360)+'deg');
+  const tk=score>=5?'t_score_ex':score>=3?'t_score_ok':'t_score_lo';
+  $('#scoretitle').textContent=I18N.t(tk);
+  $('#scoredesc').textContent=score+' / 5 — '+I18N.t('t_score_desc');
+  if(scroll)box.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ---- export ---- */
+function doExport(){
+  const rep={
+    format:"agritech-tp-report",module:"M2",domain:"d1",tp:"teledetection",version:"tp_teledetection_v1",
+    lang:I18N.lang,exportedAt:new Date().toISOString(),
+    stepsCompleted:[1,2,3,4,5].filter(i=>STATE.done[i]),
+    answers:{
+      step1:{area_ha:STATE.fields.s1_area||"",vertices:STATE.fields.s1_verts||"",export_format_choice:STATE.radios.s1a},
+      step2:{scene_date:STATE.fields.s2_date||"",cloud_pct:STATE.fields.s2_cloud||"",index_choice:STATE.radios.s2a},
+      step3:{ndvi_A:STATE.fields.s3_p1||"",ndvi_B:STATE.fields.s3_p2||"",ndvi_C:STATE.fields.s3_p3||"",weakest:STATE.fields.s3_weak||"",weakest_meaning_choice:STATE.radios.s3a},
+      step4:{stage:STATE.fields.s4_stage||"",drop_meaning_choice:STATE.radios.s4a,interpretation:STATE.fields.s4_interp||""},
+      step5:{quiz:STATE.quiz,takeaway:STATE.fields.s5_takeaway||""}
+    },
+    quizScore:STATE.score,quizMax:5
+  };
+  const name="tp_teledetection_"+(new Date().toISOString().slice(0,10))+".json";
+  if(window.Store&&Store.download)Store.download(name,JSON.stringify(rep,null,2),'application/json');
+  else{const a=document.createElement('a');a.href='data:application/json,'+encodeURIComponent(JSON.stringify(rep,null,2));a.download=name;a.click();}
+}
+
+/* ---- reset ---- */
+function doReset(){
+  if(!confirm(I18N.t('t_reset_confirm')))return;
+  STATE=blank();localStorage.removeItem(LKEY);
+  $$('.fb').forEach(f=>f.className='fb');
+  $('#scorebox').hidden=true;
+  buildQuiz();restore();
+}
+
+/* ---- i18n re-render ---- */
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{
+  applyHTML();buildQuiz();
+  ['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+  if(STATE.corrected&&STATE.score!=null)showScore(STATE.score,false);
+  updateProgress();
+});
+
+$('#correctBtn').addEventListener('click',correctQuiz);
+$('#exportBtn').addEventListener('click',doExport);
+$('#resetBtn').addEventListener('click',doReset);
+
+buildQuiz();wire();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();restore();
+['s1a','s2a','s3a','s4a'].forEach(n=>{if(STATE.radios[n]!=null)feedbackStep(n);});
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

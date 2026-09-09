@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hydrogéologie Sarir — puits & aquifère nubien</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:960px;margin:-4px 0 4px;font-size:14px}
+  .lead b{color:var(--ink)}
+  .grid-main{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;align-items:start}
+  @media(max-width:980px){.grid-main{grid-template-columns:1fr}}
+  #map{height:460px;border-radius:12px;border:1px solid var(--line);z-index:0}
+  .maphint{font-size:12px;color:var(--muted);margin-top:8px}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tabs button{border:1px solid var(--line);background:#fff;color:var(--muted);font:inherit;font-weight:700;font-size:12.5px;padding:7px 13px;border-radius:9px;cursor:pointer}
+  .tabs button.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .pane{display:none} .pane.on{display:block}
+  .fld{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+  .fld label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:flex;justify-content:space-between;align-items:baseline}
+  .fld .rngval{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:12.5px}
+  select,input[type=text],input[type=number]{border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:#fff;color:var(--ink);font:inherit;font-weight:600;width:100%}
+  select:focus,input:focus{outline:none;border-color:var(--green)}
+  input[type=range]{width:100%;accent-color:var(--green)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  svg.chart{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:10px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:12px}
+  .kpi{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+  .kpi .l{color:var(--muted);font-size:10.5px;font-weight:700;text-transform:uppercase}
+  .kpi .v{font-size:1.25rem;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+  .kpi .v small{font-size:.72rem;font-weight:700;color:var(--muted)}
+  .detail{font-size:13px;line-height:1.7}
+  .detail .k{color:var(--muted)} .detail .v{font-weight:700;font-family:"JetBrains Mono",monospace}
+  .badge2{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:11px}
+  .badge2.pw{background:#e6f2fa;color:#2f7fae}.badge2.pz{background:#efe9fa;color:#6f4fb0}.badge2.co{background:#eef8ef;color:var(--impact)}
+  .clist{max-height:200px;overflow:auto;margin-top:10px}
+  .citem{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;margin-bottom:7px;font-size:12.5px}
+  .citem b{flex:1}.citem .del{cursor:pointer;color:var(--decision);font-weight:800;border:none;background:none;font-size:15px}
+  .ok{background:#eef8ef;border:1px solid #bfe3c3;color:var(--impact);font-size:12.5px;padding:8px 11px;border-radius:9px;margin-top:8px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .abstr-note{font-size:12.5px;color:var(--muted);margin-top:8px}
+  .abstr-note b{color:var(--decision)}
+  .leaflet-popup-content{font-family:"Inter",sans-serif;font-size:12.5px}
+  .leaflet-popup-content b{color:var(--green-d)}
+  pre.fmt{background:#0e1512;color:#d7e3cd;border-radius:9px;padding:11px 13px;font-family:"JetBrains Mono",monospace;font-size:11px;overflow:auto;margin-top:8px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">GEO</span> <b data-i18n="h_brand">Hydrogéo</b> <span data-i18n="h_brand2">Sarir</span></div>
+  <div class="sub" data-i18n="h_sub">Champ captant de Sarir · aquifère nubien · Libye</div>
+  <div class="right">
+    <span class="chip">G0 · M4</span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="h_lead"></p>
+
+  <div class="grid-main">
+    <!-- ---- Map ---- -->
+    <div class="card">
+      <h2>🗺️ <span data-i18n="h_map_title"></span> <span class="badge2 pw" id="cntPw"></span> <span class="badge2 pz" id="cntPz"></span></h2>
+      <div id="map"></div>
+      <div class="maphint" data-i18n="h_maphint"></div>
+    </div>
+
+    <!-- ---- Right panel with tabs ---- -->
+    <div class="card">
+      <div class="tabs">
+        <button class="on" data-t="detail" data-i18n="h_tab_detail"></button>
+        <button data-t="contrib" data-i18n="h_tab_contrib"></button>
+        <button data-t="io" data-i18n="h_tab_io"></button>
+      </div>
+
+      <!-- Detail + Theis -->
+      <div class="pane on" id="p-detail">
+        <div class="fld">
+          <label data-i18n="h_pick_well"></label>
+          <select id="wellSel"></select>
+        </div>
+        <div id="detail" class="detail"></div>
+        <div id="theisBox">
+          <div class="row2">
+            <div class="fld"><label><span data-i18n="h_dist"></span><span class="rngval" id="rv">100 m</span></label>
+              <input type="range" id="r" min="10" max="2000" step="10" value="100"></div>
+            <div class="fld"><label><span>S</span><span class="rngval" id="sv">1e-4</span></label>
+              <input type="range" id="s" min="-5" max="-2" step="0.1" value="-4"></div>
+          </div>
+          <svg class="chart" id="theis" viewBox="0 0 440 200" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="kpis" id="theisKpi"></div>
+        </div>
+      </div>
+
+      <!-- Contribute (researchers) -->
+      <div class="pane" id="p-contrib">
+        <p class="lead" style="margin:0 0 12px" data-i18n-html="h_contrib_intro"></p>
+        <div class="fld"><label data-i18n="h_c_kind"></label>
+          <select id="c_kind"><option value="pumping_well">🔵 <span></span></option><option value="piezometer">🟣</option></select>
+        </div>
+        <div class="row2">
+          <div class="fld"><label data-i18n="h_c_no"></label><input type="text" id="c_no" placeholder="e.g. S19"></div>
+          <div class="fld"><label data-i18n="h_c_loc"></label><input type="text" id="c_loc" placeholder="Sarir North"></div>
+        </div>
+        <div class="row2">
+          <div class="fld"><label>Lon (°E)</label><input type="number" id="c_lon" step="0.0001" placeholder="22.20"></div>
+          <div class="fld"><label>Lat (°N)</label><input type="number" id="c_lat" step="0.0001" placeholder="27.80"></div>
+        </div>
+        <button class="btn ghost" id="pickBtn" style="margin-bottom:11px">📍 <span data-i18n="h_c_pick"></span></button>
+        <!-- pumping fields -->
+        <div id="c_pw">
+          <div class="row2">
+            <div class="fld"><label>T (m²/d)</label><input type="number" id="c_T" placeholder="480"></div>
+            <div class="fld"><label>K (m/d)</label><input type="number" id="c_K" placeholder="15"></div>
+          </div>
+          <div class="row2">
+            <div class="fld"><label>Q (m³/d)</label><input type="number" id="c_Q" placeholder="3024"></div>
+            <div class="fld"><label><span data-i18n="h_c_depth"></span></label><input type="number" id="c_depth" placeholder="240"></div>
+          </div>
+          <div class="fld"><label><span data-i18n="h_c_dtw"></span></label><input type="number" id="c_dtw" placeholder="30"></div>
+        </div>
+        <!-- piezometer fields -->
+        <div id="c_pz" hidden>
+          <div class="row2">
+            <div class="fld"><label><span data-i18n="h_c_elev"></span></label><input type="number" id="c_elev" placeholder="110"></div>
+            <div class="fld"><label><span data-i18n="h_c_wl"></span></label><input type="number" id="c_wl" placeholder="80"></div>
+          </div>
+          <div class="fld"><label><span data-i18n="h_c_depth"></span></label><input type="number" id="c_depth2" placeholder="300"></div>
+        </div>
+        <div class="btns"><button class="btn primary" onclick="addContrib()">➕ <span data-i18n="h_c_add"></span></button></div>
+        <div id="c_msg"></div>
+        <div class="clist" id="c_list"></div>
+      </div>
+
+      <!-- Import / Export -->
+      <div class="pane" id="p-io">
+        <p class="lead" style="margin:0 0 12px" data-i18n-html="h_io_intro"></p>
+        <div class="btns">
+          <button class="btn ghost" onclick="doImport()">📥 <span data-i18n="import"></span> CSV / GeoJSON</button>
+          <button class="btn ghost" onclick="doExport()">📤 <span data-i18n="export"></span> GeoJSON</button>
+          <button class="btn ghost" onclick="doExportCsv()">📤 <span data-i18n="export"></span> CSV</button>
+        </div>
+        <details style="margin-top:12px">
+          <summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--green-d)" data-i18n="h_io_fmt"></summary>
+          <pre class="fmt" id="fmtHydro"></pre>
+        </details>
+        <div class="ok" style="margin-top:12px" data-i18n-html="h_io_persist"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Abstraction history ---- -->
+  <div class="card">
+    <h2>📉 <span data-i18n="h_abstr_title"></span></h2>
+    <svg class="chart" id="abstr" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet" style="background:#fff"></svg>
+    <div class="abstr-note" data-i18n-html="h_abstr_note"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="platform/public/assets/js/geo-search.js"></script>
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+
+/* ===== embedded real data (Sarir wellfield, Nubian aquifer) ===== */
+const BASE_WELLS=[{"no":"S1","loc":"Sarir North","kind":"pumping_well","lon":22.235067,"lat":27.863434,"depth":223.67,"dtw":30.2,"wl":null,"elev":null,"T":410,"K":18.09,"Q":3024},{"no":"S2","loc":"Sarir North","kind":"pumping_well","lon":22.209731,"lat":27.863821,"depth":197.92,"dtw":29,"wl":null,"elev":null,"T":530,"K":24.49,"Q":3024},{"no":"S3","loc":"Sarir North","kind":"pumping_well","lon":22.184335,"lat":27.864376,"depth":301.65,"dtw":26.06,"wl":null,"elev":null,"T":480,"K":16.76,"Q":3024},{"no":"R1","loc":"Sarir North","kind":"pumping_well","lon":22.247324,"lat":27.843746,"depth":229.53,"dtw":25.5,"wl":null,"elev":null,"T":300,"K":18.21,"Q":3024},{"no":"R2","loc":"Sarir North","kind":"pumping_well","lon":22.221942,"lat":27.844136,"depth":309.3,"dtw":28.35,"wl":null,"elev":null,"T":420,"K":4.38,"Q":3024},{"no":"R3","loc":"Sarir North","kind":"pumping_well","lon":22.196537,"lat":27.844376,"depth":310.9,"dtw":18.89,"wl":null,"elev":null,"T":730,"K":21.47,"Q":3024},{"no":"Q1","loc":"Sarir North","kind":"pumping_well","lon":22.207029,"lat":27.752658,"depth":241.89,"dtw":31.9,"wl":null,"elev":null,"T":480,"K":17.21,"Q":3024},{"no":"Q2","loc":"Sarir North","kind":"pumping_well","lon":22.182355,"lat":27.76697,"depth":232,"dtw":23.45,"wl":null,"elev":null,"T":470,"K":16.21,"Q":3024},{"no":"Q3","loc":"Sarir North","kind":"pumping_well","lon":22.156345,"lat":27.754336,"depth":238.28,"dtw":27.85,"wl":null,"elev":null,"T":610,"K":11.54,"Q":3024},{"no":"P1","loc":"Sarir North","kind":"pumping_well","lon":22.218931,"lat":27.732722,"depth":223.32,"dtw":32.4,"wl":null,"elev":null,"T":480,"K":9.18,"Q":3024},{"no":"P2","loc":"Sarir North","kind":"pumping_well","lon":22.192997,"lat":27.720131,"depth":247.29,"dtw":34.5,"wl":null,"elev":null,"T":610,"K":15.16,"Q":3024},{"no":"P3","loc":"Sarir North","kind":"pumping_well","lon":22.168156,"lat":27.734379,"depth":235.26,"dtw":28.83,"wl":null,"elev":null,"T":260,"K":6.44,"Q":3024},{"no":"L1","loc":"Sarir South","kind":"pumping_well","lon":22.193312,"lat":27.095085,"depth":300.29,"dtw":48.7,"wl":null,"elev":null,"T":1860,"K":12.89,"Q":3024},{"no":"L2","loc":"Sarir South","kind":"pumping_well","lon":22.170746,"lat":27.108346,"depth":297.12,"dtw":48.7,"wl":null,"elev":null,"T":670,"K":4.55,"Q":3024},{"no":"L3","loc":"Sarir South","kind":"pumping_well","lon":22.146022,"lat":27.094576,"depth":273.6,"dtw":48.7,"wl":null,"elev":null,"T":840,"K":6.8,"Q":3024},{"no":"pw101","loc":"Sarir West","kind":"pumping_well","lon":21.575695,"lat":27.638721,"depth":446,"dtw":89.98,"wl":null,"elev":null,"T":905,"K":null,"Q":3024},{"no":"pw102","loc":"Sarir West","kind":"pumping_well","lon":21.562518,"lat":27.638775,"depth":450,"dtw":89.84,"wl":null,"elev":null,"T":675,"K":2.68,"Q":3024},{"no":"pw103","loc":"Sarir West","kind":"pumping_well","lon":21.54934,"lat":27.638827,"depth":456,"dtw":89.38,"wl":null,"elev":null,"T":1470,"K":5.74,"Q":3024},{"no":"PZ-32","loc":"Sarir deep (South)","kind":"piezometer","lon":22.503056,"lat":26.913582,"depth":308.7,"dtw":null,"wl":96.19,"elev":170.19,"T":null,"K":null,"Q":null},{"no":"PZ-33","loc":"Sarir deep (South)","kind":"piezometer","lon":22.000596,"lat":27.338833,"depth":295.66,"dtw":null,"wl":91.67,"elev":127.44,"T":null,"K":null,"Q":null},{"no":"PZ-34","loc":"Sarir deep (South)","kind":"piezometer","lon":21.445641,"lat":26.911861,"depth":305.06,"dtw":null,"wl":106.63,"elev":171.35,"T":null,"K":null,"Q":null},{"no":"PZ-4","loc":"Sarir deep (North)","kind":"piezometer","lon":22.342309,"lat":27.781775,"depth":316,"dtw":null,"wl":75.11,"elev":104.61,"T":null,"K":null,"Q":null},{"no":"PZ-5","loc":"Sarir deep (North)","kind":"piezometer","lon":22.488694,"lat":27.726111,"depth":258,"dtw":null,"wl":70.02,"elev":100.97,"T":null,"K":null,"Q":null},{"no":"PZ-7","loc":"Sarir deep (North)","kind":"piezometer","lon":22.0525,"lat":27.692583,"depth":323.5,"dtw":null,"wl":81.22,"elev":114,"T":null,"K":null,"Q":null},{"no":"PZ-8","loc":"Sarir deep (North)","kind":"piezometer","lon":22.081456,"lat":27.800798,"depth":260,"dtw":null,"wl":75.33,"elev":104.78,"T":null,"K":null,"Q":null},{"no":"PZ-57","loc":"Sarir West deep","kind":"piezometer","lon":21.456213,"lat":27.592266,"depth":null,"dtw":null,"wl":90.1,"elev":150.6,"T":null,"K":null,"Q":null},{"no":"PZ-58","loc":"Sarir West deep","kind":"piezometer","lon":21.153471,"lat":27.592985,"depth":null,"dtw":null,"wl":90.1,"elev":167.72,"T":null,"K":null,"Q":null},{"no":"PZ-59","loc":"Sarir West deep","kind":"piezometer","lon":21.342014,"lat":27.714414,"depth":null,"dtw":null,"wl":88.8,"elev":154.48,"T":null,"K":null,"Q":null}];
+const BASE_ABSTR=[[1980,70060000],[1981,75000000],[1982,86120000],[1983,85100000],[1984,71620000],[1985,71340000],[1986,51740000],[1987,59920000],[1988,49180000],[1989,65250000],[1990,66790000],[1991,42130000],[1992,42170000],[1993,40240000],[1994,38000000],[1995,37000000]];
+const CKEY="sarir_contrib_v1";
+
+Object.assign(I18N.DICT,{
+  h_brand:{fr:"Hydrogéo",ar:"هيدروجيو",en:"Hydrogeo"},h_brand2:{fr:"Sarir",ar:"السرير",en:"Sarir"},
+  h_sub:{fr:"Champ captant de Sarir · aquifère nubien · Libye",ar:"حقل آبار السرير · الخزان النوبي · ليبيا",en:"Sarir wellfield · Nubian aquifer · Libya"},
+  h_lead:{fr:"Données <b>réelles</b> du champ captant de <b>Sarir</b> (SE Libye) puisant dans le <b>Système Aquifère de Grès Nubien</b> — l'eau <b>fossile</b> qui alimente la Grande Rivière Artificielle. 18 puits + 10 piézomètres, avec transmissivité T, perméabilité K et débits. Explorez un puits, simulez son <b>rabattement (Theis / Cooper-Jacob)</b>, lisez l'<b>historique d'exploitation</b>, et <b>ajoutez vos propres mesures</b> (onglet Contribuer).",
+          ar:"بيانات <b>حقيقية</b> من حقل آبار <b>السرير</b> (جنوب شرق ليبيا) الذي يسحب من <b>نظام الحجر الرملي النوبي</b> — المياه <b>الأحفورية</b> التي تغذّي النهر الصناعي العظيم. 18 بئراً + 10 بيزومترات، مع الناقلية T والنفاذية K والتصريف. استكشف بئراً، حاكِ <b>الهبوط (Theis)</b>، واقرأ <b>تاريخ الاستغلال</b>، و<b>أضف قياساتك</b> (تبويب المساهمة).",
+          en:"<b>Real</b> data from the <b>Sarir</b> wellfield (SE Libya) tapping the <b>Nubian Sandstone Aquifer System</b> — the <b>fossil</b> water feeding the Great Man-Made River. 18 wells + 10 piezometers, with transmissivity T, permeability K and discharge. Explore a well, simulate its <b>drawdown (Theis / Cooper-Jacob)</b>, read the <b>abstraction history</b>, and <b>add your own measurements</b> (Contribute tab)."},
+  h_map_title:{fr:"Puits & piézomètres",ar:"الآبار والبيزومترات",en:"Wells & piezometers"},
+  h_maphint:{fr:"Cliquez un point pour ses paramètres. 🔵 puits de pompage · 🟣 piézomètre · 🟢 contribution.",ar:"انقر نقطة لعرض معطياتها. 🔵 بئر ضخ · 🟣 بيزومتر · 🟢 مساهمة.",en:"Click a point for its parameters. 🔵 pumping well · 🟣 piezometer · 🟢 contribution."},
+  h_tab_detail:{fr:"Détail & Theis",ar:"التفاصيل و Theis",en:"Detail & Theis"},
+  h_tab_contrib:{fr:"Contribuer",ar:"مساهمة",en:"Contribute"},
+  h_tab_io:{fr:"Import/Export",ar:"استيراد/تصدير",en:"Import/Export"},
+  h_pick_well:{fr:"Puits sélectionné",ar:"البئر المختار",en:"Selected well"},
+  h_dist:{fr:"Distance r",ar:"المسافة r",en:"Distance r"},
+  h_contrib_intro:{fr:"<b>Espace chercheurs</b> : ajoutez un nouveau puits, piézomètre ou une mesure de terrain. Les contributions sont <b>enregistrées localement</b> et apparaissent sur la carte ; exportez-les pour les partager avec l'équipe.",
+                   ar:"<b>فضاء الباحثين</b>: أضف بئراً أو بيزومتراً أو قياساً ميدانياً جديداً. تُحفظ المساهمات <b>محلياً</b> وتظهر على الخريطة؛ صدّرها لمشاركتها مع الفريق.",
+                   en:"<b>Researcher space</b>: add a new well, piezometer or field measurement. Contributions are <b>saved locally</b> and appear on the map; export them to share with the team."},
+  h_c_kind:{fr:"Type de point",ar:"نوع النقطة",en:"Point type"},
+  h_c_no:{fr:"Identifiant",ar:"المعرّف",en:"ID / No"},
+  h_c_loc:{fr:"Localité",ar:"الموقع",en:"Location"},
+  h_c_pick:{fr:"Placer depuis la carte",ar:"تحديد من الخريطة",en:"Pick from map"},
+  h_c_depth:{fr:"Profondeur (m)",ar:"العمق (م)",en:"Total depth (m)"},
+  h_c_dtw:{fr:"Niveau d'eau / sol (m)",ar:"عمق الماء (م)",en:"Depth to water (m)"},
+  h_c_elev:{fr:"Élévation (m)",ar:"الارتفاع (م)",en:"Elevation (m)"},
+  h_c_wl:{fr:"Niveau d'eau (m amsl)",ar:"منسوب الماء (م)",en:"Water level (m amsl)"},
+  h_c_add:{fr:"Ajouter le point",ar:"إضافة النقطة",en:"Add point"},
+  h_c_added:{fr:"Point ajouté et enregistré ✓",ar:"تمت الإضافة والحفظ ✓",en:"Point added and saved ✓"},
+  h_c_need:{fr:"Renseignez au moins l'identifiant et les coordonnées.",ar:"أدخل المعرّف والإحداثيات على الأقل.",en:"Provide at least the ID and coordinates."},
+  h_c_none:{fr:"Aucune contribution pour l'instant.",ar:"لا مساهمات بعد.",en:"No contributions yet."},
+  h_io_intro:{fr:"Import/export en <b>CSV</b> et <b>GeoJSON</b> (CRS84 lon,lat) — l'import accepte les deux (puits & piézomètres), compatible avec la plateforme et les SIG (QGIS…).",ar:"استيراد/تصدير بصيغتي <b>CSV</b> و<b>GeoJSON</b> — يقبل الاستيراد كلتيهما (آبار وبيزومترات)، متوافق مع المنصة ونظم المعلومات الجغرافية.",en:"Import/export as <b>CSV</b> and <b>GeoJSON</b> (CRS84 lon,lat) — import accepts both (wells & piezometers), compatible with the platform and GIS (QGIS…)."},
+  h_io_fmt:{fr:"Format ? (CSV & GeoJSON)",ar:"الصيغة؟ (CSV و GeoJSON)",en:"Format? (CSV & GeoJSON)"},
+  h_io_persist:{fr:"💾 Vos contributions restent sur ce poste (localStorage). L'export CSV ou GeoJSON permet de les archiver ou de les remonter à l'équipe.",ar:"💾 تبقى مساهماتك على هذا الجهاز. يتيح تصدير CSV أو GeoJSON أرشفتها أو إرسالها للفريق.",en:"💾 Your contributions stay on this device (localStorage). CSV or GeoJSON export lets you archive or send them to the team."},
+  h_abstr_title:{fr:"Historique d'exploitation du champ (1980–1995)",ar:"تاريخ استغلال الحقل (1980–1995)",en:"Wellfield abstraction history (1980–1995)"},
+  h_abstr_note:{fr:"Débit total prélevé, en millions de m³/an. Le pic de <b>86 M m³ (1982)</b> décline vers <b>37 M m³ (1995)</b> : signature d'un aquifère <b>fossile non renouvelable</b> (recharge quasi nulle) — chaque m³ pompé est un m³ « miné ». À rapprocher du signal <b>GRACE</b> de perte de masse d'eau.",
+               ar:"إجمالي التصريف بملايين م³/سنة. القمة <b>86 مليون م³ (1982)</b> تتراجع إلى <b>37 مليون م³ (1995)</b>: توقيع خزان <b>أحفوري غير متجدد</b> — كل م³ مضخوخ هو م³ «مُستنزَف». يُقارن بإشارة <b>GRACE</b>.",
+               en:"Total abstraction, in million m³/yr. The <b>86 Mm³ peak (1982)</b> declines to <b>37 Mm³ (1995)</b>: signature of a <b>non-renewable fossil</b> aquifer (near-zero recharge) — every pumped m³ is 'mined'. Compare with the <b>GRACE</b> mass-loss signal."},
+  h_dd:{fr:"Rabattement s",ar:"الهبوط s",en:"Drawdown s"},
+  h_at:{fr:"à",ar:"عند",en:"at"},
+  h_time:{fr:"temps (jours)",ar:"الزمن (أيام)",en:"time (days)"},
+  h_no_theis:{fr:"Sélectionnez un puits de pompage pour l'essai Theis (les piézomètres n'ont pas de débit).",ar:"اختر بئر ضخ لاختبار Theis.",en:"Select a pumping well for the Theis test (piezometers have no discharge)."},
+  k_T:{fr:"Transmissivité",ar:"الناقلية",en:"Transmissivity"},k_Q:{fr:"Débit",ar:"التصريف",en:"Discharge"},
+  k_s30:{fr:"Rabattement à 30 j",ar:"الهبوط عند 30 يوماً",en:"Drawdown at 30 d"},k_depth:{fr:"Profondeur",ar:"العمق",en:"Depth"},
+  k_wl:{fr:"Niveau d'eau",ar:"منسوب الماء",en:"Water level"},k_elev:{fr:"Élévation",ar:"الارتفاع",en:"Elevation"}
+});
+
+/* ===== map ===== */
+let map, layer, tmpMarker, pickMode=false, SEL=null, geoCtl=null;
+let CONTRIB=loadContrib();
+function loadContrib(){ try{return JSON.parse(localStorage.getItem(CKEY)||"[]");}catch(e){return [];} }
+function saveContrib(){ localStorage.setItem(CKEY,JSON.stringify(CONTRIB)); }
+function allWells(){ return BASE_WELLS.concat(CONTRIB); }
+
+function initMap(){
+  map=L.map('map',{scrollWheelZoom:true}).setView([27.5,21.95],7);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {attribution:'Esri',maxZoom:17}).addTo(map);
+  layer=L.layerGroup().addTo(map);
+  try{ map.fitBounds(L.latLngBounds(allWells().map(w=>[w.lat,w.lon])).pad(0.12)); }catch(e){}
+  map.on('click',e=>{ if(pickMode){ $('c_lon').value=e.latlng.lng.toFixed(5); $('c_lat').value=e.latlng.lat.toFixed(5);
+    if(tmpMarker)map.removeLayer(tmpMarker); tmpMarker=L.circleMarker(e.latlng,{radius:8,color:'#3fa66a',fillColor:'#7cb342',fillOpacity:.9,weight:2}).addTo(map);
+    pickMode=false; $('pickBtn').classList.remove('primary'); } });
+  renderMap();
+  addGeoSearch();
+}
+function addGeoSearch(){
+  if(typeof GeoSearch==='undefined'||!map) return;
+  if(geoCtl){ try{ map.removeControl(geoCtl); if(geoCtl._layer) map.removeLayer(geoCtl._layer); }catch(e){} }
+  geoCtl=GeoSearch.add(map,{lang:I18N.lang, showLocalities:false});
+}
+function color(w){ return w.contrib?'#3fa66a': w.kind==='piezometer'?'#8e6fc7':'#3a9bd0'; }
+function renderMap(){
+  layer.clearLayers();
+  const all=allWells();
+  all.forEach(w=>{
+    const m=L.circleMarker([w.lat,w.lon],{radius: w.kind==='pumping_well'? (w.T? 6+Math.min(10,w.T/200):7):6,
+      color:'#fff',weight:1.5,fillColor:color(w),fillOpacity:.9});
+    m.on('click',()=>selectWell(w.no));
+    m.bindPopup(popup(w)); m.addTo(layer);
+  });
+  $('cntPw').textContent='🔵 '+all.filter(w=>w.kind==='pumping_well').length;
+  $('cntPz').textContent='🟣 '+all.filter(w=>w.kind==='piezometer').length;
+  fillWellSel();
+}
+function popup(w){
+  const t=I18N.t.bind(I18N);
+  let s=`<b>${w.no}</b> — ${w.loc}<br>`;
+  if(w.kind==='pumping_well'){ s+=`${t('k_T')}: <b>${w.T??'—'}</b> m²/d · K: ${w.K??'—'} m/d<br>Q: ${w.Q??'—'} m³/d · ${t('k_depth')}: ${w.depth??'—'} m`; }
+  else { s+=`${t('k_wl')}: <b>${w.wl??'—'}</b> m · ${t('k_elev')}: ${w.elev??'—'} m<br>${t('k_depth')}: ${w.depth??'—'} m`; }
+  if(w.contrib) s+=`<br><span style="color:#3fa66a;font-weight:700">🟢 contribution</span>`;
+  return s;
+}
+
+/* ===== selection + detail + Theis ===== */
+function fillWellSel(){
+  const sel=$('wellSel'), keep=SEL; sel.innerHTML='';
+  allWells().forEach(w=>{const o=document.createElement('option');o.value=w.no;o.textContent=`${w.kind==='piezometer'?'🟣':w.contrib?'🟢':'🔵'} ${w.no} · ${w.loc}`;sel.appendChild(o);});
+  if(keep && allWells().some(w=>w.no===keep)) sel.value=keep; else SEL=sel.value=allWells()[0]?.no;
+  selectWell(sel.value,true);
+}
+function selectWell(no,noPan){
+  SEL=no; const w=allWells().find(x=>x.no===no); if(!w)return;
+  $('wellSel').value=no;
+  if(!noPan) map.setView([w.lat,w.lon], Math.max(map.getZoom(),9),{animate:true});
+  const t=I18N.t.bind(I18N);
+  let d=`<div style="margin-bottom:8px"><b style="font-size:15px">${w.no}</b> <span class="badge2 ${w.contrib?'co':w.kind==='piezometer'?'pz':'pw'}">${w.contrib?'🟢':w.kind==='piezometer'?'🟣':'🔵'} ${w.loc}</span></div>`;
+  if(w.kind==='pumping_well'){
+    d+=`<div><span class="k">T:</span> <span class="v">${w.T??'—'}</span> m²/d · <span class="k">K:</span> <span class="v">${w.K??'—'}</span> m/d</div>
+        <div><span class="k">Q:</span> <span class="v">${w.Q??'—'}</span> m³/d · <span class="k">${t('k_depth')}:</span> <span class="v">${w.depth??'—'}</span> m</div>
+        <div><span class="k">${t('h_c_dtw')}:</span> <span class="v">${w.dtw??'—'}</span> m</div>`;
+    $('theisBox').style.display='';
+    drawTheis(w);
+  } else {
+    d+=`<div><span class="k">${t('k_wl')}:</span> <span class="v">${w.wl??'—'}</span> m amsl · <span class="k">${t('k_elev')}:</span> <span class="v">${w.elev??'—'}</span> m</div>
+        <div><span class="k">${t('k_depth')}:</span> <span class="v">${w.depth??'—'}</span> m</div>`;
+    $('theisBox').style.display='none';
+  }
+  $('detail').innerHTML=d;
+}
+function svgEl(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+/* Cooper-Jacob: s = 2.3Q/(4πT) · log10(2.25 T t / (r² S)) */
+function drawTheis(w){
+  const svg=$('theis'); svg.innerHTML='';
+  const T=w.T||300, Q=w.Q||3024, r=+$('r').value, S=Math.pow(10,+$('s').value);
+  $('rv').textContent=r+' m'; $('sv').textContent='≈ '+S.toExponential(1);
+  const W=440,H=200,PADL=40,PADR=12,PADT=12,PADB=30, x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB;
+  // time from 0.01 to 100 days, log scale
+  const tmin=0.01,tmax=100, lg=Math.log10;
+  const pts=[]; let smax=0;
+  for(let i=0;i<=120;i++){ const tt=Math.pow(10, lg(tmin)+(lg(tmax)-lg(tmin))*i/120);
+    const u=(r*r*S)/(4*T*tt); let s=0;
+    // Cooper-Jacob valid u<0.01; else clamp
+    const arg=2.25*T*tt/(r*r*S); s = arg>1? (2.3*Q/(4*Math.PI*T))*lg(arg):0;
+    s=Math.max(0,s); pts.push([tt,s]); smax=Math.max(smax,s); }
+  smax=Math.max(smax,1);
+  const sx=t=>x0+(lg(t)-lg(tmin))/(lg(tmax)-lg(tmin))*(x1-x0);
+  const sy=s=>y1-s/smax*(y1-y0);
+  // axes grid (decades)
+  for(let e=-2;e<=2;e++){ const xx=sx(Math.pow(10,e)); svg.appendChild(svgEl('line',{x1:xx,y1:y0,x2:xx,y2:y1,stroke:'#eef3e5','stroke-width':1}));
+    const tx=svgEl('text',{x:xx,y:y1+14,'text-anchor':'middle',fill:'#9aa890','font-size':10});tx.textContent=Math.pow(10,e)+ (e<0?'':'');tx.textContent=(e<0?'0.'+'0'.repeat(-e-1)+'1':''+Math.pow(10,e));svg.appendChild(tx);}
+  for(let k=0;k<=4;k++){ const yy=y0+(y1-y0)*k/4; svg.appendChild(svgEl('line',{x1:x0,y1:yy,x2:x1,y2:yy,stroke:'#f1f5ea','stroke-width':1}));
+    const tx=svgEl('text',{x:x0-5,y:yy+4,'text-anchor':'end',fill:'#9aa890','font-size':10});tx.textContent=(smax*(1-k/4)).toFixed(1);svg.appendChild(tx);}
+  // curve (s increases downward physically, but plot magnitude upward)
+  let p=''; pts.forEach((q,i)=>p+=(i?'L':'M')+sx(q[0]).toFixed(1)+' '+sy(q[1]).toFixed(1)+' ');
+  svg.appendChild(svgEl('path',{d:p,fill:'none',stroke:'#2f7fae','stroke-width':2.4}));
+  // marker at 30 d
+  const s30=pts.reduce((a,q)=>Math.abs(q[0]-30)<Math.abs(a[0]-30)?q:a,pts[0]);
+  svg.appendChild(svgEl('circle',{cx:sx(s30[0]),cy:sy(s30[1]),r:4,fill:'#d1584e'}));
+  const tx=svgEl('text',{x:x1,y:y0+10,'text-anchor':'end',fill:'#6f7d64','font-size':10});tx.textContent=I18N.t('h_time');svg.appendChild(tx);
+  // KPIs
+  $('theisKpi').innerHTML=
+    `<div class="kpi"><div class="l">${I18N.t('k_T')}</div><div class="v">${T}<small> m²/d</small></div></div>`+
+    `<div class="kpi"><div class="l">${I18N.t('k_Q')}</div><div class="v">${Q}<small> m³/d</small></div></div>`+
+    `<div class="kpi"><div class="l">${I18N.t('k_s30')} (r=${r}m)</div><div class="v">${s30[1].toFixed(2)}<small> m</small></div></div>`;
+}
+
+/* ===== abstraction chart ===== */
+function drawAbstr(){
+  const svg=$('abstr'); svg.innerHTML='';
+  const W=900,H=260,PADL=52,PADR=16,PADT=16,PADB=34, x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB;
+  const ys=BASE_ABSTR.map(a=>a[1]/1e6), xsY=BASE_ABSTR.map(a=>a[0]);
+  const ymax=Math.ceil(Math.max(...ys)/10)*10, y0v=27, y1v=ymax;  // scale
+  const sx=i=>x0+i/(BASE_ABSTR.length-1)*(x1-x0);
+  const sy=v=>y1-(v-27)/(ymax-27)*(y1-y0);
+  for(let v=30;v<=ymax;v+=10){ svg.appendChild(svgEl('line',{x1:x0,y1:sy(v),x2:x1,y2:sy(v),stroke:'#eef3e5','stroke-width':1}));
+    const t=svgEl('text',{x:x0-8,y:sy(v)+4,'text-anchor':'end',fill:'#9aa890','font-size':11});t.textContent=v+' M';svg.appendChild(t);}
+  BASE_ABSTR.forEach((a,i)=>{ if(i%2===0){const t=svgEl('text',{x:sx(i),y:y1+16,'text-anchor':'middle',fill:'#9aa890','font-size':10.5});t.textContent=a[0];svg.appendChild(t);}});
+  // area + line
+  let area='M'+sx(0)+' '+y1+' '; BASE_ABSTR.forEach((a,i)=>area+='L'+sx(i)+' '+sy(a[1]/1e6)+' '); area+='L'+sx(BASE_ABSTR.length-1)+' '+y1+' Z';
+  svg.appendChild(svgEl('path',{d:area,fill:'rgba(209,88,78,.10)'}));
+  let ln=''; BASE_ABSTR.forEach((a,i)=>ln+=(i?'L':'M')+sx(i)+' '+sy(a[1]/1e6)+' ');
+  svg.appendChild(svgEl('path',{d:ln,fill:'none',stroke:'#d1584e','stroke-width':2.6,'stroke-linejoin':'round'}));
+  BASE_ABSTR.forEach((a,i)=>svg.appendChild(svgEl('circle',{cx:sx(i),cy:sy(a[1]/1e6),r:3,fill:'#d1584e'})));
+  // peak label
+  const pk=BASE_ABSTR.reduce((a,b)=>b[1]>a[1]?b:a); const pi=BASE_ABSTR.indexOf(pk);
+  const t=svgEl('text',{x:sx(pi),y:sy(pk[1]/1e6)-8,'text-anchor':'middle',fill:'#d1584e','font-size':11,'font-weight':700});t.textContent=(pk[1]/1e6).toFixed(0)+' Mm³ ('+pk[0]+')';svg.appendChild(t);
+}
+
+/* ===== contribute ===== */
+function addContrib(){
+  const kind=$('c_kind').value;
+  const no=$('c_no').value.trim(), lon=parseFloat($('c_lon').value), lat=parseFloat($('c_lat').value);
+  if(!no || isNaN(lon) || isNaN(lat)){ $('c_msg').innerHTML=`<div class="ok" style="background:#fbecea;border-color:#eecac5;color:#d1584e">${I18N.t('h_c_need')}</div>`; return; }
+  const w={no,loc:$('c_loc').value.trim()||'—',kind,lon,lat,contrib:true,
+    depth: kind==='pumping_well'? num('c_depth'):num('c_depth2'),
+    dtw:num('c_dtw'), T:num('c_T'), K:num('c_K'), Q:num('c_Q'),
+    wl:num('c_wl'), elev:num('c_elev'), added:new Date().toISOString()};
+  CONTRIB.push(w); saveContrib(); renderMap(); renderClist(); selectWell(no);
+  $('c_msg').innerHTML=`<div class="ok">${I18N.t('h_c_added')}</div>`;
+  ['c_no','c_loc','c_lon','c_lat','c_T','c_K','c_Q','c_depth','c_dtw','c_elev','c_wl','c_depth2'].forEach(id=>$(id).value='');
+  if(tmpMarker){map.removeLayer(tmpMarker);tmpMarker=null;}
+  setTimeout(()=>$('c_msg').innerHTML='',2500);
+}
+function num(id){ const v=parseFloat($(id).value); return isNaN(v)?null:v; }
+function renderClist(){
+  if(!CONTRIB.length){ $('c_list').innerHTML=`<div class="lead" style="margin:8px 0 0">${I18N.t('h_c_none')}</div>`; return; }
+  $('c_list').innerHTML=CONTRIB.map((w,i)=>`<div class="citem"><span class="badge2 ${w.kind==='piezometer'?'pz':'pw'}">${w.kind==='piezometer'?'🟣':'🔵'}</span><b>${w.no}</b><span style="color:var(--muted)">${w.loc}</span><button class="del" onclick="delContrib(${i})">×</button></div>`).join('');
+}
+function delContrib(i){ CONTRIB.splice(i,1); saveContrib(); renderMap(); renderClist(); }
+
+/* ===== import / export ===== */
+function toGeoJSON(list){
+  return {type:"FeatureCollection",name:"sarir_wellfield",crs:{type:"name",properties:{name:"urn:ogc:def:crs:OGC:1.3:CRS84"}},
+    features:list.map(w=>({type:"Feature",geometry:{type:"Point",coordinates:[w.lon,w.lat]},
+      properties:{well_no:w.no,location:w.loc,kind:w.kind,total_depth_m:w.depth,depth_to_water_m:w.dtw,
+        elevation_m_amsl:w.elev,water_level_m:w.wl,T_m2_d:w.T,K_m_d:w.K,Q_m3_d:w.Q,contributed:!!w.contrib}}))};
+}
+function doExport(){ Store.download('sarir_wellfield_full.geojson',JSON.stringify(toGeoJSON(allWells()),null,2),'application/json'); }
+function doExportCsv(){
+  const h='well_no,location,kind,lon,lat,total_depth_m,depth_to_water_m,elevation_m,water_level_m,T_m2_d,K_m_d,Q_m3_d,contributed';
+  const rows=allWells().map(w=>[w.no,w.loc,w.kind,w.lon,w.lat,w.depth,w.dtw,w.elev,w.wl,w.T,w.K,w.Q,!!w.contrib].map(x=>x==null?'':x).join(','));
+  Store.download('sarir_wellfield.csv',[h,...rows].join('\n'),'text/csv');
+}
+function numOr(v){ const n=parseFloat(v); return isNaN(n)?null:n; }
+function parseCsv(txt){
+  const lines=txt.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+  if(!lines.length) return [];
+  const H=lines[0].split(',').map(s=>s.trim());
+  return lines.slice(1).map(line=>{ const c=line.split(','); const o={};
+    H.forEach((h,i)=>o[h]=(c[i]!==undefined?c[i].trim():'')); return o; });
+}
+function showFmt(){
+  const el=$('fmtHydro'); if(!el) return;
+  const csv='# CSV\nwell_no,location,kind,lon,lat,total_depth_m,depth_to_water_m,elevation_m,water_level_m,T_m2_d,K_m_d,Q_m3_d,contributed\n'
+    +'S9,Sarir North,pumping_well,22.20,27.80,240,30,,,480,15,3024,true\n'
+    +'PZ-9,Sarir deep,piezometer,22.34,27.78,,,105,75,,,,true';
+  const gj={type:"Feature",geometry:{type:"Point",coordinates:["lon","lat"]},
+    properties:{well_no:"S9",kind:"pumping_well",total_depth_m:240,T_m2_d:480,Q_m3_d:3024}};
+  el.textContent=csv+'\n\n# GeoJSON\n'+JSON.stringify(gj,null,1);
+}
+function doImport(){
+  Store.pickFile('.csv,.json,.geojson',(txt,fname)=>{ try{
+    const isCsv=/\.csv$/i.test(fname||'') || (txt.trim()[0]!=='{'&&txt.trim()[0]!=='[');
+    let n=0;
+    if(isCsv){
+      parseCsv(txt).forEach(r=>{ const lon=parseFloat(r.lon), lat=parseFloat(r.lat);
+        if(isNaN(lon)||isNaN(lat)) return;
+        CONTRIB.push({no:r.well_no||r.no||('W'+Date.now()+n),loc:r.location||r.loc||'—',
+          kind:r.kind||'pumping_well',lon,lat,
+          depth:numOr(r.total_depth_m),dtw:numOr(r.depth_to_water_m),
+          elev:numOr(r.elevation_m||r.elevation_m_amsl),wl:numOr(r.water_level_m),
+          T:numOr(r.T_m2_d),K:numOr(r.K_m_d),Q:numOr(r.Q_m3_d),contrib:true}); n++; });
+    } else {
+      const j=JSON.parse(txt); const feats=j.features||[];
+      feats.forEach(f=>{ const p=f.properties||{}, c=f.geometry?.coordinates; if(!c)return;
+        CONTRIB.push({no:p.well_no||p.no||('W'+Date.now()+n),loc:p.location||p.loc||'—',kind:p.kind||'pumping_well',
+          lon:c[0],lat:c[1],depth:p.total_depth_m,dtw:p.depth_to_water_m,elev:p.elevation_m_amsl,wl:p.water_level_m,
+          T:p.T_m2_d,K:p.K_m_d,Q:p.Q_m3_d,contrib:true}); n++; });
+    }
+    saveContrib(); renderMap(); renderClist(); alert('✓ '+n);
+  }catch(e){ alert('⚠ '+e.message); } });
+}
+
+/* ===== tabs & wiring ===== */
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on')); $('p-'+b.dataset.t).classList.add('on');
+  if(b.dataset.t==='contrib') renderClist();
+  setTimeout(()=>map.invalidateSize(),50);
+}));
+$('wellSel').addEventListener('change',e=>selectWell(e.target.value));
+['r','s'].forEach(id=>$(id).addEventListener('input',()=>{const w=allWells().find(x=>x.no===SEL);if(w&&w.kind==='pumping_well')drawTheis(w);}));
+$('c_kind').addEventListener('change',e=>{ $('c_pw').hidden=e.target.value!=='pumping_well'; $('c_pz').hidden=e.target.value==='pumping_well'; });
+$('pickBtn').addEventListener('click',()=>{ pickMode=true; $('pickBtn').classList.add('primary'); });
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{ applyHTML(); renderMap(); if(SEL)selectWell(SEL,true); drawAbstr(); renderClist(); addGeoSearch(); });
+
+/* boot */
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+initMap(); drawAbstr(); renderClist(); showFmt();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

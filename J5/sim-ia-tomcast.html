@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IA &amp; modèle TomCast — protection des cultures</title>
+<style>
+:root{
+  --bg:#0e1512;--panel:#16201b;--panel-2:#1c2a23;--line:#2b3a30;--line-2:#38493d;
+  --ink:#e8efe6;--muted:#8fa596;--faint:#5f7568;
+  --water:#2ea8d8;--water-d:#1c7fa8;--soil:#c9a24b;--ai:#a98bff;
+  --good:#5fb15a;--warn:#d99a2b;--bad:#d1584e;
+  --shadow:0 6px 22px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.45}
+.tabnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit}
+.topbar{display:flex;align-items:center;gap:14px;padding:12px 20px;background:linear-gradient(180deg,#16201b,#111a15);border-bottom:1px solid var(--line)}
+.logo{width:34px;height:34px;border-radius:9px;flex:none;background:radial-gradient(120% 120% at 30% 20%,#a98bff,#5b3fb0);display:grid;place-items:center}
+.logo svg{width:20px;height:20px}
+.brand .t1{font-weight:700;font-size:.98rem}
+.brand .t2{color:var(--muted);font-size:.74rem}
+.spacer{flex:1}
+.mod-badge{font-size:.72rem;color:var(--ai);border:1px solid rgba(169,139,255,.4);background:rgba(169,139,255,.12);padding:4px 11px;border-radius:20px;font-weight:700}
+
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+.lead{color:var(--muted);font-size:.9rem;max-width:820px;margin-bottom:20px}
+.lead b{color:var(--ink)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
+.card h2{margin:0 0 4px;font-size:1rem}
+.card .sub{color:var(--muted);font-size:.78rem;margin-bottom:14px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+
+/* TomCast table */
+.tctrl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.tctrl .seg{display:inline-flex;background:#131d17;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.tctrl .seg button{background:transparent;border:0;color:var(--muted);padding:8px 13px;font:inherit;font-size:.8rem;cursor:pointer}
+.tctrl .seg button.on{background:var(--ai);color:#160c30;font-weight:700}
+.tbtn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:#18241d;color:var(--ink);font-size:.84rem;cursor:pointer}
+.tbtn:hover{border-color:var(--water-d)}
+.tbtn.primary{background:linear-gradient(180deg,#a98bff,#6b4fc0);border-color:#a98bff;color:#160c30;font-weight:700}
+
+.ttbl{width:100%;border-collapse:collapse;font-size:.84rem}
+.ttbl th{text-align:center;color:var(--muted);font-weight:600;font-size:.72rem;padding:7px 6px;border-bottom:1px solid var(--line)}
+.ttbl td{padding:6px 6px;text-align:center;border-bottom:1px solid var(--line)}
+.ttbl td.day{text-align:start;color:var(--muted)}
+.ttbl .dsv{font-weight:700}
+.ttbl .cum{font-weight:800}
+.ttbl tr.spray{background:rgba(169,139,255,.14)}
+.ttbl tr.spray td{border-bottom-color:var(--ai)}
+.leafwet{display:inline-block;width:34px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--water) 0 var(--w,50%),#243329 var(--w,50%) 100%)}
+.spraytag{font-size:.66rem;font-weight:700;color:var(--ai)}
+
+.res-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.rc{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:13px 15px;position:relative;overflow:hidden}
+.rc::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--tone,var(--ai))}
+.rc .rc-l{color:var(--muted);font-size:.74rem}
+.rc .rc-v{font-size:1.7rem;font-weight:800;margin-top:2px;color:var(--tone,var(--ink))}
+.rc .rc-v small{font-size:.78rem;color:var(--muted);font-weight:500}
+.rc .rc-x{color:var(--faint);font-size:.72rem;margin-top:4px}
+
+.banner{display:flex;gap:11px;align-items:flex-start;padding:13px 14px;border-radius:11px;font-size:.86rem;margin-bottom:8px;border:1px solid}
+.banner svg{width:19px;height:19px;flex:none;margin-top:1px}
+.banner.warn{background:rgba(217,154,43,.12);border-color:rgba(217,154,43,.5);color:#e9be6f}
+.banner.good{background:rgba(95,177,90,.12);border-color:rgba(95,177,90,.45);color:#8fd08a}
+.banner.ai{background:rgba(169,139,255,.12);border-color:rgba(169,139,255,.5);color:#c7b6ff}
+.banner b{display:block;color:var(--ink);margin-bottom:2px}
+
+/* AI vision classifier */
+.leafgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.leaf{aspect-ratio:1;border-radius:12px;border:2px solid var(--line);cursor:pointer;position:relative;overflow:hidden;background:#0e1713;display:grid;place-items:center;transition:.15s}
+.leaf:hover{border-color:var(--ai)}
+.leaf.picked{border-color:var(--ai);box-shadow:0 0 0 3px rgba(169,139,255,.25)}
+.leaf svg{width:78%;height:78%}
+.leaf .conf{position:absolute;bottom:0;left:0;right:0;font-size:.66rem;padding:2px;text-align:center;background:rgba(0,0,0,.5);color:var(--ink)}
+.pred{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-radius:10px;background:#0e1713;border:1px solid var(--line);margin-bottom:8px;font-size:.85rem}
+.pred .conf-bar{width:90px;height:7px;border-radius:4px;background:#243329;overflow:hidden}
+.pred .conf-bar i{display:block;height:100%;background:var(--ai)}
+.pred b{color:var(--ink)}
+
+.q{margin-bottom:14px}.q .qt{font-size:.9rem;margin-bottom:8px}.q .qt b{color:var(--ai)}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:#0e1713;cursor:pointer;font-size:.85rem}
+.opt:hover{border-color:var(--line-2)}.opt.sel{border-color:var(--ai);background:#1c1630}
+.opt.correct{border-color:var(--good);background:rgba(95,177,90,.12)}
+.opt.wrong{border-color:var(--bad);background:rgba(209,88,78,.12)}
+.opt .mk{width:20px;height:20px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-size:.7rem;flex:none}
+.opt.correct .mk{background:var(--good);border-color:var(--good);color:#04202c}
+.opt.wrong .mk{background:var(--bad);border-color:var(--bad);color:#fff}
+.explain{font-size:.82rem;color:var(--muted);margin-top:8px;padding:10px 12px;background:#0e1713;border-radius:8px;border-left:3px solid var(--ai);display:none}
+.explain.show{display:block}
+.score{font-size:.86rem;color:var(--muted);margin-top:10px}.score b{color:var(--good);font-size:1.05rem}
+.mission{background:linear-gradient(180deg,#211a33,#181226);border:1px solid rgba(169,139,255,.5)}
+.mission h2{color:#c7b6ff}
+.note{font-size:.74rem;color:var(--faint);margin-top:14px}
+[hidden]{display:none!important}
+.langbox{display:inline-flex;gap:6px;margin-inline-start:6px}
+.langbox button{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-weight:700;font-size:.78rem;padding:5px 10px;border-radius:8px;cursor:pointer}
+.langbox button:hover{border-color:var(--good)}
+.langbox button.on{background:var(--good);color:#fff;border-color:var(--good)}
+:root[dir="rtl"] body,body[dir="rtl"]{font-family:"IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../platform/public/assets/css/skin-sim.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#e0d4ff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5 19 19M19 5l-2.5 2.5M7.5 16.5 5 19"/></svg></div>
+  <div class="brand">
+    <div class="t1" data-i18n="t_brand">IA &amp; modèle agro-climatique (TomCast)</div>
+    <div class="t2" data-i18n="t_sub">Détection maladies par vision · TomCast DSV</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="mod-badge" data-i18n="t_badge">M7 · Jour 7</div>
+  <div class="langbox">
+    <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+    <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+    <button data-lang="en" onclick="I18N.set('en')">EN</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="t_lead">
+    L'IA en production, ce n'est pas de la magie. Ici deux outils réels : un <b>modèle agro-climatique</b>
+    (TomCast) qui déclenche le traitement <b>selon le risque, pas le calendrier</b> ; et un
+    <b>classifieur de vision</b> qui détecte les maladies avec une <b>confiance</b> — et ses limites.
+  </p>
+
+  <!-- TOMCAST -->
+  <div class="card">
+    <h2 data-i18n="t_tc_title">Modèle TomCast — alerte mildiou / alternariose</h2>
+    <div class="sub" data-i18n="t_tc_sub">Chaque jour, un DSV (Disease Severity Value) est calculé selon l'humectation foliaire et la température. On traite quand le DSV cumulé atteint le seuil.</div>
+
+    <div class="tctrl">
+      <span style="font-size:.8rem;color:var(--muted)" data-i18n="t_thresh">Seuil d'intervention</span>
+      <div class="seg" id="thseg">
+        <button data-t="15" data-i18n="t_th15">15 (agressif)</button>
+        <button class="on" data-t="20" data-i18n="t_th20">20 (standard)</button>
+        <button data-t="25" data-i18n="t_th25">25 (prudent)</button>
+      </div>
+      <span style="font-size:.8rem;color:var(--muted);margin-inline-start:10px" data-i18n="t_wx">Météo</span>
+      <div class="seg" id="wxseg">
+        <button class="on" data-w="humid" data-i18n="t_wx_humid">Semaine humide</button>
+        <button data-w="sec" data-i18n="t_wx_dry">Semaine sèche</button>
+      </div>
+      <div class="spacer" style="flex:1"></div>
+      <button class="tbtn" onclick="regen()" data-i18n="t_regen">Nouvelle série</button>
+    </div>
+
+    <div class="res-cards" id="tcards"></div>
+
+    <div style="overflow-x:auto">
+      <table class="ttbl" id="ttbl"></table>
+    </div>
+    <div id="tcverdict" style="margin-top:14px"></div>
+  </div>
+
+  <div class="grid2">
+    <!-- VISION -->
+    <div class="card">
+      <h2 data-i18n="t_vis_title">Classifieur de vision — cliquez une feuille</h2>
+      <div class="sub" data-i18n="t_vis_sub">Le modèle prédit une classe avec un score de confiance. Observez les cas où il se trompe.</div>
+      <div class="leafgrid" id="leaves"></div>
+      <div id="pred"></div>
+    </div>
+
+    <!-- MISSION -->
+    <div class="card mission">
+      <h2 data-i18n="t_mission">Mission — décider avec l'IA</h2>
+      <div class="sub" data-i18n="t_mission_sub">Modèle + limites. Répondez puis validez.</div>
+
+      <div class="q" id="q1">
+        <div class="qt"><b>Q1.</b> <span data-i18n="t_q1">Pourquoi traiter au seuil TomCast plutôt qu'au calendrier fixe ?</span></div>
+        <div class="opts">
+          <div class="opt" data-q="1" data-a="0"><span class="mk"></span><span data-i18n="t_q1a0">Pour traiter toujours plus souvent</span></div>
+          <div class="opt" data-q="1" data-a="1"><span class="mk"></span><span data-i18n="t_q1a1">On traite seulement quand le risque réel est là : moins de passages, meilleure protection</span></div>
+          <div class="opt" data-q="1" data-a="2"><span class="mk"></span><span data-i18n="t_q1a2">Parce que c'est imposé par la loi</span></div>
+        </div>
+        <div class="explain" id="e1"></div>
+      </div>
+
+      <div class="q" id="q2">
+        <div class="qt"><b>Q2.</b> <span data-i18n="t_q2">Le classifieur annonce « sain » à 58 % de confiance sur une feuille floue. Que faire ?</span></div>
+        <div class="opts">
+          <div class="opt" data-q="2" data-a="0"><span class="mk"></span><span data-i18n="t_q2a0">Faire confiance : c'est une IA</span></div>
+          <div class="opt" data-q="2" data-a="1"><span class="mk"></span><span data-i18n="t_q2a1">Confiance faible → vérification humaine au champ avant décision</span></div>
+          <div class="opt" data-q="2" data-a="2"><span class="mk"></span><span data-i18n="t_q2a2">Traiter toute la parcelle par précaution</span></div>
+        </div>
+        <div class="explain" id="e2"></div>
+      </div>
+
+      <div class="q" id="q3">
+        <div class="qt"><b>Q3.</b> <span data-i18n="t_q3">Pour quel système un robot de scouting est-il défendable (question d'examen M7) ?</span></div>
+        <div class="opts">
+          <div class="opt" data-q="3" data-a="0"><span class="mk"></span><span data-i18n="t_q3a0">Un petit maraîchage diversifié de 2 ha</span></div>
+          <div class="opt" data-q="3" data-a="1"><span class="mk"></span><span data-i18n="t_q3a1">Une grande monoculture à forte valeur où le coût/ha est amorti</span></div>
+          <div class="opt" data-q="3" data-a="2"><span class="mk"></span><span data-i18n="t_q3a2">N'importe quel système, toujours</span></div>
+        </div>
+        <div class="explain" id="e3"></div>
+      </div>
+
+      <button class="tbtn primary" onclick="grade()" data-i18n="t_validate">Valider</button>
+      <div class="score" id="scorebox"></div>
+    </div>
+  </div>
+
+  <p class="note" data-i18n="t_note">TomCast : DSV quotidien = f(heures d'humectation foliaire, température moyenne pendant l'humectation). On cumule les DSV ; à l'atteinte du seuil (15/20/25 selon l'agressivité), on traite et on remet le cumul à zéro. Modèle simplifié à but pédagogique.</p>
+</div>
+
+<script src="../platform/public/assets/i18n/i18n.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let THRESH=20, WX='humid', days=[];
+
+Object.assign(I18N.DICT,{
+  t_brand:{fr:"IA & modèle agro-climatique (TomCast)",ar:"الذكاء الاصطناعي والنموذج المناخي الزراعي (TomCast)",en:"AI & agro-climatic model (TomCast)"},
+  t_sub:{fr:"Détection maladies par vision · TomCast DSV",ar:"كشف الأمراض بالرؤية · TomCast DSV",en:"Disease detection by vision · TomCast DSV"},
+  t_badge:{fr:"M7 · Jour 7",ar:"الوحدة 7 · اليوم 7",en:"M7 · Day 7"},
+  t_lead:{fr:"L'IA en production, ce n'est pas de la magie. Ici deux outils réels : un <b>modèle agro-climatique</b> (TomCast) qui déclenche le traitement <b>selon le risque, pas le calendrier</b> ; et un <b>classifieur de vision</b> qui détecte les maladies avec une <b>confiance</b> — et ses limites.",
+          ar:"الذكاء الاصطناعي في الإنتاج ليس سحراً. هنا أداتان حقيقيتان: <b>نموذج مناخي زراعي</b> (TomCast) يُطلق المعالجة <b>حسب الخطر لا حسب التقويم</b>؛ و<b>مصنّف رؤية</b> يكشف الأمراض بدرجة <b>ثقة</b> — وبحدوده.",
+          en:"AI in production is not magic. Here are two real tools: an <b>agro-climatic model</b> (TomCast) that triggers treatment <b>by risk, not by calendar</b>; and a <b>vision classifier</b> that detects diseases with a <b>confidence</b> — and its limits."},
+  t_tc_title:{fr:"Modèle TomCast — alerte mildiou / alternariose",ar:"نموذج TomCast — إنذار البياض الزغبي / ألترناريا",en:"TomCast model — downy mildew / alternaria alert"},
+  t_tc_sub:{fr:"Chaque jour, un DSV (Disease Severity Value) est calculé selon l'humectation foliaire et la température. On traite quand le DSV cumulé atteint le seuil.",
+            ar:"كل يوم تُحسب قيمة شدة المرض (DSV) حسب بلل الأوراق ودرجة الحرارة. نعالج عندما يبلغ مجموع DSV العتبة.",
+            en:"Each day a DSV (Disease Severity Value) is computed from leaf wetness and temperature. Treat when the cumulative DSV reaches the threshold."},
+  t_thresh:{fr:"Seuil d'intervention",ar:"عتبة التدخّل",en:"Intervention threshold"},
+  t_th15:{fr:"15 (agressif)",ar:"15 (عدواني)",en:"15 (aggressive)"},
+  t_th20:{fr:"20 (standard)",ar:"20 (قياسي)",en:"20 (standard)"},
+  t_th25:{fr:"25 (prudent)",ar:"25 (حذر)",en:"25 (cautious)"},
+  t_wx:{fr:"Météo",ar:"الطقس",en:"Weather"},
+  t_wx_humid:{fr:"Semaine humide",ar:"أسبوع رطب",en:"Wet week"},
+  t_wx_dry:{fr:"Semaine sèche",ar:"أسبوع جاف",en:"Dry week"},
+  t_regen:{fr:"Nouvelle série",ar:"سلسلة جديدة",en:"New series"},
+  t_vis_title:{fr:"Classifieur de vision — cliquez une feuille",ar:"مصنّف الرؤية — انقر ورقة",en:"Vision classifier — click a leaf"},
+  t_vis_sub:{fr:"Le modèle prédit une classe avec un score de confiance. Observez les cas où il se trompe.",
+             ar:"يتنبأ النموذج بفئة مع درجة ثقة. لاحظ الحالات التي يخطئ فيها.",
+             en:"The model predicts a class with a confidence score. Watch where it gets it wrong."},
+  t_mission:{fr:"Mission — décider avec l'IA",ar:"المهمّة — القرار مع الذكاء الاصطناعي",en:"Mission — deciding with AI"},
+  t_mission_sub:{fr:"Modèle + limites. Répondez puis validez.",ar:"النموذج + الحدود. أجب ثم تحقّق.",en:"Model + limits. Answer then check."},
+  t_q1:{fr:"Pourquoi traiter au seuil TomCast plutôt qu'au calendrier fixe ?",ar:"لماذا نعالج عند عتبة TomCast بدل التقويم الثابت؟",en:"Why treat at the TomCast threshold rather than on a fixed calendar?"},
+  t_q1a0:{fr:"Pour traiter toujours plus souvent",ar:"لكي نعالج أكثر دائماً",en:"To treat ever more often"},
+  t_q1a1:{fr:"On traite seulement quand le risque réel est là : moins de passages, meilleure protection",ar:"نعالج فقط عند وجود الخطر الحقيقي: تمريرات أقل وحماية أفضل",en:"We treat only when the real risk is present: fewer passes, better protection"},
+  t_q1a2:{fr:"Parce que c'est imposé par la loi",ar:"لأنه مفروض بالقانون",en:"Because it is required by law"},
+  t_q2:{fr:"Le classifieur annonce « sain » à 58 % de confiance sur une feuille floue. Que faire ?",ar:"يعلن المصنّف «سليمة» بثقة 58٪ على ورقة ضبابية. ماذا تفعل؟",en:"The classifier reports “healthy” at 58% confidence on a blurry leaf. What to do?"},
+  t_q2a0:{fr:"Faire confiance : c'est une IA",ar:"ثِق بها: إنها ذكاء اصطناعي",en:"Trust it: it's an AI"},
+  t_q2a1:{fr:"Confiance faible → vérification humaine au champ avant décision",ar:"ثقة منخفضة ← تحقّق بشري في الحقل قبل القرار",en:"Low confidence → human field check before deciding"},
+  t_q2a2:{fr:"Traiter toute la parcelle par précaution",ar:"معالجة القطعة كلها احتياطاً",en:"Treat the whole plot as a precaution"},
+  t_q3:{fr:"Pour quel système un robot de scouting est-il défendable (question d'examen M7) ?",ar:"لأيّ نظام يكون روبوت الاستطلاع مبرَّراً (سؤال امتحان الوحدة 7)؟",en:"For which system is a scouting robot justifiable (M7 exam question)?"},
+  t_q3a0:{fr:"Un petit maraîchage diversifié de 2 ha",ar:"بستان خضروات صغير متنوّع بمساحة 2 هكتار",en:"A small diversified 2 ha market garden"},
+  t_q3a1:{fr:"Une grande monoculture à forte valeur où le coût/ha est amorti",ar:"زراعة أحادية كبيرة عالية القيمة حيث تُستهلَك الكلفة/هكتار",en:"A large high-value monoculture where the cost/ha is amortised"},
+  t_q3a2:{fr:"N'importe quel système, toujours",ar:"أيّ نظام، دائماً",en:"Any system, always"},
+  t_validate:{fr:"Valider",ar:"تحقّق",en:"Check"},
+  t_note:{fr:"TomCast : DSV quotidien = f(heures d'humectation foliaire, température moyenne pendant l'humectation). On cumule les DSV ; à l'atteinte du seuil (15/20/25 selon l'agressivité), on traite et on remet le cumul à zéro. Modèle simplifié à but pédagogique.",
+          ar:"TomCast: قيمة DSV اليومية = د(ساعات بلل الأوراق، متوسط الحرارة أثناء البلل). تُجمَع قيم DSV؛ وعند بلوغ العتبة (15/20/25 حسب العدوانية) نعالج ونعيد المجموع إلى الصفر. نموذج مبسّط لغرض تعليمي.",
+          en:"TomCast: daily DSV = f(leaf wetness hours, mean temperature during wetness). DSVs are accumulated; on reaching the threshold (15/20/25 by aggressiveness), we treat and reset the sum to zero. Simplified model for teaching."},
+  // table
+  th_day:{fr:"Jour",ar:"اليوم",en:"Day"},
+  th_wet:{fr:"Humectation",ar:"البلل",en:"Wetness"},
+  th_temp:{fr:"T° moy",ar:"م. الحرارة",en:"Mean T°"},
+  th_dsv:{fr:"DSV jour",ar:"DSV يومي",en:"Daily DSV"},
+  th_cum:{fr:"Cumul",ar:"التراكم",en:"Cumulative"},
+  t_treat:{fr:"⚗ TRAITER",ar:"⚗ عالِج",en:"⚗ TREAT"},
+  // cards
+  card_dsvcum:{fr:"DSV cumulés (14 j)",ar:"DSV تراكمي (14 يوماً)",en:"Cumulative DSV (14 d)"},
+  card_dsvcum_x:{fr:"pression maladie",ar:"ضغط المرض",en:"disease pressure"},
+  card_tc:{fr:"Traitements TomCast",ar:"معالجات TomCast",en:"TomCast treatments"},
+  card_tc_x:{fr:"déclenchés par le modèle",ar:"يُطلقها النموذج",en:"triggered by the model"},
+  card_cal:{fr:"Calendrier fixe",ar:"تقويم ثابت",en:"Fixed calendar"},
+  card_cal_x:{fr:"1 passage / semaine",ar:"تمريرة واحدة / أسبوع",en:"1 pass / week"},
+  card_gap:{fr:"Écart",ar:"الفارق",en:"Difference"},
+  gap_x_saved:{fr:"passages économisés",ar:"تمريرات موفَّرة",en:"passes saved"},
+  gap_x_more:{fr:"passages en plus (risque élevé)",ar:"تمريرات إضافية (خطر مرتفع)",en:"extra passes (high risk)"},
+  gap_x_same:{fr:"passages identiques",ar:"تمريرات متساوية",en:"same passes"},
+  // verdicts
+  verdict_hp_t:{fr:"Forte pression",ar:"ضغط مرتفع",en:"High pressure"},
+  verdict_hp_d:{fr:"La semaine humide multiplie les DSV : le modèle déclenche autant ou plus que le calendrier — mais au bon moment, quand le champignon est réellement actif. Efficacité maximale.",
+                ar:"الأسبوع الرطب يضاعف قيم DSV: يُطلق النموذج بقدر التقويم أو أكثر — لكن في الوقت المناسب، حين يكون الفطر نشطاً فعلاً. فعالية قصوى.",
+                en:"The wet week multiplies DSVs: the model triggers as much as or more than the calendar — but at the right moment, when the fungus is truly active. Maximum efficacy."},
+  verdict_save_t:{fr:"Traitements économisés",ar:"معالجات موفَّرة",en:"Treatments saved"},
+  verdict_save_d:{fr:"TomCast a supprimé {n} passage(s) inutile(s) par rapport au calendrier fixe, sans laisser passer de fenêtre à risque. Moins de produit, moins de coût, même protection.",
+                  ar:"ألغى TomCast {n} تمريرة غير ضرورية مقارنة بالتقويم الثابت، دون تفويت أي نافذة خطر. مبيد أقل، كلفة أقل، الحماية نفسها.",
+                  en:"TomCast removed {n} unnecessary pass(es) versus the fixed calendar, without missing any risk window. Less product, less cost, same protection."},
+  verdict_risk_t:{fr:"Pilotage par le risque",ar:"التحكّم حسب الخطر",en:"Risk-driven control"},
+  verdict_risk_d:{fr:"Le nombre de traitements suit la météo réelle, pas le calendrier. C'est tout l'intérêt : la décision est fondée sur la donnée.",
+                  ar:"يتبع عدد المعالجات الطقس الحقيقي لا التقويم. هذا هو المغزى: القرار مبني على البيانات.",
+                  en:"The number of treatments follows the real weather, not the calendar. That's the whole point: the decision is data-driven."},
+  // vision classes
+  v_healthy:{fr:"Saine",ar:"سليمة",en:"Healthy"},
+  v_mildew:{fr:"Mildiou",ar:"البياض الزغبي",en:"Downy mildew"},
+  v_alt:{fr:"Alternariose",ar:"ألترناريا",en:"Alternaria"},
+  v_def:{fr:"Carence",ar:"نقص غذائي",en:"Deficiency"},
+  pred_model:{fr:"Prédiction du modèle :",ar:"تنبؤ النموذج:",en:"Model prediction:"},
+  pred_truth:{fr:"Vérité terrain :",ar:"الحقيقة الميدانية:",en:"Ground truth:"},
+  pred_ok:{fr:"Prédiction fiable ({c}%).",ar:"تنبؤ موثوق ({c}٪).",en:"Reliable prediction ({c}%)."},
+  pred_lowok:{fr:"Prédiction correcte mais confiance faible ({c}%) → à vérifier.",ar:"تنبؤ صحيح لكن ثقة منخفضة ({c}٪) ← يجب التحقّق.",en:"Correct prediction but low confidence ({c}%) → verify."},
+  pred_wrong:{fr:"⚠ Le modèle se trompe : il prédit « {p} » alors que la feuille est « {t} ». ",ar:"⚠ النموذج مخطئ: يتنبأ بـ«{p}» بينما الورقة «{t}». ",en:"⚠ The model is wrong: it predicts “{p}” while the leaf is “{t}”. "},
+  pred_wrong_low:{fr:"La confiance basse aurait dû alerter.",ar:"كان ينبغي أن تنبّه الثقة المنخفضة.",en:"The low confidence should have raised a flag."},
+  pred_wrong_high:{fr:"Confiance élevée malgré l'erreur — le danger des faux positifs.",ar:"ثقة مرتفعة رغم الخطأ — خطر الإيجابيات الكاذبة.",en:"High confidence despite the error — the danger of false positives."},
+  // explanations
+  t_e1:{fr:"Le calendrier fixe traite qu'il y ait risque ou non. TomCast ne déclenche que lorsque les conditions (humectation + température) rendent le champignon actif : on supprime les passages inutiles tout en couvrant les vraies fenêtres d'infection.",
+        ar:"التقويم الثابت يعالج سواء وُجد خطر أم لا. لا يُطلق TomCast إلا حين تجعل الظروف (البلل + الحرارة) الفطر نشطاً: نُلغي التمريرات غير المجدية مع تغطية نوافذ العدوى الحقيقية.",
+        en:"A fixed calendar treats whether there's risk or not. TomCast only triggers when conditions (wetness + temperature) make the fungus active: we cut useless passes while still covering the real infection windows."},
+  t_e2:{fr:"Une confiance de 58 % sur une image floue n'est pas une décision. La règle en production : sous un seuil de confiance, l'IA passe la main à l'humain. L'explicabilité et le doute font partie de l'outil.",
+        ar:"ثقة 58٪ على صورة ضبابية ليست قراراً. القاعدة في الإنتاج: تحت عتبة ثقة معيّنة، يُسلّم الذكاء الاصطناعي القرار للإنسان. القابلية للتفسير والشكّ جزء من الأداة.",
+        en:"A 58% confidence on a blurry image is not a decision. The production rule: below a confidence threshold, the AI hands over to a human. Explainability and doubt are part of the tool."},
+  t_e3:{fr:"Un robot de scouting coûte cher. Il n'est défendable que si son coût/ha est amorti : grande surface, culture à forte valeur, main-d'œuvre rare. Sur 2 ha diversifiés, une observation humaine reste plus rentable — c'est la limite honnête enseignée en M7.",
+        ar:"روبوت الاستطلاع مكلف. لا يكون مبرَّراً إلا إذا استُهلكت كلفته/هكتار: مساحة كبيرة، محصول عالي القيمة، عمالة نادرة. على 2 هكتار متنوّعة، تبقى الملاحظة البشرية أجدى — وهذا هو الحدّ الصادق المُدرَّس في الوحدة 7.",
+        en:"A scouting robot is expensive. It's only justifiable if its cost/ha is amortised: large area, high-value crop, scarce labour. On 2 diversified ha, human scouting stays more cost-effective — the honest limit taught in M7."},
+  t_score:{fr:"Score",ar:"النتيجة",en:"Score"},
+  t_solid:{fr:"✓ décision solide",ar:"✓ قرار متين",en:"✓ solid decision"},
+  t_reread:{fr:"— relisez les explications",ar:"— أعد قراءة الشروح",en:"— review the explanations"}
+});
+const CLS={Saine:'v_healthy',Mildiou:'v_mildew',Alternariose:'v_alt',Carence:'v_def'};
+const clsName=fr=>I18N.t(CLS[fr]||'');
+
+// TomCast DSV lookup (simplifié) : selon heures d'humectation & T moyenne
+function dsvOf(leafWetHrs, tmean){
+  // plage T optimale ~ 20-25°C ; humectation longue => DSV haut
+  let base;
+  if(leafWetHrs<6) base=0;
+  else if(leafWetHrs<9) base=1;
+  else if(leafWetHrs<12) base=2;
+  else if(leafWetHrs<16) base=3;
+  else base=4;
+  // correction température
+  let tf=1;
+  if(tmean<13) tf=0.3; else if(tmean<17) tf=0.6; else if(tmean<=27) tf=1; else tf=0.7;
+  return Math.round(base*tf);
+}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function genDays(){
+  days=[];
+  for(let i=0;i<14;i++){
+    let lw,tm;
+    if(WX==='humid'){ lw=rnd(8,18); tm=rnd(18,26); }
+    else { lw=rnd(1,8); tm=rnd(22,32); }
+    days.push({lw:Math.round(lw),tm:Math.round(tm),dsv:dsvOf(lw,tm)});
+  }
+}
+function render(){
+  let cum=0, sprays=0, lastSpray=-99;
+  const rows=days.map((d,i)=>{
+    cum+=d.dsv;
+    let spray=false;
+    if(cum>=THRESH){ spray=true; sprays++; cum=0; lastSpray=i; }
+    return {...d,cum:spray?THRESH:cum, spray, cumRaw:cum};
+  });
+  // recompute cumulative display properly
+  let c=0;
+  const disp=days.map((d,i)=>{
+    c+=d.dsv; let spray=false;
+    if(c>=THRESH){spray=true;c=0;}
+    return {...d,cumShown:spray?'▲':c,spray};
+  });
+  let sprayCount=disp.filter(r=>r.spray).length;
+
+  $('ttbl').innerHTML=`<thead><tr><th class="day" style="text-align:left">${I18N.t('th_day')}</th><th>${I18N.t('th_wet')}</th><th>${I18N.t('th_temp')}</th><th>${I18N.t('th_dsv')}</th><th>${I18N.t('th_cum')}</th><th></th></tr></thead><tbody>`+
+    disp.map((r,i)=>`<tr class="${r.spray?'spray':''}">
+      <td class="day">J${i+1}</td>
+      <td><span class="leafwet" style="--w:${Math.min(100,r.lw/18*100)}%"></span> ${r.lw} h</td>
+      <td class="tabnum">${r.tm}°C</td>
+      <td class="dsv" style="color:${r.dsv>=3?'var(--warn)':'var(--muted)'}">${r.dsv}</td>
+      <td class="cum tabnum">${r.spray?THRESH:r.cumShown}</td>
+      <td>${r.spray?'<span class="spraytag">'+I18N.t('t_treat')+'</span>':''}</td>
+    </tr>`).join('')+`</tbody>`;
+
+  // cards
+  const totalDsv=days.reduce((s,d)=>s+d.dsv,0);
+  const calFixed=Math.ceil(14/7); // calendrier fixe = 1 passage/semaine
+  const saved=calFixed-sprayCount;
+  const gapX=saved>0?I18N.t('gap_x_saved'):saved<0?I18N.t('gap_x_more'):I18N.t('gap_x_same');
+  $('tcards').innerHTML=`
+    <div class="rc"><div class="rc-l">${I18N.t('card_dsvcum')}</div><div class="rc-v tabnum">${totalDsv}</div><div class="rc-x">${I18N.t('card_dsvcum_x')}</div></div>
+    <div class="rc" style="--tone:var(--ai)"><div class="rc-l">${I18N.t('card_tc')}</div><div class="rc-v tabnum">${sprayCount}</div><div class="rc-x">${I18N.t('card_tc_x')}</div></div>
+    <div class="rc" style="--tone:var(--muted)"><div class="rc-l">${I18N.t('card_cal')}</div><div class="rc-v tabnum">${calFixed}</div><div class="rc-x">${I18N.t('card_cal_x')}</div></div>
+    <div class="rc" style="--tone:${saved>0?'var(--good)':saved<0?'var(--warn)':'var(--muted)'}"><div class="rc-l">${I18N.t('card_gap')}</div><div class="rc-v tabnum">${saved>0?'−'+saved:saved<0?'+'+Math.abs(saved):'0'}</div><div class="rc-x">${gapX}</div></div>`;
+
+  // verdict
+  let v;
+  if(WX==='humid' && sprayCount>=calFixed) v=['warn','ai',I18N.t('verdict_hp_t'),I18N.t('verdict_hp_d')];
+  else if(saved>0) v=['good','good',I18N.t('verdict_save_t'),I18N.t('verdict_save_d').replace('{n}',saved)];
+  else v=['ai','ai',I18N.t('verdict_risk_t'),I18N.t('verdict_risk_d')];
+  $('tcverdict').innerHTML=`<div class="banner ${v[1]}">${ic(v[0])}<div><b>${v[2]}</b>${v[3]}</div></div>`;
+}
+function regen(){genDays();render();}
+
+document.querySelectorAll('#thseg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#thseg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');THRESH=+b.dataset.t;render();});
+document.querySelectorAll('#wxseg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#wxseg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');WX=b.dataset.w;genDays();render();});
+
+function ic(t){const p=t==='good'?'M20 6 9 17l-5-5':t==='warn'?'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z':'M12 2v4M12 18v4M2 12h4M18 12h4';return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${p}"/></svg>`;}
+
+// ===== VISION CLASSIFIER =====
+// each leaf: true class + model prediction + confidence (some wrong on purpose)
+const LEAVES=[
+  {truth:'Saine',   pred:'Saine',        conf:96, color:'#4a8f3c', spots:0, blur:false},
+  {truth:'Mildiou', pred:'Mildiou',      conf:91, color:'#6b7a3a', spots:6, blur:false},
+  {truth:'Alternariose',pred:'Alternariose',conf:88,color:'#7a6a2a',spots:4,blur:false, ring:true},
+  {truth:'Mildiou', pred:'Alternariose', conf:54, color:'#6b7a3a', spots:5, blur:true},  // erreur
+  {truth:'Saine',   pred:'Saine',        conf:93, color:'#4a8f3c', spots:0, blur:false},
+  {truth:'Carence', pred:'Mildiou',      conf:61, color:'#9a9a3a', spots:3, blur:false},  // erreur : carence confondue
+  {truth:'Alternariose',pred:'Alternariose',conf:84,color:'#7a6a2a',spots:5,blur:false,ring:true},
+  {truth:'Saine',   pred:'Saine',        conf:58, color:'#4a8f3c', spots:0, blur:true}   // confiance faible
+];
+function leafSVG(l){
+  let spots='';
+  for(let i=0;i<l.spots;i++){
+    const cx=25+Math.random()*50, cy=25+Math.random()*50, r=3+Math.random()*4;
+    spots+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#3a2a12" opacity=".8"/>`;
+    if(l.ring) spots+=`<circle cx="${cx}" cy="${cy}" r="${r+2}" fill="none" stroke="#c9a24b" stroke-width=".6" opacity=".6"/>`;
+  }
+  return `<svg viewBox="0 0 100 100" ${l.blur?'style="filter:blur(1.2px)"':''}>
+    <path d="M50 8 C 20 20 12 55 50 92 C 88 55 80 20 50 8 Z" fill="${l.color}"/>
+    <path d="M50 12 L50 88" stroke="#2c4a24" stroke-width="1.5"/>
+    ${spots}</svg>`;
+}
+function renderLeaves(){
+  $('leaves').innerHTML=LEAVES.map((l,i)=>`<div class="leaf" data-i="${i}" onclick="pickLeaf(${i})">${leafSVG(l)}</div>`).join('');
+}
+function pickLeaf(i){
+  document.querySelectorAll('.leaf').forEach(x=>x.classList.remove('picked'));
+  document.querySelector(`.leaf[data-i="${i}"]`).classList.add('picked');
+  const l=LEAVES[i];
+  const correct=l.pred===l.truth;
+  const lowconf=l.conf<70;
+  let flag = correct ? (lowconf?'ai':'good') : 'warn';
+  let msg = correct
+    ? (lowconf?I18N.t('pred_lowok').replace('{c}',l.conf):I18N.t('pred_ok').replace('{c}',l.conf))
+    : I18N.t('pred_wrong').replace('{p}',clsName(l.pred)).replace('{t}',clsName(l.truth))+(lowconf?I18N.t('pred_wrong_low'):I18N.t('pred_wrong_high'));
+  $('pred').innerHTML=`
+    <div class="pred"><span>${I18N.t('pred_model')} <b>${clsName(l.pred)}</b></span>
+      <span style="display:flex;align-items:center;gap:8px"><span class="conf-bar"><i style="width:${l.conf}%;background:${l.conf<70?'var(--warn)':'var(--ai)'}"></i></span><b>${l.conf}%</b></span></div>
+    <div class="banner ${flag}" style="margin-bottom:0">${ic(flag==='good'?'good':flag==='warn'?'warn':'ai')}<div><b>${I18N.t('pred_truth')} ${clsName(l.truth)}</b>${msg}</div></div>`;
+}
+
+// ===== MISSION =====
+let sel={}, graded=false;
+function bind(){document.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
+  const q=o.dataset.q;document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(x=>x.classList.remove('sel'));
+  o.classList.add('sel');sel[q]=+o.dataset.a;});}
+function grade(){
+  graded=true;
+  const ans={1:1,2:1,3:1};let score=0;
+  [1,2,3].forEach(q=>{
+    document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(o=>{o.classList.remove('correct','wrong');
+      const a=+o.dataset.a;if(a===ans[q])o.classList.add('correct');else if(sel[q]===a)o.classList.add('wrong');});
+    if(sel[q]===ans[q])score++;
+  });
+  $('e1').classList.add('show');$('e1').textContent=I18N.t('t_e1');
+  $('e2').classList.add('show');$('e2').textContent=I18N.t('t_e2');
+  $('e3').classList.add('show');$('e3').textContent=I18N.t('t_e3');
+  $('scorebox').innerHTML=`${I18N.t('t_score')} : <b>${score}/3</b> ${score===3?I18N.t('t_solid'):I18N.t('t_reread')}`;
+}
+
+// i18n wiring
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{
+  applyHTML();
+  render();
+  const picked=document.querySelector('.leaf.picked');
+  if(picked) pickLeaf(+picked.dataset.i);
+  if(graded) grade();
+});
+
+genDays();render();renderLeaves();bind();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+</script>
+</body>
+</html>

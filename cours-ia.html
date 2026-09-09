@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cours — Intelligence artificielle en agriculture · IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:940px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  .wrap{max-width:1080px}
+  /* --- bandeau titre --- */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#8e6fc7,#5b3fb0);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:17px;box-shadow:var(--shadow)}
+  .hero h1{font-size:24px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}
+  .toc a{font-size:12.5px;font-weight:600;color:var(--green-d);background:var(--green-bg);
+    border:1px solid var(--line);border-radius:20px;padding:5px 13px}
+  .toc a:hover{border-color:var(--green);background:#e7f2d8}
+  /* --- objectifs --- */
+  .obj{background:linear-gradient(180deg,#eef8ef,#f6fbf0);border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px}
+  .obj h2{color:var(--impact)}
+  .obj ul{margin:6px 0 0;padding-inline-start:20px;columns:2;column-gap:28px}
+  @media(max-width:720px){.obj ul{columns:1}}
+  .obj li{margin:5px 0;font-size:13.5px;color:var(--ink);break-inside:avoid}
+  /* --- sections --- */
+  .card h2{font-size:17px}
+  .card h3{font-size:14.5px;font-weight:800;color:var(--green-d);margin:14px 0 6px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--data);
+    color:#fff;font-size:13px;font-weight:800;flex:none}
+  p.par{color:var(--ink);font-size:14px;line-height:1.65;margin:8px 0;max-width:940px}
+  p.par b{color:var(--green-d)}
+  /* --- concepts grid --- */
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:12px 0}
+  .concept{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .concept .sym{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:15px}
+  .concept .nm{font-weight:700;font-size:13px;margin:2px 0 4px;color:var(--ink)}
+  .concept .ds{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .concept .u{font-family:"JetBrains Mono",monospace;color:var(--info);font-size:11.5px}
+  /* --- à retenir --- */
+  .retenir{background:#fdf7ea;border:1px solid #f0d9ac;border-inline-start:4px solid var(--info);
+    border-radius:11px;padding:12px 16px;margin:14px 0;font-size:13.5px;color:var(--ink);line-height:1.6}
+  .retenir .h{font-weight:800;color:#b5701a;text-transform:uppercase;font-size:11px;letter-spacing:.05em;display:block;margin-bottom:4px}
+  body[dir="rtl"] .retenir{border-inline-start:1px solid #f0d9ac;border-inline-end:4px solid var(--info)}
+  .ai{background:#f3eefb;border-color:#d9c9f0;border-inline-start-color:var(--data)}
+  .ai .h{color:var(--data)}
+  body[dir="rtl"] .ai{border-inline-end-color:var(--data)}
+  /* --- figures --- */
+  .fig{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0}
+  .fig svg{width:100%;height:auto;display:block;direction:ltr}
+  .figcap{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+  .figcap b{color:var(--ink)}
+  /* --- tâches IA --- */
+  .sysgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+  .sys{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:#fff;border-top:4px solid var(--sc,var(--green))}
+  .sys .nm{font-weight:800;font-size:14px;color:var(--ink)}
+  .sys .sub{font-size:11.5px;color:var(--muted);margin:2px 0 6px}
+  .sys .ds{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .sys .badge{margin-top:8px;font-size:10px}
+  /* --- table --- */
+  table.t{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:start}
+  table.t th{background:var(--green-bg);color:var(--green-d);font-weight:700;font-size:12px}
+  table.t td b{color:var(--ink)}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:13px;background:#0e1512;color:#d7e3cd;
+    border-radius:10px;padding:12px 16px;overflow:auto;margin:10px 0}
+  .formula .hl{color:#a5d16e;font-weight:700}
+  /* --- apps --- */
+  .appgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:6px}
+  .appcard{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:13px;
+    padding:15px 17px;transition:.16s;border-inline-start:4px solid var(--ac,var(--green))}
+  .appcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(60,80,40,.15);border-color:var(--ac,var(--green))}
+  body[dir="rtl"] .appcard{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--ac,var(--green))}
+  .appcard .ico{font-size:26px}
+  .appcard h4{font-size:14.5px;font-weight:800;margin:6px 0 4px;color:var(--ink)}
+  .appcard p{font-size:12.5px;color:var(--muted);flex:1;line-height:1.5;margin-bottom:10px}
+  .appcard .go{font-size:12.5px;font-weight:700;color:var(--green-d)}
+  .tpbanner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;
+    background:linear-gradient(120deg,#8e6fc7,#5b3fb0);color:#fff;border-radius:15px;padding:20px 24px;margin-top:18px}
+  .tpbanner .tt{font-size:18px;font-weight:800}
+  .tpbanner .dd{font-size:13px;opacity:.92;margin-top:3px;max-width:560px}
+  .tpbanner .btn{background:#fff;color:#5b3fb0}
+  .tpbanner .btn:hover{background:#f3eefb}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:22px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">IA</span> <b data-i18n="c_brand">Intelligence</b> <span data-i18n="c_brand2">artificielle</span></div>
+  <div class="sub" data-i18n="c_sub">Cours · vision, modèles agronomiques, confiance & limites</div>
+  <div class="right">
+    <span class="chip">IA · <span data-i18n="c_course_chip">Cours</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="g0">IA</div>
+    <div>
+      <h1 data-i18n="c_title">L'intelligence artificielle en agriculture</h1>
+      <div class="tag" data-i18n="c_tag">Domaine d6 · la couche intelligente au-dessus des données, ses usages et ses limites</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="c_intro"></p>
+
+  <nav class="toc">
+    <a href="#s1" data-i18n="c_toc1">1 · Vue d'ensemble</a>
+    <a href="#s2" data-i18n="c_toc2">2 · Vision par ordinateur</a>
+    <a href="#s3" data-i18n="c_toc3">3 · Modèles agronomiques + IA</a>
+    <a href="#s4" data-i18n="c_toc4">4 · Limites & règle d'or</a>
+    <a href="#apps" data-i18n="c_toc5">Applications</a>
+  </nav>
+
+  <!-- OBJECTIFS -->
+  <div class="card obj">
+    <h2>🎯 <span data-i18n="c_obj_h">Objectifs pédagogiques</span></h2>
+    <ul>
+      <li data-i18n="c_obj1">Situer l'IA comme une couche « intelligente » posée sur les données agricoles.</li>
+      <li data-i18n="c_obj2">Expliquer l'apprentissage supervisé en une phrase : données étiquetées → modèle → prédiction.</li>
+      <li data-i18n="c_obj3">Lire une prédiction de vision : une classe + un score de confiance.</li>
+      <li data-i18n="c_obj4">Comprendre TomCast : le cumul de DSV vers un seuil de traitement.</li>
+      <li data-i18n="c_obj5">Nommer les limites honnêtes de l'IA (explicabilité, données locales, coût, biais).</li>
+      <li data-i18n="c_obj6">Appliquer la règle d'or : quand la confiance est faible, l'humain tranche.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 1 : VUE D'ENSEMBLE -->
+  <div class="card" id="s1">
+    <h2><span class="num">1</span> <span data-i18n="c_s1_h">L'IA en agriculture : la couche intelligente</span></h2>
+    <p class="par" data-i18n-html="c_s1_p1"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 316" role="img">
+        <defs>
+          <linearGradient id="gModel" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f3eefb"/><stop offset="1" stop-color="#e6dcf7"/>
+          </linearGradient>
+        </defs>
+        <!-- input layer : data sources -->
+        <g>
+          <rect x="30" y="40" width="150" height="52" rx="10" fill="#e9f4fb" stroke="#9fcbe6"/>
+          <text x="105" y="63" font-size="20" text-anchor="middle">🛰️</text>
+          <text data-i18n="c_fig1_rs" x="105" y="83" font-size="11.5" font-weight="700" fill="#25607f" text-anchor="middle">Télédétection</text>
+          <rect x="30" y="132" width="150" height="52" rx="10" fill="#fdf3e3" stroke="#f0d9ac"/>
+          <text x="105" y="155" font-size="20" text-anchor="middle">📡</text>
+          <text data-i18n="c_fig1_iot" x="105" y="175" font-size="11.5" font-weight="700" fill="#b5701a" text-anchor="middle">Capteurs / IoT</text>
+          <rect x="30" y="224" width="150" height="52" rx="10" fill="#eef8ef" stroke="#bfe3c3"/>
+          <text x="105" y="247" font-size="20" text-anchor="middle">🗃️</text>
+          <text data-i18n="c_fig1_fmis" x="105" y="267" font-size="11.5" font-weight="700" fill="#2f7d3a" text-anchor="middle">FMIS / historique</text>
+        </g>
+        <!-- arrows to model -->
+        <g stroke="#b7a7d6" stroke-width="2" fill="none">
+          <path d="M180 66 C 250 66 250 150 320 150"/>
+          <path d="M180 158 L 320 158"/>
+          <path d="M180 250 C 250 250 250 166 320 166"/>
+        </g>
+        <!-- model layer -->
+        <rect x="320" y="96" width="180" height="124" rx="16" fill="url(#gModel)" stroke="#b393e0" stroke-width="2"/>
+        <text data-i18n="c_fig1_model" x="410" y="128" font-size="13.5" font-weight="800" fill="#5b3fb0" text-anchor="middle">Modèle IA</text>
+        <!-- little neural net -->
+        <g fill="#8e6fc7">
+          <circle cx="356" cy="158" r="6"/><circle cx="356" cy="186" r="6"/>
+          <circle cx="410" cy="150" r="6"/><circle cx="410" cy="178" r="6"/><circle cx="410" cy="206" r="6"/>
+          <circle cx="464" cy="172" r="6"/>
+        </g>
+        <g stroke="#c3b0e6" stroke-width="1.4">
+          <line x1="356" y1="158" x2="410" y2="150"/><line x1="356" y1="158" x2="410" y2="178"/><line x1="356" y1="158" x2="410" y2="206"/>
+          <line x1="356" y1="186" x2="410" y2="150"/><line x1="356" y1="186" x2="410" y2="178"/><line x1="356" y1="186" x2="410" y2="206"/>
+          <line x1="410" y1="150" x2="464" y2="172"/><line x1="410" y1="178" x2="464" y2="172"/><line x1="410" y1="206" x2="464" y2="172"/>
+        </g>
+        <!-- arrow to output -->
+        <path d="M500 158 L 590 158" stroke="#8e6fc7" stroke-width="2.5" fill="none" marker-end="url(#ah)"/>
+        <defs><marker id="ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#8e6fc7"/></marker></defs>
+        <!-- output layer -->
+        <rect x="590" y="108" width="150" height="100" rx="12" fill="#eef8ef" stroke="#8ecb96" stroke-width="2"/>
+        <text data-i18n="c_fig1_out" x="665" y="140" font-size="12.5" font-weight="800" fill="#2f7d3a" text-anchor="middle">Prédiction</text>
+        <text data-i18n="c_fig1_out2" x="665" y="162" font-size="11" font-weight="600" fill="#6f7d64" text-anchor="middle">+ décision</text>
+        <text data-i18n="c_fig1_conf" x="665" y="188" font-size="10.5" font-weight="700" fill="#b5701a" text-anchor="middle">+ confiance</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig1_cap"></div>
+    </div>
+
+    <h3 data-i18n="c_s1_h2">L'apprentissage supervisé en une phrase</h3>
+    <p class="par" data-i18n-html="c_s1_p2"></p>
+    <div class="cgrid">
+      <div class="concept"><div class="sym">(x, y)</div><div class="nm" data-i18n="c_ml_data">Données étiquetées</div><div class="ds" data-i18n="c_ml_data_d">Des exemples X avec la bonne réponse y (ex. photo → « mildiou »).</div></div>
+      <div class="concept"><div class="sym">f(x)</div><div class="nm" data-i18n="c_ml_model">Modèle</div><div class="ds" data-i18n="c_ml_model_d">Fonction ajustée sur ces exemples pendant l'entraînement.</div></div>
+      <div class="concept"><div class="sym">ŷ</div><div class="nm" data-i18n="c_ml_pred">Prédiction</div><div class="ds" data-i18n="c_ml_pred_d">La réponse du modèle sur une donnée jamais vue.</div></div>
+      <div class="concept"><div class="sym">p</div><div class="nm" data-i18n="c_ml_conf">Confiance</div><div class="ds" data-i18n="c_ml_conf_d">Score (0–100 %) de certitude associé à la prédiction.</div></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s1_ret"></span></div>
+  </div>
+
+  <!-- SECTION 2 : VISION -->
+  <div class="card" id="s2">
+    <h2><span class="num">2</span> <span data-i18n="c_s2_h">Vision par ordinateur : détecter les maladies</span></h2>
+    <p class="par" data-i18n-html="c_s2_p1"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 250" role="img">
+        <defs><marker id="ah2" markerWidth="11" markerHeight="11" refX="7" refY="3.2" orient="auto"><path d="M0 0 L7 3.2 L0 6.4 z" fill="#8e6fc7"/></marker></defs>
+        <!-- input image : leaf -->
+        <rect x="34" y="60" width="150" height="130" rx="12" fill="#eef6ea" stroke="#bfe3c3"/>
+        <path d="M109 92 C 74 100 74 150 109 162 C 144 150 144 100 109 92 Z" fill="#6fae4f"/>
+        <line x1="109" y1="96" x2="109" y2="160" stroke="#3d6a1e" stroke-width="2"/>
+        <circle cx="93" cy="128" r="6" fill="#7a6a2a"/><circle cx="122" cy="118" r="4.5" fill="#7a6a2a"/><circle cx="118" cy="142" r="5" fill="#7a6a2a"/>
+        <text data-i18n="c_fig2_img" x="109" y="210" font-size="11.5" font-weight="700" fill="#2f7d3a" text-anchor="middle">Image de feuille</text>
+        <!-- arrow -->
+        <path d="M188 125 L 260 125" stroke="#8e6fc7" stroke-width="2.5" fill="none" marker-end="url(#ah2)"/>
+        <!-- model box -->
+        <rect x="262" y="72" width="176" height="106" rx="14" fill="#f3eefb" stroke="#b393e0" stroke-width="2"/>
+        <text data-i18n="c_fig2_model" x="350" y="100" font-size="12.5" font-weight="800" fill="#5b3fb0" text-anchor="middle">Réseau de neurones</text>
+        <text data-i18n="c_fig2_model2" x="350" y="118" font-size="10.5" fill="#8e6fc7" text-anchor="middle">(classifieur d'images)</text>
+        <g fill="#8e6fc7"><circle cx="300" cy="146" r="5"/><circle cx="325" cy="146" r="5"/><circle cx="350" cy="146" r="5"/><circle cx="375" cy="146" r="5"/><circle cx="400" cy="146" r="5"/></g>
+        <!-- arrow -->
+        <path d="M438 125 L 510 125" stroke="#8e6fc7" stroke-width="2.5" fill="none" marker-end="url(#ah2)"/>
+        <!-- output : class + confidence bar -->
+        <rect x="512" y="60" width="214" height="130" rx="12" fill="#fff" stroke="#8ecb96" stroke-width="2"/>
+        <text data-i18n="c_fig2_cls" x="524" y="88" font-size="13" font-weight="800" fill="#2f7d3a">Classe : Alternariose</text>
+        <text data-i18n="c_fig2_conf" x="524" y="112" font-size="11.5" font-weight="700" fill="#b5701a">Confiance : 88 %</text>
+        <rect x="524" y="122" width="190" height="14" rx="7" fill="#eef2e6"/>
+        <rect x="524" y="122" width="167" height="14" rx="7" fill="#6bbf62"/>
+        <text data-i18n="c_fig2_scale" x="524" y="162" font-size="10.5" fill="#9aa890">0 %————————— 100 %</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig2_cap"></div>
+    </div>
+
+    <div class="sysgrid">
+      <div class="sys" style="--sc:#4a8f3c"><div class="nm" data-i18n="c_cls_h">Saine</div><div class="sub" data-i18n="c_cls_h_s">healthy</div><div class="ds" data-i18n="c_cls_h_d">Aucune lésion — feuille de référence.</div></div>
+      <div class="sys" style="--sc:#6b7a3a"><div class="nm" data-i18n="c_cls_m">Mildiou</div><div class="sub" data-i18n="c_cls_m_s">downy mildew</div><div class="ds" data-i18n="c_cls_m_d">Plages huileuses, feutrage au revers.</div></div>
+      <div class="sys" style="--sc:#7a6a2a"><div class="nm" data-i18n="c_cls_a">Alternariose</div><div class="sub" data-i18n="c_cls_a_s">alternaria</div><div class="ds" data-i18n="c_cls_a_d">Taches brunes concentriques (cibles).</div></div>
+      <div class="sys" style="--sc:#c9a24b"><div class="nm" data-i18n="c_cls_c">Carence</div><div class="sub" data-i18n="c_cls_c_s">deficiency</div><div class="ds" data-i18n="c_cls_c_d">Jaunissement diffus, pas un pathogène.</div></div>
+    </div>
+    <div class="retenir ai"><span class="h" data-i18n="c_key">Point clé — confiance</span><span data-i18n-html="c_s2_ret"></span></div>
+  </div>
+
+  <!-- SECTION 3 : MODELES AGRONOMIQUES + IA -->
+  <div class="card" id="s3">
+    <h2><span class="num">3</span> <span data-i18n="c_s3_h">Modèles agronomiques + IA : TomCast & au-delà</span></h2>
+    <p class="par" data-i18n-html="c_s3_p1"></p>
+
+    <div class="formula">DSV<sub>jour</sub> = f(<span class="hl">heures d'humectation</span>, <span class="hl">température moyenne</span>)   →   cumul Σ DSV ≥ <span class="hl">seuil</span> ⇒ traiter</div>
+    <p class="par" data-i18n-html="c_s3_p2"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 320" role="img">
+        <!-- axes -->
+        <line x1="66" y1="30" x2="66" y2="270" stroke="#c8d3b8" stroke-width="1.5"/>
+        <line x1="66" y1="270" x2="720" y2="270" stroke="#c8d3b8" stroke-width="1.5"/>
+        <!-- y ticks -->
+        <g font-size="10.5" fill="#9aa890" text-anchor="end">
+          <text x="58" y="274">0</text><text x="58" y="214">6</text><text x="58" y="154">12</text>
+          <text x="58" y="94">18</text><text x="58" y="46">24</text>
+        </g>
+        <!-- x ticks (days) -->
+        <g font-size="10.5" fill="#9aa890" text-anchor="middle">
+          <text x="120" y="286">J1</text><text x="220" y="286">J4</text><text x="320" y="286">J7</text>
+          <text x="420" y="286">J10</text><text x="520" y="286">J13</text><text x="620" y="286">J16</text>
+        </g>
+        <!-- threshold line at DSV=18 (y=94) -->
+        <line x1="66" y1="94" x2="720" y2="94" stroke="#d1584e" stroke-width="2" stroke-dasharray="7 5"/>
+        <text data-i18n="c_fig3_thr" x="712" y="86" font-size="11" font-weight="800" fill="#d1584e" text-anchor="end">seuil de traitement (18)</text>
+        <!-- cumulative stepped DSV line -->
+        <polyline points="120,270 153,258 186,246 220,222 253,210 286,186 320,174 353,150 386,138 420,110 453,96 470,90"
+          fill="none" stroke="#8e6fc7" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- continuation past threshold, dimmed -->
+        <polyline points="470,90 520,60 570,42 620,34" fill="none" stroke="#b7a7d6" stroke-width="2.5" stroke-dasharray="5 4"/>
+        <!-- crossing marker -->
+        <circle cx="470" cy="90" r="6" fill="#d1584e"/>
+        <line x1="470" y1="94" x2="470" y2="270" stroke="#d1584e" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text data-i18n="c_fig3_cross" x="470" y="304" font-size="11" font-weight="800" fill="#d1584e" text-anchor="middle">jour de franchissement</text>
+        <!-- axis titles -->
+        <text data-i18n="c_fig3_y" x="20" y="150" font-size="12" font-weight="700" fill="#6f7d64" transform="rotate(-90 20 150)" text-anchor="middle">Cumul de DSV</text>
+        <text data-i18n="c_fig3_x" x="393" y="316" font-size="12" font-weight="700" fill="#6f7d64" text-anchor="middle">Temps (jours)</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig3_cap"></div>
+    </div>
+
+    <h3 data-i18n="c_s3_h2">Trois familles de tâches</h3>
+    <table class="t">
+      <thead><tr><th data-i18n="c_tbl_task">Tâche IA</th><th data-i18n="c_tbl_in">Entrée</th><th data-i18n="c_tbl_out">Sortie</th></tr></thead>
+      <tbody>
+        <tr><td><b data-i18n="c_tbl_r1a">Alerte maladie (TomCast)</b></td><td data-i18n="c_tbl_r1b">Humectation + température</td><td data-i18n="c_tbl_r1c">Cumul DSV → traiter / attendre</td></tr>
+        <tr><td><b data-i18n="c_tbl_r2a">Prédiction de rendement</b></td><td data-i18n="c_tbl_r2b">NDVI, météo, historique parcelle</td><td data-i18n="c_tbl_r2c">Estimation t/ha à la récolte</td></tr>
+        <tr><td><b data-i18n="c_tbl_r3a">Classification d'occupation du sol</b></td><td data-i18n="c_tbl_r3b">Images satellite (Sentinel-2)</td><td data-i18n="c_tbl_r3c">Carte des cultures / parcelles</td></tr>
+      </tbody>
+    </table>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s3_ret"></span></div>
+  </div>
+
+  <!-- SECTION 4 : LIMITES -->
+  <div class="card" id="s4">
+    <h2><span class="num">4</span> <span data-i18n="c_s4_h">Limites honnêtes de l'IA & règle d'or</span></h2>
+    <p class="par" data-i18n-html="c_s4_p1"></p>
+    <div class="sysgrid">
+      <div class="sys" style="--sc:#8e6fc7"><div class="nm" data-i18n="c_lim_exp">Explicabilité</div><div class="ds" data-i18n="c_lim_exp_d">Le modèle prédit sans toujours dire pourquoi — la « boîte noire » complique la confiance.</div></div>
+      <div class="sys" style="--sc:#3a9bd0"><div class="nm" data-i18n="c_lim_data">Données locales</div><div class="ds" data-i18n="c_lim_data_d">Un modèle entraîné ailleurs se trompe sur les cultures et sols libyens s'il n'est pas ré-entraîné.</div></div>
+      <div class="sys" style="--sc:#e0912b"><div class="nm" data-i18n="c_lim_cost">Coût / hectare</div><div class="ds" data-i18n="c_lim_cost_d">Capteurs, connectivité et maintenance doivent rester justifiés par le gain agronomique.</div></div>
+      <div class="sys" style="--sc:#d1584e"><div class="nm" data-i18n="c_lim_bias">Biais</div><div class="ds" data-i18n="c_lim_bias_d">Des données d'entraînement déséquilibrées produisent des erreurs systématiques.</div></div>
+    </div>
+    <div class="retenir ai"><span class="h" data-i18n="c_gold">Règle d'or</span><span data-i18n-html="c_s4_ret"></span></div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="card" id="apps">
+    <h2>🧭 <span data-i18n="c_apps_h">Applications de ce domaine</span></h2>
+    <p class="lead" data-i18n="c_apps_p">Mettez en pratique le cours avec les applications interactives de la plateforme :</p>
+    <div class="appgrid">
+      <a class="appcard" style="--ac:#8e6fc7" href="J5/sim-ia-tomcast.html">
+        <div class="ico">🤖</div><h4 data-i18n="c_app_tom">IA & TomCast + Vision</h4>
+        <p data-i18n="c_app_tom_d">Cumul DSV vers le seuil de traitement, et classifieur de maladies avec confiance.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#3fa66a" href="AgriSim_Live_Parcels_Indices.html">
+        <div class="ico">🛰️</div><h4 data-i18n="c_app_idx">Indices & parcelles live</h4>
+        <p data-i18n="c_app_idx_d">Les données de télédétection que l'IA prolonge (classification, rendement).</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#e0912b" href="J4/agrimanager-v1.6.html">
+        <div class="ico">🗃️</div><h4 data-i18n="c_app_fmis">AgriManager (FMIS)</h4>
+        <p data-i18n="c_app_fmis_d">L'historique de ferme qui nourrit les prédictions de rendement.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+    </div>
+
+    <div class="tpbanner">
+      <div>
+        <div class="tt">🧪 <span data-i18n="c_tp_t">TP guidé — Intelligence artificielle</span></div>
+        <div class="dd" data-i18n="c_tp_d">Cinq étapes pas-à-pas : TomCast, décision de traitement, vision, confiance faible, puis QCM auto-corrigé et compte-rendu exportable.</div>
+      </div>
+      <a class="btn" href="tp-ia.html"><span data-i18n="c_tp_go">Commencer le TP</span> →</a>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="c_foot">Plateforme AgriTech Libye · EU4Skills — Domaine d6 (IA) · support de cours</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  c_brand:{fr:"Intelligence",ar:"الذكاء",en:"Artificial"},
+  c_brand2:{fr:"artificielle",ar:"الاصطناعي",en:"Intelligence"},
+  c_sub:{fr:"Cours · vision, modèles agronomiques, confiance & limites",ar:"درس · الرؤية، النماذج الزراعية، الثقة والحدود",en:"Course · vision, agronomic models, confidence & limits"},
+  c_course_chip:{fr:"Cours",ar:"درس",en:"Course"},
+  c_title:{fr:"L'intelligence artificielle en agriculture",ar:"الذكاء الاصطناعي في الزراعة",en:"Artificial intelligence in agriculture"},
+  c_tag:{fr:"Domaine d6 · la couche intelligente au-dessus des données, ses usages et ses limites",ar:"المجال d6 · الطبقة الذكية فوق البيانات، استعمالاتها وحدودها",en:"Domain d6 · the intelligent layer above the data, its uses and its limits"},
+  c_intro:{fr:"L'intelligence artificielle n'est pas une source de données de plus : c'est une <b>couche intelligente</b> posée <b>au-dessus</b> des données que vous connaissez déjà — télédétection, capteurs, FMIS. Elle apprend des régularités dans ces données pour <b>prédire</b> (une maladie, un rendement, une occupation du sol) et <b>aider à décider</b>. Ce cours pose la vision par ordinateur, les modèles agronomiques comme TomCast, la notion de <b>confiance</b>, puis les <b>limites honnêtes</b> à garder en tête — avant de renvoyer vers les applications où vous les manipulerez.",
+    ar:"الذكاء الاصطناعي ليس مصدر بيانات إضافياً: بل هو <b>طبقة ذكية</b> توضع <b>فوق</b> البيانات التي تعرفها بالفعل — الاستشعار عن بُعد، المجسّات، نظام إدارة المزرعة. يتعلّم انتظامات في هذه البيانات لكي <b>يتنبّأ</b> (بمرض، بمحصول، باستعمال الأرض) و<b>يساعد على القرار</b>. يضع هذا الدرس الرؤية الحاسوبية، والنماذج الزراعية مثل TomCast، ومفهوم <b>الثقة</b>، ثم <b>الحدود الصادقة</b> الواجب تذكّرها — قبل الإحالة إلى التطبيقات التي ستستعملها.",
+    en:"Artificial intelligence is not one more data source: it is an <b>intelligent layer</b> placed <b>on top</b> of the data you already know — remote sensing, sensors, FMIS. It learns patterns in that data to <b>predict</b> (a disease, a yield, a land cover) and <b>help decide</b>. This course lays out computer vision, agronomic models such as TomCast, the notion of <b>confidence</b>, then the <b>honest limits</b> to keep in mind — before pointing you to the apps where you will practise them."},
+  c_toc1:{fr:"1 · Vue d'ensemble",ar:"1 · نظرة عامة",en:"1 · Overview"},
+  c_toc2:{fr:"2 · Vision par ordinateur",ar:"2 · الرؤية الحاسوبية",en:"2 · Computer vision"},
+  c_toc3:{fr:"3 · Modèles + IA",ar:"3 · النماذج + الذكاء",en:"3 · Models + AI"},
+  c_toc4:{fr:"4 · Limites",ar:"4 · الحدود",en:"4 · Limits"},
+  c_toc5:{fr:"Applications",ar:"التطبيقات",en:"Apps"},
+
+  c_obj_h:{fr:"Objectifs pédagogiques",ar:"الأهداف التعليمية",en:"Learning objectives"},
+  c_obj1:{fr:"Situer l'IA comme une couche « intelligente » posée sur les données agricoles.",ar:"وضع الذكاء الاصطناعي كطبقة «ذكية» فوق البيانات الزراعية.",en:"Place AI as an 'intelligent' layer sitting on agricultural data."},
+  c_obj2:{fr:"Expliquer l'apprentissage supervisé en une phrase : données étiquetées → modèle → prédiction.",ar:"شرح التعلّم المُوجَّه في جملة: بيانات موسومة ← نموذج ← تنبّؤ.",en:"Explain supervised learning in one sentence: labelled data → model → prediction."},
+  c_obj3:{fr:"Lire une prédiction de vision : une classe + un score de confiance.",ar:"قراءة تنبّؤ الرؤية: صنف + درجة ثقة.",en:"Read a vision prediction: a class + a confidence score."},
+  c_obj4:{fr:"Comprendre TomCast : le cumul de DSV vers un seuil de traitement.",ar:"فهم TomCast: تراكم DSV نحو عتبة المعالجة.",en:"Understand TomCast: the DSV accumulation toward a spray threshold."},
+  c_obj5:{fr:"Nommer les limites honnêtes de l'IA (explicabilité, données locales, coût, biais).",ar:"تسمية حدود الذكاء الاصطناعي الصادقة (القابلية للتفسير، البيانات المحلية، الكلفة، التحيّز).",en:"Name the honest limits of AI (explainability, local data, cost, bias)."},
+  c_obj6:{fr:"Appliquer la règle d'or : quand la confiance est faible, l'humain tranche.",ar:"تطبيق القاعدة الذهبية: عند ضعف الثقة، الإنسان يقرّر.",en:"Apply the golden rule: when confidence is low, the human decides."},
+
+  c_ret:{fr:"À retenir",ar:"للتذكّر",en:"Remember"},
+  c_key:{fr:"Point clé — confiance",ar:"نقطة مفتاحية — الثقة",en:"Key point — confidence"},
+  c_gold:{fr:"Règle d'or",ar:"القاعدة الذهبية",en:"Golden rule"},
+  c_open:{fr:"Ouvrir →",ar:"فتح →",en:"Open →"},
+
+  // Section 1
+  c_s1_h:{fr:"L'IA en agriculture : la couche intelligente",ar:"الذكاء الاصطناعي في الزراعة: الطبقة الذكية",en:"AI in agriculture: the intelligent layer"},
+  c_s1_p1:{fr:"Vous avez déjà des <b>données</b> : images satellite (télédétection), mesures de capteurs (IoT), et l'historique de la ferme (FMIS). Prises isolément, elles décrivent le <b>présent</b>. L'IA vient <b>par-dessus</b> : elle apprend les régularités qui relient ces données à un résultat utile, puis produit une <b>prédiction</b> accompagnée d'une <b>confiance</b>. Elle ne remplace pas les données ni l'agronome — elle les <b>augmente</b>.",
+    ar:"لديك بالفعل <b>بيانات</b>: صور فضائية (استشعار عن بُعد)، وقياسات مجسّات (إنترنت الأشياء)، وتاريخ المزرعة (FMIS). منفردةً تصف <b>الحاضر</b>. يأتي الذكاء الاصطناعي <b>فوقها</b>: يتعلّم الانتظامات التي تربط هذه البيانات بنتيجة مفيدة، ثم ينتج <b>تنبّؤاً</b> مصحوباً بـ<b>ثقة</b>. إنه لا يعوّض البيانات ولا المهندس الزراعي — بل <b>يعزّزهما</b>.",
+    en:"You already have <b>data</b>: satellite images (remote sensing), sensor readings (IoT), and the farm's history (FMIS). On their own they describe the <b>present</b>. AI sits <b>on top</b>: it learns the patterns linking that data to a useful outcome, then produces a <b>prediction</b> with a <b>confidence</b>. It replaces neither the data nor the agronomist — it <b>augments</b> them."},
+  c_fig1_rs:{fr:"Télédétection",ar:"استشعار عن بُعد",en:"Remote sensing"},
+  c_fig1_iot:{fr:"Capteurs / IoT",ar:"مجسّات / IoT",en:"Sensors / IoT"},
+  c_fig1_fmis:{fr:"FMIS / historique",ar:"FMIS / السجل",en:"FMIS / history"},
+  c_fig1_model:{fr:"Modèle IA",ar:"نموذج ذكاء",en:"AI model"},
+  c_fig1_out:{fr:"Prédiction",ar:"تنبّؤ",en:"Prediction"},
+  c_fig1_out2:{fr:"+ décision",ar:"+ قرار",en:"+ decision"},
+  c_fig1_conf:{fr:"+ confiance",ar:"+ ثقة",en:"+ confidence"},
+  c_fig1_cap:{fr:"<b>La couche intelligente.</b> Les données existantes (télédétection, capteurs, FMIS) alimentent un modèle qui apprend leurs régularités et renvoie une prédiction, une aide à la décision et un score de confiance.",
+    ar:"<b>الطبقة الذكية.</b> البيانات الموجودة (استشعار، مجسّات، FMIS) تُغذّي نموذجاً يتعلّم انتظاماتها ويعيد تنبّؤاً ومساعدةً على القرار ودرجة ثقة.",
+    en:"<b>The intelligent layer.</b> Existing data (remote sensing, sensors, FMIS) feed a model that learns their patterns and returns a prediction, a decision aid and a confidence score."},
+  c_s1_h2:{fr:"L'apprentissage supervisé en une phrase",ar:"التعلّم المُوجَّه في جملة",en:"Supervised learning in one sentence"},
+  c_s1_p2:{fr:"En <b>apprentissage supervisé</b>, on montre au modèle beaucoup d'exemples déjà <b>étiquetés</b> (une photo de feuille avec la bonne maladie écrite à côté). Le modèle ajuste sa fonction interne pour reproduire ces réponses, puis on l'utilise sur des données <b>nouvelles</b> : il rend une prédiction ŷ et une confiance p. En une phrase : <b>données étiquetées → modèle → prédiction</b>.",
+    ar:"في <b>التعلّم المُوجَّه</b> نعرض على النموذج أمثلة كثيرة <b>موسومة</b> مسبقاً (صورة ورقة مع اسم المرض الصحيح بجانبها). يضبط النموذج دالته الداخلية ليعيد هذه الإجابات، ثم نستعمله على بيانات <b>جديدة</b>: فيعطي تنبّؤاً ŷ وثقة p. في جملة: <b>بيانات موسومة ← نموذج ← تنبّؤ</b>.",
+    en:"In <b>supervised learning</b> we show the model many already-<b>labelled</b> examples (a leaf photo with the correct disease written beside it). The model tunes its internal function to reproduce those answers, then we use it on <b>new</b> data: it returns a prediction ŷ and a confidence p. In one sentence: <b>labelled data → model → prediction</b>."},
+  c_ml_data:{fr:"Données étiquetées",ar:"بيانات موسومة",en:"Labelled data"},
+  c_ml_data_d:{fr:"Des exemples X avec la bonne réponse y (ex. photo → « mildiou »).",ar:"أمثلة X مع الإجابة الصحيحة y (مثلاً صورة ← «بياض زغبي»).",en:"Examples X with the right answer y (e.g. photo → 'mildew')."},
+  c_ml_model:{fr:"Modèle",ar:"نموذج",en:"Model"},
+  c_ml_model_d:{fr:"Fonction ajustée sur ces exemples pendant l'entraînement.",ar:"دالة تُضبط على هذه الأمثلة أثناء التدريب.",en:"Function fitted on those examples during training."},
+  c_ml_pred:{fr:"Prédiction",ar:"تنبّؤ",en:"Prediction"},
+  c_ml_pred_d:{fr:"La réponse du modèle sur une donnée jamais vue.",ar:"إجابة النموذج على بيانات لم يرها من قبل.",en:"The model's answer on data it never saw."},
+  c_ml_conf:{fr:"Confiance",ar:"الثقة",en:"Confidence"},
+  c_ml_conf_d:{fr:"Score (0–100 %) de certitude associé à la prédiction.",ar:"درجة (0–100٪) من اليقين مرافقة للتنبّؤ.",en:"Certainty score (0–100%) attached to the prediction."},
+  c_s1_ret:{fr:"L'IA ne « comprend » pas l'agronomie : elle <b>reproduit des régularités</b> vues dans les données d'entraînement. Sa qualité dépend donc entièrement de la <b>qualité et de la représentativité</b> de ces données. Une prédiction sans <b>confiance</b> n'est qu'une opinion — la confiance est ce qui rend la prédiction pilotable.",
+    ar:"الذكاء الاصطناعي لا «يفهم» الزراعة: بل <b>يعيد إنتاج انتظامات</b> رآها في بيانات التدريب. لذا تعتمد جودته كلّياً على <b>جودة وتمثيلية</b> تلك البيانات. والتنبّؤ بلا <b>ثقة</b> مجرّد رأي — الثقة هي ما يجعل التنبّؤ قابلاً للإدارة.",
+    en:"AI does not 'understand' agronomy: it <b>reproduces patterns</b> seen in the training data. Its quality therefore depends entirely on the <b>quality and representativeness</b> of that data. A prediction without a <b>confidence</b> is just an opinion — confidence is what makes the prediction actionable."},
+
+  // Section 2
+  c_s2_h:{fr:"Vision par ordinateur : détecter les maladies",ar:"الرؤية الحاسوبية: كشف الأمراض",en:"Computer vision: detecting diseases"},
+  c_s2_p1:{fr:"La <b>vision par ordinateur</b> apprend à reconnaître des motifs dans les <b>images</b>. En protection des cultures, on photographie une feuille et le modèle la classe parmi quelques catégories — par exemple <b>saine</b>, <b>mildiou</b>, <b>alternariose</b> ou <b>carence</b>. Il ne renvoie jamais qu'une classe : il l'accompagne d'un <b>score de confiance</b> qui dit à quel point il est sûr de lui.",
+    ar:"تتعلّم <b>الرؤية الحاسوبية</b> التعرّف على الأنماط في <b>الصور</b>. في وقاية المحاصيل نصوّر ورقة فيصنّفها النموذج ضمن فئات قليلة — مثلاً <b>سليمة</b>، <b>بياض زغبي</b>، <b>ألترناريا</b> أو <b>نقص غذائي</b>. ولا يعيد صنفاً فقط: بل يرافقه بـ<b>درجة ثقة</b> تبيّن مدى تأكّده.",
+    en:"<b>Computer vision</b> learns to recognise patterns in <b>images</b>. In crop protection you photograph a leaf and the model classes it among a few categories — for example <b>healthy</b>, <b>downy mildew</b>, <b>alternaria</b> or <b>deficiency</b>. It never returns just a class: it attaches a <b>confidence score</b> saying how sure it is."},
+  c_fig2_img:{fr:"Image de feuille",ar:"صورة ورقة",en:"Leaf image"},
+  c_fig2_model:{fr:"Réseau de neurones",ar:"شبكة عصبية",en:"Neural network"},
+  c_fig2_model2:{fr:"(classifieur d'images)",ar:"(مصنّف صور)",en:"(image classifier)"},
+  c_fig2_cls:{fr:"Classe : Alternariose",ar:"الصنف: ألترناريا",en:"Class: Alternaria"},
+  c_fig2_conf:{fr:"Confiance : 88 %",ar:"الثقة: 88٪",en:"Confidence: 88%"},
+  c_fig2_scale:{fr:"0 %————————— 100 %",ar:"0٪————————— 100٪",en:"0%————————— 100%"},
+  c_fig2_cap:{fr:"<b>Pipeline de vision.</b> L'image d'une feuille passe dans le classifieur, qui renvoie une <b>classe</b> (ici alternariose) et une <b>confiance</b> (88 %). Une confiance élevée invite à agir ; une confiance faible, à vérifier.",
+    ar:"<b>مسار الرؤية.</b> تمرّ صورة الورقة في المصنّف الذي يعيد <b>صنفاً</b> (هنا ألترناريا) و<b>ثقة</b> (88٪). الثقة العالية تدعو للفعل، والمنخفضة تدعو للتحقّق.",
+    en:"<b>Vision pipeline.</b> A leaf image passes through the classifier, which returns a <b>class</b> (here alternaria) and a <b>confidence</b> (88%). High confidence invites action; low confidence, verification."},
+  c_cls_h:{fr:"Saine",ar:"سليمة",en:"Healthy"},
+  c_cls_h_s:{fr:"healthy",ar:"healthy",en:"healthy"},
+  c_cls_h_d:{fr:"Aucune lésion — feuille de référence.",ar:"لا آفة — ورقة مرجعية.",en:"No lesion — reference leaf."},
+  c_cls_m:{fr:"Mildiou",ar:"البياض الزغبي",en:"Downy mildew"},
+  c_cls_m_s:{fr:"downy mildew",ar:"downy mildew",en:"downy mildew"},
+  c_cls_m_d:{fr:"Plages huileuses, feutrage au revers.",ar:"بقع زيتية، زغب في الظهر.",en:"Oily patches, felting on the underside."},
+  c_cls_a:{fr:"Alternariose",ar:"ألترناريا",en:"Alternaria"},
+  c_cls_a_s:{fr:"alternaria",ar:"alternaria",en:"alternaria"},
+  c_cls_a_d:{fr:"Taches brunes concentriques (cibles).",ar:"بقع بنية متراكزة (أهداف).",en:"Concentric brown spots (targets)."},
+  c_cls_c:{fr:"Carence",ar:"نقص غذائي",en:"Deficiency"},
+  c_cls_c_s:{fr:"deficiency",ar:"deficiency",en:"deficiency"},
+  c_cls_c_d:{fr:"Jaunissement diffus, pas un pathogène.",ar:"اصفرار منتشر، ليس مُمرِضاً.",en:"Diffuse yellowing, not a pathogen."},
+  c_s2_ret:{fr:"La <b>confiance</b> est aussi importante que la classe. À 96 %, on peut agir ; à 58 % sur une image floue, la prédiction est fragile et peut être <b>fausse avec assurance</b> (faux positif). C'est pourquoi tout déploiement sérieux fixe un <b>seuil de confiance</b> en dessous duquel on ne décide pas seul.",
+    ar:"<b>الثقة</b> لا تقلّ أهمية عن الصنف. عند 96٪ يمكن الفعل؛ وعند 58٪ على صورة ضبابية يكون التنبّؤ هشّاً وقد يكون <b>خاطئاً بثقة</b> (إيجابي كاذب). لذا يضع كل نشرٍ جادّ <b>عتبة ثقة</b> لا يُقرَّر تحتها منفرداً.",
+    en:"<b>Confidence</b> matters as much as the class. At 96% you can act; at 58% on a blurry image the prediction is fragile and can be <b>confidently wrong</b> (false positive). That is why any serious deployment sets a <b>confidence threshold</b> below which you do not decide alone."},
+
+  // Section 3
+  c_s3_h:{fr:"Modèles agronomiques + IA : TomCast & au-delà",ar:"النماذج الزراعية + الذكاء: TomCast وأبعد",en:"Agronomic models + AI: TomCast & beyond"},
+  c_s3_p1:{fr:"Toute IA n'est pas un réseau de neurones. <b>TomCast</b> est un modèle agro-climatique éprouvé pour le mildiou et l'alternariose : chaque jour, il calcule un <b>DSV</b> (Disease Severity Value, valeur de sévérité de la maladie) à partir des <b>heures d'humectation foliaire</b> et de la <b>température moyenne</b>. Ces DSV s'<b>additionnent</b> jour après jour ; lorsque le <b>cumul</b> atteint un <b>seuil</b>, le risque justifie un traitement.",
+    ar:"ليس كل ذكاء اصطناعي شبكة عصبية. <b>TomCast</b> نموذج مناخي-زراعي مُجرَّب للبياض الزغبي والألترناريا: يحسب كل يوم <b>DSV</b> (قيمة شدّة المرض) من <b>ساعات بلل الأوراق</b> و<b>متوسّط الحرارة</b>. تتراكم هذه القيم يوماً بعد يوم؛ وعند بلوغ <b>المجموع</b> <b>عتبةً</b>، يبرّر الخطر المعالجة.",
+    en:"Not all AI is a neural network. <b>TomCast</b> is a proven agro-climatic model for mildew and alternaria: each day it computes a <b>DSV</b> (Disease Severity Value) from the <b>leaf wetness hours</b> and the <b>mean temperature</b>. These DSVs <b>add up</b> day after day; when the <b>cumulative total</b> reaches a <b>threshold</b>, the risk justifies a treatment."},
+  c_s3_p2:{fr:"La logique est celle d'un <b>compteur de risque</b> : par temps chaud et humide, le DSV quotidien est élevé et le cumul grimpe vite ; par temps sec, il stagne. On ne traite donc plus « au calendrier » mais <b>selon le risque réel</b> — le jour où la courbe de cumul <b>franchit le seuil</b>.",
+    ar:"المنطق هو <b>عدّاد خطر</b>: في الجوّ الحارّ الرطب يكون DSV اليومي عالياً فيرتفع المجموع بسرعة؛ وفي الجفاف يركد. فلم نعد نعالج «حسب التقويم» بل <b>حسب الخطر الفعلي</b> — يوم <b>تجاوز</b> منحنى المجموع للعتبة.",
+    en:"The logic is a <b>risk counter</b>: in hot, humid weather the daily DSV is high and the total climbs fast; in dry weather it stalls. So you no longer treat 'by the calendar' but <b>by the real risk</b> — the day the cumulative curve <b>crosses the threshold</b>."},
+  c_fig3_thr:{fr:"seuil de traitement (18)",ar:"عتبة المعالجة (18)",en:"spray threshold (18)"},
+  c_fig3_cross:{fr:"jour de franchissement",ar:"يوم التجاوز",en:"crossing day"},
+  c_fig3_y:{fr:"Cumul de DSV",ar:"مجموع DSV",en:"Cumulative DSV"},
+  c_fig3_x:{fr:"Temps (jours)",ar:"الزمن (أيام)",en:"Time (days)"},
+  c_fig3_cap:{fr:"<b>Courbe de cumul DSV.</b> Chaque jour ajoute son DSV au total. La date où le cumul franchit le seuil (ici 18) déclenche l'alerte de traitement. Une météo chaude et humide raidit la pente.",
+    ar:"<b>منحنى تراكم DSV.</b> كل يوم يضيف قيمته إلى المجموع. تاريخ تجاوز المجموع للعتبة (هنا 18) يُطلق إنذار المعالجة. والطقس الحارّ الرطب يزيد حدّة الميل.",
+    en:"<b>DSV accumulation curve.</b> Each day adds its DSV to the total. The date the total crosses the threshold (here 18) triggers the spray alert. Hot, humid weather steepens the slope."},
+  c_tbl_task:{fr:"Tâche IA",ar:"مهمة الذكاء",en:"AI task"},
+  c_tbl_in:{fr:"Entrée",ar:"المدخل",en:"Input"},
+  c_tbl_out:{fr:"Sortie",ar:"المخرج",en:"Output"},
+  c_tbl_r1a:{fr:"Alerte maladie (TomCast)",ar:"إنذار مرض (TomCast)",en:"Disease alert (TomCast)"},
+  c_tbl_r1b:{fr:"Humectation + température",ar:"البلل + الحرارة",en:"Wetness + temperature"},
+  c_tbl_r1c:{fr:"Cumul DSV → traiter / attendre",ar:"مجموع DSV ← معالجة / انتظار",en:"DSV total → treat / wait"},
+  c_tbl_r2a:{fr:"Prédiction de rendement",ar:"التنبّؤ بالمحصول",en:"Yield prediction"},
+  c_tbl_r2b:{fr:"NDVI, météo, historique parcelle",ar:"NDVI، المناخ، سجل القطعة",en:"NDVI, weather, parcel history"},
+  c_tbl_r2c:{fr:"Estimation t/ha à la récolte",ar:"تقدير طن/هكتار عند الحصاد",en:"t/ha estimate at harvest"},
+  c_tbl_r3a:{fr:"Classification d'occupation du sol",ar:"تصنيف استعمال الأرض",en:"Land-cover classification"},
+  c_tbl_r3b:{fr:"Images satellite (Sentinel-2)",ar:"صور فضائية (Sentinel-2)",en:"Satellite images (Sentinel-2)"},
+  c_tbl_r3c:{fr:"Carte des cultures / parcelles",ar:"خريطة المحاصيل / القطع",en:"Crop / parcel map"},
+  c_s3_ret:{fr:"TomCast montre qu'un <b>bon modèle simple</b> et transparent peut valoir un réseau de neurones : il est <b>explicable</b> (on sait pourquoi il alerte) et se prolonge naturellement vers la <b>prédiction de rendement</b> et la <b>classification satellite</b>, qui étendent la télédétection du module 2.",
+    ar:"يُظهر TomCast أن <b>نموذجاً بسيطاً جيّداً</b> وشفّافاً قد يعادل شبكة عصبية: فهو <b>قابل للتفسير</b> (نعرف لماذا ينذر) ويمتدّ طبيعياً نحو <b>التنبّؤ بالمحصول</b> و<b>التصنيف الفضائي</b> اللذين يوسّعان الاستشعار عن بُعد للوحدة 2.",
+    en:"TomCast shows that a <b>good simple model</b> that is transparent can rival a neural network: it is <b>explainable</b> (you know why it alerts) and extends naturally to <b>yield prediction</b> and <b>satellite classification</b>, which broaden the remote sensing of module 2."},
+
+  // Section 4
+  c_s4_h:{fr:"Limites honnêtes de l'IA & règle d'or",ar:"حدود الذكاء الاصطناعي الصادقة والقاعدة الذهبية",en:"Honest limits of AI & the golden rule"},
+  c_s4_p1:{fr:"Enseigner l'IA honnêtement, c'est aussi enseigner ce qu'elle <b>ne sait pas</b> faire. Quatre limites reviennent toujours et doivent guider tout déploiement en Libye.",
+    ar:"تعليم الذكاء الاصطناعي بصدق يعني أيضاً تعليم ما <b>لا يُحسنه</b>. أربعة حدود تتكرّر دوماً ويجب أن توجّه كل نشرٍ في ليبيا.",
+    en:"Teaching AI honestly means also teaching what it <b>cannot</b> do. Four limits always recur and must guide any deployment in Libya."},
+  c_lim_exp:{fr:"Explicabilité",ar:"القابلية للتفسير",en:"Explainability"},
+  c_lim_exp_d:{fr:"Le modèle prédit sans toujours dire pourquoi — la « boîte noire » complique la confiance.",ar:"يتنبّأ النموذج دون أن يقول لماذا دوماً — «الصندوق الأسود» يعقّد الثقة.",en:"The model predicts without always saying why — the 'black box' complicates trust."},
+  c_lim_data:{fr:"Données locales",ar:"البيانات المحلية",en:"Local data"},
+  c_lim_data_d:{fr:"Un modèle entraîné ailleurs se trompe sur les cultures et sols libyens s'il n'est pas ré-entraîné.",ar:"نموذج مُدرَّب في مكان آخر يُخطئ على المحاصيل والتربة الليبية إن لم يُعَد تدريبه.",en:"A model trained elsewhere errs on Libyan crops and soils unless retrained."},
+  c_lim_cost:{fr:"Coût / hectare",ar:"الكلفة / هكتار",en:"Cost / hectare"},
+  c_lim_cost_d:{fr:"Capteurs, connectivité et maintenance doivent rester justifiés par le gain agronomique.",ar:"يجب أن تبقى المجسّات والاتصال والصيانة مبرَّرة بالمكسب الزراعي.",en:"Sensors, connectivity and upkeep must stay justified by the agronomic gain."},
+  c_lim_bias:{fr:"Biais",ar:"التحيّز",en:"Bias"},
+  c_lim_bias_d:{fr:"Des données d'entraînement déséquilibrées produisent des erreurs systématiques.",ar:"بيانات تدريب غير متوازنة تنتج أخطاءً منهجية.",en:"Unbalanced training data produce systematic errors."},
+  c_s4_ret:{fr:"La règle d'or d'un usage responsable : <b>quand la confiance est faible, l'humain tranche</b>. L'IA propose, l'agronome dispose. Un seuil de confiance, un contrôle au champ et une trace de la décision transforment une prédiction incertaine en <b>outil fiable</b> — jamais l'inverse.",
+    ar:"القاعدة الذهبية للاستعمال المسؤول: <b>عند ضعف الثقة، الإنسان يقرّر</b>. الذكاء يقترح والمهندس يقرّر. عتبة ثقة، وتحقّق ميداني، وأثرٌ للقرار تُحوّل تنبّؤاً غير مؤكّد إلى <b>أداة موثوقة</b> — لا العكس أبداً.",
+    en:"The golden rule of responsible use: <b>when confidence is low, the human decides</b>. AI proposes, the agronomist disposes. A confidence threshold, a field check and a record of the decision turn an uncertain prediction into a <b>reliable tool</b> — never the reverse."},
+
+  // Apps
+  c_apps_h:{fr:"Applications de ce domaine",ar:"تطبيقات هذا المجال",en:"Apps for this domain"},
+  c_apps_p:{fr:"Mettez en pratique le cours avec les applications interactives de la plateforme :",ar:"طبّق الدرس عبر التطبيقات التفاعلية للمنصّة:",en:"Put the course into practice with the platform's interactive apps:"},
+  c_app_tom:{fr:"IA & TomCast + Vision",ar:"الذكاء وTomCast + الرؤية",en:"AI & TomCast + Vision"},
+  c_app_tom_d:{fr:"Cumul DSV vers le seuil de traitement, et classifieur de maladies avec confiance.",ar:"تراكم DSV نحو عتبة المعالجة، ومصنّف الأمراض مع الثقة.",en:"DSV accumulation toward the spray threshold, and a disease classifier with confidence."},
+  c_app_idx:{fr:"Indices & parcelles live",ar:"المؤشرات والقطع مباشرة",en:"Indices & parcels live"},
+  c_app_idx_d:{fr:"Les données de télédétection que l'IA prolonge (classification, rendement).",ar:"بيانات الاستشعار التي يمدّدها الذكاء (تصنيف، محصول).",en:"The remote-sensing data that AI extends (classification, yield)."},
+  c_app_fmis:{fr:"AgriManager (FMIS)",ar:"أجري-مانجر (FMIS)",en:"AgriManager (FMIS)"},
+  c_app_fmis_d:{fr:"L'historique de ferme qui nourrit les prédictions de rendement.",ar:"سجل المزرعة الذي يغذّي تنبّؤات المحصول.",en:"The farm history that feeds yield predictions."},
+  c_tp_t:{fr:"TP guidé — Intelligence artificielle",ar:"عمل تطبيقي موجّه — الذكاء الاصطناعي",en:"Guided lab — Artificial intelligence"},
+  c_tp_d:{fr:"Cinq étapes pas-à-pas : TomCast, décision de traitement, vision, confiance faible, puis QCM auto-corrigé et compte-rendu exportable.",ar:"خمس خطوات: TomCast، قرار المعالجة، الرؤية، الثقة المنخفضة، ثم اختبار ذاتي التصحيح وتقرير قابل للتصدير.",en:"Five step-by-step stages: TomCast, treatment decision, vision, low confidence, then a self-marked quiz and an exportable report."},
+  c_tp_go:{fr:"Commencer le TP",ar:"ابدأ العمل التطبيقي",en:"Start the lab"},
+  c_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Domaine d6 (IA) · support de cours",ar:"منصّة أجريتك ليبيا · EU4Skills — المجال d6 (الذكاء) · مادة الدرس",en:"AgriTech Libya Platform · EU4Skills — Domain d6 (AI) · course material"}
+});
+
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',applyHTML);
+
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

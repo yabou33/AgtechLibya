@@ -1,0 +1,22 @@
+{
+  "format": "agrimanager-irrigation",
+  "version": 1,
+  "exportedAt": "2026-09-05T12:00:00.000Z",
+  "name": "Domaine Sebha",
+  "center": [27.036, 14.425],
+  "zoom": 13,
+  "parcels": [
+    {
+      "id": "p1", "name": "Pivot Nord", "crop": "ble", "soil": "sableux", "shape": "pivot",
+      "area_ha": 50, "kc": 1.15,
+      "geometry": { "type": "Polygon", "coordinates": [[[14.4200,27.0350],[14.4230,27.0350],[14.4230,27.0375],[14.4200,27.0375],[14.4200,27.0350]]] },
+      "thresholds": { "pf": 6, "seuil": 11, "cc": 16 }
+    }
+  ],
+  "equipment": [
+    { "id": "e1", "type": "weather", "lat": 27.034, "lng": 14.423, "props": { "label": "Station Sebha" } },
+    { "id": "e2", "type": "probe",   "lat": 27.036, "lng": 14.424, "props": { "depths_cm": [30, 50, 80] } },
+    { "id": "e3", "type": "valve",   "lat": 27.037, "lng": 14.425, "props": { "sector": "Nord" } }
+  ],
+  "planning": []
+}

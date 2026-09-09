@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cours — Télédétection & indices · M2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:940px;font-size:14.5px;line-height:1.6}
+  .lead b{color:var(--ink)}
+  .wrap{max-width:1080px}
+  /* --- bandeau titre --- */
+  .hero{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:2px}
+  .hero .g0{width:52px;height:52px;border-radius:13px;flex:none;background:linear-gradient(135deg,#5a8f2c,#3fa66a);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;box-shadow:var(--shadow)}
+  .hero h1{font-size:24px;font-weight:800;color:var(--ink);line-height:1.15}
+  .hero .tag{color:var(--muted);font-size:13px;margin-top:2px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}
+  .toc a{font-size:12.5px;font-weight:600;color:var(--green-d);background:var(--green-bg);
+    border:1px solid var(--line);border-radius:20px;padding:5px 13px}
+  .toc a:hover{border-color:var(--green);background:#e7f2d8}
+  /* --- objectifs --- */
+  .obj{background:linear-gradient(180deg,#eef8ef,#f6fbf0);border:1px solid #bfe3c3;border-radius:14px;padding:16px 20px}
+  .obj h2{color:var(--impact)}
+  .obj ul{margin:6px 0 0;padding-inline-start:20px;columns:2;column-gap:28px}
+  @media(max-width:720px){.obj ul{columns:1}}
+  .obj li{margin:5px 0;font-size:13.5px;color:var(--ink);break-inside:avoid}
+  /* --- sections --- */
+  .card h2{font-size:17px}
+  .card h3{font-size:14.5px;font-weight:800;color:var(--green-d);margin:14px 0 6px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--green);
+    color:#fff;font-size:13px;font-weight:800;flex:none}
+  p.par{color:var(--ink);font-size:14px;line-height:1.65;margin:8px 0;max-width:940px}
+  p.par b{color:var(--green-d)}
+  /* --- concepts grid --- */
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:12px 0}
+  .concept{background:var(--green-bg);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .concept .sym{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:15px}
+  .concept .nm{font-weight:700;font-size:13px;margin:2px 0 4px;color:var(--ink)}
+  .concept .ds{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .concept .u{font-family:"JetBrains Mono",monospace;color:var(--info);font-size:11.5px}
+  /* --- à retenir --- */
+  .retenir{background:#fdf7ea;border:1px solid #f0d9ac;border-inline-start:4px solid var(--info);
+    border-radius:11px;padding:12px 16px;margin:14px 0;font-size:13.5px;color:var(--ink);line-height:1.6}
+  .retenir .h{font-weight:800;color:#b5701a;text-transform:uppercase;font-size:11px;letter-spacing:.05em;display:block;margin-bottom:4px}
+  body[dir="rtl"] .retenir{border-inline-start:1px solid #f0d9ac;border-inline-end:4px solid var(--info)}
+  .fossil{background:#eaf3fa;border-color:#bcd9ec;border-inline-start-color:var(--capture)}
+  .fossil .h{color:var(--capture)}
+  body[dir="rtl"] .fossil{border-inline-end-color:var(--capture)}
+  /* --- figures --- */
+  .fig{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0}
+  .fig svg{width:100%;height:auto;display:block;direction:ltr}
+  .figcap{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+  .figcap b{color:var(--ink)}
+  /* --- indices / systèmes --- */
+  .sysgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+  .sys{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:#fff;border-top:4px solid var(--sc,var(--green))}
+  .sys .nm{font-weight:800;font-size:14px;color:var(--ink)}
+  .sys .sub{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--green-d);margin:3px 0 6px}
+  .sys .ds{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .sys .badge{margin-top:8px;font-size:10px}
+  /* --- table --- */
+  table.t{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 11px;text-align:start}
+  table.t th{background:var(--green-bg);color:var(--green-d);font-weight:700;font-size:12px}
+  table.t td b{color:var(--ink)}
+  table.t td .mono{font-family:"JetBrains Mono",monospace;color:var(--capture)}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:13px;background:#0e1512;color:#d7e3cd;
+    border-radius:10px;padding:12px 16px;overflow:auto;margin:10px 0}
+  .formula .hl{color:#a5d16e;font-weight:700}
+  /* --- apps --- */
+  .appgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:6px}
+  .appcard{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:13px;
+    padding:15px 17px;transition:.16s;border-inline-start:4px solid var(--ac,var(--green))}
+  .appcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(60,80,40,.15);border-color:var(--ac,var(--green))}
+  body[dir="rtl"] .appcard{border-inline-start:1px solid var(--line);border-inline-end:4px solid var(--ac,var(--green))}
+  .appcard .ico{font-size:26px}
+  .appcard h4{font-size:14.5px;font-weight:800;margin:6px 0 4px;color:var(--ink)}
+  .appcard p{font-size:12.5px;color:var(--muted);flex:1;line-height:1.5;margin-bottom:10px}
+  .appcard .go{font-size:12.5px;font-weight:700;color:var(--green-d)}
+  .tpbanner{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;
+    background:linear-gradient(120deg,#5a8f2c,#3fa66a);color:#fff;border-radius:15px;padding:20px 24px;margin-top:18px}
+  .tpbanner .tt{font-size:18px;font-weight:800}
+  .tpbanner .dd{font-size:13px;opacity:.92;margin-top:3px;max-width:560px}
+  .tpbanner .btn{background:#fff;color:var(--green-d)}
+  .tpbanner .btn:hover{background:#eef8ef}
+  .footnote{color:var(--faint);font-size:12px;text-align:center;margin:22px 0 6px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">M2</span> <b data-i18n="c_brand">Télédétection</b> <span data-i18n="c_brand2">& indices</span></div>
+  <div class="sub" data-i18n="c_sub">Cours · réflectance, NDVI, séries temporelles, Sentinel-2</div>
+  <div class="right">
+    <span class="chip">M2 · <span data-i18n="c_course_chip">Cours</span></span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="g0">M2</div>
+    <div>
+      <h1 data-i18n="c_title">Télédétection & indices de végétation</h1>
+      <div class="tag" data-i18n="c_tag">Domaine d1 · lire la santé des cultures depuis l'espace, gratuitement</div>
+    </div>
+  </div>
+  <p class="lead" data-i18n-html="c_intro"></p>
+
+  <nav class="toc">
+    <a href="#s1" data-i18n="c_toc1">1 · Réflectance & bandes</a>
+    <a href="#s2" data-i18n="c_toc2">2 · Les indices</a>
+    <a href="#s3" data-i18n="c_toc3">3 · Séries temporelles</a>
+    <a href="#s4" data-i18n="c_toc4">4 · Résolution & limites</a>
+    <a href="#apps" data-i18n="c_toc5">Applications</a>
+  </nav>
+
+  <!-- OBJECTIFS -->
+  <div class="card obj">
+    <h2>🎯 <span data-i18n="c_obj_h">Objectifs pédagogiques</span></h2>
+    <ul>
+      <li data-i18n="c_obj1">Comprendre la réflectance et lire la signature spectrale de la végétation.</li>
+      <li data-i18n="c_obj2">Situer les bandes de Sentinel-2 (résolution 10 m, revisite 5 j, gratuit).</li>
+      <li data-i18n="c_obj3">Calculer et interpréter NDVI, NDWI, NDRE et NDMI.</li>
+      <li data-i18n="c_obj4">Expliquer le rôle du « red-edge » et du pic NIR dans le diagnostic.</li>
+      <li data-i18n="c_obj5">Lire une série temporelle NDVI et repérer un stress avant l'œil.</li>
+      <li data-i18n="c_obj6">Distinguer résolution spatiale et temporelle, et connaître les limites (nuages, mixels).</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 1 : REFLECTANCE & BANDES -->
+  <div class="card" id="s1">
+    <h2><span class="num">1</span> <span data-i18n="c_s1_h">Réflectance & bandes spectrales</span></h2>
+    <p class="par" data-i18n-html="c_s1_p1"></p>
+
+    <h3 data-i18n="c_s1_h2">La signature spectrale de la végétation</h3>
+    <p class="par" data-i18n-html="c_s1_p2"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 372" role="img">
+        <defs>
+          <linearGradient id="gVis" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#5566cc"/><stop offset="0.45" stop-color="#3fa66a"/>
+            <stop offset="0.7" stop-color="#e0c93a"/><stop offset="1" stop-color="#cc4b3a"/>
+          </linearGradient>
+        </defs>
+        <!-- band backgrounds -->
+        <rect x="70" y="40" width="98" height="260" fill="url(#gVis)" opacity="0.16"/>
+        <rect x="168" y="40" width="26" height="260" fill="#c98fd0" opacity="0.22"/>
+        <rect x="194" y="40" width="182" height="260" fill="#9fd0ec" opacity="0.16"/>
+        <rect x="376" y="40" width="344" height="260" fill="#e0a86a" opacity="0.13"/>
+        <!-- axes -->
+        <line x1="70" y1="40" x2="70" y2="300" stroke="#c8d3b8" stroke-width="1.5"/>
+        <line x1="70" y1="300" x2="720" y2="300" stroke="#c8d3b8" stroke-width="1.5"/>
+        <!-- y ticks -->
+        <g font-size="10.5" fill="#9aa890" text-anchor="end">
+          <text x="62" y="72">0.5</text><text x="62" y="186">0.25</text><text x="62" y="304">0</text>
+        </g>
+        <!-- x ticks (wavelength nm) -->
+        <g font-size="10" fill="#9aa890" text-anchor="middle">
+          <text x="119" y="318">550</text><text x="181" y="318">720</text>
+          <text x="300" y="318">850</text><text x="480" y="318">1600</text><text x="640" y="318">2200</text>
+        </g>
+        <!-- vegetation reflectance curve -->
+        <path d="M70 287 L102 279 Q112 252 119 252 Q140 258 161 285 L168 283
+                 Q176 250 184 130 L200 82 Q280 72 362 80 L411 206 Q436 172 460 168
+                 Q510 176 540 200 L558 244 Q600 220 640 214 L720 220"
+              fill="none" stroke="#2f8f3f" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- green bump marker -->
+        <circle cx="119" cy="252" r="3.5" fill="#3fa66a"/>
+        <!-- red trough marker -->
+        <circle cx="161" cy="285" r="3.5" fill="#cc4b3a"/>
+        <!-- NIR peak marker -->
+        <circle cx="300" cy="72" r="3.5" fill="#2f8f3f"/>
+        <!-- red-edge arrow -->
+        <line x1="184" y1="130" x2="205" y2="96" stroke="#8e4fa0" stroke-width="1.4"/>
+        <!-- labels -->
+        <text data-i18n="c_fig1_vis" x="119" y="56" font-size="11" font-weight="700" fill="#4a5a86" text-anchor="middle">Visible</text>
+        <text data-i18n="c_fig1_re" x="181" y="34" font-size="10" font-weight="700" fill="#8e4fa0" text-anchor="middle">Red-edge</text>
+        <text data-i18n="c_fig1_nir" x="285" y="56" font-size="11" font-weight="700" fill="#2f7fb5" text-anchor="middle">Proche IR (NIR)</text>
+        <text data-i18n="c_fig1_swir" x="548" y="56" font-size="11" font-weight="700" fill="#a56a2a" text-anchor="middle">SWIR</text>
+        <text data-i18n="c_fig1_green" x="119" y="240" font-size="10.5" font-weight="700" fill="#2f8f3f" text-anchor="middle">pic vert</text>
+        <text data-i18n="c_fig1_redt" x="150" y="300" font-size="10.5" font-weight="700" fill="#cc4b3a" text-anchor="end">creux rouge</text>
+        <text data-i18n="c_fig1_peak" x="300" y="64" font-size="10.5" font-weight="800" fill="#2f8f3f" text-anchor="middle">pic NIR</text>
+        <text data-i18n="c_fig1_edge" x="212" y="94" font-size="10.5" font-weight="800" fill="#8e4fa0">red-edge (montée)</text>
+        <text data-i18n="c_fig1_ax" x="395" y="338" font-size="11" font-weight="700" fill="#6f7d64" text-anchor="middle">Longueur d'onde (nm)</text>
+        <text data-i18n="c_fig1_ay" x="18" y="170" font-size="11" font-weight="700" fill="#6f7d64" transform="rotate(-90 18 170)" text-anchor="middle">Réflectance</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig1_cap"></div>
+    </div>
+
+    <h3 data-i18n="c_s1_h3">Sentinel-2 : le satellite gratuit de référence</h3>
+    <div class="cgrid">
+      <div class="concept"><div class="sym">10 m</div><div class="nm" data-i18n="c_sen_res">Résolution spatiale</div><div class="ds" data-i18n="c_sen_res_d">Bandes visibles et NIR à 10 m par pixel.</div></div>
+      <div class="concept"><div class="sym">5 j</div><div class="nm" data-i18n="c_sen_rev">Revisite</div><div class="ds" data-i18n="c_sen_rev_d">Deux satellites → une image tous les ~5 jours.</div></div>
+      <div class="concept"><div class="sym">13</div><div class="nm" data-i18n="c_sen_band">Bandes spectrales</div><div class="ds" data-i18n="c_sen_band_d">Du bleu au SWIR, dont 3 bandes red-edge.</div></div>
+      <div class="concept"><div class="sym">0 €</div><div class="nm" data-i18n="c_sen_free">Gratuit & ouvert</div><div class="ds" data-i18n="c_sen_free_d">Programme Copernicus (UE), accès libre.</div></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s1_ret"></span></div>
+  </div>
+
+  <!-- SECTION 2 : LES INDICES -->
+  <div class="card" id="s2">
+    <h2><span class="num">2</span> <span data-i18n="c_s2_h">Les indices spectraux</span></h2>
+    <p class="par" data-i18n-html="c_s2_p1"></p>
+
+    <div class="formula">NDVI = (<span class="hl">NIR − Rouge</span>) / (<span class="hl">NIR + Rouge</span>)</div>
+    <p class="par" data-i18n-html="c_s2_p2"></p>
+
+    <div class="sysgrid">
+      <div class="sys" style="--sc:#3fa66a">
+        <div class="nm">NDVI</div>
+        <div class="sub">(NIR − R) / (NIR + R)</div>
+        <div class="ds" data-i18n="c_idx_ndvi_d">Vigueur & densité du couvert végétal. L'indice de référence.</div>
+        <span class="badge" data-i18n="c_idx_vig">Vigueur</span>
+      </div>
+      <div class="sys" style="--sc:#3a9bd0">
+        <div class="nm">NDWI</div>
+        <div class="sub">(Vert − NIR) / (Vert + NIR)</div>
+        <div class="ds" data-i18n="c_idx_ndwi_d">Teneur en eau / plans d'eau. Révèle l'humidité de surface.</div>
+        <span class="badge" style="background:#eaf3fa;color:#25607f;border-color:#bcd9ec" data-i18n="c_idx_eau">Eau</span>
+      </div>
+      <div class="sys" style="--sc:#8e6fc7">
+        <div class="nm">NDRE</div>
+        <div class="sub">(NIR − RedEdge) / (NIR + RedEdge)</div>
+        <div class="ds" data-i18n="c_idx_ndre_d">Statut azoté & chlorophylle. Utile en couvert dense (NDVI saturé).</div>
+        <span class="badge" style="background:#f3eefb;color:#6a4bb0;border-color:#d9c9f0" data-i18n="c_idx_azote">Azote</span>
+      </div>
+      <div class="sys" style="--sc:#e0912b">
+        <div class="nm">NDMI</div>
+        <div class="sub">(NIR − SWIR) / (NIR + SWIR)</div>
+        <div class="ds" data-i18n="c_idx_ndmi_d">Humidité de la végétation. Détecte le stress hydrique précoce.</div>
+        <span class="badge soon" data-i18n="c_idx_stress">Stress hydrique</span>
+      </div>
+    </div>
+
+    <h3 data-i18n="c_s2_h2">Lire une échelle de couleurs NDVI</h3>
+    <div class="fig">
+      <svg viewBox="0 0 760 150" role="img">
+        <defs>
+          <linearGradient id="gNDVI" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#3a76c4"/><stop offset="0.18" stop-color="#b98a4e"/>
+            <stop offset="0.35" stop-color="#e6d24a"/><stop offset="0.6" stop-color="#8fc23e"/>
+            <stop offset="0.82" stop-color="#3f9a3a"/><stop offset="1" stop-color="#1e5a26"/>
+          </linearGradient>
+        </defs>
+        <rect x="70" y="34" width="620" height="34" rx="7" fill="url(#gNDVI)"/>
+        <!-- ticks -->
+        <g stroke="#9aa890" stroke-width="1">
+          <line x1="70" y1="68" x2="70" y2="76"/><line x1="194" y1="68" x2="194" y2="76"/>
+          <line x1="318" y1="68" x2="318" y2="76"/><line x1="442" y1="68" x2="442" y2="76"/>
+          <line x1="566" y1="68" x2="566" y2="76"/><line x1="690" y1="68" x2="690" y2="76"/>
+        </g>
+        <g font-size="11" fill="#6f7d64" text-anchor="middle" font-weight="600">
+          <text x="70" y="90">−0.1</text><text x="194" y="90">0.1</text><text x="318" y="90">0.3</text>
+          <text x="442" y="90">0.5</text><text x="566" y="90">0.7</text><text x="690" y="90">0.9</text>
+        </g>
+        <g font-size="11.5" font-weight="700" text-anchor="middle">
+          <text data-i18n="c_ndvi_water" x="105" y="122" fill="#3a76c4">eau</text>
+          <text data-i18n="c_ndvi_bare" x="256" y="122" fill="#9c7238">sol nu</text>
+          <text data-i18n="c_ndvi_stress" x="400" y="122" fill="#b09a1e">végétation faible</text>
+          <text data-i18n="c_ndvi_dense" x="600" y="122" fill="#2f7d3a">végétation dense & vigoureuse</text>
+        </g>
+      </svg>
+      <div class="figcap" data-i18n-html="c_ndvi_cap"></div>
+    </div>
+    <div class="retenir fossil"><span class="h" data-i18n="c_ret_key">Point clé — choisir l'indice</span><span data-i18n-html="c_s2_ret"></span></div>
+  </div>
+
+  <!-- SECTION 3 : SERIES TEMPORELLES -->
+  <div class="card" id="s3">
+    <h2><span class="num">3</span> <span data-i18n="c_s3_h">Séries temporelles & phénologie</span></h2>
+    <p class="par" data-i18n-html="c_s3_p1"></p>
+
+    <div class="fig">
+      <svg viewBox="0 0 760 340" role="img">
+        <!-- axes -->
+        <line x1="70" y1="30" x2="70" y2="280" stroke="#c8d3b8" stroke-width="1.5"/>
+        <line x1="70" y1="280" x2="720" y2="280" stroke="#c8d3b8" stroke-width="1.5"/>
+        <!-- y ticks NDVI -->
+        <g font-size="10.5" fill="#9aa890" text-anchor="end">
+          <text x="62" y="64">0.8</text><text x="62" y="156">0.5</text><text x="62" y="284">0.1</text>
+        </g>
+        <!-- x ticks (stades) -->
+        <g font-size="10.5" fill="#9aa890" text-anchor="middle">
+          <text x="150" y="298">Levée</text><text x="330" y="298">Croissance</text>
+          <text x="470" y="298">Pic</text><text x="640" y="298">Sénescence</text>
+        </g>
+        <!-- healthy season curve -->
+        <path d="M90 250 Q160 240 210 190 Q300 90 400 74 Q450 70 500 82 Q590 130 700 236"
+              fill="none" stroke="#2f8f3f" stroke-width="3.4" stroke-linecap="round"/>
+        <!-- stressed anomaly curve (dashed) -->
+        <path d="M90 250 Q160 240 210 192 Q280 120 330 128 Q380 150 430 196 Q520 230 700 250"
+              fill="none" stroke="#d1584e" stroke-width="2.6" stroke-dasharray="7 5" stroke-linecap="round"/>
+        <!-- anomaly detection marker -->
+        <circle cx="330" cy="128" r="5" fill="#d1584e"/>
+        <line x1="330" y1="128" x2="330" y2="74" stroke="#d1584e" stroke-width="1.2" stroke-dasharray="3 3"/>
+        <circle cx="330" cy="74" r="3" fill="#2f8f3f"/>
+        <!-- labels -->
+        <text data-i18n="c_fig3_ok" x="420" y="58" font-size="11.5" font-weight="800" fill="#2f8f3f">saison saine</text>
+        <text data-i18n="c_fig3_stress" x="470" y="222" font-size="11.5" font-weight="800" fill="#d1584e">saison stressée</text>
+        <text data-i18n="c_fig3_gap" x="342" y="106" font-size="10.5" font-weight="700" fill="#b23b30">écart détecté</text>
+        <text data-i18n="c_fig3_ax" x="395" y="322" font-size="11" font-weight="700" fill="#6f7d64" text-anchor="middle">Temps (saison culturale)</text>
+        <text data-i18n="c_fig3_ay" x="18" y="155" font-size="11" font-weight="700" fill="#6f7d64" transform="rotate(-90 18 155)" text-anchor="middle">NDVI</text>
+      </svg>
+      <div class="figcap" data-i18n-html="c_fig3_cap"></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret">À retenir</span><span data-i18n-html="c_s3_ret"></span></div>
+  </div>
+
+  <!-- SECTION 4 : RESOLUTION & LIMITES -->
+  <div class="card" id="s4">
+    <h2><span class="num">4</span> <span data-i18n="c_s4_h">Résolution, limites & pipeline zéro-budget</span></h2>
+    <p class="par" data-i18n-html="c_s4_p1"></p>
+
+    <table class="t">
+      <thead><tr><th data-i18n="c_tbl_type">Résolution</th><th data-i18n="c_tbl_def">Ce qu'elle décrit</th><th data-i18n="c_tbl_ex">Sentinel-2</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="c_tbl_r1a"><b>Spatiale</b></td><td data-i18n="c_tbl_r1b">Taille du plus petit détail (le pixel).</td><td><span class="mono">10 m</span></td></tr>
+        <tr><td data-i18n="c_tbl_r2a"><b>Temporelle</b></td><td data-i18n="c_tbl_r2b">Fréquence de passage sur un même point.</td><td><span class="mono">~5 j</span></td></tr>
+        <tr><td data-i18n="c_tbl_r3a"><b>Spectrale</b></td><td data-i18n="c_tbl_r3b">Nombre et finesse des bandes.</td><td><span class="mono">13 bandes</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3 data-i18n="c_s4_h2">Les deux limites à toujours garder en tête</h3>
+    <p class="par" data-i18n-html="c_s4_p2"></p>
+
+    <h3 data-i18n="c_s4_h3">Un pipeline « zéro budget »</h3>
+    <p class="par" data-i18n-html="c_s4_p3"></p>
+    <div class="cgrid">
+      <div class="concept"><div class="sym">1 · 🛰️</div><div class="nm" data-i18n="c_pipe1">Acquérir</div><div class="ds" data-i18n="c_pipe1_d">Télécharger une scène Sentinel-2 (Copernicus, gratuit).</div></div>
+      <div class="concept"><div class="sym">2 · 🗺️</div><div class="nm" data-i18n="c_pipe2">Délimiter</div><div class="ds" data-i18n="c_pipe2_d">Dessiner la parcelle en GeoJSON (QGIS / app carto).</div></div>
+      <div class="concept"><div class="sym">3 · 🧮</div><div class="nm" data-i18n="c_pipe3">Calculer</div><div class="ds" data-i18n="c_pipe3_d">Produire le NDVI et les statistiques zonales.</div></div>
+      <div class="concept"><div class="sym">4 · 📈</div><div class="nm" data-i18n="c_pipe4">Suivre</div><div class="ds" data-i18n="c_pipe4_d">Empiler les dates → série temporelle & alertes.</div></div>
+    </div>
+    <div class="retenir"><span class="h" data-i18n="c_ret_case">Cas d'étude — parcelle B-14</span><span data-i18n-html="c_s4_ret"></span></div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="card" id="apps">
+    <h2>🧭 <span data-i18n="c_apps_h">Applications de ce domaine</span></h2>
+    <p class="lead" data-i18n="c_apps_p">Mettez en pratique le cours avec les applications interactives de la plateforme :</p>
+    <div class="appgrid">
+      <a class="appcard" style="--ac:#3fa66a" href="agrisim_live.html">
+        <div class="ico">🛰️</div><h4 data-i18n="c_app_sim">AgriSim Live — indices</h4>
+        <p data-i18n="c_app_sim_d">Imagerie Sentinel-2 en direct : afficher NDVI, NDRE, NDMI sur une parcelle.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#3a9bd0" href="AgriMap_Formation_SentinelHub.html">
+        <div class="ico">🌍</div><h4 data-i18n="c_app_map">AgriMap Formation</h4>
+        <p data-i18n="c_app_map_d">Explorer une scène Sentinel Hub, comparer les bandes et les indices.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+      <a class="appcard" style="--ac:#8e6fc7" href="platform/public/apps/carto.html">
+        <div class="ico">🗺️</div><h4 data-i18n="c_app_carto">Carto — dessin de parcelle</h4>
+        <p data-i18n="c_app_carto_d">Dessiner un polygone, l'exporter en GeoJSON pour les statistiques zonales.</p>
+        <span class="go" data-i18n="c_open">Ouvrir →</span>
+      </a>
+    </div>
+
+    <div class="tpbanner">
+      <div>
+        <div class="tt">🧪 <span data-i18n="c_tp_t">TP guidé — Télédétection</span></div>
+        <div class="dd" data-i18n="c_tp_d">Cinq étapes pas-à-pas : dessiner une parcelle, charger l'imagerie, calculer le NDVI, tracer la saison, puis QCM auto-corrigé et compte-rendu exportable.</div>
+      </div>
+      <a class="btn" href="tp-teledetection.html"><span data-i18n="c_tp_go">Commencer le TP</span> →</a>
+    </div>
+  </div>
+
+  <div class="footnote" data-i18n="c_foot">Plateforme AgriTech Libye · EU4Skills — Domaine d1 (Télédétection) · support de cours</div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script>
+Object.assign(I18N.DICT,{
+  c_brand:{fr:"Télédétection",ar:"الاستشعار عن بُعد",en:"Remote Sensing"},
+  c_brand2:{fr:"& indices",ar:"والمؤشرات",en:"& indices"},
+  c_sub:{fr:"Cours · réflectance, NDVI, séries temporelles, Sentinel-2",ar:"درس · الانعكاسية، NDVI، السلاسل الزمنية، Sentinel-2",en:"Course · reflectance, NDVI, time-series, Sentinel-2"},
+  c_course_chip:{fr:"Cours",ar:"درس",en:"Course"},
+  c_title:{fr:"Télédétection & indices de végétation",ar:"الاستشعار عن بُعد ومؤشرات الغطاء النباتي",en:"Remote sensing & vegetation indices"},
+  c_tag:{fr:"Domaine d1 · lire la santé des cultures depuis l'espace, gratuitement",ar:"المجال d1 · قراءة صحة المحاصيل من الفضاء، مجاناً",en:"Domain d1 · read crop health from space, for free"},
+  c_intro:{fr:"La <b>télédétection</b> permet de suivre chaque parcelle <b>sans y aller</b>, en mesurant la lumière qu'elle renvoie vers le satellite. Avec <b>Sentinel-2</b> — gratuit, 10 m, tous les 5 jours — on transforme une image en <b>indices</b> (NDVI, NDRE…) qui chiffrent la vigueur, l'eau et l'azote. Ce cours explique d'où viennent ces indices, comment les lire dans le temps, et comment monter un suivi <b>zéro budget</b> — puis renvoie vers les applications où vous les manipulerez.",
+    ar:"يتيح <b>الاستشعار عن بُعد</b> متابعة كل قطعة أرض <b>دون الذهاب إليها</b>، بقياس الضوء الذي تعكسه نحو القمر الصناعي. مع <b>Sentinel-2</b> — مجاني، 10 أمتار، كل 5 أيام — نحوّل الصورة إلى <b>مؤشرات</b> (NDVI، NDRE…) تُقدّر الحيوية والماء والنيتروجين. يشرح هذا الدرس من أين تأتي هذه المؤشرات، وكيف نقرؤها عبر الزمن، وكيف نبني متابعة <b>بلا ميزانية</b> — ثم يحيل إلى التطبيقات التي ستستعملها.",
+    en:"<b>Remote sensing</b> lets you monitor each field <b>without visiting it</b>, by measuring the light it reflects back to the satellite. With <b>Sentinel-2</b> — free, 10 m, every 5 days — an image becomes <b>indices</b> (NDVI, NDRE…) that quantify vigour, water and nitrogen. This course explains where these indices come from, how to read them over time, and how to set up a <b>zero-budget</b> monitoring pipeline — then points you to the apps where you will practise."},
+  c_toc1:{fr:"1 · Réflectance & bandes",ar:"1 · الانعكاسية والنطاقات",en:"1 · Reflectance & bands"},
+  c_toc2:{fr:"2 · Les indices",ar:"2 · المؤشرات",en:"2 · The indices"},
+  c_toc3:{fr:"3 · Séries temporelles",ar:"3 · السلاسل الزمنية",en:"3 · Time-series"},
+  c_toc4:{fr:"4 · Résolution & limites",ar:"4 · الدقة والحدود",en:"4 · Resolution & limits"},
+  c_toc5:{fr:"Applications",ar:"التطبيقات",en:"Apps"},
+
+  c_obj_h:{fr:"Objectifs pédagogiques",ar:"الأهداف التعليمية",en:"Learning objectives"},
+  c_obj1:{fr:"Comprendre la réflectance et lire la signature spectrale de la végétation.",ar:"فهم الانعكاسية وقراءة البصمة الطيفية للغطاء النباتي.",en:"Understand reflectance and read the spectral signature of vegetation."},
+  c_obj2:{fr:"Situer les bandes de Sentinel-2 (résolution 10 m, revisite 5 j, gratuit).",ar:"التعرّف على نطاقات Sentinel-2 (دقة 10 أمتار، إعادة زيارة 5 أيام، مجاني).",en:"Locate Sentinel-2 bands (10 m resolution, 5-day revisit, free)."},
+  c_obj3:{fr:"Calculer et interpréter NDVI, NDWI, NDRE et NDMI.",ar:"حساب وتفسير NDVI وNDWI وNDRE وNDMI.",en:"Compute and interpret NDVI, NDWI, NDRE and NDMI."},
+  c_obj4:{fr:"Expliquer le rôle du « red-edge » et du pic NIR dans le diagnostic.",ar:"شرح دور «الحافة الحمراء» وذروة NIR في التشخيص.",en:"Explain the role of the \"red-edge\" and the NIR peak in diagnosis."},
+  c_obj5:{fr:"Lire une série temporelle NDVI et repérer un stress avant l'œil.",ar:"قراءة سلسلة زمنية لـ NDVI ورصد الإجهاد قبل العين.",en:"Read an NDVI time-series and spot stress before the naked eye."},
+  c_obj6:{fr:"Distinguer résolution spatiale et temporelle, et connaître les limites (nuages, mixels).",ar:"التمييز بين الدقة المكانية والزمنية، ومعرفة الحدود (الغيوم، البكسلات المختلطة).",en:"Tell spatial from temporal resolution, and know the limits (clouds, mixed pixels)."},
+
+  c_ret:{fr:"À retenir",ar:"للتذكّر",en:"Remember"},
+  c_ret_key:{fr:"Point clé — choisir l'indice",ar:"نقطة مفتاحية — اختيار المؤشر",en:"Key point — choosing the index"},
+  c_ret_case:{fr:"Cas d'étude — parcelle B-14",ar:"حالة دراسية — القطعة B-14",en:"Case study — parcel B-14"},
+
+  // Section 1
+  c_s1_h:{fr:"Réflectance & bandes spectrales",ar:"الانعكاسية والنطاقات الطيفية",en:"Reflectance & spectral bands"},
+  c_s1_p1:{fr:"Le Soleil éclaire la parcelle ; une partie de cette lumière est <b>réfléchie</b> vers le ciel. La <b>réflectance</b> est la fraction de lumière renvoyée, mesurée <b>bande par bande</b> (bleu, vert, rouge, proche infrarouge…). Un capteur satellite ne « voit » pas des plantes : il mesure une réflectance dans chaque bande, et c'est à nous d'en déduire l'état du couvert.",
+    ar:"تُضيء الشمس القطعة الزراعية؛ ويُعكس جزء من هذا الضوء نحو السماء. <b>الانعكاسية</b> هي نسبة الضوء المرتدّ، تُقاس <b>نطاقاً بنطاق</b> (أزرق، أخضر، أحمر، الأشعّة تحت الحمراء القريبة…). لا «يرى» المستشعر الفضائي نباتات: بل يقيس انعكاسية في كل نطاق، وعلينا استنتاج حالة الغطاء منها.",
+    en:"The Sun lights the field; part of that light is <b>reflected</b> back to the sky. <b>Reflectance</b> is the fraction of light returned, measured <b>band by band</b> (blue, green, red, near-infrared…). A satellite sensor does not \"see\" plants: it measures reflectance in each band, and it is up to us to infer the state of the canopy."},
+  c_s1_h2:{fr:"La signature spectrale de la végétation",ar:"البصمة الطيفية للغطاء النباتي",en:"The spectral signature of vegetation"},
+  c_s1_p2:{fr:"Une plante saine a une signature très caractéristique : la chlorophylle <b>absorbe</b> le bleu et le rouge (creux) et réfléchit un peu de vert (d'où la couleur verte), puis la structure des feuilles fait <b>bondir la réflectance dans le proche infrarouge</b> (pic NIR). La transition brutale entre le rouge absorbé et le NIR élevé s'appelle le <b>red-edge</b> : sa position et sa pente sont extrêmement sensibles à la santé et à l'azote de la plante.",
+    ar:"للنبات السليم بصمة مميّزة جداً: يمتصّ الكلوروفيل <b>الأزرق والأحمر</b> (انخفاض) ويعكس قليلاً من الأخضر (ومن هنا اللون الأخضر)، ثم تجعل بنية الأوراق <b>الانعكاسية تقفز في الأشعّة تحت الحمراء القريبة</b> (ذروة NIR). ويُسمّى الانتقال الحادّ بين الأحمر الممتصّ وNIR المرتفع بـ<b>الحافة الحمراء (red-edge)</b>: موضعها وميلها حسّاسان جداً لصحة النبات ونيتروجينه.",
+    en:"A healthy plant has a very characteristic signature: chlorophyll <b>absorbs</b> blue and red (troughs) and reflects a little green (hence the green colour), then leaf structure makes <b>reflectance jump in the near-infrared</b> (NIR peak). The abrupt transition between absorbed red and high NIR is the <b>red-edge</b>: its position and slope are extremely sensitive to the plant's health and nitrogen."},
+  c_fig1_cap:{fr:"<b>Courbe de réflectance d'une végétation saine.</b> Faible dans le visible (absorption de la chlorophylle), montée brutale au red-edge, plateau élevé dans le proche infrarouge, puis baisses dans le SWIR liées à l'eau des feuilles.",
+    ar:"<b>منحنى انعكاسية غطاء نباتي سليم.</b> منخفض في المرئي (امتصاص الكلوروفيل)، ارتفاع حادّ عند الحافة الحمراء، هضبة مرتفعة في الأشعّة تحت الحمراء القريبة، ثم انخفاضات في SWIR مرتبطة بماء الأوراق.",
+    en:"<b>Reflectance curve of healthy vegetation.</b> Low in the visible (chlorophyll absorption), a sharp rise at the red-edge, a high plateau in the near-infrared, then dips in the SWIR tied to leaf water."},
+  c_fig1_vis:{fr:"Visible",ar:"المرئي",en:"Visible"},
+  c_fig1_re:{fr:"Red-edge",ar:"الحافة الحمراء",en:"Red-edge"},
+  c_fig1_nir:{fr:"Proche IR (NIR)",ar:"تحت الحمراء القريبة",en:"Near-IR (NIR)"},
+  c_fig1_swir:{fr:"SWIR",ar:"SWIR",en:"SWIR"},
+  c_fig1_green:{fr:"pic vert",ar:"ذروة الأخضر",en:"green peak"},
+  c_fig1_redt:{fr:"creux rouge",ar:"انخفاض الأحمر",en:"red trough"},
+  c_fig1_peak:{fr:"pic NIR",ar:"ذروة NIR",en:"NIR peak"},
+  c_fig1_edge:{fr:"red-edge (montée)",ar:"الحافة الحمراء (ارتفاع)",en:"red-edge (rise)"},
+  c_fig1_ax:{fr:"Longueur d'onde (nm)",ar:"الطول الموجي (nm)",en:"Wavelength (nm)"},
+  c_fig1_ay:{fr:"Réflectance",ar:"الانعكاسية",en:"Reflectance"},
+  c_s1_h3:{fr:"Sentinel-2 : le satellite gratuit de référence",ar:"Sentinel-2: القمر المجاني المرجعي",en:"Sentinel-2: the reference free satellite"},
+  c_sen_res:{fr:"Résolution spatiale",ar:"الدقة المكانية",en:"Spatial resolution"},
+  c_sen_res_d:{fr:"Bandes visibles et NIR à 10 m par pixel.",ar:"النطاقات المرئية وNIR بدقة 10 أمتار للبكسل.",en:"Visible and NIR bands at 10 m per pixel."},
+  c_sen_rev:{fr:"Revisite",ar:"إعادة الزيارة",en:"Revisit"},
+  c_sen_rev_d:{fr:"Deux satellites → une image tous les ~5 jours.",ar:"قمران → صورة كل ~5 أيام.",en:"Two satellites → one image every ~5 days."},
+  c_sen_band:{fr:"Bandes spectrales",ar:"النطاقات الطيفية",en:"Spectral bands"},
+  c_sen_band_d:{fr:"Du bleu au SWIR, dont 3 bandes red-edge.",ar:"من الأزرق إلى SWIR، منها 3 نطاقات للحافة الحمراء.",en:"Blue to SWIR, including 3 red-edge bands."},
+  c_sen_free:{fr:"Gratuit & ouvert",ar:"مجاني ومفتوح",en:"Free & open"},
+  c_sen_free_d:{fr:"Programme Copernicus (UE), accès libre.",ar:"برنامج Copernicus (الاتحاد الأوروبي)، وصول حرّ.",en:"Copernicus programme (EU), open access."},
+  c_s1_ret:{fr:"Un satellite mesure de la <b>réflectance par bande</b>, pas de la « santé ». Toute la télédétection agricole consiste à <b>combiner les bonnes bandes</b> — surtout le rouge, le red-edge et le NIR — pour en extraire une information utile. C'est exactement le rôle des indices.",
+    ar:"يقيس القمر <b>انعكاسية بكل نطاق</b>، لا «الصحة». وكل الاستشعار الزراعي هو <b>دمج النطاقات المناسبة</b> — خاصة الأحمر والحافة الحمراء وNIR — لاستخراج معلومة مفيدة. وهذا بالضبط دور المؤشرات.",
+    en:"A satellite measures <b>reflectance per band</b>, not \"health\". All agricultural remote sensing is about <b>combining the right bands</b> — especially red, red-edge and NIR — to extract useful information. That is exactly what indices do."},
+
+  // Section 2
+  c_s2_h:{fr:"Les indices spectraux",ar:"المؤشرات الطيفية",en:"Spectral indices"},
+  c_s2_p1:{fr:"Un <b>indice</b> combine deux bandes (ou plus) en un seul nombre facile à cartographier. Le plus connu, le <b>NDVI</b>, oppose le proche infrarouge (élevé pour la végétation) au rouge (absorbé) : plus la plante est vigoureuse, plus l'écart est grand, plus le NDVI est élevé. Le résultat est <b>normalisé entre −1 et +1</b>, ce qui le rend comparable d'une image à l'autre.",
+    ar:"يجمع <b>المؤشر</b> بين نطاقين (أو أكثر) في رقم واحد يسهل رسمه خرائطياً. أشهرها <b>NDVI</b>، يقابل بين الأشعّة تحت الحمراء القريبة (مرتفعة للنبات) والأحمر (ممتصّ): كلما زادت حيوية النبات اتسع الفرق وارتفع NDVI. والنتيجة <b>مُطبَّعة بين −1 و+1</b>، ما يجعلها قابلة للمقارنة بين الصور.",
+    en:"An <b>index</b> combines two (or more) bands into a single, easily mapped number. The best known, <b>NDVI</b>, contrasts near-infrared (high for vegetation) with red (absorbed): the more vigorous the plant, the larger the gap and the higher the NDVI. The result is <b>normalised between −1 and +1</b>, making it comparable from one image to another."},
+  c_s2_p2:{fr:"Selon ce que l'on cherche — vigueur, eau, azote, stress — on change de bandes et donc d'indice. Voici les quatre à connaître :",
+    ar:"حسب ما نبحث عنه — حيوية، ماء، نيتروجين، إجهاد — نغيّر النطاقات ومن ثمّ المؤشر. وهذه الأربعة الواجب معرفتها:",
+    en:"Depending on what you seek — vigour, water, nitrogen, stress — you change bands and therefore index. Here are the four to know:"},
+  c_idx_ndvi_d:{fr:"Vigueur & densité du couvert végétal. L'indice de référence.",ar:"حيوية وكثافة الغطاء النباتي. المؤشر المرجعي.",en:"Vigour & density of the canopy. The reference index."},
+  c_idx_vig:{fr:"Vigueur",ar:"الحيوية",en:"Vigour"},
+  c_idx_ndwi_d:{fr:"Teneur en eau / plans d'eau. Révèle l'humidité de surface.",ar:"محتوى الماء / المسطحات المائية. يكشف رطوبة السطح.",en:"Water content / water bodies. Reveals surface moisture."},
+  c_idx_eau:{fr:"Eau",ar:"ماء",en:"Water"},
+  c_idx_ndre_d:{fr:"Statut azoté & chlorophylle. Utile en couvert dense (NDVI saturé).",ar:"حالة النيتروجين والكلوروفيل. مفيد في الغطاء الكثيف (NDVI مُشبَع).",en:"Nitrogen status & chlorophyll. Useful in dense canopy (NDVI saturated)."},
+  c_idx_azote:{fr:"Azote",ar:"نيتروجين",en:"Nitrogen"},
+  c_idx_ndmi_d:{fr:"Humidité de la végétation. Détecte le stress hydrique précoce.",ar:"رطوبة الغطاء النباتي. يكشف الإجهاد المائي المبكّر.",en:"Vegetation moisture. Detects early water stress."},
+  c_idx_stress:{fr:"Stress hydrique",ar:"إجهاد مائي",en:"Water stress"},
+  c_s2_h2:{fr:"Lire une échelle de couleurs NDVI",ar:"قراءة مقياس ألوان NDVI",en:"Reading an NDVI colour scale"},
+  c_ndvi_water:{fr:"eau",ar:"ماء",en:"water"},
+  c_ndvi_bare:{fr:"sol nu",ar:"تربة عارية",en:"bare soil"},
+  c_ndvi_stress:{fr:"végétation faible",ar:"غطاء ضعيف",en:"weak vegetation"},
+  c_ndvi_dense:{fr:"végétation dense & vigoureuse",ar:"غطاء كثيف وحيوي",en:"dense & vigorous vegetation"},
+  c_ndvi_cap:{fr:"<b>Échelle NDVI.</b> Les valeurs négatives (bleu) désignent l'eau, autour de 0,1 le sol nu (brun), puis le vert s'intensifie avec la vigueur du couvert jusqu'aux valeurs proches de 0,9.",
+    ar:"<b>مقياس NDVI.</b> القيم السالبة (أزرق) تدلّ على الماء، حوالي 0.1 التربة العارية (بنّي)، ثم يشتدّ الأخضر مع حيوية الغطاء حتى القيم القريبة من 0.9.",
+    en:"<b>NDVI scale.</b> Negative values (blue) mark water, around 0.1 bare soil (brown), then green intensifies with canopy vigour up to values near 0.9."},
+  c_s2_ret:{fr:"Aucun indice n'est « le meilleur » : on choisit selon la question. <b>NDVI</b> pour la vigueur générale, mais il <b>sature</b> en couvert dense → on passe au <b>NDRE</b> (red-edge) pour l'azote ; <b>NDMI/NDWI</b> pour l'eau. En pratique, on <b>croise plusieurs indices</b> avant de conclure.",
+    ar:"لا يوجد مؤشر «الأفضل»: نختار حسب السؤال. <b>NDVI</b> للحيوية العامة، لكنه <b>يتشبّع</b> في الغطاء الكثيف ← ننتقل إلى <b>NDRE</b> (الحافة الحمراء) للنيتروجين؛ و<b>NDMI/NDWI</b> للماء. عملياً <b>نُقاطع عدة مؤشرات</b> قبل الاستنتاج.",
+    en:"No index is \"the best\": you choose by the question. <b>NDVI</b> for overall vigour, but it <b>saturates</b> in dense canopy → switch to <b>NDRE</b> (red-edge) for nitrogen; <b>NDMI/NDWI</b> for water. In practice, you <b>cross several indices</b> before concluding."},
+
+  // Section 3
+  c_s3_h:{fr:"Séries temporelles & phénologie",ar:"السلاسل الزمنية والفينولوجيا",en:"Time-series & phenology"},
+  c_s3_p1:{fr:"Une seule image est une photo ; c'est la <b>série temporelle</b> qui raconte l'histoire. En traçant le NDVI d'une parcelle au fil de la saison, on retrouve la <b>phénologie</b> de la culture : <b>levée</b> (NDVI bas), <b>croissance</b> (montée), <b>pic</b> (couvert maximal), puis <b>sénescence</b> (déclin à la maturité). Chaque culture a sa courbe type ; s'en écarter, c'est déjà une alerte.",
+    ar:"الصورة الواحدة لقطة؛ أما <b>السلسلة الزمنية</b> فتروي القصة. برسم NDVI لقطعة عبر الموسم نستعيد <b>فينولوجيا</b> المحصول: <b>الإنبات</b> (NDVI منخفض)، <b>النمو</b> (ارتفاع)، <b>الذروة</b> (أقصى غطاء)، ثم <b>الشيخوخة</b> (انحدار عند النضج). لكل محصول منحناه النموذجي؛ والانحراف عنه إنذار مبكّر.",
+    en:"A single image is a photo; it is the <b>time-series</b> that tells the story. By plotting a field's NDVI across the season you recover the crop's <b>phenology</b>: <b>emergence</b> (low NDVI), <b>growth</b> (rise), <b>peak</b> (maximum canopy), then <b>senescence</b> (decline at maturity). Each crop has its typical curve; departing from it is already a warning."},
+  c_fig3_cap:{fr:"<b>Deux saisons NDVI.</b> La courbe verte suit une phénologie saine (levée → pic → sénescence). La courbe rouge décroche tôt : le satellite détecte l'écart <b>avant</b> qu'il ne soit visible au champ — d'où une intervention plus précoce.",
+    ar:"<b>موسمان لـ NDVI.</b> المنحنى الأخضر يتبع فينولوجيا سليمة (إنبات ← ذروة ← شيخوخة). أما المنحنى الأحمر فينحرف مبكّراً: يكتشف القمر الفارق <b>قبل</b> أن يُرى في الحقل — ومن هنا تدخّل أبكر.",
+    en:"<b>Two NDVI seasons.</b> The green curve follows a healthy phenology (emergence → peak → senescence). The red curve drops early: the satellite detects the gap <b>before</b> it is visible in the field — hence an earlier intervention."},
+  c_fig3_ok:{fr:"saison saine",ar:"موسم سليم",en:"healthy season"},
+  c_fig3_stress:{fr:"saison stressée",ar:"موسم مُجهَد",en:"stressed season"},
+  c_fig3_gap:{fr:"écart détecté",ar:"فارق مرصود",en:"gap detected"},
+  c_fig3_ax:{fr:"Temps (saison culturale)",ar:"الزمن (الموسم الزراعي)",en:"Time (growing season)"},
+  c_fig3_ay:{fr:"NDVI",ar:"NDVI",en:"NDVI"},
+  c_s3_ret:{fr:"L'intérêt majeur n'est pas la valeur d'un jour, mais la <b>forme de la courbe</b> et ses <b>écarts</b>. Une chute anormale du NDVI signale un stress (eau, maladie, azote) <b>plusieurs jours avant</b> qu'il ne devienne visible à l'œil — le temps de réagir.",
+    ar:"القيمة المهمّة ليست قيمة يوم واحد، بل <b>شكل المنحنى</b> و<b>انحرافاته</b>. الانخفاض الشاذّ في NDVI يشير إلى إجهاد (ماء، مرض، نيتروجين) <b>قبل أيام</b> من ظهوره للعين — وهو وقت كافٍ للتدخّل.",
+    en:"What matters is not one day's value but the <b>shape of the curve</b> and its <b>deviations</b>. An abnormal NDVI drop signals stress (water, disease, nitrogen) <b>several days before</b> it becomes visible to the eye — time enough to react."},
+
+  // Section 4
+  c_s4_h:{fr:"Résolution, limites & pipeline zéro-budget",ar:"الدقة والحدود وسلسلة بلا ميزانية",en:"Resolution, limits & zero-budget pipeline"},
+  c_s4_p1:{fr:"Choisir une source d'imagerie, c'est arbitrer entre trois <b>résolutions</b>. Il n'existe pas de satellite parfait : plus le pixel est fin, moins on repasse souvent ; plus on a de bandes, plus la donnée est lourde. Sentinel-2 offre un excellent compromis pour l'agriculture.",
+    ar:"اختيار مصدر الصور مفاضلة بين ثلاث <b>دقّات</b>. لا يوجد قمر مثالي: كلما دقّ البكسل قلّ تكرار المرور؛ وكلما كثرت النطاقات ثقلت البيانات. يوفّر Sentinel-2 توازناً ممتازاً للزراعة.",
+    en:"Choosing an imagery source means trading off three <b>resolutions</b>. There is no perfect satellite: the finer the pixel, the less often you revisit; the more bands, the heavier the data. Sentinel-2 offers an excellent compromise for agriculture."},
+  c_tbl_type:{fr:"Résolution",ar:"الدقة",en:"Resolution"},
+  c_tbl_def:{fr:"Ce qu'elle décrit",ar:"ما تصفه",en:"What it describes"},
+  c_tbl_ex:{fr:"Sentinel-2",ar:"Sentinel-2",en:"Sentinel-2"},
+  c_tbl_r1a:{fr:"<b>Spatiale</b>",ar:"<b>مكانية</b>",en:"<b>Spatial</b>"},
+  c_tbl_r1b:{fr:"Taille du plus petit détail (le pixel).",ar:"حجم أصغر تفصيل (البكسل).",en:"Size of the smallest detail (the pixel)."},
+  c_tbl_r2a:{fr:"<b>Temporelle</b>",ar:"<b>زمنية</b>",en:"<b>Temporal</b>"},
+  c_tbl_r2b:{fr:"Fréquence de passage sur un même point.",ar:"تكرار المرور فوق النقطة نفسها.",en:"How often the satellite revisits the same point."},
+  c_tbl_r3a:{fr:"<b>Spectrale</b>",ar:"<b>طيفية</b>",en:"<b>Spectral</b>"},
+  c_tbl_r3b:{fr:"Nombre et finesse des bandes.",ar:"عدد النطاقات ودقّتها.",en:"Number and fineness of the bands."},
+  c_s4_h2:{fr:"Les deux limites à toujours garder en tête",ar:"القيدان اللذان يجب تذكّرهما دائماً",en:"The two limits to always keep in mind"},
+  c_s4_p2:{fr:"Première limite, les <b>nuages</b> : en optique, un ciel couvert masque la parcelle et rend l'image inutilisable — d'où l'importance d'une revisite fréquente pour retrouver des dates « claires ». Seconde limite, le <b>pixel mixte (mixel)</b> : un pixel de 10 m peut recouvrir à la fois de la culture, du sol nu et un chemin ; sa valeur est alors une <b>moyenne trompeuse</b>. On limite l'effet en travaillant à l'intérieur des parcelles, loin des bords.",
+    ar:"القيد الأول، <b>الغيوم</b>: في البصريات، السماء الملبّدة تحجب القطعة وتجعل الصورة غير صالحة — ومن هنا أهمية إعادة الزيارة المتكرّرة لإيجاد تواريخ «صافية». القيد الثاني، <b>البكسل المختلط (mixel)</b>: بكسل 10 أمتار قد يغطّي محصولاً وتربة عارية وطريقاً معاً؛ فتكون قيمته <b>متوسّطاً مضلّلاً</b>. ونحدّ من الأثر بالعمل داخل القطع بعيداً عن الحواف.",
+    en:"First limit, <b>clouds</b>: in optical imaging, an overcast sky hides the field and makes the image unusable — hence the value of frequent revisits to find \"clear\" dates. Second limit, the <b>mixed pixel (mixel)</b>: a 10 m pixel may cover crop, bare soil and a track at once; its value is then a <b>misleading average</b>. You limit the effect by working inside fields, away from edges."},
+  c_s4_h3:{fr:"Un pipeline « zéro budget »",ar:"سلسلة عمل «بلا ميزانية»",en:"A \"zero-budget\" pipeline"},
+  c_s4_p3:{fr:"Tout ce qui précède se fait <b>sans licence coûteuse</b> : Sentinel-2 est gratuit et <b>QGIS</b> (SIG libre) suffit pour la plupart des traitements. Le flux type tient en quatre étapes :",
+    ar:"كل ما سبق يتمّ <b>دون ترخيص مكلف</b>: Sentinel-2 مجاني و<b>QGIS</b> (نظم معلومات جغرافية حرّة) يكفي لأغلب المعالجات. ويتلخّص المسار في أربع خطوات:",
+    en:"Everything above is done <b>without a costly licence</b>: Sentinel-2 is free and <b>QGIS</b> (open-source GIS) is enough for most processing. The typical flow is four steps:"},
+  c_pipe1:{fr:"Acquérir",ar:"الحصول",en:"Acquire"},
+  c_pipe1_d:{fr:"Télécharger une scène Sentinel-2 (Copernicus, gratuit).",ar:"تنزيل مشهد Sentinel-2 (Copernicus، مجاني).",en:"Download a Sentinel-2 scene (Copernicus, free)."},
+  c_pipe2:{fr:"Délimiter",ar:"التحديد",en:"Delineate"},
+  c_pipe2_d:{fr:"Dessiner la parcelle en GeoJSON (QGIS / app carto).",ar:"رسم القطعة بصيغة GeoJSON (QGIS / تطبيق الخرائط).",en:"Draw the field as GeoJSON (QGIS / carto app)."},
+  c_pipe3:{fr:"Calculer",ar:"الحساب",en:"Compute"},
+  c_pipe3_d:{fr:"Produire le NDVI et les statistiques zonales.",ar:"إنتاج NDVI والإحصاءات المناطقية.",en:"Produce NDVI and zonal statistics."},
+  c_pipe4:{fr:"Suivre",ar:"المتابعة",en:"Track"},
+  c_pipe4_d:{fr:"Empiler les dates → série temporelle & alertes.",ar:"تكديس التواريخ ← سلسلة زمنية وإنذارات.",en:"Stack dates → time-series & alerts."},
+  c_s4_ret:{fr:"Sur la parcelle <b>B-14</b> signalée « à contrôler », on n'envoie personne à l'aveugle : on charge la dernière scène Sentinel-2, on calcule le NDVI zone par zone, et la série temporelle montre <b>où</b> et <b>depuis quand</b> la vigueur décroche. La visite de terrain vient <b>confirmer</b> un diagnostic déjà ciblé — c'est tout le gain de la télédétection.",
+    ar:"في القطعة <b>B-14</b> المشار إليها بـ«للفحص»، لا نرسل أحداً بشكل أعمى: نُحمّل آخر مشهد Sentinel-2، ونحسب NDVI منطقة بمنطقة، وتُظهر السلسلة الزمنية <b>أين</b> و<b>منذ متى</b> تراجعت الحيوية. وتأتي الزيارة الميدانية <b>لتأكيد</b> تشخيص مُوجَّه مسبقاً — وهذا كامل مكسب الاستشعار.",
+    en:"On parcel <b>B-14</b> flagged \"to check\", you send nobody in blind: load the latest Sentinel-2 scene, compute NDVI zone by zone, and the time-series shows <b>where</b> and <b>since when</b> vigour dropped. The field visit then <b>confirms</b> an already targeted diagnosis — that is the whole gain of remote sensing."},
+
+  // Apps
+  c_apps_h:{fr:"Applications de ce domaine",ar:"تطبيقات هذا المجال",en:"Apps for this domain"},
+  c_apps_p:{fr:"Mettez en pratique le cours avec les applications interactives de la plateforme :",ar:"طبّق الدرس عبر التطبيقات التفاعلية للمنصّة:",en:"Put the course into practice with the platform's interactive apps:"},
+  c_open:{fr:"Ouvrir →",ar:"فتح →",en:"Open →"},
+  c_app_sim:{fr:"AgriSim Live — indices",ar:"أجريسيم مباشر — المؤشرات",en:"AgriSim Live — indices"},
+  c_app_sim_d:{fr:"Imagerie Sentinel-2 en direct : afficher NDVI, NDRE, NDMI sur une parcelle.",ar:"صور Sentinel-2 مباشرة: عرض NDVI وNDRE وNDMI على قطعة.",en:"Live Sentinel-2 imagery: display NDVI, NDRE, NDMI on a field."},
+  c_app_map:{fr:"AgriMap Formation",ar:"أجريماب التكوين",en:"AgriMap Training"},
+  c_app_map_d:{fr:"Explorer une scène Sentinel Hub, comparer les bandes et les indices.",ar:"استكشاف مشهد Sentinel Hub ومقارنة النطاقات والمؤشرات.",en:"Explore a Sentinel Hub scene, compare bands and indices."},
+  c_app_carto:{fr:"Carto — dessin de parcelle",ar:"خرائط — رسم القطعة",en:"Carto — field drawing"},
+  c_app_carto_d:{fr:"Dessiner un polygone, l'exporter en GeoJSON pour les statistiques zonales.",ar:"رسم مضلّع وتصديره بصيغة GeoJSON للإحصاءات المناطقية.",en:"Draw a polygon, export it as GeoJSON for zonal statistics."},
+  c_tp_t:{fr:"TP guidé — Télédétection",ar:"عمل تطبيقي موجّه — الاستشعار عن بُعد",en:"Guided lab — Remote sensing"},
+  c_tp_d:{fr:"Cinq étapes pas-à-pas : dessiner une parcelle, charger l'imagerie, calculer le NDVI, tracer la saison, puis QCM auto-corrigé et compte-rendu exportable.",ar:"خمس خطوات: رسم قطعة، تحميل الصور، حساب NDVI، رسم الموسم، ثم اختبار ذاتي التصحيح وتقرير قابل للتصدير.",en:"Five step-by-step stages: draw a field, load imagery, compute NDVI, plot the season, then a self-marked quiz and exportable report."},
+  c_tp_go:{fr:"Commencer le TP",ar:"ابدأ العمل التطبيقي",en:"Start the lab"},
+  c_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Domaine d1 (Télédétection) · support de cours",ar:"منصّة أجريتك ليبيا · EU4Skills — المجال d1 (الاستشعار عن بُعد) · مادة الدرس",en:"AgriTech Libya Platform · EU4Skills — Domain d1 (Remote sensing) · course material"}
+});
+
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',applyHTML);
+
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Réservoir sol — bilan hydrique FAO-56</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:920px;margin:-4px 0 4px;font-size:14px}
+  .lead b{color:var(--ink)}
+  .grid-main{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.grid-main{grid-template-columns:1fr}}
+  .fld{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+  .fld label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:flex;justify-content:space-between;align-items:baseline}
+  .fld .rngval{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:12.5px}
+  select{border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:#fff;color:var(--ink);font-weight:600;font:inherit;font-weight:600}
+  select:focus{outline:none;border-color:var(--green)}
+  input[type=range]{width:100%;accent-color:var(--green)}
+  .seg{display:inline-flex;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;overflow:hidden;width:100%}
+  .seg button{flex:1;background:transparent;border:0;color:var(--muted);padding:8px 6px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+  .seg button.on{background:var(--green);color:#fff}
+  .reservoir{display:flex;gap:14px;align-items:stretch}
+  .rzcol{flex:none;width:96px}
+  .rztube{position:relative;height:280px;border:2px solid var(--line);border-radius:10px 10px 12px 12px;background:linear-gradient(#faf6ee,#f3ead9);overflow:hidden}
+  .rzfill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#5bb0e0,#3a9bd0);transition:height .4s}
+  .rzline{position:absolute;left:0;right:0;height:0;border-top:2px dashed #d99a2b}
+  .rzlbl{position:absolute;right:2px;font-size:9.5px;font-weight:700;color:#b5701a;transform:translateY(-11px)}
+  .rzcap{text-align:center;font-size:11px;color:var(--muted);margin-top:6px;line-height:1.35}
+  .chartwrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 8px 4px}
+  svg.chart{width:100%;height:auto;display:block;touch-action:none}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 6px 2px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:15px;height:3px;border-radius:2px;display:inline-block}
+  .legend i.sq{width:12px;height:12px;border-radius:3px}
+  .legend i.dash{height:0;border-top:2px dashed currentColor;width:15px}
+  .hoverbox{font-size:13px;color:var(--muted);padding:9px 12px;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;margin-top:10px;min-height:20px}
+  .hoverbox b{color:var(--ink)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:14px}
+  .kpi{background:var(--green-bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .kpi .l{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+  .kpi .v{font-size:1.5rem;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .kpi .v small{font-size:.8rem;font-weight:700;color:var(--muted)}
+  .kpi .x{color:var(--faint);font-size:11px;margin-top:3px}
+  .kpi.good{background:#eef8ef;border-color:#bfe3c3}.kpi.good .v{color:var(--impact)}
+  .kpi.warn{background:#fdf3e3;border-color:#f0d9ac}.kpi.warn .v{color:#b5701a}
+  .kpi.bad{background:#fbecea;border-color:#eecac5}.kpi.bad .v{color:var(--decision)}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:12.5px;background:#0e1512;color:#d7e3cd;border-radius:9px;padding:11px 14px;overflow:auto;margin:2px 0 4px}
+  .defrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+  .def{background:var(--green-bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px}
+  .def b{color:var(--green-d)} .def .u{color:var(--muted)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">SOL</span> <b data-i18n="r_brand">Réservoir</b> <span data-i18n="r_brand2">sol</span></div>
+  <div class="sub" data-i18n="r_sub">Bilan hydrique du sol · FAO-56 · réserve utile & pilotage</div>
+  <div class="right">
+    <span class="chip">M3·M4</span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="r_lead"></p>
+
+  <div class="grid-main">
+    <!-- ---- Controls ---- -->
+    <div class="card">
+      <h2>⚙️ <span data-i18n="r_params"></span></h2>
+      <div class="fld">
+        <label data-i18n="r_texture"></label>
+        <select id="texture"></select>
+      </div>
+      <div class="fld">
+        <label data-i18n="r_crop"></label>
+        <select id="crop"></select>
+      </div>
+      <div class="fld">
+        <label><span data-i18n="r_zr"></span><span class="rngval" id="zrv">0.8 m</span></label>
+        <input type="range" id="zr" min="0.3" max="1.6" step="0.1" value="0.8">
+      </div>
+      <div class="fld">
+        <label><span data-i18n="r_p"></span><span class="rngval" id="pv">50%</span></label>
+        <input type="range" id="p" min="30" max="70" step="5" value="50">
+      </div>
+      <div class="fld">
+        <label><span data-i18n="r_et0"></span><span class="rngval" id="et0v">6 mm/j</span></label>
+        <input type="range" id="et0" min="2" max="10" step="0.5" value="6">
+      </div>
+      <div class="fld">
+        <label><span data-i18n="r_rain"></span><span class="rngval" id="rainv">20 mm</span></label>
+        <input type="range" id="rain" min="0" max="80" step="5" value="20">
+      </div>
+      <div class="fld">
+        <label data-i18n="r_strategy"></label>
+        <div class="seg" id="strat">
+          <button class="on" data-v="auto" data-i18n="r_auto"></button>
+          <button data-v="manual" data-i18n="r_manual"></button>
+          <button data-v="none" data-i18n="r_rainfed"></button>
+        </div>
+      </div>
+      <div class="fld" id="manualBox" hidden>
+        <label><span data-i18n="r_interval"></span><span class="rngval" id="intv">7 j</span></label>
+        <input type="range" id="interval" min="2" max="15" step="1" value="7">
+        <label style="margin-top:8px"><span data-i18n="r_dose"></span><span class="rngval" id="dosev">30 mm</span></label>
+        <input type="range" id="dose" min="10" max="60" step="5" value="30">
+      </div>
+      <div class="btns">
+        <button class="btn ghost" onclick="doExport()">📤 <span data-i18n="export"></span></button>
+      </div>
+    </div>
+
+    <!-- ---- Reservoir + chart ---- -->
+    <div class="card">
+      <div class="reservoir">
+        <div class="rzcol">
+          <div class="rztube">
+            <div class="rzline" id="rzRAW"><span class="rzlbl" id="rzRAWl">RAW</span></div>
+            <div class="rzfill" id="rzFill" style="height:60%"></div>
+          </div>
+          <div class="rzcap" id="rzCap"></div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <h2 style="margin-bottom:2px">💧 <span data-i18n="r_chart_title"></span></h2>
+          <div class="chartwrap">
+            <svg class="chart" id="svg" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+          <div class="legend" id="legend"></div>
+          <div class="hoverbox" id="hover"></div>
+        </div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+    </div>
+  </div>
+
+  <!-- ---- Method ---- -->
+  <div class="card">
+    <h2>📐 <span data-i18n="r_method"></span></h2>
+    <div class="formula">TAW = 1000 · (θ<sub>FC</sub> − θ<sub>WP</sub>) · Z<sub>r</sub>   ·   RAW = p · TAW   ·   ET<sub>c</sub> = K<sub>s</sub> · K<sub>c</sub> · ET₀   ·   D<sub>r,i</sub> = D<sub>r,i-1</sub> − (P + I) + ET<sub>c</sub></div>
+    <div class="defrow" id="defs"></div>
+    <p class="lead" style="margin-top:12px" data-i18n-html="r_method_txt"></p>
+  </div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script src="platform/public/assets/js/crops.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+
+Object.assign(I18N.DICT,{
+  r_brand:{fr:"Réservoir",ar:"خزّان",en:"Reservoir"},
+  r_brand2:{fr:"sol",ar:"التربة",en:"soil"},
+  r_sub:{fr:"Bilan hydrique du sol · FAO-56 · réserve utile & pilotage",ar:"الميزان المائي للتربة · FAO-56 · المخزون والتحكم",en:"Soil water balance · FAO-56 · available water & scheduling"},
+  r_lead:{fr:"Le sol est un <b>réservoir</b> : il se remplit (pluie, irrigation) et se vide (évapotranspiration, drainage). Ce simulateur applique le <b>bilan hydrique FAO-56</b> jour par jour et montre la <b>réserve utile</b>, le seuil de recharge (RAW), le <b>stress</b> et l'eau <b>perdue en drainage</b>. C'est le « pourquoi » derrière les courbes de sonde.",
+          ar:"التربة <b>خزّان</b>: تمتلئ (مطر، ري) وتفرغ (تبخّر-نتح، صرف). يطبّق هذا المحاكي <b>الميزان المائي FAO-56</b> يوماً بيوم ويُظهر <b>المخزون المتاح</b> وعتبة إعادة الري (RAW) و<b>الإجهاد</b> والماء <b>المفقود بالصرف</b>. إنه «سبب» منحنيات المجسات.",
+          en:"Soil is a <b>reservoir</b>: it fills (rain, irrigation) and empties (evapotranspiration, drainage). This simulator runs the <b>FAO-56 water balance</b> day by day and shows <b>available water</b>, the refill threshold (RAW), <b>stress</b> and water <b>lost to drainage</b>. It's the “why” behind probe curves."},
+  r_params:{fr:"Paramètres",ar:"المعطيات",en:"Parameters"},
+  r_texture:{fr:"Texture du sol (θFC / θWP)",ar:"قوام التربة",en:"Soil texture (θFC / θWP)"},
+  r_crop:{fr:"Culture (Kc)",ar:"المحصول (Kc)",en:"Crop (Kc)"},
+  r_zr:{fr:"Profondeur racinaire Zr",ar:"عمق الجذور Zr",en:"Root depth Zr"},
+  r_p:{fr:"Épuisement admissible p (MAD)",ar:"الاستنزاف المسموح p",en:"Allowed depletion p (MAD)"},
+  r_et0:{fr:"ET₀ de référence",ar:"ET₀ المرجعي",en:"Reference ET₀"},
+  r_rain:{fr:"Pluie sur la période",ar:"المطر خلال الفترة",en:"Rain over period"},
+  r_strategy:{fr:"Stratégie d'irrigation",ar:"استراتيجية الري",en:"Irrigation strategy"},
+  r_auto:{fr:"Auto (RAW)",ar:"تلقائي",en:"Auto (RAW)"},
+  r_manual:{fr:"Calendrier",ar:"جدول",en:"Calendar"},
+  r_rainfed:{fr:"Pluvial",ar:"بعلي",en:"Rainfed"},
+  r_interval:{fr:"Intervalle",ar:"الفترة",en:"Interval"},
+  r_dose:{fr:"Dose",ar:"الجرعة",en:"Dose"},
+  r_chart_title:{fr:"Réserve utile sur 30 jours",ar:"المخزون المتاح خلال 30 يوماً",en:"Available water over 30 days"},
+  r_method:{fr:"Méthode — bilan hydrique FAO-56",ar:"الطريقة — الميزان المائي FAO-56",en:"Method — FAO-56 water balance"},
+  r_method_txt:{fr:"Quand l'épuisement D<b>r</b> dépasse RAW, la plante ferme ses stomates : le coefficient de stress <b>K<sub>s</sub></b> passe sous 1 et l'ET réelle chute — c'est le stress hydrique. En mode <b>Auto</b>, on irrigue pile quand D<sub>r</sub> atteint RAW, avec une dose qui remplit jusqu'à la capacité au champ, sans excédent (donc sans drainage). Tout apport au-delà de TAW part en <b>drainage profond</b> (eau + engrais perdus).",
+                ar:"عندما يتجاوز الاستنزاف D<b>r</b> عتبة RAW، يغلق النبات ثغوره: ينخفض معامل الإجهاد <b>K<sub>s</sub></b> دون 1 ويقلّ النتح الفعلي — هذا هو الإجهاد المائي. في الوضع <b>التلقائي</b> نروي تماماً عند بلوغ RAW بجرعة تملأ حتى السعة الحقلية دون فائض (بلا صرف). أي إضافة فوق TAW تذهب <b>صرفاً عميقاً</b> (ماء وسماد مفقودان).",
+                en:"When depletion D<b>r</b> exceeds RAW, the plant closes its stomata: the stress coefficient <b>K<sub>s</sub></b> drops below 1 and actual ET falls — that's water stress. In <b>Auto</b> mode we irrigate exactly when D<sub>r</sub> reaches RAW, with a dose that refills to field capacity without excess (no drainage). Any input beyond TAW becomes <b>deep drainage</b> (water + fertiliser lost)."},
+  // KPIs
+  rk_aw:{fr:"Réserve utile actuelle",ar:"المخزون الحالي",en:"Current available water"},
+  rk_nirr:{fr:"Irrigations",ar:"مرات الري",en:"Irrigations"},
+  rk_applied:{fr:"Eau apportée",ar:"الماء المضاف",en:"Water applied"},
+  rk_stress:{fr:"Jours de stress",ar:"أيام الإجهاد",en:"Stress days"},
+  rk_drain:{fr:"Drainage (perte)",ar:"الصرف (فقد)",en:"Drainage (loss)"},
+  rk_eff:{fr:"Efficience",ar:"الكفاءة",en:"Efficiency"},
+  // legend / labels
+  r_lg_aw:{fr:"Réserve utile (mm)",ar:"المخزون المتاح (مم)",en:"Available water (mm)"},
+  r_lg_raw:{fr:"Seuil RAW",ar:"عتبة RAW",en:"RAW threshold"},
+  r_lg_taw:{fr:"Réserve totale TAW",ar:"المخزون الكلي TAW",en:"Total TAW"},
+  r_lg_irr:{fr:"Irrigation",ar:"ري",en:"Irrigation"},
+  r_lg_rain:{fr:"Pluie",ar:"مطر",en:"Rain"},
+  r_day:{fr:"Jour",ar:"يوم",en:"Day"},
+  r_full:{fr:"plein",ar:"ممتلئ",en:"full"},
+  r_stress:{fr:"stress",ar:"إجهاد",en:"stress"},
+  r_ok:{fr:"confort",ar:"مريح",en:"comfort"},
+  r_torefill:{fr:"à irriguer",ar:"يحتاج ري",en:"to irrigate"},
+  r_cap_root:{fr:"Zone racinaire",ar:"منطقة الجذور",en:"Root zone"},
+  d_taw:{fr:"Réserve totale",ar:"المخزون الكلي",en:"Total available"},
+  d_raw:{fr:"Réserve facile",ar:"المخزون السهل",en:"Readily available"},
+  d_dr:{fr:"Épuisement actuel",ar:"الاستنزاف الحالي",en:"Current depletion"},
+  d_ks:{fr:"Coef. de stress",ar:"معامل الإجهاد",en:"Stress coef."}
+});
+
+/* textures : θFC, θWP (m³/m³) — FAO-56 indicatif */
+const TEX=[
+  {id:'sand', fc:0.10, wp:0.05, fr:"Sableux",         ar:"رملي",       en:"Sand"},
+  {id:'sloam',fc:0.20, wp:0.09, fr:"Limono-sableux",  ar:"طيني رملي",  en:"Sandy loam"},
+  {id:'loam', fc:0.28, wp:0.12, fr:"Limoneux",        ar:"طَمْيي",      en:"Loam"},
+  {id:'cloam',fc:0.36, wp:0.20, fr:"Argilo-limoneux", ar:"طيني طَمْيي", en:"Clay loam"},
+  {id:'clay', fc:0.40, wp:0.24, fr:"Argileux",        ar:"طيني",       en:"Clay"}
+];
+const CROPS=window.CROPS_DB;   // base de cultures partagée (FAO-56, Tunisie & Libye)
+const DAYS=30;
+
+function fillSelects(){
+  const t=$('texture'),c=$('crop'),kt=t.value,kc=c.value;
+  t.innerHTML=''; TEX.forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=`${x[I18N.lang]||x.fr} · ${x.fc}/${x.wp}`;t.appendChild(o);});
+  window.CROPS.fillSelect(c,{lang:I18N.lang,suffix:x=>'Kc '+x.Kc[1]});
+  t.value=kt||'sloam'; c.value=kc||'tomato';
+}
+function params(){
+  const tx=TEX.find(x=>x.id===$('texture').value)||TEX[1];
+  const cr=CROPS.find(x=>x.id===$('crop').value)||CROPS[0];
+  const Zr=+$('zr').value, p=+$('p').value/100, ET0=+$('et0').value, rain=+$('rain').value;
+  const TAW=1000*(tx.fc-tx.wp)*Zr, RAW=p*TAW;
+  return {tx,cr,Zr,p,ET0,rain,TAW,RAW,Kc:cr.Kc[1],
+          strat:document.querySelector('#strat button.on').dataset.v,
+          interval:+$('interval').value, dose:+$('dose').value};
+}
+
+/* ---- simulate daily water balance ---- */
+function simulate(P){
+  const {TAW,RAW,ET0,Kc,rain,strat,interval,dose}=P;
+  // rain events: two showers (day 8 & 20)
+  const rainDay={}; if(rain>0){ rainDay[8]=rain*0.55; rainDay[20]=rain*0.45; }
+  let Dr=RAW*0.4;                 // start slightly depleted
+  const rows=[]; let nIrr=0,applied=0,drain=0,stressDays=0,etcTot=0;
+  for(let d=0;d<DAYS;d++){
+    let I=0; const P_=rainDay[d]||0;
+    // irrigation decision at start of day
+    if(strat==='auto'){ if(Dr>=RAW){ I=Dr; } }              // refill to FC
+    else if(strat==='manual'){ if(d%interval===0 && d>0){ I=dose; } }
+    // apply water (reduces depletion), cap at 0 → excess = drainage
+    Dr -= (P_+I);
+    if(Dr<0){ drain += -Dr; Dr=0; }
+    if(I>0){ nIrr++; applied+=I; }
+    // ET with stress reduction
+    const Ks = Dr>RAW ? Math.max(0,(TAW-Dr)/(TAW-RAW)) : 1;
+    const ETc = Ks*Kc*ET0; etcTot+=ETc;
+    if(Ks<0.999) stressDays++;
+    Dr += ETc;
+    if(Dr>TAW) Dr=TAW;
+    rows.push({d,AW:TAW-Dr,Dr,Ks,I,P:P_});
+  }
+  return {rows,nIrr,applied:Math.round(applied),drain:Math.round(drain),stressDays,
+          eff: applied>0? Math.max(0,Math.round((1-drain/applied)*100)) : 100};
+}
+
+/* ---- render ---- */
+let SIM=null;
+function render(){
+  const P=params();
+  // sync readouts
+  $('zrv').textContent=P.Zr.toFixed(1)+' m'; $('pv').textContent=(P.p*100)+'%';
+  $('et0v').textContent=P.ET0+' mm/j'; $('rainv').textContent=P.rain+' mm';
+  $('intv').textContent=P.interval+' j'; $('dosev').textContent=P.dose+' mm';
+  $('manualBox').hidden = P.strat!=='manual';
+  SIM=simulate(P);
+  drawChart(P,SIM); drawReservoir(P,SIM); drawKPIs(P,SIM); drawDefs(P,SIM);
+}
+function svgEl(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+function drawChart(P,S){
+  const svg=$('svg'); svg.innerHTML='';
+  const W=900,H=340,PADL=44,PADR=14,PADT=16,PADB=34;
+  const x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB;
+  const ymax=P.TAW*1.08;
+  const sx=d=>x0+d/(DAYS-1)*(x1-x0);
+  const sy=v=>y1-(v/ymax)*(y1-y0);
+  // y grid
+  const step= P.TAW>120?40: P.TAW>60?20:10;
+  for(let v=0;v<=ymax;v+=step){ svg.appendChild(svgEl('line',{x1:x0,y1:sy(v),x2:x1,y2:sy(v),stroke:'#eef3e5','stroke-width':1}));
+    const t=svgEl('text',{x:x0-7,y:sy(v)+4,'text-anchor':'end',fill:'#9aa890','font-size':11});t.textContent=v;svg.appendChild(t);}
+  // x labels
+  for(let d=0;d<DAYS;d+=5){ const t=svgEl('text',{x:sx(d),y:y1+18,'text-anchor':'middle',fill:'#9aa890','font-size':11});t.textContent='J'+d;svg.appendChild(t);}
+  // TAW full band + RAW threshold (RAW available line = TAW-RAW)
+  const rawLine=P.TAW-P.RAW;
+  svg.appendChild(svgEl('line',{x1:x0,y1:sy(P.TAW),x2:x1,y2:sy(P.TAW),stroke:'#3fa66a','stroke-width':1.5,'stroke-dasharray':'6 5',opacity:.8}));
+  { const t=svgEl('text',{x:x1-3,y:sy(P.TAW)-4,'text-anchor':'end',fill:'#3fa66a','font-size':10.5,'font-weight':700});t.textContent='TAW '+Math.round(P.TAW);svg.appendChild(t);}
+  svg.appendChild(svgEl('line',{x1:x0,y1:sy(rawLine),x2:x1,y2:sy(rawLine),stroke:'#d99a2b','stroke-width':1.5,'stroke-dasharray':'6 5',opacity:.85}));
+  { const t=svgEl('text',{x:x1-3,y:sy(rawLine)+13,'text-anchor':'end',fill:'#b5701a','font-size':10.5,'font-weight':700});t.textContent='RAW';svg.appendChild(t);}
+  // stress zone shading (below rawLine)
+  svg.appendChild(svgEl('rect',{x:x0,y:sy(rawLine),width:x1-x0,height:y1-sy(rawLine),fill:'rgba(209,88,78,.06)'}));
+  // event bars (rain / irrigation)
+  S.rows.forEach(r=>{
+    if(r.I>0){ svg.appendChild(svgEl('line',{x1:sx(r.d),y1:y0,x2:sx(r.d),y2:y1,stroke:'rgba(58,155,208,.5)','stroke-width':3}));
+      const t=svgEl('text',{x:sx(r.d),y:y0+10,'text-anchor':'middle','font-size':11});t.textContent='💧';svg.appendChild(t);}
+    if(r.P>0){ svg.appendChild(svgEl('line',{x1:sx(r.d)+3,y1:y0,x2:sx(r.d)+3,y2:y1,stroke:'rgba(142,111,199,.5)','stroke-width':3}));
+      const t=svgEl('text',{x:sx(r.d)+3,y:y0+22,'text-anchor':'middle','font-size':10});t.textContent='🌧';svg.appendChild(t);}
+  });
+  // AW area + line
+  let area='M'+sx(0)+' '+sy(0)+' '; S.rows.forEach(r=>area+='L'+sx(r.d).toFixed(1)+' '+sy(r.AW).toFixed(1)+' '); area+='L'+sx(DAYS-1)+' '+sy(0)+' Z';
+  svg.appendChild(svgEl('path',{d:area,fill:'rgba(58,155,208,.14)'}));
+  let line=''; S.rows.forEach((r,i)=>line+=(i?'L':'M')+sx(r.d).toFixed(1)+' '+sy(r.AW).toFixed(1)+' ');
+  svg.appendChild(svgEl('path',{d:line,fill:'none',stroke:'#3a9bd0','stroke-width':2.6,'stroke-linejoin':'round'}));
+  // legend
+  $('legend').innerHTML=
+    `<span style="color:#3a9bd0"><i class="sq" style="background:rgba(58,155,208,.3);border:1px solid #3a9bd0"></i>${I18N.t('r_lg_aw')}</span>`+
+    `<span style="color:#3fa66a"><i class="dash" style="color:#3fa66a"></i>${I18N.t('r_lg_taw')}</span>`+
+    `<span style="color:#b5701a"><i class="dash" style="color:#b5701a"></i>${I18N.t('r_lg_raw')}</span>`+
+    `<span>💧 ${I18N.t('r_lg_irr')}</span><span>🌧 ${I18N.t('r_lg_rain')}</span>`;
+  // hover
+  const hl=svgEl('rect',{x:x0,y:y0,width:x1-x0,height:y1-y0,fill:'transparent'});hl.style.cursor='crosshair';svg.appendChild(hl);
+  const cur=svgEl('line',{stroke:'#7cb342','stroke-width':1,opacity:0,y1:y0,y2:y1});svg.appendChild(cur);
+  hl.addEventListener('mousemove',ev=>{
+    const rc=svg.getBoundingClientRect(); let d=Math.round((ev.clientX-rc.left)/rc.width*W - x0)/(x1-x0)*(DAYS-1);
+    d=Math.max(0,Math.min(DAYS-1,Math.round(d))); const r=S.rows[d];
+    cur.setAttribute('x1',sx(d));cur.setAttribute('x2',sx(d));cur.setAttribute('opacity',.5);
+    const st = r.AW>=P.TAW-1?'r_full': r.Dr>P.RAW?'r_stress': r.Dr>P.RAW*0.85?'r_torefill':'r_ok';
+    $('hover').innerHTML=`<b>${I18N.t('r_day')} ${d}</b> — ${I18N.t('r_lg_aw')} : <b>${r.AW.toFixed(0)} mm</b> · Ks ${r.Ks.toFixed(2)} — <b>${I18N.t(st)}</b>${r.I>0?' · 💧 '+r.I.toFixed(0)+'mm':''}${r.P>0?' · 🌧 '+r.P.toFixed(0)+'mm':''}`;
+  });
+}
+function drawReservoir(P,S){
+  const last=S.rows[S.rows.length-1];
+  const pct=Math.max(0,Math.min(100,last.AW/P.TAW*100));
+  $('rzFill').style.height=pct+'%';
+  const rawPct=(P.TAW-P.RAW)/P.TAW*100;
+  $('rzRAW').style.bottom=rawPct+'%'; $('rzRAW').style.top='auto';
+  $('rzFill').style.background = last.Dr>P.RAW ? 'linear-gradient(#e0a86b,#d99a2b)' : 'linear-gradient(#5bb0e0,#3a9bd0)';
+  $('rzRAWl').textContent='RAW';
+  $('rzCap').innerHTML=`<b>${I18N.t('r_cap_root')} ${P.Zr.toFixed(1)} m</b><br>${last.AW.toFixed(0)} / ${Math.round(P.TAW)} mm`;
+}
+function kpi(cls,l,v,u,x){return `<div class="kpi ${cls||''}"><div class="l">${l}</div><div class="v">${v}<small>${u||''}</small></div><div class="x">${x||''}</div></div>`;}
+function drawKPIs(P,S){
+  const last=S.rows[S.rows.length-1]; const awPct=Math.round(last.AW/P.TAW*100);
+  const stCls=last.Dr>P.RAW?'bad':awPct<40?'warn':'good';
+  $('kpis').innerHTML=
+    kpi(stCls,I18N.t('rk_aw'),awPct,'%',`${last.AW.toFixed(0)}/${Math.round(P.TAW)} mm`)+
+    kpi('',I18N.t('rk_nirr'),S.nIrr,'',`${I18N.t('r_lg_irr')}`)+
+    kpi('',I18N.t('rk_applied'),S.applied,' mm','30 j')+
+    kpi(S.stressDays>0?'bad':'good',I18N.t('rk_stress'),S.stressDays,' j','Ks < 1')+
+    kpi(S.drain>5?'bad':'good',I18N.t('rk_drain'),S.drain,' mm',`${I18N.t('rk_eff')} ${S.eff}%`);
+}
+function drawDefs(P,S){
+  const last=S.rows[S.rows.length-1];
+  $('defs').innerHTML=
+    `<div class="def"><b>TAW</b> = ${Math.round(P.TAW)} <span class="u">mm</span><br><span class="u">${I18N.t('d_taw')}</span></div>`+
+    `<div class="def"><b>RAW</b> = ${Math.round(P.RAW)} <span class="u">mm</span> (p=${P.p})<br><span class="u">${I18N.t('d_raw')}</span></div>`+
+    `<div class="def"><b>Dr</b> = ${last.Dr.toFixed(0)} <span class="u">mm</span><br><span class="u">${I18N.t('d_dr')}</span></div>`+
+    `<div class="def"><b>Ks</b> = ${last.Ks.toFixed(2)}<br><span class="u">${I18N.t('d_ks')}</span></div>`;
+}
+
+function doExport(){
+  const P=params(),S=SIM||simulate(P);
+  const csv=['day,rain_mm,irrigation_mm,available_water_mm,depletion_mm,Ks'];
+  S.rows.forEach(r=>csv.push(`${r.d},${r.P.toFixed(1)},${r.I.toFixed(1)},${r.AW.toFixed(1)},${r.Dr.toFixed(1)},${r.Ks.toFixed(2)}`));
+  const meta={format:'soil-water-balance-fao56',texture:$('texture').value,crop:$('crop').value,
+    Zr:P.Zr,p:P.p,ET0:P.ET0,TAW:+P.TAW.toFixed(1),RAW:+P.RAW.toFixed(1),strategy:P.strat,
+    result:{irrigations:S.nIrr,applied_mm:S.applied,drainage_mm:S.drain,stress_days:S.stressDays,efficiency_pct:S.eff},
+    series:S.rows};
+  Store.download('bilan_sol_fao56.json',JSON.stringify(meta,null,2),'application/json');
+  Store.download('bilan_sol_fao56.csv',csv.join('\n'),'text/csv');
+}
+
+/* wire */
+['texture','crop'].forEach(id=>$(id).addEventListener('change',render));
+['zr','p','et0','rain','interval','dose'].forEach(id=>$(id).addEventListener('input',render));
+document.querySelectorAll('#strat button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#strat button').forEach(x=>x.classList.remove('on'));b.classList.add('on');render();}));
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{applyHTML();fillSelects();render();});
+
+fillSelects();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML(); render();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>

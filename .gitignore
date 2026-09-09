@@ -1,0 +1,22 @@
+# Base SQLite (contient identifiants API + données utilisateurs) — NE PAS versionner
+platform/db/*.db
+platform/db/*.db-journal
+platform/db/*.sqlite
+
+# Archives / gros binaires
+*.rar
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+*.log
+
+# Gros jeux de donnees (> limite GitHub 100 MB) — garder en local
+J4/DataJ4/DataJ4/soil-sensor-readings-historical-data.json

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Énergie de pompage</title>
+<style>
+:root{
+  --bg:#0e1512;--panel:#16201b;--panel-2:#1c2a23;--line:#2b3a30;--line-2:#38493d;
+  --ink:#e8efe6;--muted:#8fa596;--faint:#5f7568;
+  --water:#2ea8d8;--water-d:#1c7fa8;--soil:#c9a24b;--energy:#e08a2b;
+  --good:#5fb15a;--warn:#d99a2b;--bad:#d1584e;
+  --shadow:0 6px 22px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.45}
+.tabnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit}
+.topbar{display:flex;align-items:center;gap:14px;padding:12px 20px;background:linear-gradient(180deg,#16201b,#111a15);border-bottom:1px solid var(--line)}
+.logo{width:34px;height:34px;border-radius:9px;flex:none;background:radial-gradient(120% 120% at 30% 20%,#e08a2b,#8a4e12);display:grid;place-items:center}
+.logo svg{width:20px;height:20px}
+.brand .t1{font-weight:700;font-size:.98rem}
+.brand .t2{color:var(--muted);font-size:.74rem}
+.spacer{flex:1}
+.mod-badge{font-size:.72rem;color:var(--energy);border:1px solid rgba(224,138,43,.4);background:rgba(224,138,43,.1);padding:4px 11px;border-radius:20px;font-weight:700}
+
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+.lead{color:var(--muted);font-size:.9rem;max-width:800px;margin-bottom:20px}
+.lead b{color:var(--ink)}
+
+.grid{display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
+.card h2{margin:0 0 4px;font-size:1rem}
+.card .sub{color:var(--muted);font-size:.78rem;margin-bottom:14px}
+
+.fld{margin-bottom:14px}
+.fld label{display:flex;justify-content:space-between;color:var(--muted);font-size:.78rem;margin-bottom:6px}
+.fld label .val{color:var(--energy);font-weight:700}
+.fld input[type=range]{width:100%;accent-color:var(--energy)}
+.fld input[type=number],.fld select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#0e1713;color:var(--ink);font:inherit;font-size:.92rem}
+.fld input:focus,.fld select:focus{outline:2px solid var(--water-d);border-color:var(--water)}
+
+.res-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:13px;margin-bottom:18px}
+.rc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px;position:relative;overflow:hidden}
+.rc::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--tone,var(--energy))}
+.rc .rc-l{color:var(--muted);font-size:.76rem}
+.rc .rc-v{font-size:1.85rem;font-weight:800;line-height:1.1;margin-top:3px;color:var(--tone,var(--ink))}
+.rc .rc-v small{font-size:.8rem;font-weight:500;color:var(--muted);margin-inline-start:3px}
+.rc .rc-x{color:var(--muted);font-size:.74rem;margin-top:5px}
+
+.banner{display:flex;gap:11px;align-items:flex-start;padding:13px 14px;border-radius:11px;font-size:.86rem;margin-bottom:14px;border:1px solid}
+.banner svg{width:19px;height:19px;flex:none;margin-top:1px}
+.banner.warn{background:rgba(217,154,43,.12);border-color:rgba(217,154,43,.5);color:#e9be6f}
+.banner.good{background:rgba(95,177,90,.12);border-color:rgba(95,177,90,.45);color:#8fd08a}
+.banner.bad{background:rgba(209,88,78,.14);border-color:rgba(209,88,78,.5);color:#e79086}
+.banner b{display:block;color:var(--ink);margin-bottom:2px}
+
+.bars{margin-top:6px}
+.barrow{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.barrow .bl{width:140px;font-size:.8rem;color:var(--muted);flex:none}
+.barrow .bt{flex:1;height:22px;background:#0e1713;border:1px solid var(--line);border-radius:6px;overflow:hidden;position:relative}
+.barrow .bf{height:100%;border-radius:5px;transition:width .3s}
+.barrow .bv{width:70px;text-align:end;font-size:.82rem;font-weight:700;flex:none}
+
+.formula{background:#0e1713;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:.82rem;color:var(--muted)}
+.formula code{color:#eeb26e;font-family:"Cascadia Code",Consolas,monospace}
+.formula .step{padding:4px 0;border-bottom:1px dashed var(--line)}
+.formula .step:last-child{border-bottom:0}
+.formula b{color:var(--ink)}
+
+.mission{background:linear-gradient(180deg,#2a2015,#1f1810);border:1px solid rgba(224,138,43,.5);border-radius:14px;padding:18px 20px}
+.mission h2{color:#eeb26e}
+.q{margin-bottom:14px}.q .qt{font-size:.9rem;margin-bottom:8px}.q .qt b{color:var(--energy)}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:#0e1713;cursor:pointer;font-size:.85rem}
+.opt:hover{border-color:var(--line-2)}.opt.sel{border-color:var(--energy);background:#241a10}
+.opt.correct{border-color:var(--good);background:rgba(95,177,90,.12)}
+.opt.wrong{border-color:var(--bad);background:rgba(209,88,78,.12)}
+.opt .mk{width:20px;height:20px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-size:.7rem;flex:none}
+.opt.correct .mk{background:var(--good);border-color:var(--good);color:#04202c}
+.opt.wrong .mk{background:var(--bad);border-color:var(--bad);color:#fff}
+.explain{font-size:.82rem;color:var(--muted);margin-top:8px;padding:10px 12px;background:#0e1713;border-radius:8px;border-left:3px solid var(--energy);display:none}
+.explain.show{display:block}
+.tbtn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:9px;border:1px solid var(--line);background:#18241d;color:var(--ink);font-size:.86rem;cursor:pointer}
+.tbtn.primary{background:linear-gradient(180deg,#e08a2b,#b56a15);border-color:#e08a2b;color:#241300;font-weight:700}
+.score{font-size:.86rem;color:var(--muted);margin-top:10px}.score b{color:var(--good);font-size:1.05rem}
+.note{font-size:.74rem;color:var(--faint);margin-top:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+.langbox{display:inline-flex;gap:6px;margin-inline-start:6px}
+.langbox button{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-weight:700;font-size:.78rem;padding:5px 10px;border-radius:8px;cursor:pointer}
+.langbox button:hover{border-color:var(--good)}
+.langbox button.on{background:var(--good);color:#fff;border-color:var(--good)}
+:root[dir="rtl"] body,body[dir="rtl"]{font-family:"IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../platform/public/assets/css/skin-sim.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#ffe0b0" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg></div>
+  <div class="brand">
+    <div class="t1" data-i18n="p_brand">Énergie de pompage</div>
+    <div class="t2" data-i18n="p_sub">kWh/m³ · profondeur · pression · pompage solaire</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="mod-badge" data-i18n="p_badge">M5 · Jour 5</div>
+  <div class="langbox">
+    <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+    <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+    <button data-lang="en" onclick="I18N.set('en')">EN</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="p_lead">
+    Le coût de l'eau, c'est surtout de l'énergie. Réglez la profondeur de pompage et la pression :
+    le simulateur calcule l'<b>énergie spécifique en kWh/m³</b>, le coût annuel, et compare
+    réseau vs solaire. Vous verrez pourquoi <b>200 mm de pluie ≠ 200 mm de recharge</b> et le
+    <b>paradoxe du pompage solaire</b>.
+  </p>
+
+  <div class="grid">
+    <!-- INPUT -->
+    <div>
+      <div class="card">
+        <h2 data-i18n="p_inst">Installation de pompage</h2>
+        <div class="sub" data-i18n="p_inst_sub">Paramètres du forage et du réseau</div>
+
+        <div class="fld">
+          <label><span data-i18n="p_depth">Profondeur dynamique de pompage</span><span class="val" id="l-depth">45 m</span></label>
+          <input id="depth" type="range" min="5" max="200" step="1" value="45">
+        </div>
+        <div class="fld">
+          <label><span data-i18n="p_press">Pression de service en tête</span><span class="val" id="l-press">2.0 bar</span></label>
+          <input id="press" type="range" min="0" max="6" step="0.1" value="2">
+        </div>
+        <div class="fld">
+          <label><span data-i18n="p_eff">Rendement global groupe (pompe × moteur)</span><span class="val" id="l-eff">65 %</span></label>
+          <input id="eff" type="range" min="35" max="80" step="1" value="65">
+        </div>
+        <div class="fld">
+          <label><span data-i18n="p_vol">Volume annuel pompé</span><span class="val" id="l-vol">50 000 m³</span></label>
+          <input id="vol" type="range" min="5000" max="300000" step="1000" value="50000">
+        </div>
+
+        <h2 style="margin-top:8px" data-i18n="p_energy">Énergie</h2>
+        <div class="fld">
+          <label data-i18n="p_source">Source</label>
+          <select id="src">
+            <option value="grid" data-i18n="p_src_grid">Réseau électrique</option>
+            <option value="solar" data-i18n="p_src_solar">Solaire photovoltaïque</option>
+            <option value="diesel" data-i18n="p_src_diesel">Groupe diesel</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label><span data-i18n="p_price">Prix de l'énergie</span><span class="val" id="l-price">0.25 DT/kWh</span></label>
+          <input id="price" type="number" step="0.01" value="0.25">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 data-i18n="p_calc">Comment c'est calculé</h2>
+        <div class="formula" id="steps"></div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div>
+      <div class="res-cards">
+        <div class="rc" id="rc-e"><div class="rc-l" data-i18n="p_rc_e">Énergie spécifique</div><div class="rc-v tabnum" id="v-e">–</div><div class="rc-x" data-i18n="p_rc_e_x">kWh par m³ pompé</div></div>
+        <div class="rc" id="rc-cost"><div class="rc-l" data-i18n="p_rc_cost">Coût de l'eau</div><div class="rc-v tabnum" id="v-cost">–</div><div class="rc-x" id="x-cost"></div></div>
+        <div class="rc" id="rc-year"><div class="rc-l" data-i18n="p_rc_year">Facture annuelle</div><div class="rc-v tabnum" id="v-year">–</div><div class="rc-x" data-i18n="p_rc_year_x">énergie de pompage</div></div>
+        <div class="rc" id="rc-kwh"><div class="rc-l" data-i18n="p_rc_kwh">Énergie annuelle</div><div class="rc-v tabnum" id="v-kwh">–</div><div class="rc-x" data-i18n="p_rc_kwh_x">kWh/an</div></div>
+      </div>
+
+      <div class="card">
+        <h2 data-i18n="p_where">Où passe l'énergie ?</h2>
+        <div class="sub" data-i18n="p_where_sub">Décomposition de la hauteur manométrique totale (HMT)</div>
+        <div class="bars" id="bars"></div>
+        <div id="advice"></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2 data-i18n="p_cmp">Comparaison des sources</h2>
+          <div class="sub" data-i18n="p_cmp_sub">Même volume, même HMT</div>
+          <div class="bars" id="cmp"></div>
+        </div>
+        <div class="card mission">
+          <h2 data-i18n="p_mission">Mission</h2>
+          <div class="sub" data-i18n="p_mission_sub">Le paradoxe solaire &amp; la recharge</div>
+
+          <div class="q" id="q1">
+            <div class="qt"><b>Q1.</b> <span data-i18n="p_q1">Un forage passe de 30 m à 90 m de profondeur. L'énergie par m³ :</span></div>
+            <div class="opts">
+              <div class="opt" data-q="1" data-a="0"><span class="mk"></span><span data-i18n="p_q1a0">reste identique</span></div>
+              <div class="opt" data-q="1" data-a="1"><span class="mk"></span><span data-i18n="p_q1a1">est multipliée par ~3 (proportionnelle à la hauteur)</span></div>
+              <div class="opt" data-q="1" data-a="2"><span class="mk"></span><span data-i18n="p_q1a2">diminue</span></div>
+            </div>
+            <div class="explain" id="e1"></div>
+          </div>
+
+          <div class="q" id="q2">
+            <div class="qt"><b>Q2.</b> <span data-i18n="p_q2">Le « paradoxe du pompage solaire » c'est :</span></div>
+            <div class="opts">
+              <div class="opt" data-q="2" data-a="0"><span class="mk"></span><span data-i18n="p_q2a0">L'eau gratuite pousse à sur-pomper et vider la nappe</span></div>
+              <div class="opt" data-q="2" data-a="1"><span class="mk"></span><span data-i18n="p_q2a1">Le solaire coûte plus cher que le réseau</span></div>
+              <div class="opt" data-q="2" data-a="2"><span class="mk"></span><span data-i18n="p_q2a2">Les panneaux ne marchent pas l'été</span></div>
+            </div>
+            <div class="explain" id="e2"></div>
+          </div>
+
+          <button class="tbtn primary" onclick="grade()" data-i18n="p_validate">Valider</button>
+          <div class="score" id="scorebox"></div>
+        </div>
+      </div>
+
+      <p class="note" data-i18n="p_note">Formule : E = ρ·g·HMT·V / (3.6e6 · η) · HMT = profondeur + pression×10.2 + pertes de charge. ρg ≈ 9810 N/m³. Pluie → recharge : seule une fraction (souvent &lt; 15 % en zone aride) atteint la nappe après ETP et ruissellement.</p>
+    </div>
+  </div>
+</div>
+
+<script src="../platform/public/assets/i18n/i18n.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=(x,d=2)=>isFinite(x)?x.toLocaleString(I18N.lang==='ar'?'ar-EG':I18N.lang==='en'?'en-US':'fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}):'–';
+const nfmt=x=>x.toLocaleString(I18N.lang==='ar'?'ar-EG':I18N.lang==='en'?'en-US':'fr-FR');
+const g=9.81, rho=1000;
+
+Object.assign(I18N.DICT,{
+  p_brand:{fr:"Énergie de pompage",ar:"طاقة الضخّ",en:"Pumping energy"},
+  p_sub:{fr:"kWh/m³ · profondeur · pression · pompage solaire",ar:"ك.و.س/م³ · العمق · الضغط · الضخّ الشمسي",en:"kWh/m³ · depth · pressure · solar pumping"},
+  p_badge:{fr:"M5 · Jour 5",ar:"الوحدة 5 · اليوم 5",en:"M5 · Day 5"},
+  p_lead:{fr:"Le coût de l'eau, c'est surtout de l'énergie. Réglez la profondeur de pompage et la pression : le simulateur calcule l'<b>énergie spécifique en kWh/m³</b>, le coût annuel, et compare réseau vs solaire. Vous verrez pourquoi <b>200 mm de pluie ≠ 200 mm de recharge</b> et le <b>paradoxe du pompage solaire</b>.",
+          ar:"كلفة الماء هي أساساً طاقة. اضبط عمق الضخّ والضغط: يحسب المحاكي <b>الطاقة النوعية بـ ك.و.س/م³</b> والكلفة السنوية، ويقارن الشبكة بالطاقة الشمسية. سترى لماذا <b>200 مم مطر ≠ 200 مم تغذية</b> و<b>مفارقة الضخّ الشمسي</b>.",
+          en:"The cost of water is mostly energy. Set the pumping depth and pressure: the simulator computes the <b>specific energy in kWh/m³</b>, the yearly cost, and compares grid vs solar. You'll see why <b>200 mm of rain ≠ 200 mm of recharge</b> and the <b>solar pumping paradox</b>."},
+  p_inst:{fr:"Installation de pompage",ar:"منظومة الضخّ",en:"Pumping installation"},
+  p_inst_sub:{fr:"Paramètres du forage et du réseau",ar:"معطيات البئر والشبكة",en:"Borehole and network parameters"},
+  p_depth:{fr:"Profondeur dynamique de pompage",ar:"العمق الديناميكي للضخّ",en:"Dynamic pumping depth"},
+  p_press:{fr:"Pression de service en tête",ar:"ضغط التشغيل عند الرأس",en:"Head service pressure"},
+  p_eff:{fr:"Rendement global groupe (pompe × moteur)",ar:"المردود الإجمالي للمجموعة (مضخّة × محرّك)",en:"Overall unit efficiency (pump × motor)"},
+  p_vol:{fr:"Volume annuel pompé",ar:"الحجم السنوي المضخوخ",en:"Annual pumped volume"},
+  p_energy:{fr:"Énergie",ar:"الطاقة",en:"Energy"},
+  p_source:{fr:"Source",ar:"المصدر",en:"Source"},
+  p_src_grid:{fr:"Réseau électrique",ar:"الشبكة الكهربائية",en:"Electrical grid"},
+  p_src_solar:{fr:"Solaire photovoltaïque",ar:"الطاقة الشمسية الكهروضوئية",en:"Solar photovoltaic"},
+  p_src_diesel:{fr:"Groupe diesel",ar:"مولّد ديزل",en:"Diesel generator"},
+  p_price:{fr:"Prix de l'énergie",ar:"سعر الطاقة",en:"Energy price"},
+  p_calc:{fr:"Comment c'est calculé",ar:"كيف يُحسب",en:"How it's calculated"},
+  p_rc_e:{fr:"Énergie spécifique",ar:"الطاقة النوعية",en:"Specific energy"},
+  p_rc_e_x:{fr:"kWh par m³ pompé",ar:"ك.و.س لكل م³ مضخوخ",en:"kWh per m³ pumped"},
+  p_rc_cost:{fr:"Coût de l'eau",ar:"كلفة الماء",en:"Water cost"},
+  p_rc_year:{fr:"Facture annuelle",ar:"الفاتورة السنوية",en:"Annual bill"},
+  p_rc_year_x:{fr:"énergie de pompage",ar:"طاقة الضخّ",en:"pumping energy"},
+  p_rc_kwh:{fr:"Énergie annuelle",ar:"الطاقة السنوية",en:"Annual energy"},
+  p_rc_kwh_x:{fr:"kWh/an",ar:"ك.و.س/سنة",en:"kWh/yr"},
+  p_where:{fr:"Où passe l'énergie ?",ar:"أين تذهب الطاقة؟",en:"Where does the energy go?"},
+  p_where_sub:{fr:"Décomposition de la hauteur manométrique totale (HMT)",ar:"تفكيك الارتفاع المانومتري الكلّي (HMT)",en:"Breakdown of total dynamic head (TDH)"},
+  p_cmp:{fr:"Comparaison des sources",ar:"مقارنة المصادر",en:"Source comparison"},
+  p_cmp_sub:{fr:"Même volume, même HMT",ar:"نفس الحجم، نفس HMT",en:"Same volume, same head"},
+  p_mission:{fr:"Mission",ar:"المهمّة",en:"Mission"},
+  p_mission_sub:{fr:"Le paradoxe solaire & la recharge",ar:"مفارقة الطاقة الشمسية والتغذية",en:"The solar paradox & recharge"},
+  p_q1:{fr:"Un forage passe de 30 m à 90 m de profondeur. L'énergie par m³ :",ar:"بئر ينتقل من عمق 30 م إلى 90 م. الطاقة لكل م³:",en:"A borehole goes from 30 m to 90 m deep. The energy per m³:"},
+  p_q1a0:{fr:"reste identique",ar:"تبقى كما هي",en:"stays the same"},
+  p_q1a1:{fr:"est multipliée par ~3 (proportionnelle à la hauteur)",ar:"تتضاعف بنحو 3 (متناسبة مع الارتفاع)",en:"is multiplied by ~3 (proportional to head)"},
+  p_q1a2:{fr:"diminue",ar:"تنخفض",en:"decreases"},
+  p_q2:{fr:"Le « paradoxe du pompage solaire » c'est :",ar:"«مفارقة الضخّ الشمسي» هي:",en:"The “solar pumping paradox” is:"},
+  p_q2a0:{fr:"L'eau gratuite pousse à sur-pomper et vider la nappe",ar:"الماء المجاني يدفع إلى الإفراط في الضخّ واستنزاف الطبقة الجوفية",en:"Free water drives over-pumping and depletes the aquifer"},
+  p_q2a1:{fr:"Le solaire coûte plus cher que le réseau",ar:"الطاقة الشمسية أغلى من الشبكة",en:"Solar costs more than the grid"},
+  p_q2a2:{fr:"Les panneaux ne marchent pas l'été",ar:"الألواح لا تعمل في الصيف",en:"Panels don't work in summer"},
+  p_validate:{fr:"Valider",ar:"تحقّق",en:"Check"},
+  p_note:{fr:"Formule : E = ρ·g·HMT·V / (3.6e6 · η) · HMT = profondeur + pression×10.2 + pertes de charge. ρg ≈ 9810 N/m³. Pluie → recharge : seule une fraction (souvent < 15 % en zone aride) atteint la nappe après ETP et ruissellement.",
+          ar:"الصيغة: E = ρ·g·HMT·V / (3.6e6 · η) · HMT = العمق + الضغط×10.2 + فواقد الحمل. ρg ≈ 9810 ن/م³. المطر ← التغذية: جزء فقط (غالباً < 15٪ في المناطق الجافة) يصل إلى الطبقة الجوفية بعد التبخّر-النتح والجريان السطحي.",
+          en:"Formula: E = ρ·g·TDH·V / (3.6e6 · η) · TDH = depth + pressure×10.2 + head losses. ρg ≈ 9810 N/m³. Rain → recharge: only a fraction (often < 15% in arid zones) reaches the aquifer after PET and runoff."},
+  // JS-generated
+  p_low:{fr:"faible",ar:"منخفض",en:"low"},
+  p_moderate:{fr:"modéré",ar:"معتدل",en:"moderate"},
+  p_high:{fr:"élevé",ar:"مرتفع",en:"high"},
+  p_bar_depth:{fr:"Profondeur (relevage)",ar:"العمق (الرفع)",en:"Depth (lift)"},
+  p_bar_press:{fr:"Pression de service",ar:"ضغط التشغيل",en:"Service pressure"},
+  p_bar_loss:{fr:"Pertes de charge",ar:"فواقد الحمل",en:"Head losses"},
+  p_bar_hmt:{fr:"HMT totale",ar:"HMT الكلّي",en:"Total head"},
+  p_adv_good_t:{fr:"Installation efficiente",ar:"منظومة كفؤة",en:"Efficient installation"},
+  p_adv_good_d:{fr:"Bon rendement et HMT maîtrisée. Surveillez la pression : chaque bar en trop coûte ~10 m de HMT.",
+                ar:"مردود جيّد وارتفاع HMT مضبوط. راقب الضغط: كل بار زائد يكلّف نحو 10 م من HMT.",
+                en:"Good efficiency and controlled head. Watch the pressure: each extra bar costs ~10 m of head."},
+  p_adv_press_t:{fr:"Pression élevée",ar:"ضغط مرتفع",en:"High pressure"},
+  p_adv_press_d:{fr:"Vous payez 10.2 m de HMT par bar. Si le goutte-à-goutte fonctionne à 1–1.5 bar, baissez la consigne : économie directe sur la facture.",
+                 ar:"تدفع 10.2 م من HMT لكل بار. إذا كان التنقيط يعمل عند 1–1.5 بار، فاخفض القيمة المضبوطة: توفير مباشر في الفاتورة.",
+                 en:"You pay 10.2 m of head per bar. If drip runs at 1–1.5 bar, lower the setpoint: a direct saving on the bill."},
+  p_adv_eff_t:{fr:"Rendement faible",ar:"مردود ضعيف",en:"Low efficiency"},
+  p_adv_eff_d:{fr:"Un groupe usé à {v} % gaspille l'énergie. Un rééquipement pompe/moteur peut réduire la facture de 20–30 %.",
+               ar:"مجموعة مهترئة عند {v}٪ تهدر الطاقة. تجديد المضخّة/المحرّك قد يخفض الفاتورة بنسبة 20–30٪.",
+               en:"A worn unit at {v}% wastes energy. A pump/motor retrofit can cut the bill by 20–30%."},
+  p_adv_depth_t:{fr:"Nappe profonde",ar:"طبقة جوفية عميقة",en:"Deep aquifer"},
+  p_adv_depth_d:{fr:"Relevage très coûteux — souvent le signe d'une nappe fossile ou sur-exploitée. La sobriété (dose, RDI) devient prioritaire sur la puissance.",
+                 ar:"رفع مكلف جداً — غالباً علامة على طبقة أحفورية أو مستنزفة. يصبح الاقتصاد (الجرعة، الري الناقص المتحكّم فيه) أولوية على القدرة.",
+                 en:"Very costly lift — often a sign of a fossil or over-exploited aquifer. Frugality (dose, RDI) becomes a priority over power."},
+  p_cmp_grid:{fr:"Réseau",ar:"الشبكة",en:"Grid"},
+  p_cmp_solar:{fr:"Solaire PV",ar:"شمسي كهروضوئي",en:"Solar PV"},
+  p_cmp_diesel:{fr:"Diesel",ar:"ديزل",en:"Diesel"},
+  p_cmp_note:{fr:"DT/m³ énergie (solaire = coût amorti très bas → d'où le paradoxe)",
+              ar:"د.ت/م³ طاقة (الشمسي = كلفة مُستهلَكة منخفضة جداً ← من هنا المفارقة)",
+              en:"DT/m³ energy (solar = very low amortised cost → hence the paradox)"},
+  p_step_annual:{fr:"Annuel",ar:"سنوي",en:"Annual"},
+  p_step_cost:{fr:"Coût",ar:"الكلفة",en:"Cost"},
+  p_e1:{fr:"L'énergie spécifique est proportionnelle à la HMT, donc à la profondeur. Passer de 30 à 90 m triple (à pression et rendement constants) l'énergie par m³ — et donc la facture.",
+        ar:"الطاقة النوعية متناسبة مع HMT، أي مع العمق. الانتقال من 30 إلى 90 م يضاعف الطاقة لكل م³ ثلاث مرات (عند ثبات الضغط والمردود) — وبالتالي الفاتورة.",
+        en:"Specific energy is proportional to head, hence to depth. Going from 30 to 90 m triples (at constant pressure and efficiency) the energy per m³ — and so the bill."},
+  p_e2:{fr:"Quand l'énergie devient quasi gratuite (solaire amorti), plus rien ne freine le pompage : on sur-exploite la nappe. Le vrai garde-fou devient le quota et le compteur volumétrique, pas le prix de l'électricité.",
+        ar:"عندما تصبح الطاقة شبه مجانية (شمسي مُستهلَك)، لا شيء يكبح الضخّ: تُستنزف الطبقة الجوفية. يصبح الضابط الحقيقي هو الحصّة والعدّاد الحجمي، لا سعر الكهرباء.",
+        en:"When energy becomes nearly free (amortised solar), nothing curbs pumping any more: the aquifer is over-exploited. The real safeguard becomes the quota and volumetric meter, not the price of electricity."},
+  p_score:{fr:"Score",ar:"النتيجة",en:"Score"},
+  p_reread:{fr:"— relisez les explications",ar:"— أعد قراءة الشروح",en:"— review the explanations"}
+});
+
+function calc(){
+  const depth=+$('depth').value, press=+$('press').value, eff=+$('eff').value/100,
+        vol=+$('vol').value, src=$('src').value, price=+$('price').value;
+
+  $('l-depth').textContent=depth+' m';
+  $('l-press').textContent=press.toFixed(1)+' bar';
+  $('l-eff').textContent=(eff*100).toFixed(0)+' %';
+  $('l-vol').textContent=nfmt(vol)+' m³';
+  $('l-price').textContent=price.toFixed(2)+' DT/kWh';
+
+  // HMT components (m)
+  const hPress=press*10.2;              // 1 bar ≈ 10.2 m
+  const hLoss=Math.max(2, depth*0.05 + 3);  // pertes de charge estimées
+  const HMT=depth+hPress+hLoss;
+
+  // specific energy kWh/m³
+  const Espec = (rho*g*HMT)/(3.6e6*eff);   // kWh/m³
+  const kwhYear=Espec*vol;
+  const costM3=Espec*price;
+  const costYear=kwhYear*price;
+
+  card('e',fmt(Espec,3),'kWh/m³', Espec<0.4?'good':Espec<0.9?'warn':'bad');
+  card('cost',fmt(costM3,3),'DT/m³', costM3<0.15?'good':costM3<0.35?'warn':'bad');
+  $('x-cost').textContent = costM3<0.15?I18N.t('p_low'):costM3<0.35?I18N.t('p_moderate'):I18N.t('p_high');
+  card('year',fmt(costYear,0),'DT','energy');
+  card('kwh',fmt(kwhYear,0),'','energy');
+
+  // HMT decomposition bars
+  const total=HMT;
+  $('bars').innerHTML=[
+    [I18N.t('p_bar_depth'),depth,'var(--water)'],
+    [I18N.t('p_bar_press'),hPress,'var(--energy)'],
+    [I18N.t('p_bar_loss'),hLoss,'var(--bad)']
+  ].map(r=>`<div class="barrow"><div class="bl">${r[0]}</div><div class="bt"><div class="bf" style="width:${(r[1]/total*100).toFixed(0)}%;background:${r[2]}"></div></div><div class="bv tabnum">${r[1].toFixed(1)} m</div></div>`).join('')
+    + `<div class="barrow"><div class="bl"><b style="color:var(--ink)">${I18N.t('p_bar_hmt')}</b></div><div class="bt"></div><div class="bv tabnum" style="color:var(--ink)">${HMT.toFixed(0)} m</div></div>`;
+
+  // advice
+  let a=['good','p_adv_good_t','p_adv_good_d'];
+  if(press>3.5) a=['warn','p_adv_press_t','p_adv_press_d'];
+  if(eff<0.5) a=['bad','p_adv_eff_t','p_adv_eff_d'];
+  if(depth>120) a=['bad','p_adv_depth_t','p_adv_depth_d'];
+  const advDesc=I18N.t(a[2]).replace('{v}',(eff*100).toFixed(0));
+  $('advice').innerHTML=`<div class="banner ${a[0]}" style="margin-top:14px">${ic(a[0])}<div><b>${I18N.t(a[1])}</b>${advDesc}</div></div>`;
+
+  // source comparison — cost per m³
+  const P={grid:0.25,solar:0.02,diesel:0.55}; // DT/kWh équivalent amorti
+  $('cmp').innerHTML=[
+    [I18N.t('p_cmp_grid'),'grid','var(--water)'],[I18N.t('p_cmp_solar'),'solar','var(--good)'],[I18N.t('p_cmp_diesel'),'diesel','var(--bad)']
+  ].map(r=>{
+    const c=Espec*P[r[1]];
+    const max=Espec*P.diesel;
+    return `<div class="barrow"><div class="bl">${r[0]}</div><div class="bt"><div class="bf" style="width:${(c/max*100).toFixed(0)}%;background:${r[2]}"></div></div><div class="bv tabnum">${fmt(c,3)}</div></div>`;
+  }).join('') + `<div class="note" style="margin-top:4px">${I18N.t('p_cmp_note')}</div>`;
+
+  $('steps').innerHTML=`
+    <div class="step"><b>HMT</b> = ${depth} + ${press}×10.2 + ${hLoss.toFixed(1)} = <code>${HMT.toFixed(1)} m</code></div>
+    <div class="step"><b>E</b> = ρ·g·HMT / (3.6e6·η) = 9810×${HMT.toFixed(1)} / (3.6e6×${eff.toFixed(2)}) = <code>${fmt(Espec,3)} kWh/m³</code></div>
+    <div class="step"><b>${I18N.t('p_step_annual')}</b> = ${fmt(Espec,3)} × ${nfmt(vol)} = <code>${fmt(kwhYear,0)} kWh</code></div>
+    <div class="step"><b>${I18N.t('p_step_cost')}</b> = ${fmt(kwhYear,0)} × ${price} = <code>${fmt(costYear,0)} DT/an</code></div>`;
+}
+function card(id,v,u,tone){
+  $('v-'+id).innerHTML=v+(u?` <small>${u}</small>`:'');
+  const col=tone==='good'?'var(--good)':tone==='warn'?'var(--warn)':tone==='bad'?'var(--bad)':tone==='energy'?'var(--energy)':'var(--water)';
+  $('rc-'+id).style.setProperty('--tone',col);
+}
+function ic(t){const p=t==='good'?'M20 6 9 17l-5-5':t==='warn'?'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z':'M12 8v4m0 4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z';return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${p}"/></svg>`;}
+
+// mission
+let sel={};
+document.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
+  const q=o.dataset.q;
+  document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(x=>x.classList.remove('sel'));
+  o.classList.add('sel'); sel[q]=+o.dataset.a;
+}));
+function grade(){
+  const ans={1:1,2:0};
+  let score=0;
+  [1,2].forEach(q=>{
+    document.querySelectorAll(`.opt[data-q="${q}"]`).forEach(o=>{
+      o.classList.remove('correct','wrong');
+      const a=+o.dataset.a;
+      if(a===ans[q])o.classList.add('correct');
+      else if(sel[q]===a)o.classList.add('wrong');
+    });
+    if(sel[q]===ans[q])score++;
+  });
+  $('e1').classList.add('show');
+  $('e1').textContent=I18N.t('p_e1');
+  $('e2').classList.add('show');
+  $('e2').textContent=I18N.t('p_e2');
+  $('scorebox').innerHTML=`${I18N.t('p_score')} : <b>${score}/2</b> ${score===2?'✓':I18N.t('p_reread')}`;
+}
+
+document.querySelectorAll('#depth,#press,#eff,#vol,#src,#price').forEach(el=>el.addEventListener('input',calc));
+// diesel/solar price hint
+$('src').addEventListener('change',()=>{const s=$('src').value;$('price').value=s==='solar'?0.05:s==='diesel'?0.55:0.25;calc();});
+
+// i18n wiring
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{applyHTML();calc();});
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML();
+calc();
+</script>
+</body>
+</html>

@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geology × Remote Sensing — AgriTech & Hydrogéologie · SKILLS4EU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Moteur de dessin PARTAGÉ de la plateforme (standard pilotage-irrigation) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="platform/public/assets/js/agrimap-draw.js"></script>
+<script src="platform/public/assets/js/geo-search.js"></script>
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<style>
+  :root{
+    --bg:#0b150e; --panel:#132217; --panel2:#192c1e; --panel-hover:#1f3726; --line:#294430;
+    --ink:#edf5eb; --sub:#9eb698; --moss:#97bc62; --gold:#d4af37; --gold2:#e5c158;
+    --blue:#38bdf8; --forest:#2c5f2d; --danger:#ef4444; --amber:#f59e0b;
+    --shadow:0 8px 24px rgba(0,0,0,0.4); --radius:12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    background:radial-gradient(1300px 800px at 85% 10%, #15331e 0%, var(--bg) 60%);
+    color:var(--ink); font:14px/1.5 "Inter","Segoe UI",system-ui,sans-serif; min-height:100vh; padding-bottom:30px
+  }
+  
+  /* Header */
+  header{
+    background:#132217e6; backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; position:sticky; top:0; z-index:1100; flex-wrap:wrap
+  }
+  header .logo{font-size:19px; font-weight:800; display:flex; align-items:center; gap:6px}
+  header .logo b{color:var(--moss)} header .logo span{color:var(--gold)}
+  header .tag{color:var(--sub); font-size:12px; border-left:1px solid var(--line); padding-left:12px}
+  header .ar{color:var(--gold); font-size:13.5px; font-weight:700}
+  header .right{margin-left:auto; display:flex; align-items:center; gap:10px}
+
+  main{display:grid; grid-template-columns:1fr 400px; gap:16px; padding:16px 20px; align-items:start}
+  @media (max-width:1150px){ main{grid-template-columns:1fr} }
+  
+  /* Map container & toolbar */
+  .mapwrap{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; position:relative; box-shadow:var(--shadow)}
+  .toolbar{display:flex; gap:6px; flex-wrap:wrap; padding:10px 14px; border-bottom:1px solid var(--line); align-items:center}
+  .toolbar .sep{width:1px; align-self:stretch; background:var(--line); margin:0 4px}
+  /* Panneau de dessin vertical à gauche de la carte (standard plateforme) */
+  .draw-rail{display:flex; flex-direction:column; gap:5px; background:#0e1512; border:1px solid rgba(255,255,255,.18); border-radius:10px; padding:6px; box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .draw-rail button{width:42px; height:42px; padding:0; margin:0; display:grid; place-items:center; font-size:17px; line-height:1; background:#1b2c1f; border:1px solid rgba(255,255,255,.14); border-radius:8px; color:#edf4e8; cursor:pointer; transition:.15s}
+  .draw-rail button:hover{background:#274031}
+  .draw-rail button.active{background:#7cb342; border-color:#7cb342; color:#fff}
+  .draw-rail button span{display:none}
+  
+  button,select,input[type=date]{
+    background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:8px;
+    padding:6px 12px; font:inherit; cursor:pointer; transition:all .15s; font-size:12.5px
+  }
+  input[type=date]{cursor:auto; color-scheme:dark}
+  button:hover{border-color:var(--moss); color:#fff}
+  button.active{background:var(--forest); border-color:var(--moss); color:#fff; box-shadow:0 0 10px rgba(151,188,98,0.35)}
+  button.gold{background:var(--gold); color:#141a10; border-color:var(--gold); font-weight:800}
+  button.gold:hover{background:var(--gold2); color:#000}
+  button.danger{background:#451410; border-color:var(--danger); color:#fca5a5}
+  
+  #lmap{height:540px; z-index:1}
+  
+  .map-hud{
+    position:absolute; top:56px; right:12px; z-index:1000; background:rgba(19,34,23,0.94); backdrop-filter:blur(8px);
+    border:1px solid var(--line); border-radius:8px; padding:8px 14px; font-size:12px; color:var(--ink); pointer-events:none
+  }
+  .map-hud b{color:var(--gold)}
+
+  .timebar{display:flex; align-items:center; gap:10px; padding:9px 14px; border-top:1px solid var(--line); flex-wrap:wrap}
+  .timebar .date{font-weight:700; color:var(--moss); min-width:160px; font-size:13px}
+  .chips{display:flex; gap:6px; flex-wrap:wrap; padding:0 14px 10px; max-height:76px; overflow:auto}
+  .chip{background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:3px 10px; font-size:11.5px; cursor:pointer; color:var(--ink)}
+  .chip small{color:var(--gold)}
+  .chip.on{background:var(--forest); border-color:var(--moss); color:#fff}
+  
+  .statusline{padding:6px 14px 8px; font-size:12px; color:var(--sub)}
+  .statusline.err{color:var(--danger); font-weight:700}
+  .statusline.ok{color:var(--moss); font-weight:700}
+
+  /* Right Panel / Cards */
+  aside .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:14px; box-shadow:var(--shadow)}
+  aside h2{font-size:14.5px; font-weight:800; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+  aside h2 .ar{color:var(--gold); font-size:13px; margin-left:auto}
+  aside .hint{color:var(--sub); font-size:12px; margin-bottom:8px; line-height:1.45}
+  
+  /* Tabs */
+  .tabs{display:flex; border-bottom:1px solid var(--line); margin-bottom:12px; gap:4px}
+  .tab-btn{background:none; border:none; border-bottom:2px solid transparent; color:var(--sub); padding:6px 12px; font-weight:700; border-radius:0; cursor:pointer}
+  .tab-btn.active{color:var(--gold); border-bottom-color:var(--gold)}
+  
+  /* Hydrogeology & Piezometry Simulator */
+  .hydro-box{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:12px; margin-top:8px}
+  .hydro-val{display:flex; justify-content:space-between; margin-bottom:4px; font-size:12px}
+  .hydro-val b{color:var(--gold)}
+  .hydro-formula{font-family:'JetBrains Mono',monospace; background:#0c170f; padding:6px 10px; border-radius:6px; font-size:11.5px; color:var(--blue); margin:6px 0}
+  
+  /* Table */
+  table{width:100%; border-collapse:collapse; font-size:12px}
+  th{color:var(--sub); font-weight:700; text-align:left; padding:5px 6px; border-bottom:1px solid var(--line)}
+  td{padding:6px 6px; border-bottom:1px solid rgba(41,68,48,0.5)}
+  tr.sel td{background:rgba(151,188,98,0.15)}
+  tr:hover td{background:rgba(151,188,98,0.08); cursor:pointer}
+  td .del{color:var(--danger); cursor:pointer; border:none; background:none; font-size:13px}
+  .spark{width:64px; height:20px; vertical-align:middle}
+
+  /* Charts */
+  canvas.chart-box{width:100%; height:180px; background:var(--panel2); border:1px solid var(--line); border-radius:8px}
+  .rtl{direction:rtl; text-align:right}
+  
+  /* Accordion details */
+  details{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 16px; margin:0 20px 14px}
+  details summary{cursor:pointer; font-weight:800; color:var(--gold); font-size:13.5px}
+  details .ex{margin:12px 0 6px; font-size:13px; line-height:1.5}
+  details .ex b{color:var(--moss)}
+  details .ex .ar{color:#cfc39a; font-size:12.5px; margin-top:2px}
+  
+  /* Dialog modal */
+  .modal-backdrop{position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.75); z-index:2000; display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px)}
+  .modal{background:#132217; border:1px solid var(--line); border-radius:14px; width:90%; max-width:560px; padding:22px; box-shadow:0 20px 40px rgba(0,0,0,0.7)}
+  .modal h3{font-size:17px; margin-bottom:10px; color:var(--gold)}
+  .modal .field{display:flex; flex-direction:column; gap:4px; margin-bottom:10px}
+  .modal .actions{display:flex; justify-content:flex-end; gap:10px; margin-top:16px}
+  
+  kbd{background:#0c170f; border:1px solid var(--line); border-radius:4px; padding:1px 5px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--gold)}
+  .leaflet-labels-pane img{filter:drop-shadow(0 0 2px #000) drop-shadow(0 0 1px #000)}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style id="platform-skin">
+/* ===== Harmonisation thème plateforme (accueil vert clair) — surcharge ===== */
+:root{
+  --bg:#fbfcf8;--panel:#ffffff;--panel2:#f6faf0;--panel-hover:#eef7e6;--line:#d8e4c8;
+  --ink:#2c3a24;--sub:#6f7d64;--moss:#5a8f2c;--gold:#c9922b;--gold2:#d9a63a;
+}
+[hidden]{display:none!important}
+body{font-family:"Inter","Segoe UI",system-ui,sans-serif}
+body[dir=rtl]{font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif; direction:rtl}
+header{background:#fff!important;backdrop-filter:none!important;border-bottom:1px solid var(--line)!important}
+.modal{background:#fff!important;border-color:#d8e4c8!important}
+.modal-backdrop{background:rgba(44,58,36,.35)!important}
+.hydro-formula{background:#f6faf0!important;border-color:#d8e4c8!important;color:#2f7fae!important}
+kbd{background:#f1f7e9!important;color:#5a8f2c!important;border-color:#d8e4c8!important}
+.px-tip{background:rgba(255,255,255,.96)!important;color:#2c3a24!important;border-color:#d8e4c8!important}
+.leaflet-container{background:#e9eef0!important}
+.leaflet-control-layers,.leaflet-bar a,.leaflet-bar{background:#fff!important;color:#2c3a24!important;border-color:#d8e4c8!important}
+input[type=date]{color-scheme:light!important}
+.map-hud{background:rgba(255,255,255,.94)!important;color:#2c3a24!important;border-color:#d8e4c8!important;box-shadow:0 4px 14px rgba(60,80,40,.14)}
+.statusline.ok{color:#5a8f2c!important}
+canvas.chart-box{background:#f6faf0!important;border-color:#d8e4c8!important}
+/* accents secondaires arabe/or -> tons clairs cohérents */
+header .ar,aside h2 .ar,.chip small,details .ex .ar,#wfTextAr{color:#b5701a!important}
+details summary,.modal h3,.hydro-val b,.map-hud b{color:var(--gold)!important}
+/* Langbox (standard plateforme) */
+.langbox{display:inline-flex;gap:6px}
+.langbox button{border:1px solid var(--line);background:#fff;color:var(--sub);font:inherit;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;transition:.15s;font-size:12.5px}
+.langbox button:hover{border-color:var(--moss);color:var(--ink)}
+.langbox button.on{background:var(--moss);color:#fff;border-color:var(--moss)}
+/* Barre d'outils de dessin VERTICALE standard (contrôle Leaflet, coin haut-gauche) */
+.agri-stdbar{display:flex; flex-direction:column; gap:3px; background:#16201b; border:1px solid #2b3a30;
+  border-radius:11px; padding:5px; box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.agri-stdbar .tool{width:38px; height:38px; border:none; background:transparent; color:#cdd8cb; border-radius:8px;
+  cursor:pointer; display:grid; place-items:center; position:relative; transition:.15s}
+.agri-stdbar .tool svg{width:20px; height:20px}
+.agri-stdbar .tool:hover{background:#ffffff1a; color:#fff}
+.agri-stdbar .tool.on{background:var(--moss); color:#fff}
+.agri-stdbar .sep{height:1px; background:#2b3a30; margin:3px 4px}
+.agri-stdbar .tool .tip{position:absolute; inset-inline-start:46px; top:50%; transform:translateY(-50%);
+  background:#0e1512; color:#e8efe6; font:600 12px/1 "Inter",system-ui; white-space:nowrap; padding:6px 9px;
+  border-radius:6px; opacity:0; pointer-events:none; transition:.12s; border:1px solid #2b3a30; z-index:5}
+.agri-stdbar .tool:hover .tip{opacity:1}
+body[dir=rtl] .agri-stdbar .tool .tip{inset-inline-start:auto; inset-inline-end:46px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <b>Geology</b> × <span>Remote Sensing</span>
+  </div>
+  <div class="tag" data-i18n="gl_tag">Module 2 & Passerelle Hydrogéologie · SKILLS4EU — Expertise France</div>
+  <div class="ar" data-i18n="gl_hsub">الجيولوجيا والتكنولوجيا الزراعية — الاستشعار عن بعد والمياه الجوفية</div>
+  <div class="right">
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+    <button id="btnConfig" style="font-size:12px"><span data-i18n="gl_cfg">⚙️ API / Clés</span></button>
+    <a href="agrimap.html" style="text-decoration:none; background:var(--panel2); color:var(--ink); padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--line)">🛰️ AgriMap</a>
+    <a href="agrisim_live.html" style="text-decoration:none; background:var(--forest); color:#fff; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--moss)">🌱 AgriSim Live</a>
+  </div>
+</header>
+
+<main>
+  <!-- Zone Carte & Outils -->
+  <section class="mapwrap">
+    <div class="toolbar">
+      <!-- Indices Spectraux & Couches Géologiques -->
+      <div role="group" aria-label="Layers" style="display:flex;gap:4px">
+        <button id="l-rgb" class="active" title="Sentinel-2 Couleurs Naturelles">S2 RGB</button>
+        <button id="l-ndvi" title="NDVI: Vigueur & Proxy de pompage">NDVI</button>
+        <button id="l-ndwi" title="NDWI Gao: Teneur en eau du couvert">NDWI</button>
+        <button id="l-ndre" title="NDRE: Red-Edge & Nutrition">NDRE</button>
+        <button id="l-si" title="SI: Indice de Salinité optique">🧂 SI (Sel)</button>
+      </div>
+      
+      <div class="sep"></div>
+      
+      <!-- Outils de Dessin Simplifiés (Sans Double-Clic) -->
+      <button id="t-pivot" title="Dessiner un pivot circulaire d'irrigation">🔘 <span data-i18n="gl_pivot">Pivot (Cercle)</span></button>
+      <button id="t-draw" title="Dessiner une parcelle polygonale">✏️ <span data-i18n="gl_parcel">Parcelle</span></button>
+      <button id="t-rect" title="Dessiner un rectangle">⏹️ <span data-i18n="gl_rect">Rect</span></button>
+      <button id="t-undo" title="Annuler le dernier point">↩️</button>
+      <button id="t-inspect" title="Inspecter les réflectances du pixel">🔍 <span data-i18n="gl_inspect">Inspecteur</span></button>
+      <button id="btnRefresh" class="gold" title="Recalculer le rendu raster découpé">↻ <span data-i18n="gl_show">Afficher</span></button>
+
+      <div class="sep"></div>
+
+      <!-- Présélections Géologiques Réelles -->
+      <span style="color:var(--sub);font-size:11.5px" data-i18n="gl_site">Site :</span>
+      <select id="selGeoSite" style="width:155px">
+        <option value="24.1848,23.3150,13" selected>Kufra (Grands Pivots - Grès de Nubie)</option>
+        <option value="27.0377,14.4283,13">Fezzan / Sebha (Oasis & Extension)</option>
+        <option value="32.7500,12.5000,13">Plaine de la Jefara (Intrusion Saline)</option>
+        <option value="34.8500,10.6000,13">Sfax / SDA Zitouna (Anomalie B-14)</option>
+        <option value="34.5493,8.6833,14">Gafsa (Palmeraie & Forages)</option>
+      </select>
+
+      <span style="color:var(--sub);font-size:12px" data-i18n="gl_from">Du</span> <input type="date" id="dFrom" style="width:120px">
+      <span style="color:var(--sub);font-size:12px" data-i18n="gl_to">Au</span> <input type="date" id="dTo" style="width:120px">
+      <button id="btnSearch">🛰 <span data-i18n="gl_searchbtn">Rechercher</span></button>
+
+      <div class="sep"></div>
+
+      <!-- Import / Export — GeoJSON + CSV (parité règle 6) -->
+      <button id="btnImport" title="Importer GeoJSON (.geojson/.json) ou CSV (.csv) — colonnes : name,type,radius_m,mean,min,max,wkt">📥 <span data-i18n="import">Importer</span></button>
+      <button id="btnExport" title="Exporter GeoJSON + CSV (name,type,radius_m,mean,min,max,wkt ; géométrie en WKT POLYGON)">📤 <span data-i18n="export">Exporter</span></button>
+    </div>
+
+    <div id="lmap"></div>
+    <div class="map-hud" id="mapHud">Outil : <b>Prêt</b> — Choisissez 🔘 Pivot ou ✏️ Parcelle pour dessiner</div>
+
+    <!-- Barre temporelle -->
+    <div class="timebar">
+      <button id="prevD" title="Date précédente">◀</button>
+      <button id="play" title="Animer la saison">▶</button>
+      <button id="nextD" title="Date suivante">▶▶</button>
+      <span class="date" id="dateLabel">Aucune date — Cliquez sur 🛰 Rechercher</span>
+      <span style="color:var(--sub);font-size:12px;margin-left:auto" data-i18n="gl_opacity">Opacité :</span>
+      <input type="range" id="opacity" min="0" max="100" value="100" style="width:120px;accent-color:var(--moss)">
+    </div>
+
+    <div class="chips" id="dateChips"></div>
+    <div class="statusline" id="mapStatus" data-i18n="gl_status_ready">Prêt — Choisissez un site géologique ou dessinez un pivot circulaire pour démarrer.</div>
+  </section>
+
+  <!-- Panneau Pédagogique & Géologique -->
+  <aside>
+    <!-- Onglets Pédagogiques -->
+    <div class="card" style="border-color:var(--gold)">
+      <div class="tabs">
+        <button class="tab-btn active" id="tabWf">📖 <span data-i18n="gl_tab_wf">Parcours M1–M7</span></button>
+        <button class="tab-btn" id="tabHydro">💧 <span data-i18n="gl_tab_hydro">Puits & Hydrogéologie</span></button>
+        <button class="tab-btn" id="tabGrace">🛰️ <span data-i18n="gl_tab_grace">Gravité GRACE</span></button>
+      </div>
+
+      <!-- Contenu 1 : Parcours Pédagogique -->
+      <div id="secWf">
+        <h2 style="display:flex;align-items:center;gap:6px">
+          <span id="wfStep" style="color:var(--gold);font-size:12px">Étape 1/10</span>
+          <span id="wfMod" style="color:var(--moss);font-size:12px;font-weight:700"></span>
+        </h2>
+        <div id="wfDots" style="display:flex;gap:4px;margin:6px 0 8px"></div>
+        <div id="wfTitle" style="font-weight:800;font-size:13.5px;margin:2px 0 4px"></div>
+        <div id="wfText" class="hint" style="margin-bottom:4px"></div>
+        <div id="wfTextAr" class="hint rtl" style="margin-bottom:6px;color:#cfc39a"></div>
+        <div id="wfStatus" style="font-size:12px;min-height:18px;margin-bottom:8px;color:var(--sub)"></div>
+        <div style="display:flex;gap:8px">
+          <button id="wfPrev">← Précédent</button>
+          <button id="wfNext" class="gold" style="flex:1">Étape suivante →</button>
+        </div>
+      </div>
+
+      <!-- Contenu 2 : Simulateur Forage & Piezomètre ESP32 (Module 3/5) -->
+      <div id="secHydro" style="display:none">
+        <h2><span data-i18n="gl_hydro_h">Puits instrumenté (ESP32 · 150 €)</span> <span class="ar" data-i18n="gl_hydro_har">البيزومتر الذكي</span></h2>
+        <div class="hint" data-i18n="gl_hydro_hint">Estimation du rabattement piézométrique et du coût énergétique au m³ selon Theis / Cooper-Jacob.</div>
+
+        <div class="hydro-box">
+          <div class="hydro-val"><span data-i18n="gl_hydro_q">Débit de pompage (Q) :</span> <b id="hQ">120 m³/h</b></div>
+          <input type="range" id="rgQ" min="20" max="300" value="120" style="width:100%;accent-color:var(--gold)">
+
+          <div class="hydro-val" style="margin-top:8px"><span data-i18n="gl_hydro_t">Transmissivité aquifère (T) :</span> <b id="hT">1.5 × 10⁻³ m²/s</b></div>
+          <div class="hydro-formula"><span data-i18n="gl_hydro_draw">Rabattement</span> : s = (Q / 4πT) × ln(2.25Tt / r²S)</div>
+
+          <div class="hydro-val" style="margin-top:6px"><span data-i18n="gl_hydro_depth">Profondeur dynamique de l'eau :</span> <b id="hDepth" style="color:var(--danger)">-34.8 m</b></div>
+          <div class="hydro-val"><span data-i18n="gl_hydro_energy">Énergie spécifique requise :</span> <b id="hEnergy">0.14 kWh / m³</b></div>
+          <div class="hydro-val"><span data-i18n="gl_hydro_cost">Coût annuel énergie (pivot 40 ha) :</span> <b id="hCost" style="color:var(--gold)">18 400 DT / an</b></div>
+        </div>
+      </div>
+
+      <!-- Contenu 3 : Satellite GRACE & Bilan des Stocks Fossiles (Module 1/2) -->
+      <div id="secGrace" style="display:none">
+        <h2><span data-i18n="gl_grace_h">Pesée satellitaire GRACE</span> <span class="ar" data-i18n="gl_grace_har">الجاذبية والمخزون</span></h2>
+        <div class="hint" data-i18n="gl_grace_hint">Les jumeaux GRACE pèsent la perte de masse d'eau de l'aquifère des grès de Nubie depuis l'espace.</div>
+        <canvas class="chart-box" id="graceChart" width="360" height="150"></canvas>
+        <div class="hint" style="margin-top:6px;font-size:11.5px" data-i18n-html="gl_grace_note">
+          Tendance : <b>-1.6 cm équivalent eau / an</b>. Un pivot dans le désert n'exploite pas un flux renouvelable mais extrait un stock fossile non rechargeable.
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableau des Parcelles & Pivots -->
+    <div class="card">
+      <h2><span data-i18n="gl_parcels_h">Parcelles &amp; Pivots d'irrigation</span> <span class="ar" data-i18n="gl_parcels_har">القطع والمحاور</span></h2>
+      <div class="hint" data-i18n="gl_parcels_hint">Chaque pivot circulaire dessiné calcule la surface irriguée et l'extraction volumique estimée.</div>
+      <table id="ptable">
+        <thead><tr><th data-i18n="gl_th_name">Nom</th><th data-i18n="gl_th_type">Type / Rayon</th><th data-i18n="gl_th_ndvi">NDVI Moy</th><th data-i18n="gl_th_vol">Volume est.</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Séries Temporelles Multi-Indices -->
+    <div class="card">
+      <h2><span data-i18n="gl_series_h">Diagnostic Temporel — NDVI / NDWI / NDRE</span> <span class="ar" data-i18n="gl_series_har">السلسلة</span></h2>
+      <div class="hint" id="chartHint" data-i18n="gl_series_hint">Sélectionnez une parcelle pour afficher sa dynamique saisonnière.</div>
+      <canvas class="chart-box" id="chart" width="360" height="180"></canvas>
+    </div>
+  </aside>
+</main>
+
+<!-- Guide d'Atelier Pédagogique (4 Travaux Pratiques) -->
+<details>
+  <summary data-i18n="gl_tp_summary">🎓 Guide Pédagogique Enseignant — 4 Exercices Pratiques (TP 2.1 &amp; TP 2.2)</summary>
+  <div class="ex" data-i18n-html="gl_tp1">
+    <b>TP 1 — Le pivot circulaire est un compteur d'eau vu de l'espace.</b> <span class="ar">التمرين 1: المحور عدّاد مياه من الفضاء</span><br>
+    Positionnez la carte sur le bassin de <b>Kufra</b>. Utilisez l'outil 🔘 Pivot pour entourer un cercle vert (rayon ~400 m = ~50 ha). Calculez le volume d'eau pompé à partir de l'évapotranspiration déduite du NDVI. Chaque cercle vert représente une extraction directe du stock fossile des Grès de Nubie.
+    <div class="rtl">كل دائرة خضراء في الصحراء هي سحب مياه جوفية مباشر من خزان الحجر الرملي النوبي غير المتجدد.</div>
+  </div>
+  <div class="ex" data-i18n-html="gl_tp2">
+    <b>TP 2 — La clinique des séries temporelles (Cas B-14).</b> <span class="ar">التمرين 2: عيادة السلاسل الزمنية (حالة B-14)</span><br>
+    Sur l'oliveraie de Sfax (SDA Zitouna, 1000 ha), observez la chute anormale du NDVI sur le bloc B-14 alors que les blocs voisins restent stables. Croisez avec les sondes capacitives à 40 cm : confirmation de deux rampes de goutte-à-goutte entartrées. Décision : rinçage à l'acide nitrique.
+    <div class="rtl">القمر الصناعي يحدد أين، والمجسات الميدانية تحدد لماذا، والتطبيق يغلق الحلقة.</div>
+  </div>
+  <div class="ex" data-i18n-html="gl_tp3">
+    <b>TP 3 — Le piège du pixel mixte sur oliveraie à grand écartement (24×24 m).</b> <span class="ar">التمرين 3: فخ البكسل الممتزج في الزيتون المتباعد</span><br>
+    Pourquoi une oliveraie saine à Sfax présente-t-elle un NDVI moyen de seulement 0.25 à 0.35 ? Le pixel Sentinel-2 de 10 m mélange la canopée de l'arbre et le sol nu inter-rang. Règle d'or : comparez toujours les anomalies relatives dans le temps, jamais les valeurs absolues brutes.
+  </div>
+  <div class="ex" data-i18n-html="gl_tp4">
+    <b>TP 4 — Suivi du biseau salin dans la plaine côtière de la Jefara.</b> <span class="ar">التمرين 4: رصد التملح وتداخل مياه البحر بالجفارة</span><br>
+    Activez l'indice de salinité (🧂 SI) et observez la progression des croûtes salines superficielles causées par la remontée capillaire et l'intrusion marine (relation de Ghyben-Herzberg).
+  </div>
+</details>
+
+<!-- Modal Configuration API -->
+<div class="modal-backdrop" id="modalConfig">
+  <div class="modal">
+    <h3><span data-i18n="gl_cfg_title">⚙️ Configuration Sentinel Hub OAuth</span></h3>
+    <div class="field">
+      <label style="color:var(--sub);font-size:12px" data-i18n="gl_cfg_mode">Mode d'accès</label>
+      <select id="cfgMode">
+        <option value="proxy" selected>Proxy PHP local (sh_token.php)</option>
+        <option value="direct_token" data-i18n="gl_cfg_direct">Jeton Bearer direct</option>
+      </select>
+    </div>
+    <div id="cfgGroupProxy" class="field">
+      <label style="color:var(--sub);font-size:12px" data-i18n="gl_cfg_proxy">URL du proxy</label>
+      <input type="text" id="cfgProxyUrl" value="sh_token.php">
+    </div>
+    <div id="cfgGroupToken" style="display:none" class="field">
+      <label style="color:var(--sub);font-size:12px" data-i18n="gl_cfg_token">Access Token direct</label>
+      <input type="text" id="cfgToken">
+    </div>
+    <div id="cfgTestStatus" style="font-size:12px;margin-top:8px"></div>
+    <div class="actions">
+      <button id="btnTestAuth">🔌 <span data-i18n="gl_cfg_test">Tester</span></button>
+      <button id="btnCloseConfig" data-i18n="gl_cfg_close">Fermer</button>
+      <button id="btnSaveConfig" class="gold" data-i18n="gl_cfg_save">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============ Configuration Sentinel Hub ============ */
+const SH = {
+  process: "https://services.sentinel-hub.com/api/v1/process",
+  catalog: "https://services.sentinel-hub.com/api/v1/catalog/1.0.0/search",
+  stats: "https://services.sentinel-hub.com/api/v1/statistics"
+};
+
+const authCfg = {
+  mode: localStorage.getItem('sh_auth_mode') || 'proxy',
+  proxyUrl: localStorage.getItem('sh_proxy_url') || 'sh_token.php',
+  directToken: localStorage.getItem('sh_direct_token') || ''
+};
+
+let token = null, tokenExp = 0;
+
+async function getToken(){
+  if(token && Date.now() < tokenExp - 60000) return token;
+  if (authCfg.mode === 'direct_token' && authCfg.directToken) {
+    token = authCfg.directToken.trim(); tokenExp = Date.now() + 3600000; return token;
+  }
+  const r = await fetch(authCfg.proxyUrl, { cache: "no-store" });
+  if(!r.ok){
+    const txt = await r.text();
+    let msg = "Proxy jeton erreur (" + r.status + ")";
+    try { const j = JSON.parse(txt); msg = j.detail || j.error || msg; }catch(e){}
+    throw new Error(msg);
+  }
+  const j = await r.json();
+  if(!j.access_token) throw new Error("Proxy jeton invalide");
+  token = j.access_token; tokenExp = Date.now() + (j.expires_in || 3500) * 1000;
+  return token;
+}
+
+async function shFetch(url, payload, expect="json"){
+  const tk = await getToken();
+  const acceptHeader = (expect === "blob") ? "image/png" : "application/geo+json, application/json, */*";
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk, "Accept": acceptHeader },
+    body: JSON.stringify(payload)
+  });
+  if(!r.ok){ const t = await r.text(); throw new Error("API " + r.status + " — " + t.slice(0, 160)); }
+  return expect === "blob" ? r.blob() : r.json();
+}
+
+function setStatus(msg, err){
+  const e = document.getElementById("mapStatus");
+  e.textContent = msg;
+  e.className = "statusline" + (err ? " err" : " ok");
+}
+
+/* ============ Géométrie & Conversion Géodésique Pivot ============ */
+function circleToPolygon(centerLat, centerLng, radiusMeters, numPoints = 64) {
+  const coords = [];
+  const earthRadius = 6378137;
+  const latRad = centerLat * Math.PI / 180;
+  const lngRad = centerLng * Math.PI / 180;
+  const dByR = radiusMeters / earthRadius;
+
+  for (let i = 0; i <= numPoints; i++) {
+    const bearing = (i * 2 * Math.PI) / numPoints;
+    const pointLatRad = Math.asin(
+      Math.sin(latRad) * Math.cos(dByR) +
+      Math.cos(latRad) * Math.sin(dByR) * Math.cos(bearing)
+    );
+    const pointLngRad = lngRad + Math.atan2(
+      Math.sin(bearing) * Math.sin(dByR) * Math.cos(latRad),
+      Math.cos(dByR) - Math.sin(latRad) * Math.sin(pointLatRad)
+    );
+    coords.push([pointLatRad * 180 / Math.PI, pointLngRad * 180 / Math.PI]);
+  }
+  return coords;
+}
+
+/* ============ Indices Spectraux & Réflectances ============ */
+const IDX = {
+ ndvi:{f:"(B08 - B04) / (B08 + B04)", min:0, max:0.9, ramp:[[0,'#a50f15'],[0.28,'#f46d43'],[0.55,'#fee08b'],[0.8,'#a6d96a'],[1,'#006837']]},
+ ndwi:{f:"(B08 - B11) / (B08 + B11)", min:-0.3, max:0.6, ramp:[[0,'#785028'],[0.5,'#e8e6d4'],[1,'#1a49b8']]},
+ ndre:{f:"(B08 - B05) / (B08 + B05)", min:0, max:0.5, ramp:[[0,'#a50f15'],[0.3,'#f46d43'],[0.6,'#fee08b'],[0.85,'#a6d96a'],[1,'#006837']]},
+ si:{f:"Math.sqrt(B02 * B04)", min:0, max:0.4, ramp:[[0,'#3c82b4'],[0.5,'#efe6a0'],[1,'#b01f1f']]}
+};
+
+const BANDS = ["B02","B03","B04","B05","B08","B11"];
+
+function rampStops(ix){
+  return ix.ramp.map(([t,hex])=>{
+    const n = parseInt(hex.slice(1), 16);
+    return `[${(ix.min + t * (ix.max - ix.min)).toFixed(4)},[${(n>>16)&255},${(n>>8)&255},${n&255}]]`;
+  }).join(",");
+}
+
+function vizEval(l){
+  if(l === "rgb") return `//VERSION=3
+function setup(){return{input:[{bands:["B02","B03","B04","dataMask"]}],output:{bands:4}};}
+function evaluatePixel(s){return[2.8*s.B04,2.8*s.B03,2.8*s.B02,s.dataMask];}`;
+  const ix = IDX[l];
+  return `//VERSION=3
+function setup(){return{input:[{bands:["B02","B04","B05","B08","B11","dataMask"]}],output:{bands:4}};}
+const stops=[${rampStops(ix)}];
+function colorOf(v){ if(v<=stops[0][0])return stops[0][1];
+ for(let i=1;i<stops.length;i++){ if(v<=stops[i][0]){ const f=(v-stops[i-1][0])/(stops[i][0]-stops[i-1][0]),a=stops[i-1][1],b=stops[i][1];
+  return[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}} return stops[stops.length-1][1];}
+function evaluatePixel(s){const B02=s.B02,B04=s.B04,B05=s.B05,B08=s.B08,B11=s.B11;
+ const v=${ix.f}; const c=colorOf(v); return[c[0]/255,c[1]/255,c[2]/255,s.dataMask];}`;
+}
+
+const statEval = `//VERSION=3
+function setup(){return{input:[{bands:["B02","B04","B05","B08","B11","dataMask"]}],
+ output:[{id:"data",bands:4,sampleType:"FLOAT32"},{id:"dataMask",bands:1}]};}
+function evaluatePixel(s){const B02=s.B02,B04=s.B04,B05=s.B05,B08=s.B08,B11=s.B11;
+ return{data:[(B08-B04)/(B08+B04),(B08-B11)/(B08+B11),(B08-B05)/(B08+B05),Math.sqrt(B02*B04)],dataMask:[s.dataMask]};}`;
+
+const pixelEval = `//VERSION=3
+function setup(){return{input:[{bands:["B02","B03","B04","B05","B08","B11","dataMask"]}],
+ output:[{id:"data",bands:6,sampleType:"FLOAT32"},{id:"dataMask",bands:1}]};}
+function evaluatePixel(s){return{data:[s.B02,s.B03,s.B04,s.B05,s.B08,s.B11],dataMask:[s.dataMask]};}`;
+
+/* ============ Carte & Outils de Dessin ============ */
+let layer = "rgb", activeTool = null, curDate = null, dates = [], dateI = -1;
+let parcels = [], selParcel = -1, drawing = [], pivotCenter = null;
+let rasterOverlay = null;
+const statCache = {}, serieCache = {};
+
+const lmap = L.map("lmap", { doubleClickZoom: false }).setView([24.1848, 23.3150], 13);
+const baseSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19, attribution: "Esri World Imagery · Sentinel-2 © Copernicus"
+}).addTo(lmap);
+/* ---- Noms des lieux (villes, villages, limites) au-dessus de l'imagerie ---- */
+lmap.createPane("labels"); lmap.getPane("labels").style.zIndex = 450; lmap.getPane("labels").style.pointerEvents = "none";
+const placeLabels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19, pane: "labels", attribution: "Toponymes © Esri"
+}).addTo(lmap);
+const roadLabels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19, pane: "labels", opacity: 0.85, attribution: "Routes © Esri"
+});
+L.control.layers(null, {"🏷 Noms des lieux": placeLabels, "🛣 Routes & pistes": roadLabels}, { position: "topleft" }).addTo(lmap);
+
+/* ---- Recherche géographique partagée (localités FR/EN/AR + coordonnées) ---- */
+let geoCtl = null;
+function addGeoSearch(){
+  if (typeof GeoSearch === "undefined") return;
+  if (geoCtl){ try{ lmap.removeControl(geoCtl); if(geoCtl._layer) lmap.removeLayer(geoCtl._layer); }catch(e){} }
+  geoCtl = GeoSearch.add(lmap, { lang: (window.I18N ? I18N.lang : "fr"), showLocalities:false });
+}
+addGeoSearch();
+
+const drawGroup = L.layerGroup().addTo(lmap);
+const parcelGroup = L.layerGroup().addTo(lmap);
+
+function viewBBox(){ const b = lmap.getBounds(); return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]; }
+function bboxDims(bb, maxPx=768){
+  const mx = 111320 * Math.cos((bb[1]+bb[3])/2 * Math.PI / 180), my = 110540;
+  let w = Math.max(32, Math.round((bb[2]-bb[0])*mx/10)), h = Math.max(32, Math.round((bb[3]-bb[1])*my/10));
+  const k = Math.max(w,h)/maxPx; if(k>1){ w = Math.round(w/k); h = Math.round(h/k); } return {w, h};
+}
+function geoOf(p){ const ring = p.pts.map(q => [q[1], q[0]]); ring.push(ring[0]); return { type: "Polygon", coordinates: [ring] }; }
+function bboxOf(p){ const la = p.pts.map(q => q[0]), lo = p.pts.map(q => q[1]); return [Math.min(...lo), Math.min(...la), Math.max(...lo), Math.max(...la)]; }
+function setHud(txt){ document.getElementById("mapHud").innerHTML = txt; }
+
+/* ============ Sélection de Site Géologique ============ */
+document.getElementById("selGeoSite").onchange = function(){
+  const [lat, lng, zoom] = this.value.split(",").map(Number);
+  lmap.setView([lat, lng], zoom);
+  findDates();
+};
+
+/* ============ Outils de Dessin ============ */
+const bPivot = document.getElementById("t-pivot");
+const bDraw = document.getElementById("t-draw");
+const bRect = document.getElementById("t-rect");
+const bIns = document.getElementById("t-inspect");
+
+function setTool(t){
+  activeTool = (activeTool === t) ? null : t;
+  bPivot.classList.toggle("active", activeTool === "pivot");
+  bDraw.classList.toggle("active", activeTool === "draw");
+  bRect.classList.toggle("active", activeTool === "rect");
+  bIns.classList.toggle("active", activeTool === "inspect");
+  
+  drawing = []; pivotCenter = null; drawGroup.clearLayers();
+  
+  if(!activeTool){
+    lmap.getContainer().style.cursor = "";
+    setHud("Outil : <b>Prêt</b> — Choisissez 🔘 Pivot ou ✏️ Parcelle");
+  } else if(activeTool === "pivot"){
+    lmap.getContainer().style.cursor = "crosshair";
+    setHud("🔘 Pivot d'irrigation : <b>Clic 1</b> = Centre du forage · <b>Clic 2</b> = Rayon");
+  } else if(activeTool === "draw"){
+    lmap.getContainer().style.cursor = "crosshair";
+    setHud("✏️ Parcelle : Cliquez les sommets · <b>Cliquez sur le 1er point vert</b> pour fermer");
+  } else if(activeTool === "rect"){
+    lmap.getContainer().style.cursor = "crosshair";
+    setHud("⏹️ Rectangle : <b>Clic 1</b> = Coin 1 · <b>Clic 2</b> = Coin 2");
+  } else if(activeTool === "inspect"){
+    lmap.getContainer().style.cursor = "help";
+    setHud("🔍 Inspecteur : Cliquez sur un pixel pour voir les réflectances brutes");
+  }
+}
+
+bPivot.onclick = () => setTool("pivot");
+bDraw.onclick = () => setTool("draw");
+bRect.onclick = () => setTool("rect");
+bIns.onclick = () => setTool("inspect");
+document.getElementById("t-undo").onclick = () => { if (drawing.length > 0) { drawing.pop(); refreshDraw(); } };
+
+// ---- Panneau de dessin VERTICAL à gauche de la carte (standard plateforme) ----
+try{
+  const _DrawRail = L.Control.extend({ options:{ position:'topleft' },
+    onAdd:function(){
+      const d = L.DomUtil.create('div','draw-rail');
+      ['t-pivot','t-draw','t-rect','t-undo','t-inspect'].forEach(id=>{ const b=document.getElementById(id); if(b) d.appendChild(b); });
+      L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+      return d;
+    }});
+  lmap.addControl(new _DrawRail());
+}catch(e){ console.warn('draw-rail', e); }
+
+function refreshDraw(mouseLL){
+  drawGroup.clearLayers();
+  if (activeTool === "pivot") {
+    if (pivotCenter) {
+      L.circleMarker(pivotCenter, { radius: 7, color: "#d4af37", fillColor: "#d4af37", fillOpacity: 1 }).addTo(drawGroup);
+      if (mouseLL) {
+        const r = Math.round(lmap.distance(pivotCenter, mouseLL));
+        L.circle(pivotCenter, { radius: r, color: "#97bc62", weight: 2.5, dashArray: "6 4", fillColor: "#97bc62", fillOpacity: 0.2 }).addTo(drawGroup);
+        L.polyline([pivotCenter, mouseLL], { color: "#d4af37", dashArray: "4 4", weight: 2 }).addTo(drawGroup);
+        L.circleMarker(mouseLL, { radius: 4, color: "#97bc62", fillColor: "#97bc62", fillOpacity: 1 }).addTo(drawGroup);
+        const ha = (Math.PI * r * r) / 10000;
+        const volEst = Math.round(ha * 6500); // ~6500 m3/ha/saison
+        setHud(`🔘 Pivot : Rayon = <b>${r} m</b> · Surface = <b>${ha.toFixed(1)} ha</b> · Pompage est. = <b>${volEst.toLocaleString()} m³/an</b>`);
+      }
+    }
+  } else if (activeTool === "draw") {
+    drawing.forEach((p, idx) => {
+      const isOrigin = (idx === 0);
+      const isHoverClose = isOrigin && drawing.length >= 3 && mouseLL && lmap.distance(p, mouseLL) < (lmap.getZoom() > 14 ? 30 : 60);
+      const marker = L.circleMarker(p, {
+        radius: isOrigin ? (isHoverClose ? 10 : 7) : 5,
+        color: isOrigin ? "#97bc62" : "#d4af37",
+        fillColor: isOrigin ? (isHoverClose ? "#bbf7d0" : "#97bc62") : "#d4af37",
+        fillOpacity: 1
+      }).addTo(drawGroup);
+      if (isOrigin && drawing.length >= 3) {
+        marker.bindTooltip("✓ Clic ici pour fermer", { permanent: true, direction: "top" });
+      }
+    });
+    if (drawing.length > 1) L.polyline(drawing, { color: "#97bc62", dashArray: "6 4", weight: 2.5 }).addTo(drawGroup);
+    if (drawing.length >= 1 && mouseLL) L.polyline([drawing[drawing.length - 1], mouseLL], { color: "#d4af37", dashArray: "3 3", weight: 2 }).addTo(drawGroup);
+    if (drawing.length >= 3) setHud(`✏️ Parcelle : <b>${drawing.length} sommets</b> — <span style="color:#97bc62;font-weight:bold;cursor:pointer" onclick="closePoly()">[ ✓ Clic pour FERMER ]</span>`);
+  } else if (activeTool === "rect" && drawing.length === 1 && mouseLL) {
+    L.rectangle(L.latLngBounds(drawing[0], mouseLL), { color: "#97bc62", weight: 2.5, dashArray: "6 4", fillColor: "#97bc62", fillOpacity: 0.2 }).addTo(drawGroup);
+  }
+}
+
+lmap.on("mousemove", e => { if (activeTool) refreshDraw(e.latlng); });
+
+lmap.on("click", async e => {
+  if (activeTool === "pivot") {
+    if (!pivotCenter) {
+      pivotCenter = e.latlng; refreshDraw(e.latlng);
+    } else {
+      const r = Math.round(lmap.distance(pivotCenter, e.latlng));
+      savePivot(pivotCenter, r);
+    }
+  } else if (activeTool === "draw") {
+    if (drawing.length >= 3) {
+      const dist = lmap.distance(drawing[0], e.latlng);
+      if (dist < (lmap.getZoom() > 14 ? 30 : 60)) { closePoly(); return; }
+    }
+    drawing.push([e.latlng.lat, e.latlng.lng]); refreshDraw(e.latlng);
+  } else if (activeTool === "rect") {
+    if (drawing.length === 0) { drawing.push([e.latlng.lat, e.latlng.lng]); refreshDraw(e.latlng); }
+    else {
+      const p1 = drawing[0], p2 = [e.latlng.lat, e.latlng.lng];
+      savePoly([[p1[0], p1[1]], [p1[0], p2[1]], [p2[0], p2[1]], [p2[0], p1[1]]], "Rect");
+    }
+  } else if (activeTool === "inspect") {
+    await inspectPixel(e.latlng);
+  }
+});
+
+function closePoly(){ if (drawing && drawing.length >= 3) savePoly(drawing.slice(), "Poly"); }
+
+function savePivot(center, radius){
+  if (radius < 15) radius = 100;
+  const pts = circleToPolygon(center.lat, center.lng, radius, 64);
+  const ha = (Math.PI * radius * radius) / 10000;
+  const volEst = Math.round(ha * 6500);
+  const name = "Pivot " + (parcels.length + 1);
+  const p = { name, pts, type: "pivot", radius, center, ha, volEst };
+  
+  p.layer = L.circle(center, { radius, color: "#d4af37", weight: 2.5, fillColor: "#d4af37", fillOpacity: 0.15 }).addTo(parcelGroup);
+  p.layer.bindTooltip(`${name} (${Math.round(radius)}m · ${ha.toFixed(1)}ha)`, { permanent: true, direction: "center" });
+  finalizeAddParcel(p);
+}
+
+function savePoly(pts, typeName){
+  const name = "P" + (parcels.length + 1);
+  const p = { name, pts, type: typeName };
+  p.layer = L.polygon(pts, { color: "#d4af37", weight: 2.5, fillColor: "#d4af37", fillOpacity: 0.15 }).addTo(parcelGroup);
+  p.layer.bindTooltip(name, { permanent: true, direction: "center" });
+  finalizeAddParcel(p);
+}
+
+function finalizeAddParcel(p){
+  parcels.push(p); selParcel = parcels.length - 1; setTool(null);
+  if (curDate) { renderView(); parcelStats(p).then(s => { p.cur = s; updateTable(); }).catch(() => {}); }
+  updateTable(); wfStatus();
+}
+
+/* ============ Import / Export — GeoJSON + CSV (parité règle 6) ============
+   Pas de store.js ici : helpers de téléchargement/upload locaux.
+   Géométrie parcelle -> WKT POLYGON((lng lat, ...)) (pivot -> anneau 64 pts via geoOf).
+   Détection import : si le contenu ne commence pas par { ou [ => CSV.
+   Parser CSV robuste (guillemets doubles + virgules) calqué sur agrimap-draw.js.
+   Reconstruction via les MÊMES fonctions de création : savePivot / savePoly. */
+function dlFile(name, content, mime){
+  const blob = new Blob([content], { type: mime || "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function pickFileLocal(accept, cb){
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = accept || ".geojson,.json,.csv";
+  inp.onchange = e => { const f = e.target.files[0]; if(!f) return;
+    const rd = new FileReader(); rd.onload = () => cb(rd.result, f.name); rd.readAsText(f); };
+  inp.click();
+}
+function csvCell(v){ v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function parseCSV(text){
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < text.length; i++){ const ch = text[i];
+    if (q){ if (ch === '"'){ if (text[i+1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(cur); cur = ""; }
+    else if (ch === '\n'){ row.push(cur); rows.push(row); row = []; cur = ""; }
+    else if (ch !== '\r') cur += ch;
+  }
+  if (cur !== "" || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r => r.length && r.some(c => c !== ""));
+}
+function ringCentroid(pts){ let x = 0, y = 0; pts.forEach(p => { x += p[0]; y += p[1]; }); return [x / pts.length, y / pts.length]; }
+function wktOf(p){ // geoOf -> anneau fermé en [lng,lat]
+  const ring = geoOf(p).coordinates[0];
+  return "POLYGON((" + ring.map(c => (+c[0]).toFixed(6) + " " + (+c[1]).toFixed(6)).join(", ") + "))";
+}
+function exportGeoJSON(){
+  return { type: "FeatureCollection", name: "parcelles-geology",
+    crs: { type: "name", properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+    features: parcels.map(p => { const s = (p.cur && p.cur.ndvi) || {};
+      return { type: "Feature",
+        properties: { name: p.name, type: p.type, radius_m: (p.type === "pivot" ? p.radius : null),
+          ndvi_mean: (s.mean ?? null), ndvi_min: (s.min ?? null), ndvi_max: (s.max ?? null),
+          ha: (p.ha ?? null), volEst: (p.volEst ?? null) },
+        geometry: geoOf(p) }; }) };
+}
+function exportCSV(){
+  const head = ["name","type","radius_m","mean","min","max","wkt"];
+  const rows = parcels.map(p => { const s = (p.cur && p.cur.ndvi) || {};
+    return [ p.name, p.type, (p.type === "pivot" ? p.radius : ""),
+      (s.mean != null ? (+s.mean).toFixed(4) : ""), (s.min != null ? (+s.min).toFixed(4) : ""),
+      (s.max != null ? (+s.max).toFixed(4) : ""), wktOf(p) ].map(csvCell).join(","); });
+  return head.join(",") + "\n" + rows.join("\n") + "\n";
+}
+function importGeoJSON(fc){
+  if (!fc || !fc.features) return 0; let n = 0;
+  fc.features.forEach(f => {
+    if (!f.geometry || f.geometry.type !== "Polygon") return;
+    let ring = f.geometry.coordinates[0].map(c => [c[1], c[0]]); // -> [lat,lng]
+    if (ring.length > 1 && ring[0][0] === ring[ring.length-1][0] && ring[0][1] === ring[ring.length-1][1]) ring.pop();
+    if (ring.length < 3) return;
+    const pr = f.properties || {};
+    if (pr.type === "pivot" && isFinite(+pr.radius_m) && +pr.radius_m > 0){
+      const ctr = ringCentroid(ring); savePivot(L.latLng(ctr[0], ctr[1]), +pr.radius_m);
+    } else {
+      savePoly(ring, pr.type || "Poly");
+    }
+    if (pr.name){ const p = parcels[parcels.length - 1]; if (p){ p.name = pr.name;
+      if (p.layer && p.layer.setTooltipContent){ try{ p.layer.setTooltipContent(
+        p.type === "pivot" ? `${p.name} (${Math.round(p.radius)}m · ${(p.ha||0).toFixed(1)}ha)` : p.name); }catch(e){} } } }
+    n++;
+  });
+  if (n) updateTable();
+  return n;
+}
+function importCSV(text){
+  const rows = parseCSV(text); if (rows.length < 2) return 0;
+  const head = rows[0].map(h => h.trim().toLowerCase()), ix = k => head.indexOf(k);
+  const iN = ix("name"), iT = ix("type"), iR = ix("radius_m"), iW = ix("wkt");
+  if (iW < 0) return 0;
+  const feats = [];
+  for (let r = 1; r < rows.length; r++){ const c = rows[r];
+    const m = /POLYGON\s*\(\(([^)]+)\)\)/i.exec(c[iW] || ""); if (!m) continue;
+    const ring = m[1].split(",").map(pr => { const s = pr.trim().split(/\s+/).map(Number); return [s[0], s[1]]; }); // [lng,lat]
+    feats.push({ type: "Feature",
+      properties: { name: iN >= 0 ? c[iN] : "", type: iT >= 0 ? (c[iT] || "Poly") : "Poly", radius_m: iR >= 0 ? +c[iR] : null },
+      geometry: { type: "Polygon", coordinates: [ring] } });
+  }
+  return importGeoJSON({ type: "FeatureCollection", features: feats });
+}
+function doExport(){
+  if (!parcels.length){ setStatus("Aucune parcelle à exporter — dessinez d'abord un pivot ou une parcelle.", true); return; }
+  dlFile("parcelles_geology.geojson", JSON.stringify(exportGeoJSON(), null, 2), "application/geo+json");
+  dlFile("parcelles_geology.csv", exportCSV(), "text/csv");
+  setStatus(`${parcels.length} parcelle(s) exportée(s) — GeoJSON + CSV.`);
+}
+function doImport(){
+  pickFileLocal(".geojson,.json,.csv", (txt) => {
+    try{
+      const s = (txt || "").replace(/^﻿/, "").trimStart();
+      let n = 0;
+      if (s[0] === "{" || s[0] === "["){            // JSON / GeoJSON
+        const o = JSON.parse(txt);
+        const fc = (o.type === "FeatureCollection") ? o
+          : Array.isArray(o) ? { type: "FeatureCollection", features: o }
+          : { type: "FeatureCollection", features: o.features || o.parcels || [] };
+        n = importGeoJSON(fc);
+      } else {                                      // sinon = CSV (règle 6)
+        n = importCSV(txt);
+      }
+      if (!n) throw new Error("aucune parcelle trouvée");
+      setStatus(`${n} parcelle(s) importée(s).`);
+    }catch(e){ setStatus("Import invalide : " + e.message, true); }
+  });
+}
+
+/* ============ Import / Export (boutons toolbar) ============ */
+document.getElementById("btnExport").onclick = doExport;
+document.getElementById("btnImport").onclick = doImport;
+
+/* ============ Dates Catalog ============ */
+document.getElementById("btnSearch").onclick = findDates;
+
+async function findDates(){
+  setStatus("Recherche des scènes Sentinel-2…");
+  try{
+    const j = await shFetch(SH.catalog, {
+      collections: ["sentinel-2-l2a"],
+      bbox: viewBBox(),
+      datetime: document.getElementById("dFrom").value + "T00:00:00Z/" + document.getElementById("dTo").value + "T23:59:59Z",
+      limit: 100,
+      filter: { op: "<=", args: [{ property: "eo:cloud_cover" }, 30] },
+      "filter-lang": "cql2-json",
+      fields: { include: ["properties.datetime", "properties.eo:cloud_cover"], exclude: ["assets", "links"] }
+    });
+    const byDay = {};
+    (j.features || []).forEach(f => {
+      const d = f.properties.datetime.slice(0, 10), cc = Math.round(f.properties["eo:cloud_cover"] ?? 0);
+      if (!(d in byDay) || cc < byDay[d]) byDay[d] = cc;
+    });
+    dates = Object.entries(byDay).map(([d, cc]) => ({ d, cc })).sort((a, b) => a.d.localeCompare(b.d));
+    const zone = document.getElementById("dateChips"); zone.innerHTML = "";
+    dates.forEach((s, i) => {
+      const c = document.createElement("button"); c.className = "chip";
+      c.innerHTML = `${s.d} <small>☁${s.cc}%</small>`;
+      c.onclick = () => gotoDate(i);
+      zone.appendChild(c);
+    });
+    setStatus(`${dates.length} acquisitions trouvées — Cliquez sur une date.`);
+    if (dates.length) gotoDate(dates.length - 1);
+  }catch(e){ setStatus(e.message, true); }
+}
+
+function gotoDate(i){
+  dateI = i; curDate = dates[i].d;
+  [...document.getElementById("dateChips").children].forEach((c, k) => c.classList.toggle("on", k === i));
+  document.getElementById("dateLabel").textContent = `${curDate} · ☁${dates[i].cc}% (${i+1}/${dates.length})`;
+  renderView(); refreshAllStats(); drawChart(); wfStatus();
+}
+
+document.getElementById("prevD").onclick = () => { if (dateI > 0) gotoDate(dateI - 1); };
+document.getElementById("nextD").onclick = () => { if (dateI >= 0 && dateI < dates.length - 1) gotoDate(dateI + 1); };
+
+let playing = false, playT = null;
+document.getElementById("play").onclick = function(){
+  if (playing) { clearInterval(playT); playing = false; this.textContent = "▶"; return; }
+  if (!dates.length) return;
+  playing = true; this.textContent = "⏸";
+  playT = setInterval(() => { gotoDate((dateI + 1) % dates.length); }, 1600);
+};
+
+/* ============ Rendu Raster Délimité ============ */
+document.getElementById("btnRefresh").onclick = renderView;
+
+async function renderView(){
+  if (!curDate) { setStatus("Recherchez d'abord des dates satellites (🛰).", true); return; }
+  const targetParcel = (selParcel >= 0 && parcels[selParcel]) ? parcels[selParcel] : (parcels.length > 0 ? parcels[parcels.length - 1] : null);
+  const hasGeom = targetParcel !== null;
+  const geom = hasGeom ? geoOf(targetParcel) : null;
+  const bb = hasGeom ? bboxOf(targetParcel) : viewBBox();
+  const dim = bboxDims(bb, hasGeom ? 256 : 768);
+
+  const inputBounds = hasGeom 
+    ? { geometry: geom, properties: { crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84" } }
+    : { bbox: bb, properties: { crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84" } };
+
+  const label = hasGeom ? `${targetParcel.name} (${targetParcel.type})` : 'vue générale';
+  setStatus(`Calcul du calque ${layer.toUpperCase()} sur ${label}…`);
+
+  try{
+    const blob = await shFetch(SH.process, {
+      input: {
+        bounds: inputBounds,
+        data: [{ type: "sentinel-2-l2a", dataFilter: { timeRange: { from: curDate + "T00:00:00Z", to: curDate + "T23:59:59Z" }, mosaickingOrder: "leastCC" } }]
+      },
+      output: { width: dim.w, height: dim.h, responses: [{ identifier: "default", format: { type: "image/png" } }] },
+      evalscript: vizEval(layer)
+    }, "blob");
+
+    if (rasterOverlay) lmap.removeLayer(rasterOverlay);
+    rasterOverlay = L.imageOverlay(URL.createObjectURL(blob), [[bb[1], bb[0]], [bb[3], bb[2]]], {
+      opacity: +document.getElementById("opacity").value / 100, interactive: false
+    }).addTo(lmap);
+    
+    parcelGroup.eachLayer(l => l.bringToFront && l.bringToFront());
+    setStatus(`Indice ${layer.toUpperCase()} délimité sur ${label} (${dim.w}×${dim.h} px) · ${curDate}`);
+  }catch(e){ setStatus(e.message, true); }
+}
+
+document.getElementById("opacity").oninput = function(){ if (rasterOverlay) rasterOverlay.setOpacity(this.value / 100); };
+
+/* ============ Statistiques & Séries ============ */
+function statPayload(geom, from, to, interval, evs, dims){
+  return {
+    input: {
+      bounds: { geometry: geom, properties: { crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84" } },
+      data: [{ type: "sentinel-2-l2a", dataFilter: { maxCloudCoverage: 30, mosaickingOrder: "leastCC" } }]
+    },
+    aggregation: { timeRange: { from, to }, aggregationInterval: { of: interval }, width: dims.w, height: dims.h, evalscript: evs }
+  };
+}
+
+async function parcelStats(p){
+  const key = p.name + "|" + curDate;
+  if (statCache[key]) return statCache[key];
+  const dim = bboxDims(bboxOf(p), 160);
+  const j = await shFetch(SH.stats, statPayload(geoOf(p), curDate + "T00:00:00Z", curDate + "T23:59:59Z", "P1D", statEval, dim));
+  const it = j.data && j.data[0];
+  if (!it) return null;
+  const b = it.outputs.data.bands;
+  const out = { ndvi: b.B0.stats, ndwi: b.B1.stats, ndre: b.B2.stats, si: b.B3.stats };
+  statCache[key] = out;
+  return out;
+}
+
+async function parcelSerie(p){
+  const period = document.getElementById("dFrom").value + "|" + document.getElementById("dTo").value;
+  const key = p.name + "|" + period;
+  if (serieCache[key]) return serieCache[key];
+  const dim = bboxDims(bboxOf(p), 120);
+  const j = await shFetch(SH.stats, statPayload(geoOf(p), document.getElementById("dFrom").value + "T00:00:00Z", document.getElementById("dTo").value + "T23:59:59Z", "P1D", statEval, dim));
+  const pts = (j.data || []).map(it => ({
+    d: it.interval.from.slice(0, 10),
+    ndvi: it.outputs?.data?.bands?.B0?.stats?.mean,
+    ndwi: it.outputs?.data?.bands?.B1?.stats?.mean,
+    ndre: it.outputs?.data?.bands?.B2?.stats?.mean,
+    si: it.outputs?.data?.bands?.B3?.stats?.mean
+  })).filter(x => x.ndvi !== undefined && !isNaN(x.ndvi));
+  serieCache[key] = pts;
+  return pts;
+}
+
+async function refreshAllStats(){ for (const p of parcels) { try { p.cur = await parcelStats(p); } catch(e){} } updateTable(); }
+
+function updateTable(){
+  const tb = document.querySelector("#ptable tbody"); tb.innerHTML = "";
+  const lay = (layer === "rgb") ? "ndvi" : layer;
+  parcels.forEach((p, i) => {
+    const s = p.cur && p.cur[lay];
+    const tr = document.createElement("tr"); if (i === selParcel) tr.className = "sel";
+    const f = v => (v === undefined || v === null || isNaN(v)) ? "—" : (+v).toFixed(2);
+    const badge = p.type === "pivot" ? `<span style="color:var(--gold)">Pivot (${p.radius}m)</span>` : `<span>Parcelle</span>`;
+    const volText = p.volEst ? `${p.volEst.toLocaleString()} m³` : "—";
+    
+    tr.innerHTML = `<td><b>${p.name}</b></td><td>${badge}</td><td style="color:var(--moss);font-weight:700">${f(s?.mean)}</td><td>${volText}</td>`;
+    const tdD = document.createElement("td"); const del = document.createElement("button"); del.className = "del"; del.textContent = "✕";
+    del.onclick = e => { e.stopPropagation(); lmap.removeLayer(p.layer); parcels.splice(i, 1); if (selParcel === i) selParcel = -1; else if (selParcel > i) selParcel--; updateTable(); drawChart(); };
+    tdD.appendChild(del); tr.appendChild(tdD);
+    tr.onclick = async () => {
+      selParcel = i; updateTable(); if (curDate) renderView();
+      if (!p.serie) { try { p.serie = await parcelSerie(p); } catch(e){} }
+      updateTable(); drawChart(); wfStatus();
+    };
+    tb.appendChild(tr);
+  });
+}
+
+/* ============ Graphique Séries Temporelles ============ */
+const chart = document.getElementById("chart"), cctx = chart.getContext("2d");
+function drawChart(){
+  cctx.clearRect(0, 0, chart.width, chart.height);
+  const p = parcels[selParcel];
+  if (!p || !p.serie || !p.serie.length) { document.getElementById("chartHint").style.display = "block"; return; }
+  document.getElementById("chartHint").style.display = "none";
+  
+  const L2 = { l: 36, r: 12, t: 14, b: 28 }, W2 = chart.width - L2.l - L2.r, H2 = chart.height - L2.t - L2.b;
+  cctx.strokeStyle = "#d8e4c8"; cctx.font = "10px Inter"; cctx.fillStyle = "#6f7d64";
+  for (let g = 0; g <= 4; g++) {
+    const yy = L2.t + H2 - g / 4 * H2;
+    cctx.beginPath(); cctx.moveTo(L2.l, yy); cctx.lineTo(L2.l + W2, yy); cctx.stroke();
+    cctx.fillText((g / 4).toFixed(1), 8, yy + 3);
+  }
+  const t0 = new Date(p.serie[0].d).getTime(), t1 = new Date(p.serie[p.serie.length - 1].d).getTime() || t0 + 1;
+  const X = x => L2.l + (new Date(x.d).getTime() - t0) / Math.max(1, t1 - t0) * W2;
+  const colors = { ndvi: "#97bc62", ndwi: "#38bdf8", ndre: "#d4af37" };
+  
+  ["ndvi", "ndwi", "ndre"].forEach(l => {
+    cctx.strokeStyle = colors[l]; cctx.lineWidth = 2; cctx.beginPath();
+    p.serie.forEach((x, k) => {
+      const py = L2.t + H2 - Math.max(0, Math.min(1, x[l])) * H2;
+      k ? cctx.lineTo(X(x), py) : cctx.moveTo(X(x), py);
+    });
+    cctx.stroke();
+  });
+}
+
+/* ============ Inspecteur de Pixel ============ */
+async function inspectPixel(ll){
+  if (!curDate) { setStatus("Recherchez d'abord des dates.", true); return; }
+  setStatus("Lecture du pixel satellite…");
+  const d = 0.00007;
+  const geom = { type: "Polygon", coordinates: [[[ll.lng - d, ll.lat - d], [ll.lng + d, ll.lat - d], [ll.lng + d, ll.lat + d], [ll.lng - d, ll.lat + d], [ll.lng - d, ll.lat - d]]] };
+  try{
+    const j = await shFetch(SH.stats, statPayload(geom, curDate + "T00:00:00Z", curDate + "T23:59:59Z", "P1D", pixelEval, { w: 2, h: 2 }));
+    const b = j.data?.[0]?.outputs?.data?.bands;
+    if (!b) { setStatus("Aucune donnée sur ce pixel.", true); return; }
+    const v = Object.fromEntries(BANDS.map((n, i) => [n, b["B" + i].stats.mean]));
+    const ndvi = (v.B08 - v.B04) / (v.B08 + v.B04);
+    const ndwi = (v.B08 - v.B11) / (v.B08 + v.B11);
+    const f = x => Number(x).toFixed(3);
+    L.popup().setLatLng(ll).setContent(
+      `<div style="font:12px Inter;color:#2c3a24;padding:4px"><b style="color:#5a8f2c">Pixel Sentinel-2 · ${curDate}</b><br>
+       B04 (Rouge): <b>${f(v.B04)}</b> · B08 (NIR): <b>${f(v.B08)}</b> · B11 (SWIR): <b>${f(v.B11)}</b><hr style="margin:4px 0">
+       NDVI: <b style="color:#2c5f2d">${ndvi.toFixed(3)}</b> · NDWI: <b>${ndwi.toFixed(3)}</b></div>`
+    ).openOn(lmap);
+    setStatus("Réflectances lues avec succès.");
+  }catch(e){ setStatus(e.message, true); }
+}
+
+/* ============ Sélection des Couches ============ */
+function setLayer(l){
+  layer = l;
+  ["rgb", "ndvi", "ndwi", "ndre", "si"].forEach(k => {
+    const el = document.getElementById("l-" + k);
+    if (el) el.classList.toggle("active", k === l);
+  });
+  if (curDate) renderView();
+  updateTable();
+}
+["rgb", "ndvi", "ndwi", "ndre", "si"].forEach(k => {
+  const el = document.getElementById("l-" + k);
+  if (el) el.onclick = () => setLayer(k);
+});
+
+/* ============ Onglets Pédagogiques & Simulateur Hydro ============ */
+document.getElementById("tabWf").onclick = () => switchTab("secWf", "tabWf");
+document.getElementById("tabHydro").onclick = () => switchTab("secHydro", "tabHydro");
+document.getElementById("tabGrace").onclick = () => { switchTab("secGrace", "tabGrace"); drawGraceChart(); };
+
+function switchTab(secId, tabId){
+  ["secWf", "secHydro", "secGrace"].forEach(s => document.getElementById(s).style.display = s === secId ? "block" : "none");
+  ["tabWf", "tabHydro", "tabGrace"].forEach(t => document.getElementById(t).classList.toggle("active", t === tabId));
+}
+
+// Calcul hydrodynamique Theis
+const rgQ = document.getElementById("rgQ");
+rgQ.oninput = function(){
+  const Q = +this.value;
+  document.getElementById("hQ").textContent = Q + " m³/h";
+  const depth = (20 + Q * 0.12).toFixed(1);
+  document.getElementById("hDepth").textContent = `-${depth} m`;
+  const energy = (0.0027 * depth).toFixed(2);
+  document.getElementById("hEnergy").textContent = `${energy} kWh / m³`;
+  const cost = Math.round(Q * 1800 * energy * 0.28);
+  document.getElementById("hCost").textContent = `${cost.toLocaleString()} DT / an`;
+};
+
+// Courbe GRACE
+function drawGraceChart(){
+  const gc = document.getElementById("graceChart"), gx = gc.getContext("2d");
+  gx.clearRect(0, 0, gc.width, gc.height);
+  gx.strokeStyle = "#d8e4c8"; gx.font = "10px Inter"; gx.fillStyle = "#6f7d64";
+  for(let i=0; i<=3; i++){
+    const y = 15 + i * 35; gx.beginPath(); gx.moveTo(30, y); gx.lineTo(340, y); gx.stroke();
+    gx.fillText(`-${i*10} cm`, 4, y+3);
+  }
+  gx.strokeStyle = "#38bdf8"; gx.lineWidth = 2; gx.beginPath();
+  const years = [2004, 2008, 2012, 2016, 2020, 2024];
+  years.forEach((yr, idx) => {
+    const x = 35 + idx * 58;
+    const y = 20 + idx * 18 + Math.sin(idx * 2) * 5;
+    idx ? gx.lineTo(x, y) : gx.moveTo(x, y);
+    gx.fillText(yr, x - 10, 142);
+  });
+  gx.stroke();
+}
+
+/* ============ Parcours Pédagogique M1–M7 ============ */
+let wfI = 0;
+const WF = [
+ {ar_short:"المياه الجوفية والمخزون",
+  fr:{mod:"M1 · Contexte Eau = Géologie", title:"Le satellite pèse l'aquifère fossile (GRACE)",
+      text:"Dans les zones arides (Kufra, Fezzan), l'agriculture n'exploite pas un flux d'eau renouvelable mais extrait un stock fossile (Grès de Nubie). Les jumeaux GRACE mesurent cette perte de masse à -1.6 cm/an."},
+  en:{mod:"M1 · Context: Water = Geology", title:"The satellite weighs the fossil aquifer (GRACE)",
+      text:"In arid zones (Kufra, Fezzan), farming does not tap a renewable water flow but mines a fossil stock (Nubian Sandstone). The GRACE twins measure this mass loss at -1.6 cm/yr."},
+  ar:{mod:"م1 · السياق: الماء = الجيولوجيا", title:"القمر الصناعي يزن الخزان الأحفوري (GRACE)",
+      text:"الزراعة الصحراوية تستنزف مخزوناً أحفورياً غير متجدد تقيسه توأما غريس من الفضاء بمعدل -1.6 سم/سنة."},
+  setup:{site:"24.1848,23.3150,13", layer:"rgb"}},
+ {ar_short:"المحور عداد فضائي",
+  fr:{mod:"M2 · Les Pivots comme Compteurs d'Eau", title:"Chaque cercle vert est une extraction",
+      text:"Utilisez l'outil 🔘 Pivot pour entourer un pivot circulaire à Kufra. Calculez le volume d'eau pompé à partir du rayon (~400 m = ~50 ha = ~325 000 m³/an)."},
+  en:{mod:"M2 · Pivots as Water Meters", title:"Every green circle is an extraction",
+      text:"Use the 🔘 Pivot tool to enclose a circular pivot at Kufra. Compute the pumped water volume from the radius (~400 m = ~50 ha = ~325,000 m³/yr)."},
+  ar:{mod:"م2 · المحاور كعدّادات مياه", title:"كل دائرة خضراء هي عملية سحب",
+      text:"استخدم أداة 🔘 المحور لإحاطة محور دائري في الكفرة. احسب حجم الماء المضخوخ من نصف القطر (~400 م = ~50 هكتار = ~325000 م³/سنة)."},
+  setup:{site:"24.1848,23.3150,13", layer:"ndvi"}},
+ {ar_short:"عيادة السلاسل الزمنية (B-14)",
+  fr:{mod:"M2 · TP 2.2 — Clinique des Séries (Cas B-14)", title:"Diagnostic d'anomalie sur oliveraie (Sfax)",
+      text:"Sur l'oliveraie SDA Zitouna, observez l'anomalie localisée sur le bloc B-14. Croisement satellite Sentinel-2 + sonde capacitive 40 cm = rampes entartrées confirmées."},
+  en:{mod:"M2 · Lab 2.2 — Time-Series Clinic (B-14 case)", title:"Anomaly diagnosis on an olive grove (Sfax)",
+      text:"On the SDA Zitouna olive grove, spot the localized anomaly on block B-14. Crossing Sentinel-2 + a 40 cm capacitive probe confirms scaled-up drip lines."},
+  ar:{mod:"م2 · تمرين 2.2 — عيادة السلاسل الزمنية (B-14)", title:"تشخيص الشذوذ في بستان الزيتون (صفاقس)",
+      text:"في بستان زيتون SDA زيتونة، لاحظ الشذوذ الموضعي على القطعة B-14. تقاطع Sentinel-2 مع مجس سعوي على 40 سم يؤكد انسداد خطوط التنقيط."},
+  setup:{site:"34.8500,10.6000,13", layer:"ndvi"}},
+ {ar_short:"فخ البكسل الممتزج",
+  fr:{mod:"M2 · Piège du Pixel Mixte", title:"Oliveraies à grand écartement (24×24 m)",
+      text:"Le pixel Sentinel-2 de 10 m mélange l'olivier et le sol nu. Le NDVI moyen plafonne à 0.30 même pour des arbres sains : comparez les tendances relatives, jamais les valeurs absolues."},
+  en:{mod:"M2 · The Mixed-Pixel Trap", title:"Wide-spacing olive groves (24×24 m)",
+      text:"The 10 m Sentinel-2 pixel blends the tree canopy and bare soil. Mean NDVI caps around 0.30 even for healthy trees: compare relative trends, never absolute values."},
+  ar:{mod:"م2 · فخ البكسل الممتزج", title:"بساتين الزيتون واسعة التباعد (24×24 م)",
+      text:"بكسل الـ 10 أمتار يمزج الشجرة والتربة العارية، فيبقى مؤشر NDVI حول 0.30 حتى للأشجار السليمة: قارن الاتجاهات النسبية لا القيم المطلقة."},
+  setup:{site:"34.8500,10.6000,13", layer:"ndvi"}},
+ {ar_short:"البيزومتر والتداخل",
+  fr:{mod:"M3 · Puits Instrumenté & Rabattement", title:"Télémesure ESP32 & Énergie par m³",
+      text:"Ouvrez l'onglet 'Puits & Hydrogéologie' : chaque mètre de rabattement supplémentaire augmente la facture énergétique permanente du forage."},
+  en:{mod:"M3 · Instrumented Well & Drawdown", title:"ESP32 telemetry & energy per m³",
+      text:"Open the 'Wells & Hydrogeology' tab: every extra metre of drawdown raises the well's permanent energy bill."},
+  ar:{mod:"م3 · البئر المجهّز والهبوط", title:"القياس عن بعد ESP32 والطاقة لكل م³",
+      text:"افتح تبويب 'الآبار والهيدروجيولوجيا': كل متر هبوط إضافي في منسوب المياه يزيد فاتورة الطاقة الدائمة للبئر."},
+  setup:{layer:"ndwi"}},
+ {ar_short:"من المطر إلى التغذية",
+  fr:{mod:"M4 · De la Pluie à la Recharge", title:"Recharge en pulsation dans les oueds",
+      text:"En climat aride, 200 mm de pluie ne font pas 200 mm de recharge : les crues soudaines et l'évaporation concentrent les sels en surface."},
+  en:{mod:"M4 · From Rain to Recharge", title:"Pulsed recharge in the wadis",
+      text:"In arid climates, 200 mm of rain does not make 200 mm of recharge: flash floods and evaporation concentrate salts at the surface."},
+  ar:{mod:"م4 · من المطر إلى التغذية", title:"تغذية نبضية في الأودية",
+      text:"في المناخ الجاف، 200 مم من المطر لا تعطي 200 مم تغذية: الفيضانات المفاجئة والتبخر يركزان الأملاح على السطح."},
+  setup:{layer:"si"}}
+];
+
+function wfLang(){ return (window.I18N && ["fr","en","ar"].includes(I18N.lang)) ? I18N.lang : "fr"; }
+function wfT(key){
+  const T={ step:{fr:"Étape",en:"Step",ar:"خطوة"}, prev:{fr:"← Précédent",en:"← Previous",ar:"→ السابق"},
+    next:{fr:"Étape suivante →",en:"Next step →",ar:"الخطوة التالية ←"}, again:{fr:"Recommencer ↻",en:"Restart ↻",ar:"إعادة ↻"} };
+  return (T[key]||{})[wfLang()] || (T[key]||{}).fr || key;
+}
+function wfApply(){
+  const w = WF[wfI], lg = wfLang(), c = w[lg] || w.fr;
+  document.getElementById("wfStep").textContent = `${wfT("step")} ${wfI + 1}/${WF.length}`;
+  document.getElementById("wfMod").textContent = c.mod;
+  document.getElementById("wfTitle").innerHTML = `${c.title}` + (lg === "fr" ? ` <span class="ar">${w.ar_short}</span>` : "");
+  document.getElementById("wfText").textContent = c.text;
+  // Ligne secondaire arabe (aide bilingue) uniquement en mode FR
+  document.getElementById("wfTextAr").textContent = (lg === "fr") ? (w.ar.text || "") : "";
+  document.getElementById("wfDots").innerHTML = WF.map((_, k) => `<span style="flex:1;height:4px;border-radius:2px;background:${k < wfI ? "var(--moss)" : k === wfI ? "var(--gold)" : "var(--line)"}"></span>`).join("");
+  document.getElementById("wfPrev").disabled = wfI === 0;
+  document.getElementById("wfPrev").textContent = wfT("prev");
+  document.getElementById("wfNext").textContent = wfI === WF.length - 1 ? wfT("again") : wfT("next");
+  if (w.setup?.site) {
+    const [lat, lng, zoom] = w.setup.site.split(",").map(Number);
+    lmap.setView([lat, lng], zoom);
+  }
+  if (w.setup?.layer) setLayer(w.setup.layer);
+}
+function wfStatus(){}
+
+document.getElementById("wfNext").onclick = () => { wfI = (wfI + 1) % WF.length; wfApply(); };
+document.getElementById("wfPrev").onclick = () => { if (wfI > 0) { wfI--; wfApply(); } };
+
+/* ============ Modal Configuration ============ */
+const modalConfig = document.getElementById("modalConfig");
+document.getElementById("btnConfig").onclick = () => { modalConfig.style.display = "flex"; };
+document.getElementById("btnCloseConfig").onclick = () => { modalConfig.style.display = "none"; };
+document.getElementById("btnSaveConfig").onclick = () => {
+  authCfg.mode = document.getElementById("cfgMode").value;
+  authCfg.proxyUrl = document.getElementById("cfgProxyUrl").value;
+  authCfg.directToken = document.getElementById("cfgToken").value;
+  localStorage.setItem('sh_auth_mode', authCfg.mode);
+  localStorage.setItem('sh_proxy_url', authCfg.proxyUrl);
+  localStorage.setItem('sh_direct_token', authCfg.directToken);
+  modalConfig.style.display = "none";
+};
+
+/* ============ Internationalisation (FR / EN / AR) ============ */
+Object.assign(I18N.DICT, {
+  gl_tag:{fr:"Module 2 & Passerelle Hydrogéologie · SKILLS4EU — Expertise France",
+          en:"Module 2 & Hydrogeology Bridge · SKILLS4EU — Expertise France",
+          ar:"الوحدة 2 وجسر الهيدروجيولوجيا · SKILLS4EU — خبرة فرنسا"},
+  gl_hsub:{fr:"Géologie & AgriTech — Télédétection & eaux souterraines",
+           en:"Geology & AgriTech — Remote sensing & groundwater",
+           ar:"الجيولوجيا والتكنولوجيا الزراعية — الاستشعار عن بعد والمياه الجوفية"},
+  gl_cfg:{fr:"⚙️ API / Clés", en:"⚙️ API / Keys", ar:"⚙️ واجهة / مفاتيح"},
+  gl_pivot:{fr:"Pivot (Cercle)", en:"Pivot (Circle)", ar:"محور (دائرة)"},
+  gl_parcel:{fr:"Parcelle", en:"Parcel", ar:"قطعة"},
+  gl_rect:{fr:"Rect", en:"Rect", ar:"مستطيل"},
+  gl_inspect:{fr:"Inspecteur", en:"Inspector", ar:"فاحص"},
+  gl_show:{fr:"Afficher", en:"Render", ar:"عرض"},
+  gl_site:{fr:"Site :", en:"Site:", ar:"موقع:"},
+  gl_from:{fr:"Du", en:"From", ar:"من"},
+  gl_to:{fr:"Au", en:"To", ar:"إلى"},
+  gl_searchbtn:{fr:"Rechercher", en:"Search", ar:"بحث"},
+  gl_opacity:{fr:"Opacité :", en:"Opacity:", ar:"الشفافية:"},
+  gl_status_ready:{fr:"Prêt — Choisissez un site géologique ou dessinez un pivot circulaire pour démarrer.",
+                   en:"Ready — Pick a geological site or draw a circular pivot to start.",
+                   ar:"جاهز — اختر موقعاً جيولوجياً أو ارسم محوراً دائرياً للبدء."},
+  gl_tab_wf:{fr:"Parcours M1–M7", en:"M1–M7 Pathway", ar:"المسار م1–م7"},
+  gl_tab_hydro:{fr:"Puits & Hydrogéologie", en:"Wells & Hydrogeology", ar:"الآبار والهيدروجيولوجيا"},
+  gl_tab_grace:{fr:"Gravité GRACE", en:"GRACE Gravity", ar:"جاذبية GRACE"},
+  gl_hydro_h:{fr:"Puits instrumenté (ESP32 · 150 €)", en:"Instrumented well (ESP32 · €150)", ar:"بئر مجهّز (ESP32 · 150 €)"},
+  gl_hydro_har:{fr:"البيزومتر الذكي", en:"البيزومتر الذكي", ar:"البيزومتر الذكي"},
+  gl_hydro_hint:{fr:"Estimation du rabattement piézométrique et du coût énergétique au m³ selon Theis / Cooper-Jacob.",
+                 en:"Estimate of piezometric drawdown and energy cost per m³ via Theis / Cooper-Jacob.",
+                 ar:"تقدير الهبوط البيزومتري وكلفة الطاقة لكل م³ وفق ثايس / كوبر-جاكوب."},
+  gl_hydro_q:{fr:"Débit de pompage (Q) :", en:"Pumping rate (Q):", ar:"معدل الضخ (Q):"},
+  gl_hydro_t:{fr:"Transmissivité aquifère (T) :", en:"Aquifer transmissivity (T):", ar:"ناقلية الخزان (T):"},
+  gl_hydro_draw:{fr:"Rabattement", en:"Drawdown", ar:"الهبوط"},
+  gl_hydro_depth:{fr:"Profondeur dynamique de l'eau :", en:"Dynamic water depth:", ar:"عمق الماء الديناميكي:"},
+  gl_hydro_energy:{fr:"Énergie spécifique requise :", en:"Specific energy required:", ar:"الطاقة النوعية المطلوبة:"},
+  gl_hydro_cost:{fr:"Coût annuel énergie (pivot 40 ha) :", en:"Annual energy cost (40 ha pivot):", ar:"الكلفة السنوية للطاقة (محور 40 هكتار):"},
+  gl_grace_h:{fr:"Pesée satellitaire GRACE", en:"GRACE satellite weighing", ar:"الوزن الساتلي GRACE"},
+  gl_grace_har:{fr:"الجاذبية والمخزون", en:"الجاذبية والمخزون", ar:"الجاذبية والمخزون"},
+  gl_grace_hint:{fr:"Les jumeaux GRACE pèsent la perte de masse d'eau de l'aquifère des grès de Nubie depuis l'espace.",
+                 en:"The GRACE twins weigh the water-mass loss of the Nubian Sandstone aquifer from space.",
+                 ar:"توأما GRACE يزنان فقدان كتلة الماء لخزان الحجر الرملي النوبي من الفضاء."},
+  gl_grace_note:{fr:"Tendance : <b>-1.6 cm équivalent eau / an</b>. Un pivot dans le désert n'exploite pas un flux renouvelable mais extrait un stock fossile non rechargeable.",
+                 en:"Trend: <b>-1.6 cm water-equivalent / yr</b>. A desert pivot does not tap a renewable flow but mines a non-rechargeable fossil stock.",
+                 ar:"الاتجاه: <b>-1.6 سم مكافئ ماء / سنة</b>. المحور في الصحراء لا يستغل تدفقاً متجدداً بل يستنزف مخزوناً أحفورياً غير قابل للتغذية."},
+  gl_parcels_h:{fr:"Parcelles & Pivots d'irrigation", en:"Parcels & Irrigation pivots", ar:"القطع ومحاور الري"},
+  gl_parcels_har:{fr:"القطع والمحاور", en:"القطع والمحاور", ar:"القطع والمحاور"},
+  gl_parcels_hint:{fr:"Chaque pivot circulaire dessiné calcule la surface irriguée et l'extraction volumique estimée.",
+                   en:"Each drawn circular pivot computes the irrigated area and the estimated volumetric extraction.",
+                   ar:"كل محور دائري مرسوم يحسب المساحة المروية والسحب الحجمي المقدّر."},
+  gl_th_name:{fr:"Nom", en:"Name", ar:"الاسم"},
+  gl_th_type:{fr:"Type / Rayon", en:"Type / Radius", ar:"النوع / نصف القطر"},
+  gl_th_ndvi:{fr:"NDVI Moy", en:"Mean NDVI", ar:"متوسط NDVI"},
+  gl_th_vol:{fr:"Volume est.", en:"Est. volume", ar:"الحجم المقدّر"},
+  gl_series_h:{fr:"Diagnostic Temporel — NDVI / NDWI / NDRE", en:"Temporal Diagnosis — NDVI / NDWI / NDRE", ar:"التشخيص الزمني — NDVI / NDWI / NDRE"},
+  gl_series_har:{fr:"السلسلة", en:"السلسلة", ar:"السلسلة"},
+  gl_series_hint:{fr:"Sélectionnez une parcelle pour afficher sa dynamique saisonnière.",
+                  en:"Select a parcel to display its seasonal dynamics.",
+                  ar:"اختر قطعة لعرض ديناميكيتها الموسمية."},
+  gl_tp_summary:{fr:"🎓 Guide Pédagogique Enseignant — 4 Exercices Pratiques (TP 2.1 & TP 2.2)",
+                 en:"🎓 Teacher's Guide — 4 Practical Exercises (Lab 2.1 & Lab 2.2)",
+                 ar:"🎓 دليل المعلّم — 4 تمارين تطبيقية (تمرين 2.1 و2.2)"},
+  gl_tp1:{fr:`<b>TP 1 — Le pivot circulaire est un compteur d'eau vu de l'espace.</b> <span class="ar">التمرين 1: المحور عدّاد مياه من الفضاء</span><br>Positionnez la carte sur le bassin de <b>Kufra</b>. Utilisez l'outil 🔘 Pivot pour entourer un cercle vert (rayon ~400 m = ~50 ha). Calculez le volume d'eau pompé à partir de l'évapotranspiration déduite du NDVI. Chaque cercle vert représente une extraction directe du stock fossile des Grès de Nubie.<div class="rtl">كل دائرة خضراء في الصحراء هي سحب مياه جوفية مباشر من خزان الحجر الرملي النوبي غير المتجدد.</div>`,
+          en:`<b>Lab 1 — The circular pivot is a water meter seen from space.</b><br>Center the map on the <b>Kufra</b> basin. Use the 🔘 Pivot tool to enclose a green circle (radius ~400 m = ~50 ha). Compute the pumped water volume from the NDVI-derived evapotranspiration. Each green circle is a direct extraction from the Nubian Sandstone fossil stock.<div class="rtl">كل دائرة خضراء في الصحراء هي سحب مياه جوفية مباشر من خزان الحجر الرملي النوبي غير المتجدد.</div>`,
+          ar:`<b>التمرين 1 — المحور الدائري عدّاد مياه يُرى من الفضاء.</b><br>ضع الخريطة على حوض <b>الكفرة</b>. استخدم أداة 🔘 المحور لإحاطة دائرة خضراء (نصف قطر ~400 م = ~50 هكتار). احسب حجم الماء المضخوخ من التبخر-النتح المشتق من NDVI. كل دائرة خضراء هي سحب مباشر من المخزون الأحفوري للحجر الرملي النوبي.`},
+  gl_tp2:{fr:`<b>TP 2 — La clinique des séries temporelles (Cas B-14).</b> <span class="ar">التمرين 2: عيادة السلاسل الزمنية (حالة B-14)</span><br>Sur l'oliveraie de Sfax (SDA Zitouna, 1000 ha), observez la chute anormale du NDVI sur le bloc B-14 alors que les blocs voisins restent stables. Croisez avec les sondes capacitives à 40 cm : confirmation de deux rampes de goutte-à-goutte entartrées. Décision : rinçage à l'acide nitrique.<div class="rtl">القمر الصناعي يحدد أين، والمجسات الميدانية تحدد لماذا، والتطبيق يغلق الحلقة.</div>`,
+          en:`<b>Lab 2 — The time-series clinic (B-14 case).</b><br>On the Sfax olive grove (SDA Zitouna, 1000 ha), watch the abnormal NDVI drop on block B-14 while neighbouring blocks stay stable. Cross-check with 40 cm capacitive probes: two scaled drip lines confirmed. Decision: nitric-acid flush.<div class="rtl">القمر الصناعي يحدد أين، والمجسات الميدانية تحدد لماذا، والتطبيق يغلق الحلقة.</div>`,
+          ar:`<b>التمرين 2 — عيادة السلاسل الزمنية (حالة B-14).</b><br>في بستان زيتون صفاقس (SDA زيتونة، 1000 هكتار)، لاحظ الانخفاض غير الطبيعي في NDVI على القطعة B-14 بينما تبقى القطع المجاورة مستقرة. قارن مع المجسات السعوية على 40 سم: تأكيد انسداد خطي تنقيط. القرار: غسل بحمض النتريك.`},
+  gl_tp3:{fr:`<b>TP 3 — Le piège du pixel mixte sur oliveraie à grand écartement (24×24 m).</b> <span class="ar">التمرين 3: فخ البكسل الممتزج في الزيتون المتباعد</span><br>Pourquoi une oliveraie saine à Sfax présente-t-elle un NDVI moyen de seulement 0.25 à 0.35 ? Le pixel Sentinel-2 de 10 m mélange la canopée de l'arbre et le sol nu inter-rang. Règle d'or : comparez toujours les anomalies relatives dans le temps, jamais les valeurs absolues brutes.`,
+          en:`<b>Lab 3 — The mixed-pixel trap on wide-spacing olive groves (24×24 m).</b><br>Why does a healthy Sfax olive grove show a mean NDVI of only 0.25–0.35? The 10 m Sentinel-2 pixel blends the tree canopy and the bare inter-row soil. Golden rule: always compare relative anomalies over time, never raw absolute values.`,
+          ar:`<b>التمرين 3 — فخ البكسل الممتزج في الزيتون واسع التباعد (24×24 م).</b><br>لماذا يُظهر بستان زيتون سليم في صفاقس متوسط NDVI بين 0.25 و0.35 فقط؟ بكسل Sentinel-2 بحجم 10 م يمزج تاج الشجرة والتربة العارية بين الصفوف. القاعدة الذهبية: قارن دائماً الشذوذ النسبي عبر الزمن لا القيم المطلقة الخام.`},
+  gl_tp4:{fr:`<b>TP 4 — Suivi du biseau salin dans la plaine côtière de la Jefara.</b> <span class="ar">التمرين 4: رصد التملح وتداخل مياه البحر بالجفارة</span><br>Activez l'indice de salinité (🧂 SI) et observez la progression des croûtes salines superficielles causées par la remontée capillaire et l'intrusion marine (relation de Ghyben-Herzberg).`,
+          en:`<b>Lab 4 — Tracking the saline wedge in the Jefara coastal plain.</b><br>Enable the salinity index (🧂 SI) and watch the spread of surface salt crusts driven by capillary rise and seawater intrusion (Ghyben-Herzberg relationship).`,
+          ar:`<b>التمرين 4 — تتبّع الإسفين الملحي في سهل الجفارة الساحلي.</b><br>فعّل مؤشر الملوحة (🧂 SI) ولاحظ انتشار القشور الملحية السطحية الناتجة عن الصعود الشعري وتداخل مياه البحر (علاقة غيبن-هرتزبرغ).`},
+  gl_cfg_title:{fr:"⚙️ Configuration Sentinel Hub OAuth", en:"⚙️ Sentinel Hub OAuth configuration", ar:"⚙️ إعداد Sentinel Hub OAuth"},
+  gl_cfg_mode:{fr:"Mode d'accès", en:"Access mode", ar:"وضع الوصول"},
+  gl_cfg_direct:{fr:"Jeton Bearer direct", en:"Direct Bearer token", ar:"رمز Bearer مباشر"},
+  gl_cfg_proxy:{fr:"URL du proxy", en:"Proxy URL", ar:"رابط الوسيط"},
+  gl_cfg_token:{fr:"Access Token direct", en:"Direct access token", ar:"رمز وصول مباشر"},
+  gl_cfg_test:{fr:"Tester", en:"Test", ar:"اختبار"},
+  gl_cfg_close:{fr:"Fermer", en:"Close", ar:"إغلاق"},
+  gl_cfg_save:{fr:"Enregistrer", en:"Save", ar:"حفظ"}
+});
+
+function applyHTML(){
+  document.querySelectorAll("[data-i18n-html]").forEach(el => {
+    const v = I18N.t(el.getAttribute("data-i18n-html")); if (v) el.innerHTML = v;
+  });
+}
+document.addEventListener("i18n:changed", () => {
+  applyHTML(); wfApply(); updateTable(); addGeoSearch();
+});
+
+/* ============ Initialisation ============ */
+(function(){
+  const today = new Date(), from = new Date(today - 120 * 864e5);
+  document.getElementById("dTo").value = today.toISOString().slice(0, 10);
+  document.getElementById("dFrom").value = from.toISOString().slice(0, 10);
+  const urlLang = new URLSearchParams(location.search).get("lang");
+  I18N.set(urlLang || localStorage.getItem("agri_lang") || "fr");
+  applyHTML();
+  wfApply();
+})();
+</script>
+</body>
+</html>

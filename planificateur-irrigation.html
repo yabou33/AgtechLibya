@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planificateur d'irrigation — FAO-56 décadaire</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="platform/public/assets/css/theme.css">
+<style>
+  [hidden]{display:none!important}
+  .lead{color:var(--muted);max-width:960px;margin:-4px 0 4px;font-size:14px}
+  .lead b{color:var(--ink)}
+  .grid-main{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+  @media(max-width:960px){.grid-main{grid-template-columns:1fr}}
+  .fld{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
+  .fld label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:flex;justify-content:space-between;align-items:baseline}
+  .fld .rngval{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--green-d);font-size:12.5px}
+  select,input[type=date],input[type=number]{border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:#fff;color:var(--ink);font:inherit;font-weight:600}
+  select:focus,input:focus{outline:none;border-color:var(--green)}
+  input[type=range]{width:100%;accent-color:var(--green)}
+  .seg{display:inline-flex;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;overflow:hidden;width:100%}
+  .seg button{flex:1;background:transparent;border:0;color:var(--muted);padding:8px 6px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+  .seg button.on{background:var(--green);color:#fff}
+  .chartwrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 8px 4px;margin-top:6px}
+  svg.chart{width:100%;height:auto;display:block;touch-action:none}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 6px 2px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:15px;height:12px;border-radius:3px;display:inline-block}
+  .legend i.dash{height:0;border-top:2px dashed currentColor;width:16px;border-radius:0}
+  .hoverbox{font-size:13px;color:var(--muted);padding:9px 12px;background:var(--green-bg);border:1px solid var(--line);border-radius:9px;margin-top:10px;min-height:20px}
+  .hoverbox b{color:var(--ink)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+  .kpi{background:var(--green-bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .kpi .l{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+  .kpi .v{font-size:1.45rem;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .kpi .v small{font-size:.72rem;font-weight:700;color:var(--muted)}
+  .kpi.good{background:#eef8ef;border-color:#bfe3c3}.kpi.good .v{color:var(--impact)}
+  .kpi.warn{background:#fdf3e3;border-color:#f0d9ac}.kpi.warn .v{color:#b5701a}
+  .kpi.bad{background:#fbecea;border-color:#eecac5}.kpi.bad .v{color:var(--decision)}
+  table.plan{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+  table.plan th,table.plan td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums}
+  table.plan th{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;position:sticky;top:0;background:#fff}
+  table.plan td.stg,table.plan th.stg{text-align:left}
+  table.plan tr.def td{background:#fdf3e3}
+  table.plan tr.stress td{background:#fbecea}
+  .tablewrap{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:10px}
+  .stagebadge{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:700}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:12.5px;background:#0e1512;color:#d7e3cd;border-radius:9px;padding:11px 14px;overflow:auto;margin:2px 0 4px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .capnote{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+  .capnote b{color:var(--ink)}
+  h2 .chip{vertical-align:middle}
+  .fmtbox{font-family:"JetBrains Mono",monospace;font-size:11.5px;background:#0e1512;color:#cfe0c4;border-radius:9px;padding:10px 12px;white-space:pre;overflow:auto;margin-top:8px}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="logo"><span class="es-logo">M5</span> <b data-i18n="p_brand">Planificateur</b> <span data-i18n="p_brand2">d'irrigation</span></div>
+  <div class="sub" data-i18n="p_sub">Bilan FAO-56 par décade · besoin net & brut · forage plafonné</div>
+  <div class="right">
+    <span class="chip">M5</span>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="lead" data-i18n-html="p_lead"></p>
+
+  <div class="grid-main">
+    <!-- ================= Controls ================= -->
+    <div class="card">
+      <h2>⚙️ <span data-i18n="p_params"></span></h2>
+      <div class="fld">
+        <label data-i18n="p_crop"></label>
+        <select id="crop"></select>
+      </div>
+      <div class="fld">
+        <label data-i18n="p_climate"></label>
+        <select id="climate"></select>
+      </div>
+      <div class="fld">
+        <label data-i18n="p_sow"></label>
+        <input type="date" id="sow" value="2026-03-01">
+      </div>
+      <div class="fld">
+        <label data-i18n="p_texture"></label>
+        <select id="texture"></select>
+      </div>
+      <div class="fld">
+        <label><span data-i18n="p_area"></span><span class="rngval" id="areav">2.0 ha</span></label>
+        <input type="range" id="area" min="0.5" max="50" step="0.5" value="2">
+      </div>
+      <div class="fld">
+        <label><span data-i18n="p_eff"></span><span class="rngval" id="effv">75%</span></label>
+        <input type="range" id="eff" min="50" max="95" step="5" value="75">
+      </div>
+      <div class="fld">
+        <label><span data-i18n="p_etadj"></span><span class="rngval" id="etadjv">100%</span></label>
+        <input type="range" id="etadj" min="70" max="130" step="5" value="100">
+      </div>
+
+      <h2 style="margin-top:18px">🚱 <span data-i18n="p_constraint"></span></h2>
+      <div class="fld">
+        <div class="seg" id="cap">
+          <button class="on" data-v="off" data-i18n="p_capoff"></button>
+          <button data-v="on" data-i18n="p_capon"></button>
+        </div>
+      </div>
+      <div id="capBox" hidden>
+        <div class="fld">
+          <label><span data-i18n="p_capvol"></span><span class="rngval" id="capvolv">1500 m³</span></label>
+          <input type="range" id="capvol" min="200" max="6000" step="100" value="1500">
+        </div>
+        <p class="capnote" data-i18n-html="p_capnote"></p>
+      </div>
+
+      <div class="btns">
+        <button class="btn ghost" onclick="doImport()">📥 <span data-i18n="import"></span></button>
+        <button class="btn ghost" onclick="doExportJSON()">📤 JSON</button>
+        <button class="btn" onclick="doExportCSV()">📊 CSV</button>
+      </div>
+    </div>
+
+    <!-- ================= Output ================= -->
+    <div style="min-width:0">
+      <div class="card">
+        <h2>📈 <span data-i18n="p_chart_dec"></span></h2>
+        <div class="chartwrap">
+          <svg class="chart" id="svgDec" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="legend" id="legDec"></div>
+        <div class="hoverbox" id="hoverDec"></div>
+        <div class="kpis" id="kpis"></div>
+      </div>
+
+      <div class="card">
+        <h2>🗓️ <span data-i18n="p_chart_month"></span></h2>
+        <div class="chartwrap">
+          <svg class="chart" id="svgMon" viewBox="0 0 900 220" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="legend" id="legMon"></div>
+        <div class="hoverbox" id="hoverMon"></div>
+      </div>
+
+      <div class="card">
+        <h2>📋 <span data-i18n="p_table"></span></h2>
+        <div class="tablewrap">
+          <table class="plan" id="tbl"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Method ================= -->
+  <div class="card">
+    <h2>📐 <span data-i18n="p_method"></span></h2>
+    <div class="formula">ET<sub>c</sub> = K<sub>c</sub> · ET₀   ·   P<sub>eff</sub> = 0.8 · P   ·   I<sub>net</sub> = max(0, ET<sub>c</sub> − P<sub>eff</sub>)   ·   I<sub>brut</sub> = I<sub>net</sub> / E<sub>a</sub>   ·   V = I<sub>brut</sub> · 10 · Surface(ha)</div>
+    <p class="lead" style="margin-top:12px" data-i18n-html="p_method_txt"></p>
+    <div class="fmtbox" id="fmt"></div>
+  </div>
+</div>
+
+<script src="platform/public/assets/i18n/i18n.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script src="platform/public/assets/js/crops.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+const svgEl=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+
+Object.assign(I18N.DICT,{
+  p_brand:{fr:"Planificateur",ar:"مُخطِّط",en:"Planner"},
+  p_brand2:{fr:"d'irrigation",ar:"الري",en:"irrigation"},
+  p_sub:{fr:"Bilan FAO-56 par décade · besoin net & brut · forage plafonné",ar:"ميزان FAO-56 لكل عشرة أيام · الحاجة الصافية والإجمالية · بئر محدود",en:"FAO-56 ten-day balance · net & gross need · capped well"},
+  p_lead:{fr:"Ce planificateur calcule, <b>décade par décade</b> (période de 10 jours), les besoins en eau d'une culture avec la méthode <b>FAO-56</b> : coefficient cultural K<sub>c</sub> par stade, ET₀ et pluie du climat choisi, efficience du système. Il en déduit le <b>besoin net et brut</b> et le <b>volume</b> à mobiliser. Puis il re-planifie sous la contrainte d'un <b>forage plafonné</b> (volume mensuel limité) en appliquant un déficit contrôlé (RDI).",
+          ar:"يحسب هذا المُخطِّط، <b>لكل عشرة أيام</b>، احتياجات المحصول من الماء بطريقة <b>FAO-56</b>: معامل المحصول K<sub>c</sub> حسب المرحلة، ET₀ والمطر حسب المناخ، وكفاءة النظام. يستنتج <b>الحاجة الصافية والإجمالية</b> و<b>الحجم</b> المطلوب. ثم يُعيد التخطيط تحت قيد <b>بئر محدود</b> (حجم شهري محدود) بتطبيق عجز مُتحكَّم فيه (RDI).",
+          en:"This planner computes, <b>ten days at a time</b>, a crop's water needs with the <b>FAO-56</b> method: crop coefficient K<sub>c</sub> per stage, ET₀ and rainfall for the chosen climate, and system efficiency. It derives the <b>net and gross requirement</b> and the <b>volume</b> to mobilise, then re-plans under a <b>capped well</b> constraint (limited monthly volume) by applying regulated deficit irrigation (RDI)."},
+  p_params:{fr:"Paramètres",ar:"المعطيات",en:"Parameters"},
+  p_crop:{fr:"Culture (stades Kc)",ar:"المحصول (مراحل Kc)",en:"Crop (Kc stages)"},
+  p_climate:{fr:"Climat (ET₀ & pluie)",ar:"المناخ (ET₀ والمطر)",en:"Climate (ET₀ & rain)"},
+  p_sow:{fr:"Date de semis / plantation",ar:"تاريخ البذر / الغرس",en:"Sowing / planting date"},
+  p_texture:{fr:"Texture du sol (Zr, TAW)",ar:"قوام التربة (Zr, TAW)",en:"Soil texture (Zr, TAW)"},
+  p_area:{fr:"Surface irriguée",ar:"المساحة المروية",en:"Irrigated area"},
+  p_eff:{fr:"Efficience du système Ea",ar:"كفاءة النظام Ea",en:"System efficiency Ea"},
+  p_etadj:{fr:"Ajustement ET₀ (climat)",ar:"تعديل ET₀",en:"ET₀ adjustment"},
+  p_constraint:{fr:"Contrainte — forage plafonné",ar:"القيد — بئر محدود",en:"Constraint — capped well"},
+  p_capoff:{fr:"Sans limite",ar:"بلا حد",en:"No limit"},
+  p_capon:{fr:"Plafonné",ar:"محدود",en:"Capped"},
+  p_capvol:{fr:"Plafond mensuel du forage",ar:"سقف البئر الشهري",en:"Monthly well cap"},
+  p_capnote:{fr:"Quand la demande d'un mois dépasse le plafond, on répartit l'eau disponible au prorata et on accepte un <b>déficit contrôlé</b> (RDI). Le tableau marque en orange les décades rationnées et en rouge le stress marqué.",
+             ar:"عندما تتجاوز حاجة الشهر السقف، يُوزَّع الماء المتاح بالتناسب مع قبول <b>عجز مُتحكَّم فيه</b> (RDI). يُظلَّل الجدول بالبرتقالي للعشاريات المُقنَّنة وبالأحمر للإجهاد الواضح.",
+             en:"When a month's demand exceeds the cap, available water is shared pro-rata and a <b>controlled deficit</b> (RDI) is accepted. The table shades rationed ten-day periods orange and marked stress red."},
+  p_chart_dec:{fr:"Besoins par décade (mm)",ar:"الاحتياجات لكل عشرة أيام (مم)",en:"Needs per ten-day period (mm)"},
+  p_chart_month:{fr:"Volume mensuel vs plafond (m³)",ar:"الحجم الشهري مقابل السقف (م³)",en:"Monthly volume vs cap (m³)"},
+  p_table:{fr:"Calendrier d'irrigation décadaire",ar:"جدول الري لكل عشرة أيام",en:"Ten-day irrigation calendar"},
+  p_method:{fr:"Méthode — FAO-56 décadaire",ar:"الطريقة — FAO-56 العشارية",en:"Method — FAO-56 ten-day"},
+  p_method_txt:{fr:"Le <b>coefficient cultural K<sub>c</sub></b> varie avec le stade : initial (levée), développement (montée linéaire), mi-saison (maximum), arrière-saison (déclin). On l'applique à l'<b>ET₀</b> du climat pour obtenir l'<b>ET<sub>c</sub></b>. La <b>pluie efficace</b> (ici 80 % de la pluie, plafonnée à ET<sub>c</sub>) réduit le besoin net. Le besoin <b>brut</b> divise par l'efficience du système (goutte-à-goutte ≈ 90 %, aspersion ≈ 75 %, gravitaire ≈ 55 %). Le volume mobilise 10 m³ par mm et par hectare.",
+                ar:"يتغيّر <b>معامل المحصول K<sub>c</sub></b> مع المرحلة: الابتدائية، التطور (ارتفاع خطي)، منتصف الموسم (الأقصى)، آخر الموسم (تراجع). يُطبَّق على <b>ET₀</b> المناخ للحصول على <b>ET<sub>c</sub></b>. تقلّل <b>الأمطار الفعّالة</b> (هنا 80٪ محدودة بـ ET<sub>c</sub>) الحاجة الصافية. تُقسَم الحاجة <b>الإجمالية</b> على كفاءة النظام (تنقيط ≈ 90٪، رش ≈ 75٪، سطحي ≈ 55٪). يعبّئ الحجم 10 م³ لكل مم وهكتار.",
+                en:"The <b>crop coefficient K<sub>c</sub></b> changes with stage: initial, development (linear rise), mid-season (peak), late season (decline). It is applied to the climate's <b>ET₀</b> to get <b>ET<sub>c</sub></b>. <b>Effective rain</b> (here 80% of rainfall, capped at ET<sub>c</sub>) reduces the net need. The <b>gross</b> need divides by system efficiency (drip ≈ 90%, sprinkler ≈ 75%, surface ≈ 55%). Volume mobilises 10 m³ per mm per hectare."},
+  // KPIs
+  k_net:{fr:"Besoin net (cycle)",ar:"الحاجة الصافية (الدورة)",en:"Net need (cycle)"},
+  k_gross:{fr:"Besoin brut (cycle)",ar:"الحاجة الإجمالية",en:"Gross need (cycle)"},
+  k_vol:{fr:"Volume total",ar:"الحجم الكلي",en:"Total volume"},
+  k_peak:{fr:"Mois de pointe",ar:"شهر الذروة",en:"Peak month"},
+  k_ndec:{fr:"Décades / cycle",ar:"عشاريات / دورة",en:"Ten-days / cycle"},
+  k_deficit:{fr:"Déficit (plafond)",ar:"العجز (السقف)",en:"Deficit (cap)"},
+  // legends
+  lg_net:{fr:"Besoin net",ar:"صافية",en:"Net"},
+  lg_gross:{fr:"Besoin brut",ar:"إجمالية",en:"Gross"},
+  lg_applied:{fr:"Apporté (plafond)",ar:"المُطبَّق",en:"Applied (cap)"},
+  lg_demand:{fr:"Demande brute",ar:"الطلب",en:"Gross demand"},
+  lg_cap:{fr:"Plafond mensuel",ar:"السقف الشهري",en:"Monthly cap"},
+  // table headers
+  th_dec:{fr:"Déc.",ar:"عشرة",en:"10-day"},
+  th_dates:{fr:"Période",ar:"الفترة",en:"Period"},
+  th_stage:{fr:"Stade",ar:"المرحلة",en:"Stage"},
+  th_kc:{fr:"Kc",ar:"Kc",en:"Kc"},
+  th_et0:{fr:"ET₀",ar:"ET₀",en:"ET₀"},
+  th_etc:{fr:"ETc",ar:"ETc",en:"ETc"},
+  th_peff:{fr:"P.eff",ar:"مطر فعّال",en:"P.eff"},
+  th_inet:{fr:"Net",ar:"صافية",en:"Net"},
+  th_igross:{fr:"Brut",ar:"إجمالية",en:"Gross"},
+  th_vol:{fr:"Vol m³",ar:"حجم م³",en:"Vol m³"},
+  th_appl:{fr:"Apporté",ar:"المُطبَّق",en:"Applied"},
+  th_defc:{fr:"Déficit",ar:"العجز",en:"Deficit"},
+  // stages
+  st_ini:{fr:"Initial",ar:"ابتدائي",en:"Initial"},
+  st_dev:{fr:"Développement",ar:"تطوّر",en:"Development"},
+  st_mid:{fr:"Mi-saison",ar:"منتصف الموسم",en:"Mid-season"},
+  st_late:{fr:"Arrière-saison",ar:"آخر الموسم",en:"Late season"},
+  fmt_hint:{fr:"Exemple de format d'export/import (JSON) :",ar:"مثال على صيغة التصدير/الاستيراد (JSON):",en:"Export/import format example (JSON):"},
+  hover_hint:{fr:"Survolez une barre pour le détail.",ar:"مرّر فوق عمود للتفاصيل.",en:"Hover a bar for details."}
+});
+
+/* ---- Crops : FAO-56 stage lengths (days), Kc, root depth Zr (m) ---- */
+const CROPS=window.CROPS_DB;   // base de cultures partagée (FAO-56, Tunisie & Libye)
+
+/* ---- Climates : monthly ET0 (mm/day) & rain (mm/month), Jan..Dec ---- */
+const CLIM=[
+  {id:'sebha',   fr:"Sebha (désert)",     ar:"سبها (صحراء)",  en:"Sebha (desert)",
+   et0:[3.5,4.8,6.5,8.2,9.5,10.5,10.2,9.5,8.0,6.0,4.2,3.2], rain:[1,1,2,1,0,0,0,0,0,2,2,2]},
+  {id:'benghazi',fr:"Benghazi (côtier)",  ar:"بنغازي (ساحلي)",en:"Benghazi (coastal)",
+   et0:[2.0,2.6,3.6,4.8,6.0,7.0,7.2,6.8,5.4,4.0,2.8,2.1], rain:[70,45,25,8,3,0,0,0,5,30,55,75]},
+  {id:'tripoli', fr:"Tripoli (côtier)",   ar:"طرابلس (ساحلي)",en:"Tripoli (coastal)",
+   et0:[2.2,2.8,3.8,5.0,6.3,7.4,7.8,7.4,5.8,4.2,3.0,2.3], rain:[60,40,25,10,4,1,0,0,8,35,55,70]}
+];
+
+/* ---- Soil textures : θFC, θWP (m³/m³) ---- */
+const TEX=[
+  {id:'sand', fc:0.10, wp:0.05, fr:"Sableux",         ar:"رملي",       en:"Sand"},
+  {id:'sloam',fc:0.20, wp:0.09, fr:"Limono-sableux",  ar:"طيني رملي",  en:"Sandy loam"},
+  {id:'loam', fc:0.28, wp:0.12, fr:"Limoneux",        ar:"طَمْيي",      en:"Loam"},
+  {id:'cloam',fc:0.36, wp:0.20, fr:"Argilo-limoneux", ar:"طيني طَمْيي", en:"Clay loam"},
+  {id:'clay', fc:0.40, wp:0.24, fr:"Argileux",        ar:"طيني",       en:"Clay"}
+];
+const MONTHS={fr:["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"],
+              en:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+              ar:["ينا","فبر","مار","أبر","ماي","يون","يول","أغس","سبت","أكت","نوف","ديس"]};
+const STAGECOL={ini:'#c9a24b',dev:'#7cb342',mid:'#2f8f4e',late:'#c77d3a'};
+const STAGEKEY={ini:'st_ini',dev:'st_dev',mid:'st_mid',late:'st_late'};
+
+function fillSelects(){
+  const c=$('crop'),cl=$('climate'),t=$('texture'),L=I18N.lang;
+  const kc=c.value,kcl=cl.value,kt=t.value;
+  window.CROPS.fillSelect(c,{lang:L});
+  cl.innerHTML=''; CLIM.forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=x[L]||x.fr;cl.appendChild(o);});
+  t.innerHTML=''; TEX.forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=`${x[L]||x.fr} · ${x.fc}/${x.wp}`;t.appendChild(o);});
+  c.value=kc||'tomato'; cl.value=kcl||'sebha'; t.value=kt||'sloam';
+}
+
+/* Kc at a given day of the crop cycle (FAO-56 linear interpolation) */
+function kcAtDay(cr,day){
+  const [Li,Ld,Lm,Ll]=cr.L, [Ki,Km,Ke]=cr.Kc;
+  if(day<Li) return {kc:Ki,stage:'ini'};
+  if(day<Li+Ld) return {kc:Ki+(Km-Ki)*(day-Li)/Ld,stage:'dev'};
+  if(day<Li+Ld+Lm) return {kc:Km,stage:'mid'};
+  return {kc:Km+(Ke-Km)*Math.min(1,(day-Li-Ld-Lm)/Ll),stage:'late'};
+}
+
+function params(){
+  const cr=CROPS.find(x=>x.id===$('crop').value)||CROPS[0];
+  const cl=CLIM.find(x=>x.id===$('climate').value)||CLIM[0];
+  const tx=TEX.find(x=>x.id===$('texture').value)||TEX[1];
+  return {cr,cl,tx,
+    sow:new Date($('sow').value+'T00:00:00'),
+    area:+$('area').value, eff:+$('eff').value/100, etadj:+$('etadj').value/100,
+    capOn:document.querySelector('#cap button.on').dataset.v==='on',
+    capVol:+$('capvol').value};
+}
+
+/* ---- Build the ten-day (decade) plan ---- */
+function buildPlan(P){
+  const cr=P.cr, cycle=cr.L.reduce((a,b)=>a+b,0);
+  const nDec=Math.ceil(cycle/10);
+  const decs=[];
+  for(let i=0;i<nDec;i++){
+    // mid-day of this decade within the cycle
+    const dStart=i*10, dMid=Math.min(cycle-1,dStart+5);
+    const {kc,stage}=kcAtDay(cr,dMid);
+    // calendar month at mid-day
+    const dt=new Date(P.sow.getTime()); dt.setDate(dt.getDate()+dMid);
+    const m=dt.getMonth();
+    const et0=P.cl.et0[m]*P.etadj;          // mm/day
+    const rainM=P.cl.rain[m];               // mm/month
+    const ETc=kc*et0*10;                    // mm over 10 days
+    const Pdec=rainM/3;                      // mm per decade
+    const Peff=Math.min(ETc, 0.8*Pdec);
+    const Inet=Math.max(0, ETc-Peff);
+    const Igross=Inet/P.eff;
+    const vol=Igross*10*P.area;              // m³ (1 mm/ha = 10 m³)
+    const ds=new Date(P.sow.getTime()); ds.setDate(ds.getDate()+dStart);
+    decs.push({i,stage,kc,et0,ETc,Peff,Inet,Igross,vol,month:m,year:dt.getFullYear(),
+               dStart,startDate:ds,ym:dt.getFullYear()*12+m});
+  }
+  // ---- monthly aggregation & cap ----
+  const monthMap={};
+  decs.forEach(d=>{ (monthMap[d.ym]=monthMap[d.ym]||{ym:d.ym,month:d.month,demand:0,decs:[]}); monthMap[d.ym].demand+=d.vol; monthMap[d.ym].decs.push(d); });
+  const months=Object.values(monthMap).sort((a,b)=>a.ym-b.ym);
+  months.forEach(mo=>{
+    if(P.capOn && mo.demand>P.capVol){
+      const ratio=P.capVol/mo.demand;
+      mo.applied=P.capVol; mo.ratio=ratio;
+      mo.decs.forEach(d=>{ d.applVol=d.vol*ratio; d.applGross=d.Igross*ratio; d.ratio=ratio; d.deficit=1-ratio; });
+    } else {
+      mo.applied=mo.demand; mo.ratio=1;
+      mo.decs.forEach(d=>{ d.applVol=d.vol; d.applGross=d.Igross; d.ratio=1; d.deficit=0; });
+    }
+    mo.cap=P.capOn?P.capVol:null;
+  });
+  const netTot=decs.reduce((a,d)=>a+d.Inet,0);
+  const grossTot=decs.reduce((a,d)=>a+d.Igross,0);
+  const volTot=decs.reduce((a,d)=>a+d.vol,0);
+  const applTot=decs.reduce((a,d)=>a+d.applVol,0);
+  const peak=months.reduce((a,b)=>b.demand>(a?a.demand:-1)?b:a,null);
+  return {decs,months,cycle,nDec,netTot,grossTot,volTot,applTot,deficitTot:volTot-applTot,peak};
+}
+
+let PLAN=null;
+function render(){
+  const P=params();
+  $('areav').textContent=P.area.toFixed(1)+' ha';
+  $('effv').textContent=Math.round(P.eff*100)+'%';
+  $('etadjv').textContent=Math.round(P.etadj*100)+'%';
+  $('capvolv').textContent=P.capVol.toLocaleString('fr-FR')+' m³';
+  $('capBox').hidden=!P.capOn;
+  PLAN=buildPlan(P);
+  drawDec(P,PLAN); drawMon(P,PLAN); drawTable(P,PLAN); drawKPIs(P,PLAN); drawFmt(P,PLAN);
+}
+
+/* ---- Decadal bar chart : net / gross / applied ---- */
+function drawDec(P,PL){
+  const svg=$('svgDec'); svg.innerHTML='';
+  const W=900,H=300,PADL=44,PADR=12,PADT=14,PADB=40;
+  const x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB, n=PL.decs.length;
+  const ymax=Math.max(10,Math.max(...PL.decs.map(d=>d.Igross))*1.15);
+  const sy=v=>y1-(v/ymax)*(y1-y0);
+  const bw=(x1-x0)/n, pad=bw*0.16;
+  const step=ymax>120?40:ymax>60?20:ymax>30?10:5;
+  for(let v=0;v<=ymax;v+=step){ svg.appendChild(svgEl('line',{x1:x0,y1:sy(v),x2:x1,y2:sy(v),stroke:'#eef3e5','stroke-width':1}));
+    const t=svgEl('text',{x:x0-7,y:sy(v)+4,'text-anchor':'end',fill:'#9aa890','font-size':11});t.textContent=v;svg.appendChild(t);}
+  PL.decs.forEach((d,i)=>{
+    const bx=x0+i*bw+pad, w=bw-2*pad;
+    // gross demand (light) behind
+    svg.appendChild(svgEl('rect',{x:bx,y:sy(d.Igross),width:w,height:y1-sy(d.Igross),rx:2,fill:'#d7e6c4'}));
+    // applied under constraint (green)
+    svg.appendChild(svgEl('rect',{x:bx,y:sy(d.applGross),width:w,height:y1-sy(d.applGross),rx:2,fill:d.deficit>0.001?'#e0a63a':'#7cb342'}));
+    // net (darker inner)
+    svg.appendChild(svgEl('rect',{x:bx+w*0.28,y:sy(d.Inet),width:w*0.44,height:y1-sy(d.Inet),rx:1.5,fill:'#2f8f4e',opacity:.85}));
+    // stage tick
+    svg.appendChild(svgEl('rect',{x:bx,y:y1+3,width:w,height:4,rx:1,fill:STAGECOL[d.stage]}));
+    if(i%2===0||n<=12){const t=svgEl('text',{x:bx+w/2,y:y1+20,'text-anchor':'middle',fill:'#9aa890','font-size':10});t.textContent='D'+(i+1);svg.appendChild(t);}
+    // hover
+    const hit=svgEl('rect',{x:x0+i*bw,y:y0,width:bw,height:y1-y0,fill:'transparent'});
+    hit.style.cursor='pointer';
+    hit.addEventListener('mousemove',()=>{const L=I18N.lang;
+      $('hoverDec').innerHTML=`<b>D${i+1}</b> · <span class="stagebadge" style="background:${STAGECOL[d.stage]}22;color:${STAGECOL[d.stage]}">${I18N.t(STAGEKEY[d.stage])}</span> · Kc ${d.kc.toFixed(2)} · ETc <b>${d.ETc.toFixed(1)}</b> mm · ${I18N.t('lg_net')} <b>${d.Inet.toFixed(1)}</b> · ${I18N.t('lg_gross')} <b>${d.Igross.toFixed(1)}</b> mm · <b>${Math.round(d.applVol)}</b>/${Math.round(d.vol)} m³${d.deficit>0.001?` · <span style="color:var(--decision)">−${Math.round(d.deficit*100)}%</span>`:''}`;});
+    svg.appendChild(hit);
+  });
+  const L=I18N.lang;
+  $('legDec').innerHTML=`<span><i style="background:#2f8f4e"></i>${I18N.t('lg_net')}</span><span><i style="background:#7cb342"></i>${I18N.t('lg_applied')}</span><span><i style="background:#d7e6c4"></i>${I18N.t('lg_gross')}</span>`;
+  $('hoverDec').textContent=I18N.t('hover_hint');
+}
+
+/* ---- Monthly volume vs cap ---- */
+function drawMon(P,PL){
+  const svg=$('svgMon'); svg.innerHTML='';
+  const W=900,H=220,PADL=52,PADR=12,PADT=14,PADB=34;
+  const x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB, n=PL.months.length;
+  const ymax=Math.max(P.capOn?P.capVol:0, Math.max(...PL.months.map(m=>m.demand)))*1.15||100;
+  const sy=v=>y1-(v/ymax)*(y1-y0);
+  const bw=(x1-x0)/Math.max(n,1), pad=bw*0.22;
+  const step=Math.pow(10,Math.floor(Math.log10(ymax/3)))*(ymax/3>5*Math.pow(10,Math.floor(Math.log10(ymax/3)))?5:ymax/3>2*Math.pow(10,Math.floor(Math.log10(ymax/3)))?2:1);
+  for(let v=0;v<=ymax;v+=step){ svg.appendChild(svgEl('line',{x1:x0,y1:sy(v),x2:x1,y2:sy(v),stroke:'#eef3e5','stroke-width':1}));
+    const t=svgEl('text',{x:x0-7,y:sy(v)+4,'text-anchor':'end',fill:'#9aa890','font-size':10});t.textContent=Math.round(v).toLocaleString('fr-FR');svg.appendChild(t);}
+  PL.months.forEach((mo,i)=>{
+    const bx=x0+i*bw+pad, w=bw-2*pad;
+    const over=P.capOn&&mo.demand>P.capVol;
+    svg.appendChild(svgEl('rect',{x:bx,y:sy(mo.demand),width:w,height:y1-sy(mo.demand),rx:3,fill:over?'#f0d3a0':'#cfe3b6'}));
+    svg.appendChild(svgEl('rect',{x:bx,y:sy(mo.applied),width:w,height:y1-sy(mo.applied),rx:3,fill:over?'#e0a63a':'#7cb342'}));
+    const t=svgEl('text',{x:bx+w/2,y:y1+18,'text-anchor':'middle',fill:'#9aa890','font-size':10});t.textContent=MONTHS[I18N.lang][mo.month];svg.appendChild(t);
+    const hit=svgEl('rect',{x:x0+i*bw,y:y0,width:bw,height:y1-y0,fill:'transparent'});hit.style.cursor='pointer';
+    hit.addEventListener('mousemove',()=>{$('hoverMon').innerHTML=`<b>${MONTHS[I18N.lang][mo.month]}</b> · ${I18N.t('lg_demand')} <b>${Math.round(mo.demand).toLocaleString('fr-FR')}</b> m³ · ${I18N.t('lg_applied')} <b>${Math.round(mo.applied).toLocaleString('fr-FR')}</b> m³${over?` · <span style="color:var(--decision)">−${Math.round((1-mo.ratio)*100)}%</span>`:''}`;});
+    svg.appendChild(hit);
+  });
+  if(P.capOn){ svg.appendChild(svgEl('line',{x1:x0,y1:sy(P.capVol),x2:x1,y2:sy(P.capVol),stroke:'#c0392b','stroke-width':2,'stroke-dasharray':'7 5'}));}
+  const L=I18N.lang;
+  $('legMon').innerHTML=`<span><i style="background:#7cb342"></i>${I18N.t('lg_applied')}</span><span><i style="background:#cfe3b6"></i>${I18N.t('lg_demand')}</span>`+(P.capOn?`<span style="color:#c0392b"><i class="dash" style="color:#c0392b"></i>${I18N.t('lg_cap')}</span>`:'');
+  $('hoverMon').textContent=I18N.t('hover_hint');
+}
+
+function drawTable(P,PL){
+  const L=I18N.lang;
+  const head=['th_dec','th_dates','th_stage','th_kc','th_et0','th_etc','th_peff','th_inet','th_igross','th_vol','th_appl','th_defc'];
+  let h='<thead><tr>'+head.map((k,i)=>`<th class="${i===2?'stg':''}">${I18N.t(k)}</th>`).join('')+'</tr></thead><tbody>';
+  PL.decs.forEach(d=>{
+    const cls=d.deficit>0.25?'stress':d.deficit>0.001?'def':'';
+    const dl=d.startDate.getDate()+' '+MONTHS[L][d.startDate.getMonth()];
+    h+=`<tr class="${cls}"><td>D${d.i+1}</td><td>${dl}</td><td class="stg"><span class="stagebadge" style="background:${STAGECOL[d.stage]}22;color:${STAGECOL[d.stage]}">${I18N.t(STAGEKEY[d.stage])}</span></td>`+
+       `<td>${d.kc.toFixed(2)}</td><td>${d.et0.toFixed(1)}</td><td>${d.ETc.toFixed(1)}</td><td>${d.Peff.toFixed(1)}</td>`+
+       `<td>${d.Inet.toFixed(1)}</td><td>${d.Igross.toFixed(1)}</td><td>${Math.round(d.vol)}</td><td>${Math.round(d.applVol)}</td>`+
+       `<td>${d.deficit>0.001?'−'+Math.round(d.deficit*100)+'%':'—'}</td></tr>`;
+  });
+  h+='</tbody>';
+  $('tbl').innerHTML=h;
+}
+
+function drawKPIs(P,PL){
+  const L=I18N.lang, defPct=PL.volTot>0?Math.round(PL.deficitTot/PL.volTot*100):0;
+  const peakLbl=PL.peak?`${MONTHS[L][PL.peak.month]} · ${Math.round(PL.peak.demand).toLocaleString('fr-FR')} m³`:'—';
+  const cards=[
+    {l:'k_net',v:Math.round(PL.netTot),u:'mm'},
+    {l:'k_gross',v:Math.round(PL.grossTot),u:'mm'},
+    {l:'k_vol',v:Math.round(PL.applTot).toLocaleString('fr-FR'),u:'m³',cls:'good'},
+    {l:'k_peak',v:peakLbl,u:''},
+    {l:'k_ndec',v:PL.nDec,u:`· ${PL.cycle} j`},
+    {l:'k_deficit',v:P.capOn?('−'+defPct+'%'):'0%',u:P.capOn?`· ${Math.round(PL.deficitTot).toLocaleString('fr-FR')} m³`:'',cls:P.capOn&&defPct>15?'bad':P.capOn&&defPct>0?'warn':'good'}
+  ];
+  $('kpis').innerHTML=cards.map(c=>`<div class="kpi ${c.cls||''}"><div class="l">${I18N.t(c.l)}</div><div class="v">${c.v} <small>${c.u}</small></div></div>`).join('');
+}
+
+function drawFmt(P,PL){
+  $('fmt').textContent=I18N.t('fmt_hint')+'\n'+JSON.stringify({
+    crop:P.cr.id, climate:P.cl.id, texture:P.tx.id, sow:$('sow').value,
+    area_ha:P.area, efficiency:P.eff, cap:P.capOn?P.capVol:null,
+    decades:PL.decs.slice(0,2).map(d=>({d:d.i+1,stage:d.stage,kc:+d.kc.toFixed(2),ETc:+d.ETc.toFixed(1),net:+d.Inet.toFixed(1),gross:+d.Igross.toFixed(1),vol_m3:Math.round(d.vol)}))
+  },null,1).replace(/\n /g,'\n ');
+}
+
+/* ---- Export / Import ---- */
+function planJSON(){
+  const P=params(), PL=PLAN;
+  return {app:'planificateur-irrigation',version:1,crop:P.cr.id,climate:P.cl.id,texture:P.tx.id,
+    sow:$('sow').value,area_ha:P.area,efficiency:P.eff,etadj:P.etadj,cap:P.capOn?P.capVol:null,
+    summary:{net_mm:+PL.netTot.toFixed(1),gross_mm:+PL.grossTot.toFixed(1),volume_m3:Math.round(PL.volTot),applied_m3:Math.round(PL.applTot),deficit_m3:Math.round(PL.deficitTot)},
+    decades:PL.decs.map(d=>({d:d.i+1,start:d.startDate.toISOString().slice(0,10),stage:d.stage,kc:+d.kc.toFixed(3),et0:+d.et0.toFixed(2),etc:+d.ETc.toFixed(1),peff:+d.Peff.toFixed(1),net:+d.Inet.toFixed(1),gross:+d.Igross.toFixed(1),vol_m3:Math.round(d.vol),applied_m3:Math.round(d.applVol),deficit:+(d.deficit).toFixed(3)}))};
+}
+function doExportJSON(){ Store.download('plan-irrigation.json',JSON.stringify(planJSON(),null,2),'application/json'); }
+function doExportCSV(){
+  const PL=PLAN,L=I18N.lang;
+  const cols=['D','start','stage','kc','et0_mmday','etc_mm','peff_mm','net_mm','gross_mm','vol_m3','applied_m3','deficit_pct'];
+  let csv=cols.join(',')+'\n';
+  PL.decs.forEach(d=>{csv+=[d.i+1,d.startDate.toISOString().slice(0,10),d.stage,d.kc.toFixed(3),d.et0.toFixed(2),d.ETc.toFixed(1),d.Peff.toFixed(1),d.Inet.toFixed(1),d.Igross.toFixed(1),Math.round(d.vol),Math.round(d.applVol),Math.round(d.deficit*100)].join(',')+'\n';});
+  Store.download('plan-irrigation.csv',csv,'text/csv');
+}
+function doImport(){
+  Store.pickFile('.json',(txt)=>{ try{
+    const j=JSON.parse(txt);
+    if(j.crop&&CROPS.find(x=>x.id===j.crop)) $('crop').value=j.crop;
+    if(j.climate&&CLIM.find(x=>x.id===j.climate)) $('climate').value=j.climate;
+    if(j.texture&&TEX.find(x=>x.id===j.texture)) $('texture').value=j.texture;
+    if(j.sow) $('sow').value=j.sow;
+    if(j.area_ha) $('area').value=j.area_ha;
+    if(j.efficiency) $('eff').value=Math.round(j.efficiency*100);
+    if(j.etadj) $('etadj').value=Math.round(j.etadj*100);
+    if(j.cap){ document.querySelectorAll('#cap button').forEach(x=>x.classList.toggle('on',x.dataset.v==='on')); $('capvol').value=j.cap; }
+    else { document.querySelectorAll('#cap button').forEach(x=>x.classList.toggle('on',x.dataset.v==='off')); }
+    render();
+  }catch(e){ alert('Format invalide / Invalid format'); } });
+}
+
+/* ---- wire ---- */
+['crop','climate','texture'].forEach(id=>$(id).addEventListener('change',render));
+$('sow').addEventListener('change',render);
+['area','eff','etadj','capvol'].forEach(id=>$(id).addEventListener('input',render));
+document.querySelectorAll('#cap button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#cap button').forEach(x=>x.classList.remove('on'));b.classList.add('on');render();}));
+function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
+document.addEventListener('i18n:changed',()=>{applyHTML();fillSelects();render();});
+
+fillSelects();
+const urlLang=new URLSearchParams(location.search).get('lang');
+I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
+applyHTML(); render();
+if(window.Store&&Store.detect) Store.detect();
+</script>
+</body>
+</html>
