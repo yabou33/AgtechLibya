@@ -156,6 +156,19 @@ table.dt tr.stress{background:#fdf0ee}
 .gantt svg{display:block;width:100%;height:auto}
 .gantt .glabel{font:700 11px system-ui;fill:#4a5c37}
 .gantt .gaxis{font:10px system-ui;fill:#9aa890}
+
+/* Index picker (NDVI tab) */
+.idxgrp{font-size:.68rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:8px 0 4px}
+.idxrow{display:flex;flex-wrap:wrap;gap:6px}
+.idxbtn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:5px 10px;cursor:pointer;text-align:center;min-width:96px;transition:.12s}
+.idxbtn:hover{border-color:var(--green)}
+.idxbtn.on{background:var(--green);border-color:var(--green);color:#fff}
+.idxbtn .il{font-weight:800;font-size:.82rem}
+.idxbtn .is{font-size:.66rem;color:var(--muted);line-height:1.15}
+.idxbtn.on .is{color:#eaf5dd}
+.idxbtn:disabled{opacity:.4;cursor:not-allowed}
+.rampbar{height:14px;border-radius:7px;margin:8px 0 3px}
+.ramplbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);font-weight:700}
 </style>
 </head>
 <body>
@@ -243,17 +256,16 @@ table.dt tr.stress{background:#fdf0ee}
       <div class="lead">Images d'indice de végétation de la parcelle entre deux dates (2 mois par défaut), <b>série temporelle</b>, interprétation et <b>diagnostic agronomique</b> pour l'olivier. Nécessite les clés Sentinel (bouton ⚙️ en bas).</div>
       <div id="ndNoSel" class="notice warn" style="display:none">Sélectionnez d'abord une parcelle à l'étape 1.</div>
       <div class="toolbar">
-        <div class="field" style="margin:0"><label>Indice</label><select id="nd_idx">
-          <option value="NDVI">NDVI — vigueur</option>
-          <option value="NDRE">NDRE — chlorophylle</option>
-          <option value="NDMI">NDMI — eau/stress</option></select></div>
         <div class="field" style="margin:0"><label>Du</label><input type="date" id="nd_from"></div>
         <div class="field" style="margin:0"><label>Au</label><input type="date" id="nd_to"></div>
         <div class="field" style="margin:0"><label>Nuages max %</label><input type="number" id="nd_cloud" value="30" style="width:90px"></div>
         <button class="btn primary" id="nd_load">↻ Charger</button>
         <div class="field" style="margin:0"><label>Opacité raster</label><input type="range" id="nd_op" min="0" max="100" value="80"></div>
       </div>
-      <div id="nd_status" class="hint"></div>
+      <div style="font-weight:800;font-size:.9rem;margin:6px 0 2px">Indice spectral <span id="nd_idxName" class="chip">NDVI</span></div>
+      <div id="nd_picker"></div>
+      <div id="nd_ramp"></div>
+      <div id="nd_status" class="hint" style="margin-top:6px"></div>
     </div>
     <div class="grid2">
       <div>
@@ -563,6 +575,7 @@ function setSelected(p){
   const kr=document.getElementById('ir_kr'); if(kr && a.couvert) kr.value=a.couvert;
   if(document.getElementById('tab-irrig').classList.contains('on')) renderIrrig();
   if(ndviMap){ drawNdviParcel(); }
+  const nn=document.getElementById('ndNoSel'); if(nn)nn.style.display='none';
 }
 
 function cropIdOf(v){ v=String(v||'').toLowerCase(); const DB=window.CROPS_DB||[];
@@ -1197,12 +1210,33 @@ document.getElementById('irrDailyCsv').onclick=()=>download('bilan_quotidien.csv
    ============================================================ */
 const SH={ process:"https://services.sentinel-hub.com/api/v1/process",
   stats:"https://services.sentinel-hub.com/api/v1/statistics" };
-const NDV_IDX={
-  NDVI:{bands:['B04','B08'], f:'(B08-B04)/(B08+B04)', min:0, max:0.9},
-  NDRE:{bands:['B05','B08'], f:'(B08-B05)/(B08+B05)', min:0, max:0.8},
-  NDMI:{bands:['B08','B11'], f:'(B08-B11)/(B08+B11)', min:-0.2, max:0.6}
+const RAMPS={
+  veg:[[0,[165,38,38]],[0.3,[223,146,60]],[0.55,[255,235,150]],[0.75,[120,190,70]],[1,[20,110,40]]],
+  nut:[[0,[240,240,205]],[0.5,[150,200,110]],[1,[15,100,40]]],
+  water:[[0,[166,97,26]],[0.45,[223,194,125]],[0.6,[199,234,229]],[1,[30,120,180]]],
+  sen:[[0,[20,110,40]],[0.5,[240,220,90]],[1,[170,40,30]]],
+  soil:[[0,[40,120,50]],[0.5,[225,200,130]],[1,[140,80,40]]],
+  salin:[[0,[30,120,180]],[0.4,[120,190,120]],[0.7,[240,210,120]],[1,[200,40,40]]],
+  stress:[[0,[20,120,50]],[0.5,[245,215,90]],[1,[190,30,30]]]
 };
-const NDV_STOPS=[[0,[165,30,38]],[0.25,[220,150,60]],[0.5,[255,240,150]],[0.75,[120,190,70]],[1,[20,110,40]]];
+const NDV_IDX={
+  NDVI:{grp:'Végétation',lbl:'NDVI',sub:'Vigueur végétative',bands:['B04','B08'],f:'(B08-B04)/(B08+B04)',min:0,max:0.9,ramp:'veg',desc:'Biomasse / vigueur. Olivier en pleine vég. : 0,3–0,55 (canopée ouverte).'},
+  GNDVI:{grp:'Végétation',lbl:'GNDVI',sub:'Détection précoce',bands:['B03','B08'],f:'(B08-B03)/(B08+B03)',min:0,max:0.8,ramp:'veg',desc:'Sensible à la chlorophylle — détecte le stress avant le NDVI.'},
+  EVI:{grp:'Végétation',lbl:'EVI',sub:'Biomasse · pic vég.',bands:['B02','B04','B08'],f:'2.5*(B08-B04)/(B08+6*B04-7.5*B02+1)',min:0,max:1,ramp:'veg',desc:'Biomasse — corrige sol+atmosphère, sature moins que le NDVI.'},
+  MSAVI2:{grp:'Végétation',lbl:'MSAVI2',sub:'Vég. + sol nu',bands:['B04','B08'],f:'(2*B08+1-sqrt((2*B08+1)*(2*B08+1)-8*(B08-B04)))/2',min:0,max:1,ramp:'veg',desc:'Adapté début de cycle / couvert partiel (réduit l’effet du sol).'},
+  NDRE:{grp:'Red Edge · nutrition',lbl:'NDRE',sub:'Stress azoté',bands:['B05','B08'],f:'(B08-B05)/(B08+B05)',min:0,max:0.6,ramp:'nut',desc:'Azote / chlorophylle sur végétation dense.'},
+  CIRE:{grp:'Red Edge · nutrition',lbl:'CIRE',sub:'Chloro. Red Edge',bands:['B05','B07'],f:'(B07/(B05+0.0001))-1',min:0,max:5,ramp:'nut',desc:'Indice de chlorophylle Red Edge.'},
+  MTCI:{grp:'Red Edge · nutrition',lbl:'MTCI',sub:'Chloro. fine',bands:['B04','B05','B06'],f:'(B06-B05)/((B05-B04)+0.0001)',min:0,max:4,ramp:'nut',desc:'MERIS Terrestrial Chlorophyll Index (red-edge fin).'},
+  REIP:{grp:'Red Edge · nutrition',lbl:'REIP',sub:'Stade phéno.',bands:['B04','B05','B06','B07'],f:'700+40*(((B04+B07)/2-B05)/((B06-B05)+0.0001))',min:700,max:740,ramp:'nut',desc:'Point d’inflexion Red Edge (nm) → stade phénologique.'},
+  NDMI:{grp:'Eau / hydrique',lbl:'NDMI',sub:'Humidité · stress',bands:['B08','B11'],f:'(B08-B11)/(B08+B11)',min:-0.2,max:0.6,ramp:'water',desc:'Teneur en eau de la canopée / stress hydrique.'},
+  CWSI:{grp:'Eau / hydrique',lbl:'CWSI',sub:'Stress (proxy S2)',bands:['B08','B11'],f:'B11/(B08+0.0001)',min:0.3,max:1.4,ramp:'stress',desc:'Proxy de stress hydrique (MSI = B11/B08). Élevé = stress.'},
+  NDWI:{grp:'Eau / hydrique',lbl:'NDWI',sub:'Eau libre / irrigation',bands:['B03','B08'],f:'(B03-B08)/(B03+B08)',min:-0.3,max:0.5,ramp:'water',desc:'Eau libre / plans d’eau (McFeeters).'},
+  PSRI:{grp:'Sénescence · récolte',lbl:'PSRI',sub:'Sénescence',bands:['B03','B04','B06'],f:'(B04-B03)/(B06+0.0001)',min:-0.1,max:0.4,ramp:'sen',desc:'Sénescence / maturation (monte vers la récolte).'},
+  GCI:{grp:'Chlorophylle',lbl:'GCI',sub:'Chlorophylle totale',bands:['B03','B08'],f:'(B08/(B03+0.0001))-1',min:0,max:6,ramp:'nut',desc:'Green Chlorophyll Index (indice vert).'},
+  BSI:{grp:'Sol',lbl:'BSI',sub:'Sol nu',bands:['B02','B04','B08','B11'],f:'((B11+B04)-(B08+B02))/((B11+B04)+(B08+B02))',min:-0.5,max:0.5,ramp:'soil',desc:'Sol nu / début de cycle.'},
+  SI:{grp:'Sol',lbl:'SI',sub:'Salinité (approx.)',bands:['B03','B04'],f:'sqrt(B03*B04)',min:0,max:0.35,ramp:'salin',desc:'Indice de salinité optique (approx. Tunisie).'}
+};
+let ND_CUR='NDVI';
 let ndviMap=null, ndviParcelLayer=null, ndviRaster=null, ndviReady=false;
 async function shFetch(url,payload,expect){
   const tk=await window.SHConfig.getToken();
@@ -1220,15 +1254,31 @@ function bboxDims(bb,cap){ const midLat=(bb[1]+bb[3])/2*Math.PI/180;
   let pw=Math.round(w/10), ph=Math.round(h/10); const m=Math.max(pw,ph);
   if(m>(cap||768)){ const s=(cap||768)/m; pw=Math.round(pw*s); ph=Math.round(ph*s); }
   return {w:Math.max(2,pw),h:Math.max(2,ph)}; }
-function ndviVizEval(ix){ const stops=NDV_STOPS.map(s=>'['+(ix.min+(ix.max-ix.min)*s[0])+',['+s[1].join(',')+']]').join(',');
+const ND_BANDS='const B02=s.B02||0,B03=s.B03||0,B04=s.B04||0,B05=s.B05||0,B06=s.B06||0,B07=s.B07||0,B08=s.B08||0,B8A=s.B8A||0,B11=s.B11||0,B12=s.B12||0;const sqrt=Math.sqrt;';
+function ndviVizEval(ix){ const stops=RAMPS[ix.ramp].map(s=>'['+(ix.min+(ix.max-ix.min)*s[0])+',['+s[1].join(',')+']]').join(',');
   return `//VERSION=3
 function setup(){return{input:[{bands:[${ix.bands.map(b=>'"'+b+'"').join(',')},"dataMask"]}],output:{bands:4}};}
 const stops=[${stops}];
 function col(v){ if(v<=stops[0][0])return stops[0][1]; for(let i=1;i<stops.length;i++){ if(v<=stops[i][0]){ const f=(v-stops[i-1][0])/(stops[i][0]-stops[i-1][0]),a=stops[i-1][1],b=stops[i][1]; return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f]; } } return stops[stops.length-1][1]; }
-function evaluatePixel(s){ const B03=s.B03||0,B04=s.B04||0,B05=s.B05||0,B08=s.B08||0,B11=s.B11||0; const v=${ix.f}; const c=col(v); return [c[0]/255,c[1]/255,c[2]/255,s.dataMask]; }`; }
+function evaluatePixel(s){ ${ND_BANDS} let v=${ix.f}; if(!isFinite(v))v=${ix.min}; const c=col(v); return [c[0]/255,c[1]/255,c[2]/255,s.dataMask]; }`; }
 function ndviStatEval(ix){ return `//VERSION=3
 function setup(){return{input:[{bands:[${ix.bands.map(b=>'"'+b+'"').join(',')},"dataMask"]}],output:[{id:"data",bands:1,sampleType:"FLOAT32"},{id:"dataMask",bands:1}]};}
-function evaluatePixel(s){ const B03=s.B03||0,B04=s.B04||0,B05=s.B05||0,B08=s.B08||0,B11=s.B11||0; return {data:[${ix.f}],dataMask:[s.dataMask]}; }`; }
+function evaluatePixel(s){ ${ND_BANDS} let v=${ix.f}; let m=s.dataMask; if(!isFinite(v)){v=0;m=0;} return {data:[v],dataMask:[m]}; }`; }
+function rampCss(ramp){ return 'linear-gradient(90deg,'+RAMPS[ramp].map(s=>'rgb('+s[1].join(',')+') '+(s[0]*100).toFixed(0)+'%').join(',')+')'; }
+function renderRamp(){ const ix=NDV_IDX[ND_CUR]; document.getElementById('nd_ramp').innerHTML=
+  '<div class="rampbar" style="background:'+rampCss(ix.ramp)+'"></div>'+
+  '<div class="ramplbl"><span>'+ix.min+'</span><span>'+esc(ix.lbl+' · '+ix.sub)+'</span><span>'+ix.max+'</span></div>'+
+  '<div class="hint" style="margin-top:3px">'+esc(ix.desc)+'</div>'; }
+function renderIdxPicker(){
+  const groups={}; Object.keys(NDV_IDX).forEach(k=>{const ix=NDV_IDX[k];(groups[ix.grp]=groups[ix.grp]||[]).push(k);});
+  let h='';
+  Object.keys(groups).forEach(g=>{ h+='<div class="idxgrp">'+esc(g)+'</div><div class="idxrow">'+
+    groups[g].map(k=>{const ix=NDV_IDX[k];return '<button class="idxbtn'+(k===ND_CUR?' on':'')+'" data-k="'+k+'"><div class="il">'+esc(ix.lbl)+'</div><div class="is">'+esc(ix.sub)+'</div></button>';}).join('')+'</div>'; });
+  h+='<div class="idxgrp">Thermique</div><div class="idxrow"><button class="idxbtn" disabled title="Nécessite Landsat/MODIS — pas de bande thermique sur Sentinel-2"><div class="il">LST</div><div class="is">Température surface</div></button></div>';
+  const el=document.getElementById('nd_picker'); el.innerHTML=h;
+  el.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ ND_CUR=b.dataset.k; document.getElementById('nd_idxName').textContent=ND_CUR;
+    renderIdxPicker(); renderRamp(); if(APP.selected) loadNdvi(); });
+}
 function initNdviMap(){
   if(ndviMap) return;
   ndviMap=L.map('ndviMap',{doubleClickZoom:false}).setView([APP.farm.lat,APP.farm.lng],14);
@@ -1251,7 +1301,7 @@ const NDCRS="http://www.opengis.net/def/crs/OGC/1.3/CRS84";
 let ndGeom=null, ndBB=null, ndDim=null, ndShownDate=null;
 async function loadNdviRaster(dateStr){
   if(!ndGeom) return;
-  const ix=NDV_IDX[document.getElementById('nd_idx').value];
+  const ix=NDV_IDX[ND_CUR];
   const cloud=+document.getElementById('nd_cloud').value||30;
   const st=document.getElementById('nd_status');
   const from=dateStr+"T00:00:00Z", to=dateStr+"T23:59:59Z";
@@ -1265,14 +1315,14 @@ async function loadNdviRaster(dateStr){
     if(ndviRaster)ndviMap.removeLayer(ndviRaster);
     ndviRaster=L.imageOverlay(URL.createObjectURL(blob),[[ndBB[1],ndBB[0]],[ndBB[3],ndBB[2]]],{opacity:+document.getElementById('nd_op').value/100}).addTo(ndviMap);
     ndShownDate=dateStr;
-    document.getElementById('nd_shown').innerHTML='🖼️ Image affichée : <b>'+dateStr+'</b> · '+document.getElementById('nd_idx').value+' <span class="hint">(cliquez une autre date dans « Scènes disponibles »)</span>';
+    document.getElementById('nd_shown').innerHTML='🖼️ Image affichée : <b>'+dateStr+'</b> · '+ND_CUR+' <span class="hint">(cliquez une autre date dans « Scènes disponibles »)</span>';
     st.innerHTML='✓ image '+dateStr+' chargée';
     const tb=document.getElementById('nd_scenes'); if(tb) tb.querySelectorAll('tr[data-d]').forEach(tr=>tr.classList.toggle('irr',tr.dataset.d===dateStr));
   }catch(e){ st.innerHTML='<span style="color:var(--bad)">Image '+dateStr+' : '+esc(e.message)+'</span>'; }
 }
 async function loadNdvi(){
   if(!APP.selected){ document.getElementById('ndNoSel').style.display='block'; return; }
-  const ix=NDV_IDX[document.getElementById('nd_idx').value];
+  const ix=NDV_IDX[ND_CUR];
   const from=document.getElementById('nd_from').value, to=document.getElementById('nd_to').value;
   const cloud=+document.getElementById('nd_cloud').value||30;
   const st=document.getElementById('nd_status'); st.textContent='Requête Sentinel Hub (série)…';
@@ -1293,7 +1343,7 @@ async function loadNdvi(){
   }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur : '+esc(e.message)+' — vérifiez les clés Sentinel (⚙️).</span>'; }
 }
 function renderNdvi(ix,pts){
-  const name=document.getElementById('nd_idx').value;
+  const name=ND_CUR;
   document.getElementById('nd_serieName').textContent=name;
   tsChart(document.getElementById('nd_serie'),{lines:[{label:name,color:'#3fa66a',width:2.4,points:pts.map(p=>[Date.parse(p.d),+p.v.toFixed(3)])}],height:230,yUnit:'',
     onClick:ts=>{ const d=new Date(ts); const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); loadNdviRaster(ds); }});
@@ -1544,6 +1594,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   initSol();
   document.getElementById('nd_load').onclick=loadNdvi;
   document.getElementById('nd_op').oninput=e=>{ if(ndviRaster)ndviRaster.setOpacity(+e.target.value/100); };
+  renderIdxPicker(); renderRamp();
   const h=(location.hash||'').replace('#',''); if(['parc','ndvi','meteo','irrig','sol'].includes(h)) showTab(h);
 });
 </script>
