@@ -260,13 +260,22 @@ Object.assign(I18N.DICT, {
   no_depth:{fr:"(sans profondeur)",ar:"(بدون عمق)",en:"(no depth)"}
 });
 
-/* ---- soil texture presets (%VWC) : field capacity & wilting point ---- */
+/* ---- soil texture presets (%VWC) : field capacity (CC) & wilting point (PF)
+       Les 12 classes texturales du triangle USDA, du plus sableux au plus
+       argileux. CC/PF = valeurs volumiques typiques (à ajuster selon le sol). ---- */
 const TEX = [
-  {id:'sand',   fc:12, pf:4,  fr:"Sableux",             ar:"رملي",              en:"Sand"},
-  {id:'sloam',  fc:18, pf:8,  fr:"Limono-sableux",      ar:"طيني رملي",         en:"Sandy loam"},
-  {id:'loam',   fc:28, pf:12, fr:"Limoneux",            ar:"طَمْيي",             en:"Loam"},
-  {id:'cloam',  fc:38, pf:20, fr:"Argilo-limoneux",     ar:"طيني طَمْيي",        en:"Clay loam"},
-  {id:'clay',   fc:42, pf:24, fr:"Argileux",            ar:"طيني",              en:"Clay"}
+  {id:'sand',    fc:10, pf:4,  fr:"Sableux",                ar:"رملي",                en:"Sand"},
+  {id:'lsand',   fc:14, pf:6,  fr:"Sable limoneux",         ar:"رملي طَمْيي",          en:"Loamy sand"},
+  {id:'sloam',   fc:18, pf:8,  fr:"Limono-sableux",         ar:"طَمْيي رملي",          en:"Sandy loam"},
+  {id:'loam',    fc:26, pf:12, fr:"Limoneux (terre franche)",ar:"طَمْيي",              en:"Loam"},
+  {id:'silt',    fc:30, pf:10, fr:"Silteux",                ar:"غريني",               en:"Silt"},
+  {id:'siloam',  fc:31, pf:14, fr:"Limono-silteux",         ar:"طَمْيي غريني",         en:"Silt loam"},
+  {id:'scloam',  fc:27, pf:17, fr:"Limon argilo-sableux",   ar:"طَمْيي طيني رملي",     en:"Sandy clay loam"},
+  {id:'sclay',   fc:36, pf:25, fr:"Argile sableuse",        ar:"طيني رملي",           en:"Sandy clay"},
+  {id:'cloam',   fc:38, pf:20, fr:"Argilo-limoneux",        ar:"طيني طَمْيي",          en:"Clay loam"},
+  {id:'sicloam', fc:39, pf:22, fr:"Limon argilo-silteux",   ar:"طَمْيي طيني غريني",    en:"Silty clay loam"},
+  {id:'siclay',  fc:41, pf:27, fr:"Argile silteuse",        ar:"طيني غريني",          en:"Silty clay"},
+  {id:'clay',    fc:42, pf:24, fr:"Argileux",               ar:"طيني",                en:"Clay"}
 ];
 const DEPTH_COLORS = ['#3a9bd0','#2f7fae','#8e6fc7','#6f4fb0','#e0912b','#c9741a','#d1584e','#8a3b34'];
 
@@ -455,10 +464,14 @@ function drawChart(S,{CC,SR,PF}){
   const W=960,H=380,PADL=44,PADR=14,PADT=16,PADB=40;
   const x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB;
   const {depths,series:shallow}=shallowSeries(S);
-  // time bounds across all moisture depths
-  let tmin=Infinity,tmax=-Infinity,vmax=CC+8,vmin=Math.max(0,PF-4);
-  depths.forEach(d=>S.moisture[d].forEach(([t,v])=>{tmin=Math.min(tmin,t);tmax=Math.max(tmax,t);vmax=Math.max(vmax,v);}));
+  // time bounds + value range across all moisture depths
+  let tmin=Infinity,tmax=-Infinity,vmax=CC+8,dataMin=Infinity;
+  depths.forEach(d=>S.moisture[d].forEach(([t,v])=>{tmin=Math.min(tmin,t);tmax=Math.max(tmax,t);vmax=Math.max(vmax,v);dataMin=Math.min(dataMin,v);}));
   if(!isFinite(tmin)) return;
+  // l'axe descend sous le point le plus bas (données OU PF), jamais < 0,
+  // pour que les courbes ne soient jamais coupées en bas du graphique.
+  const floorRef=Math.min(PF-4, isFinite(dataMin)?dataMin-3:PF-4);
+  const vmin=Math.max(0, floorRef);
   const sx=t=>x0+(t-tmin)/(tmax-tmin||1)*(x1-x0);
   const sy=v=>y1-(v-vmin)/(vmax-vmin)*(y1-y0);
   // y grid
