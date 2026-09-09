@@ -52,9 +52,8 @@ header{background:linear-gradient(120deg,#5a3d12,#8a5a12);color:#fff;padding:14p
 <div class="wrap">
   <div class="card">
     <h2>Parcelle</h2>
-    <div class="lead">Dessinez une parcelle (outils en haut-gauche de la carte), importez un fichier (GeoJSON / CSV), ou chargez l'oliveraie SDA Zitouna. Sélectionnez-la puis calculez la topographie.</div>
+    <div class="lead">Dessinez une parcelle (outils en haut-gauche de la carte) ou importez un fichier (GeoJSON / CSV). Sélectionnez-la puis calculez la topographie (altitude, pente, exposition).</div>
     <div class="toolbar">
-      <button class="btn" id="btnZit">↻ Charger SDA Zitouna</button>
       <button class="btn" id="btnImport">⬆ Importer GeoJSON/CSV</button>
       <button class="btn primary" id="btnTopo">⛰️ Calculer la topographie</button>
       <button class="btn danger" id="btnClear">🗑 Effacer</button>
@@ -171,7 +170,6 @@ async function computeTopo(){
     setTimeout(()=>carto.map.fitBounds(L.polygon(V).getBounds().pad(0.3)),100);
   }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur MNT : '+esc(e.message)+'</span>'; }
 }
-document.getElementById('btnZit').onclick=loadZit;
 document.getElementById('btnImport').onclick=doImport;
 document.getElementById('btnTopo').onclick=computeTopo;
 document.getElementById('btnClear').onclick=()=>{ carto.load({name:'Vide',parcels:[],equipment:[]}); cur=null;
@@ -179,7 +177,7 @@ document.getElementById('btnClear').onclick=()=>{ carto.load({name:'Vide',parcel
   document.getElementById('curName').textContent='Aucune parcelle sélectionnée';
   document.getElementById('topoKpis').innerHTML=''; document.getElementById('topoLeg').innerHTML='';
   document.getElementById('topoInterp').innerHTML=''; document.getElementById('topoStatus').textContent='Sélectionnez une parcelle puis « Calculer ».'; };
-window.addEventListener('DOMContentLoaded',()=>{ initMap(); loadZit(); });
+window.addEventListener('DOMContentLoaded',()=>{ initMap(); });
 </script>
 </body>
 </html>
