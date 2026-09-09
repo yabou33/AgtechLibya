@@ -61,7 +61,7 @@
   function creds() {
     return {
       mode: lget(LS.mode, "direct_keys"),
-      proxy: lget(LS.proxy, "sh_token.php"),
+      proxy: lget(LS.proxy, "/api/sh_token"),
       cid: lget(LS.cid, ""),
       csec: lget(LS.csec, ""),
       token: lget(LS.token, "")
@@ -75,58 +75,53 @@
   async function getToken() {
     if (_tok && Date.now() < _exp - 60000) return _tok;
     var c = creds();
+    var errors = [];
 
     // 1) Jeton Bearer collé manuellement
     if (c.mode === "direct_token" && c.token) {
       _tok = c.token.trim(); _exp = Date.now() + 3600000; return _tok;
     }
 
-    // 2) OAuth direct depuis le navigateur (client_credentials) — CORS OK
+    // 2) Proxy CÔTÉ SERVEUR (OAuth fait par le serveur → aucun blocage CORS).
+    //    On essaie plusieurs points d'entrée : le proxy configuré, celui de la
+    //    plateforme Flask (/api/sh_token), puis le proxy PHP (sh_token.php).
+    //    Le Client ID/Secret saisis sont transmis en paramètres (HTTPS).
     if (c.cid && c.csec) {
-      var body = new URLSearchParams({ grant_type: "client_credentials", client_id: c.cid, client_secret: c.csec });
-      var r = null, netErr = null;
-      try {
-        r = await fetch(OAUTH, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body });
-      } catch (e) { netErr = e; r = null; }
-      if (r && r.ok) {
-        var j = await r.json();
-        if (j && j.access_token) { _tok = j.access_token; _exp = Date.now() + (j.expires_in || 3500) * 1000; return _tok; }
+      var candidates = [];
+      if (c.proxy) candidates.push(c.proxy);
+      ["/api/sh_token", "sh_token.php"].forEach(function (p) { if (candidates.indexOf(p) < 0) candidates.push(p); });
+      for (var i = 0; i < candidates.length; i++) {
+        var url = candidates[i];
+        var sep = url.indexOf("?") >= 0 ? "&" : "?";
+        url += sep + "client_id=" + encodeURIComponent(c.cid) + "&client_secret=" + encodeURIComponent(c.csec);
+        try {
+          var rp = await fetch(url, { cache: "no-store" });
+          if (!rp.ok) { errors.push("proxy " + candidates[i] + " → HTTP " + rp.status); continue; }
+          var jp = await rp.json(); // peut jeter si la réponse n'est pas du JSON
+          if (jp && jp.access_token) { _tok = jp.access_token; _exp = Date.now() + (jp.expires_in || 3500) * 1000; return _tok; }
+          errors.push("proxy " + candidates[i] + " → " + ((jp && (jp.error || jp.detail)) || "réponse sans token"));
+        } catch (e) { errors.push("proxy " + candidates[i] + " injoignable"); }
       }
-      if (c.mode === "direct_keys") {
-        var detail = "";
-        if (netErr) {
-          // fetch rejeté AVANT d'atteindre le serveur : quasi toujours dû à
-          // une page ouverte en file:// (le navigateur bloque le réseau).
-          detail = "requête bloquée par le navigateur (" + (netErr.message || netErr) +
-                   "). Ouvrez la page via http:// (serveur local / Render), pas en double-clic (file://).";
-        } else if (r) {
-          var t = "";
-          try { t = await r.text(); } catch (e) {}
-          var msg = "";
-          try { var ej = JSON.parse(t); msg = ej.error_description || ej.error_message || (typeof ej.error === "string" ? ej.error : "") || (ej.error && ej.error.message) || ""; }
-          catch (e) { msg = t.slice(0, 140); }
-          detail = "HTTP " + r.status + (msg ? " — " + msg : "") + (r.status === 401 ? " (Client ID / Secret invalides ?)" : "");
-        }
-        throw new Error("OAuth Sentinel Hub échoué — " + detail);
-      }
-      // sinon on tente le proxy en repli
     }
 
-    // 3) Proxy de repli (sh_token.php en local, /api/sh_token sur la plateforme)
-    var url = c.proxy;
+    // 3) OAuth DIRECT navigateur — dernier recours (souvent bloqué par CORS en
+    //    production, mais utile en local ou si un proxy CORS est en place).
     if (c.cid && c.csec) {
-      var sep = url.indexOf("?") >= 0 ? "&" : "?";
-      url += sep + "client_id=" + encodeURIComponent(c.cid) + "&client_secret=" + encodeURIComponent(c.csec);
+      try {
+        var body = new URLSearchParams({ grant_type: "client_credentials", client_id: c.cid, client_secret: c.csec });
+        var r = await fetch(OAUTH, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body });
+        if (r.ok) {
+          var j = await r.json();
+          if (j && j.access_token) { _tok = j.access_token; _exp = Date.now() + (j.expires_in || 3500) * 1000; return _tok; }
+          errors.push("OAuth navigateur → réponse sans token");
+        } else {
+          errors.push("OAuth navigateur → HTTP " + r.status + (r.status === 401 ? " (clés invalides ?)" : ""));
+        }
+      } catch (e) { errors.push("OAuth navigateur bloqué (CORS/réseau)"); }
     }
-    var r2 = await fetch(url, { cache: "no-store" });
-    if (!r2.ok) {
-      var txt = await r2.text(); var msg = "Proxy jeton erreur (" + r2.status + ")";
-      try { var pj = JSON.parse(txt); msg = pj.detail || pj.error || msg; } catch (e) {}
-      throw new Error(msg + " — configurez vos clés via ⚙️.");
-    }
-    var j2 = await r2.json();
-    if (!j2.access_token) throw new Error("Proxy jeton invalide");
-    _tok = j2.access_token; _exp = Date.now() + (j2.expires_in || 3500) * 1000; return _tok;
+
+    if (!c.cid && !c.csec && !c.token) throw new Error("Aucun identifiant Sentinel Hub configuré — cliquez ⚙️ et saisissez Client ID + Secret.");
+    throw new Error("Impossible d'obtenir un jeton Sentinel Hub. " + errors.join(" · "));
   }
 
   /* ---------- Modale de saisie (injectée seulement si la page

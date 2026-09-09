@@ -6,7 +6,7 @@
 #            python server.py         ->  http://localhost:8000
 #  La base SQLite et le compte admin sont créés automatiquement au 1er lancement.
 # =====================================================================
-import os, sqlite3, json, urllib.request, urllib.parse, ssl
+import os, sqlite3, json, urllib.request, urllib.parse, urllib.error, ssl
 from flask import Flask, request, session, jsonify, send_from_directory, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -160,27 +160,43 @@ def credentials():
                  "key": b.get("weather_api_key","")})
     con.commit(); con.close(); return jsonify(ok=True)
 
-@app.route("/api/sh_token")
+@app.route("/api/sh_token", methods=["GET", "POST"])
 def sh_token():
-    """Proxy OAuth Sentinel Hub par utilisateur — ne renvoie qu'un access_token temporaire."""
-    u = need_user()
-    if not u: return jsonify(ok=False, error="Non connecté"), 401
-    con = db()
-    c = con.execute("SELECT sh_client_id, sh_client_secret FROM user_credentials WHERE user_id=?",
-                    (u["id"],)).fetchone()
-    con.close()
-    if not c or not c["sh_client_id"] or not c["sh_client_secret"]:
-        return jsonify(ok=False, error="Identifiants Sentinel Hub absents (profil)."), 400
+    """Proxy OAuth Sentinel Hub — l'OAuth est fait côté serveur (aucun blocage CORS
+    navigateur), ne renvoie qu'un access_token temporaire.
+    Deux usages :
+      1) Client ID/Secret passés en paramètres (GET/POST) — modale ⚙️, sans login.
+      2) Sinon, identifiants stockés dans le profil de l'utilisateur connecté.
+    """
+    p = request.values  # args (GET) + form (POST)
+    cid = (p.get("client_id") or "").strip()
+    csec = (p.get("client_secret") or "").strip()
+    if not (cid and csec):
+        u = need_user()
+        if not u:
+            return jsonify(ok=False, error="Identifiants Sentinel Hub absents (⚙️) ou non connecté."), 401
+        con = db()
+        c = con.execute("SELECT sh_client_id, sh_client_secret FROM user_credentials WHERE user_id=?",
+                        (u["id"],)).fetchone()
+        con.close()
+        if not c or not c["sh_client_id"] or not c["sh_client_secret"]:
+            return jsonify(ok=False, error="Identifiants Sentinel Hub absents (profil)."), 400
+        cid, csec = c["sh_client_id"], c["sh_client_secret"]
     data = urllib.parse.urlencode({
         "grant_type": "client_credentials",
-        "client_id": c["sh_client_id"],
-        "client_secret": c["sh_client_secret"],
+        "client_id": cid,
+        "client_secret": csec,
     }).encode()
     try:
         ctx = ssl.create_default_context()
         req = urllib.request.Request("https://services.sentinel-hub.com/oauth/token", data=data)
+        req.add_header("Content-Type", "application/x-www-form-urlencoded")
+        req.add_header("Accept", "application/json")
         with urllib.request.urlopen(req, context=ctx, timeout=20) as resp:
             return app.response_class(resp.read(), mimetype="application/json")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", "replace")
+        return app.response_class(body, status=e.code, mimetype="application/json")
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 502
 
