@@ -498,8 +498,49 @@ body{padding-top:30px!important}
         </div>
       </div>
 
+      <div class="card">
+        <h3>🧭 Type d'aquifère &amp; méthode d'interprétation <span class="ar">نوع الطبقة وطريقة التفسير</span></h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px">
+          <div>
+            <label style="font-size:12px;color:var(--sub);font-weight:700">Type d'aquifère</label>
+            <select id="pt_aqtype" style="width:100%;margin-top:4px">
+              <option value="conf">Confiné (captif)</option>
+              <option value="leaky">Semi-confiné / drainant (leaky)</option>
+              <option value="unconf">Libre (non confiné)</option>
+              <option value="fract">Fissuré / karstique</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--sub);font-weight:700">Méthode</label>
+            <select id="pt_method" style="width:100%;margin-top:4px">
+              <option value="theis">Theis (courbe type)</option>
+              <option value="jacob">Cooper-Jacob (semi-log)</option>
+              <option value="recovery">Theis — récupération (remontée)</option>
+              <option value="hantush">Hantush-Jacob (drainant)</option>
+              <option value="neuman">Neuman (nappe libre)</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint" id="pt_methodNote" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <h3>📥 Mesures d'essai (temps – rabattement) <span class="ar">قياسات التجربة</span></h3>
+        <div class="hint">Saisissez vos relevés terrain, ou importez un fichier, ou générez-les depuis la simulation. L'app ajuste <b>T</b> et <b>S</b> par la méthode choisie.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+          <button id="pt_import" style="border-color:var(--blue);color:var(--blue)">📂 Importer CSV/JSON</button>
+          <button id="pt_gen">🎲 Générer depuis la simulation</button>
+          <button id="pt_addrow">＋ Ligne</button>
+          <button id="pt_fit" class="primary">📊 Ajuster (T, S)</button>
+          <button id="pt_clear" class="danger-btn">🗑</button>
+        </div>
+        <div style="max-height:220px;overflow:auto"><table style="width:100%;font-size:12px;border-collapse:collapse" id="pt_table"></table></div>
+        <div class="hint" id="pt_fitInfo" style="margin-top:8px"></div>
+        <div class="formula" id="pt_fitRes" style="margin-top:6px;display:none"></div>
+      </div>
+
       <div class="card" style="flex:1">
-        <h3>📈 Courbe de Theis — s = f(log t)</h3>
+        <h3>📈 Courbe — s = f(log t) <span class="ar">منحنى الرابط</span></h3>
         <canvas id="theisChart" style="width:100%;height:300px;background:#070f0a;border-radius:8px" height="300"></canvas>
       </div>
     </div>
@@ -565,8 +606,10 @@ body{padding-top:30px!important}
       <div class="card">
         <h3>🌊 Intrusion Saline (Jefara) <span class="ar">التسرب الملحي</span></h3>
         <div class="hint">Le pompage réduit la hauteur d'eau douce côtière, permettant à l'eau salée de pénétrer. La relation de Ghyben-Herzberg décrit l'interface.</div>
-        <div class="formula">z_sel = (ρ_e / (ρ_s - ρ_e)) × h_douce<br>≈ 40 × h_douce</div>
+        <div class="formula">Ghyben-Herzberg : z_sel = (ρ_e / (ρ_s − ρ_e)) × h_douce ≈ 40 × h_douce</div>
         <div class="hint">Chaque mètre de rabattement dans la nappe côtière fait remonter l'interface salée de <b style="color:var(--danger)">40 mètres</b> dans l'aquifère.</div>
+        <div class="formula" style="margin-top:8px">Biseau (Glover) : L = K·b²·(Δρ/ρ_e) / (2·q′)</div>
+        <div class="hint"><b>L</b> = longueur d'intrusion du biseau · <b>q′</b> = flux d'eau douce vers la mer (par mètre de côte). Le <b style="color:var(--danger)">pompage réduit q′</b> → le biseau <b>avance</b> vers l'intérieur (L augmente). Δρ/ρ_e ≈ 0,025.</div>
         <canvas id="saltProfileChart" class="mini-chart" height="120"></canvas>
       </div>
       <div class="card">
@@ -1169,10 +1212,14 @@ function drawSalt() {
   sctx.fillStyle = "rgba(255,255,255,0.4)"; sctx.textAlign = "center"; sctx.font = "11px Nunito Sans";
   sctx.fillText(`← ${seaDist} km du littoral →`, W * 0.375, H * 0.08);
 
-  // Update stats
-  const toeAdvance = (saltToe < W * 0.5) ? Math.round((W * 0.5 - saltToe) / W * 5000) : 0;
-  document.getElementById("saltInterface").textContent = `x = ${toeAdvance} m inland`;
-  document.getElementById("saltGH").textContent = `z_sel = ${(40 * freshHead).toFixed(0)} m`;
+  // Update stats — longueur d'intrusion (Glover, interface abrupte)
+  const K = aquifer.T / (aquifer.thickness || 60);           // conductivité K = T/b (m/s)
+  const b = aquifer.thickness || 60, delta = 0.025;          // Δρ/ρf ≈ (1025-1000)/1000
+  const qpr0 = 1.2e-5;                                       // flux d'eau douce vers la mer au repos (m²/s)
+  const qpr = Math.max(1e-7, qpr0 * (1 - pumpFactor * 0.92)); // le pompage réduit q' → le biseau avance
+  const Ltoe = K * b * b * delta / (2 * qpr);               // L = K·b²·(Δρ/ρf)/(2q')
+  document.getElementById("saltInterface").textContent = Ltoe > 1000 ? `L ≈ ${(Ltoe/1000).toFixed(2)} km` : `L ≈ ${Math.round(Ltoe)} m`;
+  document.getElementById("saltGH").textContent = `z_sel = 40 × ${freshHead.toFixed(1)} = ${(40 * freshHead).toFixed(0)} m`;
   const cl = Math.min(35000, 250 + pumpFactor * 25000);
   document.getElementById("saltCl").textContent = `${Math.round(cl)} mg/L`;
   document.getElementById("qCl").textContent = cl > 1000 ? `<b style="color:var(--danger)">${Math.round(cl)} mg/L ⚠️</b>` : `${Math.round(cl)} mg/L`;
@@ -1323,6 +1370,31 @@ function drawTheisChart() {
   ctx.fillText("— Courbe de Theis s(r,t)", L + 10, T2 + 16);
   ctx.fillStyle = "#b5852a"; ctx.fillText("--- Droite Cooper-Jacob (u<0.01)", L + 10, T2 + 30);
 
+  // --- mesures d'essai + ajustement ---
+  if (PT_DATA.length) {
+    ctx.fillStyle = "#e11d48";
+    PT_DATA.forEach(d => { const ts = d.t * 3600; if (ts <= 0 || d.s == null) return;
+      const px = L + (Math.log10(ts) / logMax) * cW, py = T2 + cH - (d.s / (sMax2 * 1.1)) * cH;
+      ctx.beginPath(); ctx.arc(px, Math.max(T2, Math.min(T2 + cH, py)), 3.2, 0, Math.PI * 2); ctx.fill(); });
+    ctx.fillStyle = "#e11d48"; ctx.font = "11px Nunito Sans"; ctx.textAlign = "left"; ctx.fillText("● Mesures", L + 10, T2 + 44);
+  }
+  if (PT_FIT) {
+    ctx.strokeStyle = "#16a34a"; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.beginPath();
+    if (PT_FIT.mode === "line" && PT_FIT.slope > 0) {
+      const bb = -PT_FIT.slope * Math.log10(PT_FIT.t0);
+      [Math.pow(10, 0.25 * logMax), Math.pow(10, logMax)].forEach((ts, i) => {
+        const s = PT_FIT.slope * Math.log10(ts) + bb, px = L + (Math.log10(ts) / logMax) * cW, py = T2 + cH - (s / (sMax2 * 1.1)) * cH;
+        i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+    } else if (PT_FIT.mode === "theis") {
+      const Qf = +document.getElementById("rgTheisQ").value / 3600, rf = +document.getElementById("rgTheisR").value; let st = false;
+      for (let lt = 1; lt <= 200; lt++) { const ts = Math.pow(10, (lt / 200) * logMax);
+        const s = theisPred(PT_FIT.T, PT_FIT.S, Qf, rf, ts), px = L + (Math.log10(ts) / logMax) * cW, py = T2 + cH - (s / (sMax2 * 1.1)) * cH;
+        st ? ctx.lineTo(px, py) : (ctx.moveTo(px, py), st = true); }
+    }
+    ctx.stroke();
+    ctx.fillStyle = "#16a34a"; ctx.font = "11px Nunito Sans"; ctx.fillText("— Ajustement (données)", L + 10, T2 + 58);
+  }
+
   // Update results
   document.getElementById("theisSMax").textContent = `${sMax2.toFixed(2)} m`;
   document.getElementById("theisRLabel").textContent = r;
@@ -1330,6 +1402,103 @@ function drawTheisChart() {
   document.getElementById("theisTCrit").textContent = tCrit > 3600 ? `${(tCrit / 3600).toFixed(1)} h` : `${Math.round(tCrit)} s`;
   document.getElementById("theisCalcT").textContent = `${T.toExponential(2)} m²/s`;
   document.getElementById("theisCalcS").textContent = S.toFixed(4);
+}
+
+/* ============================= ANALYSEUR D'ESSAI DE POMPAGE ============================= */
+let PT_DATA = [], PT_FIT = null;
+const PT_NOTES = {
+  conf:"Confiné (captif) : nappe sous couche imperméable, S faible (10⁻⁵–10⁻³). Méthodes : Theis, Cooper-Jacob, récupération.",
+  leaky:"Semi-confiné / drainant : l'aquitard laisse filtrer de l'eau (fuite verticale). Méthode : Hantush-Jacob (facteur de fuite B).",
+  unconf:"Libre (non confiné) : surface libre, débit différé (drainage gravitaire). Méthode : Neuman (ou Boulton) ; Cooper-Jacob en fin d'essai.",
+  fract:"Fissuré / karstique : double porosité (fissures + matrice) — l'interprétation Theis donne une T « équivalente » à prendre avec prudence."
+};
+const PT_RECO = { conf:"jacob", leaky:"hantush", unconf:"neuman", fract:"jacob" };
+const PT_METHODNOTE = {
+  theis:"Superposition à la courbe type W(u) — aquifère confiné, tout u.",
+  jacob:"Droite semi-log sur les temps tardifs (u<0.01) : pente Δs/cycle → T ; intercept t₀ → S.",
+  recovery:"Remontée après arrêt : rabattement résiduel s' vs log(t/t') → T (indépendant de S).",
+  hantush:"Aquifère drainant : la courbe s'infléchit puis se stabilise (fuite). Estimation T par la pente initiale.",
+  neuman:"Nappe libre : trois segments (élastique → palier → gravitaire). T estimée sur le segment tardif."
+};
+function ptNote(){
+  const aq=document.getElementById('pt_aqtype').value, m=document.getElementById('pt_method').value;
+  document.getElementById('pt_methodNote').innerHTML='<b>'+PT_NOTES[aq]+'</b><br>'+PT_METHODNOTE[m];
+}
+function renderPTtable(){
+  const tb=document.getElementById('pt_table');
+  tb.innerHTML='<tr style="border-bottom:1px solid var(--line);color:var(--sub)"><th style="text-align:left;padding:4px">t (h)</th><th style="text-align:left;padding:4px">rabattement s (m)</th><th></th></tr>'+
+    PT_DATA.map((d,i)=>'<tr><td style="padding:2px"><input type="number" step="0.01" value="'+d.t+'" data-i="'+i+'" data-f="t" style="width:90px"></td>'+
+      '<td style="padding:2px"><input type="number" step="0.001" value="'+d.s+'" data-i="'+i+'" data-f="s" style="width:90px"></td>'+
+      '<td><button data-del="'+i+'" style="padding:2px 7px" class="danger-btn">✕</button></td></tr>').join('');
+  tb.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{ PT_DATA[+inp.dataset.i][inp.dataset.f]=+inp.value||0; PT_FIT=null; drawTheisChart(); });
+  tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ PT_DATA.splice(+b.dataset.del,1); PT_FIT=null; renderPTtable(); drawTheisChart(); });
+}
+function ptAddRow(){ const last=PT_DATA[PT_DATA.length-1]; PT_DATA.push({t:last?+(last.t*2).toFixed(2):0.1,s:0}); renderPTtable(); }
+function ptGen(){
+  const Q=+document.getElementById('rgTheisQ').value/3600, r=+document.getElementById('rgTheisR').value,
+    S=Math.pow(10,+document.getElementById('rgTheisS').value), T=+document.getElementById('selTheisT').value, durH=+document.getElementById('rgTheisDur').value;
+  PT_DATA=[]; const n=14;
+  for(let i=1;i<=n;i++){ const ts=Math.pow(10, (i/n)*Math.log10(durH*3600)); const u=(r*r*S)/(4*T*ts);
+    let s=(Q/(4*Math.PI*T))*theis_W(u); s*= (1+(Math.random()-0.5)*0.06); // bruit capteur ±3%
+    PT_DATA.push({t:+(ts/3600).toFixed(3),s:+Math.max(0,s).toFixed(3)}); }
+  PT_FIT=null; renderPTtable(); drawTheisChart();
+  document.getElementById('pt_fitInfo').textContent='Données générées depuis la simulation (T,S « réels ») — ajustez pour retrouver T et S.';
+}
+function ptImport(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.csv,.json';
+  inp.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader();
+    rd.onload=()=>{ try{ let arr=[]; const txt=rd.result;
+      if(/^\s*[\[{]/.test(txt)){ const j=JSON.parse(txt); const a=Array.isArray(j)?j:(j.data||j.readings||[]);
+        arr=a.map(o=>({t:+(o.t!=null?o.t:o.time!=null?o.time:o.temps),s:+(o.s!=null?o.s:o.drawdown!=null?o.drawdown:o.rabattement)})); }
+      else { const L=txt.split(/\r?\n/).filter(x=>x.trim()); const h=L[0].toLowerCase().split(/[;,\t]/).map(x=>x.trim());
+        const it=h.findIndex(x=>/^(t|time|temps|t_h|t\(h\))/.test(x)), is=h.findIndex(x=>/^(s|drawdown|rabattement|s_m)/.test(x));
+        const ti=it<0?0:it, si=is<0?1:is;
+        for(let k=1;k<L.length;k++){ const c=L[k].split(/[;,\t]/); const t=parseFloat(c[ti]),s=parseFloat(c[si]); if(isFinite(t)&&isFinite(s))arr.push({t,s}); } }
+      arr=arr.filter(o=>isFinite(o.t)&&isFinite(o.s)); if(!arr.length)throw new Error('aucune paire (t,s) reconnue');
+      PT_DATA=arr; PT_FIT=null; renderPTtable(); drawTheisChart();
+      document.getElementById('pt_fitInfo').textContent='✓ '+arr.length+' mesures importées ('+f.name+').';
+    }catch(err){ document.getElementById('pt_fitInfo').innerHTML='<span style="color:var(--danger)">Import : '+err.message+'</span>'; } };
+    rd.readAsText(f); };
+  inp.click();
+}
+function theisPred(T,S,Q,r,t_s){ const u=(r*r*S)/(4*T*t_s); return (Q/(4*Math.PI*T))*theis_W(u); }
+function ptFit(){
+  const data=PT_DATA.filter(d=>d.t>0&&d.s>0);
+  const info=document.getElementById('pt_fitInfo'), res=document.getElementById('pt_fitRes');
+  if(data.length<3){ info.innerHTML='<span style="color:var(--danger)">Au moins 3 mesures (t>0, s>0) requises.</span>'; return; }
+  const Q=+document.getElementById('rgTheisQ').value/3600, r=+document.getElementById('rgTheisR').value;
+  const method=document.getElementById('pt_method').value;
+  res.style.display='block';
+  if(method==='jacob'){
+    // Cooper-Jacob : droite semi-log sur les temps tardifs (valide si u<0.01)
+    const pts=data.map(d=>({x:Math.log10(d.t*3600),y:d.s})).sort((a,b)=>a.x-b.x);
+    const use=pts.slice(Math.floor(pts.length/2)); const U=use.length>=3?use:pts;
+    let n=U.length,Sx=0,Sy=0,Sxx=0,Sxy=0; U.forEach(p=>{Sx+=p.x;Sy+=p.y;Sxx+=p.x*p.x;Sxy+=p.x*p.y;});
+    const slope=(n*Sxy-Sx*Sy)/((n*Sxx-Sx*Sx)||1e-9), b=(Sy-slope*Sx)/n;
+    const T=2.3*Q/(4*Math.PI*slope), t0=Math.pow(10,-b/slope), Sc=2.25*T*t0/(r*r);
+    PT_FIT={mode:'line',slope,t0,T,S:Sc};
+    res.innerHTML='<b>T</b> = '+T.toExponential(2)+' m²/s · <b>S</b> = '+(Sc>0?Sc.toExponential(2):'—')+' · Δs/cycle = '+slope.toFixed(3)+' m · t₀ = '+(t0/3600).toFixed(2)+' h';
+    info.innerHTML='Cooper-Jacob (droite semi-log) : T = 2,3·Q/(4π·Δs) · S = 2,25·T·t₀/r². Valide si u&lt;0,01 (temps tardifs).';
+    document.getElementById('theisCalcT').textContent=T.toExponential(2)+' m²/s';
+    document.getElementById('theisCalcS').textContent=Sc>0?Sc.toExponential(2):'—';
+  } else {
+    // Ajustement Theis par moindres carrés (grille T,S puis affinage) — robuste tout régime
+    let best=null;
+    const scan=(t0l,t1l,s0l,s1l,dT,dS)=>{ for(let lt=t0l;lt<=t1l;lt+=dT){ const T=Math.pow(10,lt);
+      for(let ls=s0l;ls<=s1l;ls+=dS){ const S=Math.pow(10,ls); let sse=0;
+        for(const d of data){ const p=theisPred(T,S,Q,r,d.t*3600); sse+=(p-d.s)*(p-d.s); }
+        if(!best||sse<best.sse)best={T,S,sse,lt,ls}; } } };
+    scan(-5,-1,-4,-0.3,0.1,0.15);
+    scan(best.lt-0.15,best.lt+0.15,best.ls-0.3,best.ls+0.3,0.03,0.05); // affinage
+    const rmse=Math.sqrt(best.sse/data.length);
+    PT_FIT={mode:'theis',T:best.T,S:best.S};
+    res.innerHTML='<b>T</b> = '+best.T.toExponential(2)+' m²/s · <b>S</b> = '+best.S.toExponential(2)+' · RMSE = '+rmse.toFixed(3)+' m';
+    const mn={theis:'Theis (courbe type)',recovery:'récupération',hantush:'Hantush (drainant)',neuman:'Neuman (nappe libre)'}[method]||method;
+    info.innerHTML='Ajustement <b>Theis par moindres carrés</b> sur '+data.length+' mesures (méthode : '+mn+'). '+(method!=='theis'?'Approximation Theis équivalente ; pour Hantush/Neuman, la fuite/le débit différé ne sont pas modélisés explicitement.':'');
+    document.getElementById('theisCalcT').textContent=best.T.toExponential(2)+' m²/s';
+    document.getElementById('theisCalcS').textContent=best.S.toExponential(2);
+  }
+  drawTheisChart();
 }
 
 /* ============================= BILAN CHART ============================= */
@@ -1609,6 +1778,16 @@ function updateTheisResults() {
 const btnRunPlan = document.getElementById("btnRunPlan");
 if (btnRunPlan) btnRunPlan.onclick = () => drawPlan();
 
+/* ---- analyseur essai de pompage : bindings ---- */
+document.getElementById('pt_aqtype').onchange=()=>{ document.getElementById('pt_method').value=PT_RECO[document.getElementById('pt_aqtype').value]||'jacob'; ptNote(); };
+document.getElementById('pt_method').onchange=ptNote;
+document.getElementById('pt_import').onclick=ptImport;
+document.getElementById('pt_gen').onclick=ptGen;
+document.getElementById('pt_addrow').onclick=ptAddRow;
+document.getElementById('pt_fit').onclick=ptFit;
+document.getElementById('pt_clear').onclick=()=>{ PT_DATA=[]; PT_FIT=null; renderPTtable(); drawTheisChart(); document.getElementById('pt_fitRes').style.display='none'; document.getElementById('pt_fitInfo').textContent=''; };
+ptNote(); renderPTtable();
+
 /* ============================= INIT ============================= */
 window.addEventListener("load", () => {
   setTimeout(() => {
@@ -1617,6 +1796,8 @@ window.addEventListener("load", () => {
     updateBilan(); drawBilanChart();
     resizePlan(); drawPlan();
     drawTheisChart(); updateTheisResults();
+    const mp=new URLSearchParams(location.search).get('mod');
+    if(mp){ const key='mod'+mp.charAt(0).toUpperCase()+mp.slice(1); if(modBtns[key]) modBtns[key].btn.click(); }
   }, 100);
 });
 
