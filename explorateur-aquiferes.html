@@ -82,7 +82,8 @@ body{padding-top:30px!important}
   <div class="grid-main">
     <!-- ---- Map ---- -->
     <div class="card">
-      <h2>🗺️ <span data-i18n="x_map_title"></span></h2>
+      <h2>🗺️ <span data-i18n="x_map_title"></span>
+        <button id="btnTbound" style="float:right;font-size:12px;font-weight:700;border:1px solid var(--line,#d8e4c8);background:#fff;color:#2c3a24;padding:5px 10px;border-radius:8px;cursor:pointer">🌍 <span data-i18n="x_tbound"></span></button></h2>
       <div id="map"></div>
       <div class="maphint" id="maphint"></div>
     </div>
@@ -109,6 +110,7 @@ body{padding-top:30px!important}
         <div class="seg" id="compMode">
           <button class="on" data-v="res" data-i18n="c_mode_res"></button>
           <button data-v="sal" data-i18n="c_mode_sal"></button>
+          <button data-v="time" data-i18n="c_mode_time"></button>
         </div>
         <svg class="chart" id="comp" viewBox="0 0 900 360" preserveAspectRatio="xMidYMid meet"></svg>
         <div class="compnote" id="compNote" data-i18n-html="c_note_res"></div>
@@ -198,6 +200,30 @@ const AQ=[
   poly:[[33.2,19.5],[33,23.2],[31.3,23],[31,20],[32,19.5],[33.2,19.5]]}
 ];
 
+/* ===== extension transfrontalière + exploitation dans le temps ===== */
+const AQ_EXTRA={
+ nubian:{shared:{fr:"Transfrontalier — Libye · Égypte · Soudan · Tchad (SASN)",en:"Transboundary — Libya · Egypt · Sudan · Chad (NSAS)",ar:"عابر للحدود — ليبيا · مصر · السودان · تشاد (النظام النوبي)"},
+   exploit:[[1991,0],[1996,180],[2000,500],[2005,900],[2010,1150],[2015,1300],[2020,1350],[2024,1350]]},
+ murzuq:{shared:{fr:"Transfrontalier — Libye · Algérie · Niger (bassin de Mourzouk/Djado)",en:"Transboundary — Libya · Algeria · Niger (Murzuq/Djado basin)",ar:"عابر للحدود — ليبيا · الجزائر · النيجر (حوض مرزق)"},
+   exploit:[[1996,0],[2000,150],[2005,350],[2010,520],[2015,580],[2020,600],[2024,600]]},
+ hamada:{shared:{fr:"Transfrontalier — Libye · Tunisie · Algérie (SASS)",en:"Transboundary — Libya · Tunisia · Algeria (NWSAS)",ar:"عابر للحدود — ليبيا · تونس · الجزائر (النظام الصحراوي الشمالي)"},
+   exploit:[[1975,15],[1990,40],[2005,70],[2015,88],[2024,95]]},
+ jefara:{shared:{fr:"Transfrontalier — Libye · Tunisie (plaine de la Jefara/Jeffara)",en:"Transboundary — Libya · Tunisia (Jefara plain)",ar:"عابر للحدود — ليبيا · تونس (سهل الجفارة)"},
+   exploit:[[1970,90],[1985,380],[2000,650],[2010,800],[2020,850],[2024,860]]},
+ cyrenaica:{shared:{fr:"National (côtier — Jebel Akhdar)",en:"National (coastal — Jebel Akhdar)",ar:"وطني (ساحلي — الجبل الأخضر)"},
+   exploit:[[1970,50],[1990,140],[2005,220],[2015,275],[2024,300]]}
+};
+AQ.forEach(a=>Object.assign(a,AQ_EXTRA[a.id]||{}));
+/* systèmes aquifères transfrontaliers (empreinte régionale schématique, [lat,lon]) */
+const TBOUND=[
+ {id:'nsas',color:'#3a9bd0',name:{fr:"SASN — Grès de Nubie · Libye · Égypte · Soudan · Tchad",en:"NSAS — Nubian Sandstone · Libya · Egypt · Sudan · Chad",ar:"النظام النوبي · ليبيا · مصر · السودان · تشاد"},
+  poly:[[31,18],[31.5,34],[22,34],[18,33],[15.5,25],[18,19.5],[24,16.5],[31,18]]},
+ {id:'nwsas',color:'#e0912b',name:{fr:"SASS — Sahara Septentrional · Algérie · Tunisie · Libye",en:"NWSAS — NW Sahara · Algeria · Tunisia · Libya",ar:"النظام الصحراوي الشمالي · الجزائر · تونس · ليبيا"},
+  poly:[[35,4],[35.5,11],[33,12],[29,12.5],[27,10.5],[28.5,4],[35,4]]},
+ {id:'jefara_tb',color:'#d1584e',name:{fr:"Jefara · Libye · Tunisie",en:"Jefara · Libya · Tunisia",ar:"الجفارة · ليبيا · تونس"},
+  poly:[[34.4,10],[33.2,12.4],[32.4,11.6],[33.6,9.6],[34.4,10]]}
+];
+
 /* ===== GMMR conveyance lines (coords = [lat,lon]) ===== */
 const GMMR=[
  {phase:1,color:"#00e5ff",name:{fr:"Phase I — Sarir/Tazerbo → Syrte/Benghazi",ar:"المرحلة I — السرير/تازربو ← سرت/بنغازي",en:"Phase I — Sarir/Tazerbo → Sirte/Benghazi"},
@@ -245,6 +271,13 @@ Object.assign(I18N.DICT,{
  ty_renew:{fr:"Rechargé (pluvial)",ar:"متجدد (مطري)",en:"Recharged (rainfed)"},
  c_mode_res:{fr:"Réserves vs recharge",ar:"المخزون مقابل التغذية",en:"Reserves vs recharge"},
  c_mode_sal:{fr:"Salinité (CE)",ar:"الملوحة",en:"Salinity (EC)"},
+ c_mode_time:{fr:"Exploitation / temps",ar:"الاستغلال عبر الزمن",en:"Exploitation / time"},
+ c_note_time:{fr:"<b>Prélèvements dans le temps</b> (Mm³/an). Le <b>GMMR</b> (Nubien, Mourzouk) monte en flèche dès 1991-1996 sur une eau <b>fossile</b> : ces courbes ne redescendront pas d'elles-mêmes. La <b>Jefara</b> croît bien au-delà de sa recharge (~180 Mm³/an) → déficit chronique et intrusion saline. Comparez la pente à la recharge pour juger la durabilité.",
+   ar:"<b>السحب عبر الزمن</b> (م.م³/سنة). يرتفع <b>النهر الصناعي</b> (النوبي، مرزق) بشدة منذ 1991-1996 على مياه <b>أحفورية</b>. أما <b>الجفارة</b> فتتجاوز تغذيتها (~180) → عجز مزمن وتداخل ملحي.",
+   en:"<b>Abstraction over time</b> (Mm³/yr). The <b>GMMR</b> (Nubian, Murzuq) soars from 1991-1996 on <b>fossil</b> water: these curves won't fall back by themselves. <b>Jefara</b> grows well beyond its recharge (~180) → chronic deficit and saline intrusion."},
+ f_shared:{fr:"Extension régionale",ar:"الامتداد الإقليمي",en:"Regional extent"},
+ x_tbound:{fr:"Étendue transfrontalière",ar:"الامتداد العابر للحدود",en:"Transboundary extent"},
+ leg_tbound:{fr:"systèmes transfrontaliers (SASN · SASS)",ar:"أنظمة عابرة للحدود",en:"transboundary systems (NSAS · NWSAS)"},
  c_res_label:{fr:"Réserves (Mm³, log)",ar:"المخزون (م.م³، لوغ)",en:"Reserves (Mm³, log)"},
  c_rech_label:{fr:"Recharge (Mm³/an, log)",ar:"التغذية (م.م³/سنة، لوغ)",en:"Recharge (Mm³/yr, log)"},
  c_sal_label:{fr:"CE moyenne (dS/m)",ar:"الناقلية (dS/m)",en:"Mean EC (dS/m)"},
@@ -323,6 +356,18 @@ function drawMap(){
     html:'<div style="width:11px;height:11px;background:#fff;border:2px solid #333;border-radius:50%"></div>'})})
     .bindTooltip(c.no,{permanent:true,direction:'right',className:'cityLbl',offset:[6,0]}).addTo(ptLayer));
 }
+let tboundLayer=null, tboundOn=false;
+function drawTbound(){
+  if(tboundLayer){ map.removeLayer(tboundLayer); tboundLayer=null; }
+  const btn=$('btnTbound'); if(btn) btn.style.background=tboundOn?'#eaf3fb':'#fff';
+  if(!tboundOn) return;
+  tboundLayer=L.layerGroup().addTo(map);
+  TBOUND.forEach(tb=>{
+    L.polygon(tb.poly,{color:tb.color,weight:2,dashArray:'10 8',fill:true,fillColor:tb.color,fillOpacity:0.05,opacity:.9})
+      .bindTooltip(tb.name[I18N.lang]||tb.name.fr,{sticky:true}).addTo(tboundLayer);
+  });
+  try{ map.fitBounds(L.latLngBounds([].concat(...TBOUND.map(t=>t.poly))).pad(0.05)); }catch(e){}
+}
 function selectAq(id,noPan){
   SEL=id; const a=AQ.find(x=>x.id===id); if(!a)return;
   $('aqSel').value=id;
@@ -352,6 +397,7 @@ function renderFiche(a){
     row(t('f_ec'),a.ec+' '+t('u_dsm'))+
     row(t('f_tds'),a.tds+' '+t('u_mgl'))+
     row(t('f_use'),a.use[I18N.lang]||a.use.fr)+
+    (a.shared?row(t('f_shared'),'<b style="color:#2a7fb8">'+(a.shared[I18N.lang]||a.shared.fr)+'</b>'):'')+
     `<div class="statusbar ${a.type==='fossil'?'t-fossil':a.type==='renew'?'t-fossil':'t-semi'}">${t('f_status')} : ${a.status[I18N.lang]||a.status.fr}</div>`;
 }
 function fillSel(){
@@ -389,6 +435,9 @@ function drawComp(){
     lgd(svg,x0,H-4,[[a=>a,'','']]); // noop placeholder
     legendRow(svg,[[t('c_res_label'),'#3a9bd0'],[t('c_rech_label'),'#5a8f2c']]);
     $('compNote').setAttribute('data-i18n-html','c_note_res');
+  } else if(COMPMODE==='time'){
+    drawCompTime(svg,x0,x1,y0,y1);
+    $('compNote').setAttribute('data-i18n-html','c_note_time');
   } else {
     const emax=8.5, bx=v=>x0+v/emax*(x1-x0);
     for(let e=0;e<=8;e+=2){ const xx=bx(e);
@@ -408,6 +457,21 @@ function drawComp(){
     $('compNote').setAttribute('data-i18n-html','c_note_sal');
   }
   $('compNote').innerHTML=I18N.t($('compNote').getAttribute('data-i18n-html'));
+}
+function drawCompTime(svg,x0,x1,y0,y1){
+  const yr0=1970,yr1=2025, xt=y=>x0+(y-yr0)/(yr1-yr0)*(x1-x0);
+  let qmax=0; AQ.forEach(a=>(a.exploit||[]).forEach(p=>qmax=Math.max(qmax,p[1]))); qmax=Math.ceil(qmax/200)*200||200;
+  const yq=q=>y1-q/qmax*(y1-y0);
+  for(let g=0;g<=4;g++){ const q=qmax*g/4, yy=yq(q); svg.appendChild(svgEl('line',{x1:x0,y1:yy,x2:x1,y2:yy,stroke:'#eef3e5','stroke-width':1}));
+    const tx=svgEl('text',{x:x0-8,y:yy+3,'text-anchor':'end',fill:'#9aa890','font-size':10}); tx.textContent=Math.round(q); svg.appendChild(tx); }
+  for(let y=1970;y<=2025;y+=10){ const xx=xt(y); svg.appendChild(svgEl('line',{x1:xx,y1:y0,x2:xx,y2:y1,stroke:'#f2f6ec','stroke-width':1}));
+    const tx=svgEl('text',{x:xx,y:y1+15,'text-anchor':'middle',fill:'#9aa890','font-size':10}); tx.textContent=y; svg.appendChild(tx); }
+  const yl=svgEl('text',{x:x0-8,y:y0-3,'text-anchor':'end',fill:'#6f7d64','font-size':10,'font-weight':700}); yl.textContent='Mm³/an'; svg.appendChild(yl);
+  AQ.forEach(a=>{ const ex=a.exploit||[]; if(ex.length<2)return; let d='';
+    ex.forEach((p,i)=>{ d+=(i?'L':'M')+xt(p[0]).toFixed(1)+' '+yq(p[1]).toFixed(1)+' '; });
+    svg.appendChild(svgEl('path',{d:d,fill:'none',stroke:a.color,'stroke-width':a.id===SEL?3.4:2,opacity:a.id===SEL?1:.75}));
+    const last=ex[ex.length-1], lb=svgEl('text',{x:xt(last[0])+5,y:yq(last[1])+3,fill:a.color,'font-size':9.5,'font-weight':700});
+    lb.textContent=(a.name[I18N.lang]||a.name.fr).split('(')[0].split('—')[0].trim().slice(0,13); svg.appendChild(lb); });
 }
 function lgd(){} // unused
 function legendRow(svg,items){
@@ -537,9 +601,10 @@ document.querySelectorAll('#compMode button').forEach(b=>b.addEventListener('cli
   COMPMODE=b.dataset.v; drawComp();
 }));
 $('aqSel').addEventListener('change',e=>selectAq(e.target.value));
+$('btnTbound').addEventListener('click',()=>{ tboundOn=!tboundOn; drawTbound(); });
 function applyHTML(){document.querySelectorAll('[data-i18n-html]').forEach(el=>el.innerHTML=I18N.t(el.getAttribute('data-i18n-html')));}
 document.addEventListener('i18n:changed',()=>{
-  applyHTML(); fillSel(); drawMap(); selectAq(SEL,true); renderHint(); showFmt(); addGeoSearch();
+  applyHTML(); fillSel(); drawMap(); drawTbound(); selectAq(SEL,true); renderHint(); showFmt(); addGeoSearch();
   if($('p-comp').classList.contains('on')) drawComp();
 });
 
@@ -548,6 +613,10 @@ const urlLang=new URLSearchParams(location.search).get('lang');
 I18N.set(urlLang||localStorage.getItem('agri_lang')||'fr');
 applyHTML();
 initMap(); fillSel(); selectAq(SEL,true); renderHint(); showFmt();
+(function(){ const qp=new URLSearchParams(location.search);
+  if(qp.get('tb')==='1'){ tboundOn=true; drawTbound(); }
+  const cm=qp.get('comp'); if(cm){ COMPMODE=cm; const tb=document.querySelector('.tabs [data-t=comp]'); if(tb)tb.click();
+    document.querySelectorAll('#compMode button').forEach(x=>x.classList.toggle('on',x.dataset.v===cm)); drawComp(); } })();
 if(window.Store&&Store.detect) Store.detect();
 </script>
 <script src="map-panels.js"></script>
