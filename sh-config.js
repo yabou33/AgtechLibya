@@ -84,19 +84,30 @@
     // 2) OAuth direct depuis le navigateur (client_credentials) — CORS OK
     if (c.cid && c.csec) {
       var body = new URLSearchParams({ grant_type: "client_credentials", client_id: c.cid, client_secret: c.csec });
-      var r = null;
+      var r = null, netErr = null;
       try {
         r = await fetch(OAUTH, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body });
-      } catch (e) { r = null; }
+      } catch (e) { netErr = e; r = null; }
       if (r && r.ok) {
         var j = await r.json();
         if (j && j.access_token) { _tok = j.access_token; _exp = Date.now() + (j.expires_in || 3500) * 1000; return _tok; }
       }
       if (c.mode === "direct_keys") {
         var detail = "";
-        try { if (r) { var t = await r.text(); var ej = JSON.parse(t); detail = ej.error_description || ej.error || t.slice(0, 120); } }
-        catch (e) {}
-        throw new Error("OAuth Sentinel Hub échoué" + (detail ? " — " + detail : "") + ". Vérifiez Client ID / Secret (⚙️).");
+        if (netErr) {
+          // fetch rejeté AVANT d'atteindre le serveur : quasi toujours dû à
+          // une page ouverte en file:// (le navigateur bloque le réseau).
+          detail = "requête bloquée par le navigateur (" + (netErr.message || netErr) +
+                   "). Ouvrez la page via http:// (serveur local / Render), pas en double-clic (file://).";
+        } else if (r) {
+          var t = "";
+          try { t = await r.text(); } catch (e) {}
+          var msg = "";
+          try { var ej = JSON.parse(t); msg = ej.error_description || ej.error_message || (typeof ej.error === "string" ? ej.error : "") || (ej.error && ej.error.message) || ""; }
+          catch (e) { msg = t.slice(0, 140); }
+          detail = "HTTP " + r.status + (msg ? " — " + msg : "") + (r.status === 401 ? " (Client ID / Secret invalides ?)" : "");
+        }
+        throw new Error("OAuth Sentinel Hub échoué — " + detail);
       }
       // sinon on tente le proxy en repli
     }
