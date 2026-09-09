@@ -1,0 +1,14 @@
+# Déploiement 1-clic sur Render.com depuis GitHub (offre gratuite)
+# Ce fichier à la RACINE du repo permet à Render "New → Blueprint" de tout
+# configurer automatiquement. Le service Python vit dans le dossier platform/.
+services:
+  - type: web
+    name: agritech-libya
+    runtime: python
+    plan: free
+    rootDir: platform
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: AGRI_SECRET
+        generateValue: true
