@@ -1,0 +1,5 @@
+[
+  {"local_time": "2024-02-23T15:00:00+00:00", "site_name": "Queen Vic", "site_id": "66204", "id": "21317888", "probe_id": "1338798", "probe_measure": "Soil Moisture 80cm #0", "soil_value": 43.63, "unit": "%VWC", "json_featuretype": "Output", "year": null},
+  {"local_time": "2024-02-23T17:00:00+00:00", "site_name": "Royal Parade University college", "site_id": "70829", "id": "21317952", "probe_id": "1495863", "probe_measure": "Soil Salinity 20cm #0", "soil_value": 0.29, "unit": "µS/cm", "json_featuretype": "Output", "year": null},
+  {"local_time": "2026-09-02T14:00:00+00:00", "site_name": "Carlton Gardens South 1", "site_id": "64998", "id": "32837177", "probe_id": "1306444", "probe_measure": "Soil Moisture 60cm #0 (Clay)", "soil_value": 44.24, "unit": "%VWC", "json_featuretype": "Output", "year": null}
+]

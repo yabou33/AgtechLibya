@@ -19,4 +19,6 @@ Thumbs.db
 *.log
 
 # Gros jeux de donnees (> limite GitHub 100 MB) — garder en local
-J4/DataJ4/DataJ4/soil-sensor-readings-historical-data.json
+
+# Sauvegardes locales du gros dataset (non versionnees)
+*.FULL.bak
