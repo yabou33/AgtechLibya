@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>De la parcelle à l'irrigation — SDA Zitouna</title>
+
+<!-- Leaflet + Leaflet.draw (mêmes libs que les autres pages) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+<style>
+:root{
+  --green:#7cb342;--green-d:#5a8f2c;--ink:#22301c;--muted:#6f7d64;--line:#dfe8d2;
+  --paper:#f6f8f1;--card:#fff;--accent:#2ea8d8;--warn:#e0912b;--bad:#d1584e;--ok:#3fa66a;
+  --capture:#3a9bd0;--data:#8e6fc7;--info:#e0912b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Nunito Sans","Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink)}
+a{color:var(--green-d)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px}
+
+/* Header */
+header{background:linear-gradient(120deg,#1c2b16,#2e4a1e);color:#fff;padding:14px 0}
+.hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--green),var(--green-d));
+  display:grid;place-items:center;font-weight:900;font-size:.62rem;line-height:1;text-align:center}
+.hd h1{font-size:1.12rem;font-weight:800}
+.hd .sub{font-size:.82rem;opacity:.82}
+.hd .spacer{flex:1}
+.hd .home{color:#dfeccd;text-decoration:none;font-weight:700;font-size:.85rem;border:1px solid #ffffff33;
+  padding:7px 12px;border-radius:9px}
+.hd .home:hover{background:#ffffff1a}
+
+/* Flow steps */
+.flow{display:flex;gap:6px;align-items:stretch;overflow-x:auto;padding:12px 0}
+.step{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+  cursor:pointer;position:relative;transition:.15s;text-align:start}
+.step:hover{border-color:var(--green)}
+.step.on{border-color:var(--green);box-shadow:0 4px 14px rgba(90,143,44,.18);background:#fbfef6}
+.step .n{width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:.78rem;
+  display:grid;place-items:center;margin-bottom:6px}
+.step.on .n{background:var(--green-d)}
+.step .t{font-weight:800;font-size:.92rem}
+.step .d{font-size:.74rem;color:var(--muted);margin-top:2px;line-height:1.25}
+.step .arrow{position:absolute;inset-inline-end:-11px;top:50%;transform:translateY(-50%);color:var(--line);font-size:1.3rem;z-index:2}
+.step:last-child .arrow{display:none}
+
+/* Panels */
+.panel{display:none;background:transparent;padding:6px 0 40px}
+.panel.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{font-size:1.02rem;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card h2 .pill{font-size:.68rem;font-weight:800;padding:3px 8px;border-radius:20px;background:#eef5e2;color:var(--green-d)}
+.card .lead{color:var(--muted);font-size:.86rem;margin-bottom:12px}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:.83rem;
+  padding:8px 13px;border-radius:9px;cursor:pointer;transition:.15s;display:inline-flex;gap:6px;align-items:center}
+.btn:hover{border-color:var(--green);color:var(--green-d)}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.primary:hover{background:var(--green-d);color:#fff}
+.btn.danger{color:var(--bad);border-color:#f2cfca}
+.btn.danger:hover{background:#fdecea}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* Map */
+#mapParc{height:520px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.mapwrap{position:relative}
+
+/* Layout grid */
+.grid2{display:grid;grid-template-columns:1fr 340px;gap:14px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+
+/* Parcel list */
+.plist{list-style:none;display:flex;flex-direction:column;gap:6px;max-height:360px;overflow:auto}
+.plist li{border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer;transition:.12s}
+.plist li:hover{border-color:var(--green)}
+.plist li.sel{border-color:var(--green);background:#f4faec}
+.plist .pn{font-weight:800;font-size:.9rem;display:flex;justify-content:space-between;gap:8px}
+.plist .pm{font-size:.75rem;color:var(--muted);margin-top:2px}
+.chip{display:inline-block;font-size:.68rem;font-weight:800;padding:2px 7px;border-radius:20px;background:#eef2e6;color:#5a6b48}
+
+/* Fields */
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+.field input,.field select{border:1px solid var(--line);border-radius:8px;padding:8px 9px;font:inherit;background:#fff}
+.field .row{display:flex;gap:8px}
+.field .row>*{flex:1}
+.hint{font-size:.74rem;color:var(--muted);line-height:1.35}
+
+.notice{background:#eef5e2;border:1px solid #d6e6bf;color:#42611f;border-radius:10px;padding:10px 12px;font-size:.83rem}
+.notice.warn{background:#fdf3e3;border-color:#f2dcb4;color:#8a5a12}
+.wip{background:#f6f7f4;border:1px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--muted)}
+.selbadge{font-size:.82rem;color:var(--muted)}
+.selbadge b{color:var(--ink)}
+kbd{background:#eef2e6;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.75rem;font-weight:700}
+.footer{padding:22px 0;color:var(--muted);font-size:.78rem;text-align:center}
+
+/* KPI tiles */
+.kpirow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .k{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+.kpi .v{font-size:1.5rem;font-weight:900;margin-top:2px}
+.kpi .u{font-size:.72rem;color:var(--muted);font-weight:700}
+.kpi.accent .v{color:var(--accent)}.kpi.warn .v{color:var(--warn)}.kpi.ok .v{color:var(--ok)}.kpi.bad .v{color:var(--bad)}
+
+/* Data tables */
+table.dt{border-collapse:collapse;width:100%;font-size:.82rem}
+table.dt th,table.dt td{border:1px solid var(--line);padding:5px 8px;text-align:right;white-space:nowrap}
+table.dt th{background:#f2f6ea;font-weight:800;position:sticky;top:0;color:#4a5c37}
+table.dt td:first-child,table.dt th:first-child{text-align:left}
+table.dt tr.irr{background:#eaf5fb}
+table.dt tr.stress{background:#fdf0ee}
+
+/* Charts */
+.chart svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-inline-end:4px;vertical-align:middle}
+.legend i.dash{width:14px;height:0;border-top:2px dashed currentColor;border-radius:0}
+.hoverbox{font-size:.8rem;color:var(--muted);padding:8px 11px;background:#f4faec;border:1px solid var(--line);border-radius:9px;margin-top:8px;min-height:18px}
+.hoverbox b{color:var(--ink)}
+
+/* Soil editor tiles */
+.soilgrp{font-size:.74rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:12px 0 7px}
+.tilerow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.tile{background:#fbfdf7;border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+.tile .tl{font-size:.74rem;font-weight:700;color:var(--muted)}
+.tile .tv{display:flex;align-items:baseline;gap:4px;margin:3px 0 6px}
+.tile .tv input{width:64px;border:1px solid var(--line);border-radius:7px;padding:4px 6px;font:900 1.35rem/1 inherit;color:var(--ink)}
+.tile .tv .big{font-size:1.35rem;font-weight:900}
+.tile .tv .u{font-size:.72rem;color:var(--muted);font-weight:700}
+.tile .bar{height:7px;background:#eef2e6;border-radius:5px;overflow:hidden}
+.tile .bar>span{display:block;height:100%}
+.tile.readonly{background:#f6f8f2}
+
+/* Format examples */
+.fmtgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px}
+.fmttitle{font-weight:800;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+.fmt{background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre}
+
+/* Water sources rows */
+.srcrow{border:1px solid var(--line);border-radius:9px;padding:8px;margin-bottom:8px}
+.srcrow input[type=text]{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font:inherit}
+.srcline{display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap}
+.srcline input{width:66px;border:1px solid var(--line);border-radius:7px;padding:6px;font:inherit}
+.srcline .u{font-size:.72rem;color:var(--muted);font-weight:700}
+.srcline .del{margin-inline-start:auto;border:1px solid #f2cfca;color:var(--bad);background:#fff;border-radius:7px;padding:5px 8px;cursor:pointer;font-weight:700;font-size:.78rem}
+.srcline .del:hover{background:#fdecea}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hd">
+    <div class="logo">SDA<br>ZIT</div>
+    <div>
+      <h1>De la parcelle à l'irrigation</h1>
+      <div class="sub">SDA Zitouna · oliveraie · Testour (36.4617, 10.0057) — flux guidé : parcelle → NDVI → météo → besoins → sol</div>
+    </div>
+    <div class="spacer"></div>
+    <a class="home" href="platform/public/index.html">← Accueil</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- FLUX / WORKFLOW -->
+  <div class="flow" id="flow">
+    <div class="step on" data-tab="parc"><div class="n">1</div><div class="t">🗺️ Parcelles</div><div class="d">Charger / dessiner les contours</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="ndvi"><div class="n">2</div><div class="t">🛰️ NDVI Sentinel</div><div class="d">Vigueur, série & diagnostic</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="meteo"><div class="n">3</div><div class="t">🌦️ Météo</div><div class="d">Open-Meteo depuis 2017</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="irrig"><div class="n">4</div><div class="t">💧 Irrigation</div><div class="d">ET₀ & besoins jour par jour</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="sol"><div class="n">5</div><div class="t">🌱 Sol & sondes</div><div class="d">Analyses & capteurs</div><div class="arrow">›</div></div>
+  </div>
+
+  <!-- selection courante -->
+  <div class="card" style="padding:10px 14px;margin-bottom:12px">
+    <span class="selbadge">Parcelle courante : <b id="selName">— (aucune sélection)</b> <span id="selMeta"></span></span>
+  </div>
+
+  <!-- ============ TAB 1 : PARCELLES ============ -->
+  <section class="panel on" id="tab-parc">
+    <div class="card">
+      <h2>🗺️ Parcelles <span class="pill">étape 1</span></h2>
+      <div class="lead">L'oliveraie SDA Zitouna est chargée automatiquement (13 blocs, contours réels de la base). Sélectionnez une parcelle pour l'analyser dans les étapes suivantes. Vous pouvez aussi <b>dessiner</b>, <b>importer</b> (GeoJSON / CSV) ou <b>tout effacer</b> pour travailler sur d'autres parcelles.</div>
+      <div class="toolbar">
+        <button class="btn primary" id="btnLoadZit">↻ Charger SDA Zitouna</button>
+        <button class="btn" id="btnImport">⬆ Importer GeoJSON/CSV</button>
+        <button class="btn" id="btnExpGeo">⬇ Exporter GeoJSON</button>
+        <button class="btn" id="btnExpCsv">⬇ Exporter CSV</button>
+        <button class="btn danger" id="btnClear">🗑 Tout effacer</button>
+        <span class="hint">Dessin : outils en haut-gauche de la carte (polygone, rectangle, pivot). Double-clic pour fermer un polygone.</span>
+      </div>
+      <div class="grid2">
+        <div class="mapwrap"><div id="mapParc"></div></div>
+        <div>
+          <div class="card" style="margin:0 0 12px;padding:12px">
+            <h2 style="font-size:.92rem">Blocs <span id="pcount" class="chip">0</span></h2>
+            <ul class="plist" id="plist"></ul>
+          </div>
+          <div class="card" id="paramCard" style="margin:0;padding:12px">
+            <h2 style="font-size:.92rem">Paramètres agronomiques</h2>
+            <div id="paramBody"><div class="hint">Sélectionnez une parcelle pour éditer sa culture, variété, année de plantation et écartement.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💾 Projet — sauvegarder / importer <span class="pill">toutes les données</span></h2>
+      <div class="lead">Exportez ou importez l'ensemble du cas d'usage (parcelles, cultures, sol, sources d'eau, paramètres, météo). Chaque jeu de données a aussi son export dédié (GeoJSON/CSV parcelles, CSV/JSON météo, JSON/CSV sondes).</div>
+      <div class="toolbar">
+        <button class="btn primary" id="btnExpProj">⬇ Exporter le projet (JSON)</button>
+        <button class="btn" id="btnImpProj">⬆ Importer un projet (JSON)</button>
+      </div>
+      <details style="margin-top:6px">
+        <summary style="cursor:pointer;font-weight:800;color:var(--green-d)">📄 Formats d'import / export — exemples</summary>
+        <div class="fmtgrid">
+          <div><div class="fmttitle">Parcelles — GeoJSON</div><pre class="fmt" id="fmtParcGeo"></pre></div>
+          <div><div class="fmttitle">Parcelles — CSV</div><pre class="fmt" id="fmtParcCsv"></pre></div>
+          <div><div class="fmttitle">Météo — CSV</div><pre class="fmt" id="fmtMeteoCsv"></pre></div>
+          <div><div class="fmttitle">Sondes — JSON (horaire imbriqué)</div><pre class="fmt" id="fmtSondeJson"></pre></div>
+          <div><div class="fmttitle">Sondes — CSV (à plat)</div><pre class="fmt" id="fmtSondeCsv"></pre></div>
+          <div><div class="fmttitle">Projet complet — JSON</div><pre class="fmt" id="fmtProj"></pre></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ TAB 2 : NDVI ============ -->
+  <section class="panel" id="tab-ndvi">
+    <div class="card"><h2>🛰️ NDVI Sentinel-2 <span class="pill">étape 2</span></h2>
+      <div class="lead">Images NDVI de la parcelle entre deux dates (2 mois par défaut), interprétation, série temporelle et diagnostic agronomique.</div>
+      <div class="wip" id="ndviWip">Onglet en cours de construction — sélectionnez d'abord une parcelle à l'étape 1.</div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 3 : METEO ============ -->
+  <section class="panel" id="tab-meteo">
+    <div class="card">
+      <h2>🌦️ Météo — Open-Meteo <span class="pill">étape 3</span></h2>
+      <div class="lead">Données climatiques réelles de l'emplacement de la ferme (ERA5, depuis 2017) : T°, humidité, vent, rayonnement, pluie et <b>ET₀ FAO-56</b>. Elles alimentent le calcul des besoins (étape 4).</div>
+      <div class="toolbar">
+        <div class="field" style="margin:0"><label>Du</label><input type="date" id="mtFrom"></div>
+        <div class="field" style="margin:0"><label>Au</label><input type="date" id="mtTo"></div>
+        <div class="field" style="margin:0"><label>Agrégation</label>
+          <select id="mtAgg"><option value="day">Jour</option><option value="month" selected>Mois</option><option value="year">Année</option></select></div>
+        <button class="btn primary" id="mtLoad">↻ Charger la météo</button>
+        <button class="btn" id="mtCsv">⬇ CSV</button>
+        <button class="btn" id="mtJson">⬇ JSON</button>
+      </div>
+      <div class="toolbar" style="margin-top:-4px">
+        <span class="hint">Rapide :</span>
+        <button class="btn" data-preset="cur">Année courante</button>
+        <button class="btn" data-preset="12m">12 derniers mois</button>
+        <button class="btn" data-preset="2017">Depuis 2017</button>
+      </div>
+      <div id="mtStatus" class="hint"></div>
+    </div>
+    <div id="mtKpis" class="kpirow"></div>
+    <div class="card"><h2 style="font-size:.95rem">ET₀ &amp; pluie</h2><div id="mtChart1"></div></div>
+    <div class="card"><h2 style="font-size:.95rem">Températures</h2><div id="mtChart2"></div></div>
+    <div class="card"><h2 style="font-size:.95rem">Tableau <span id="mtTblCount" class="chip"></span></h2>
+      <div style="overflow:auto;max-height:420px"><table class="dt" id="mtTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 4 : IRRIGATION ============ -->
+  <section class="panel" id="tab-irrig">
+    <div class="card">
+      <h2>💧 ET₀ &amp; besoins en irrigation <span class="pill">étape 4</span></h2>
+      <div class="lead">Bilan hydrique <b>FAO-56 jour par jour</b> pour la parcelle sélectionnée : <code>ETc = Kc·Kr·ET₀</code>, réserve du sol (TAW/RAW), et <b>planning d'irrigation guidé</b>. Modifiez un paramètre → recalcul immédiat.</div>
+      <div id="irrNoSel" class="notice warn" style="display:none">Sélectionnez d'abord une parcelle à l'étape 1.</div>
+      <div id="irrNoWx" class="notice" style="display:none">Chargement de la météo…</div>
+    </div>
+
+    <div class="grid2" id="irrGrid">
+      <div>
+        <div id="irrKpis" class="kpirow"></div>
+        <div class="card"><h2 style="font-size:.95rem">Réserve du sol &amp; irrigations</h2><div id="irrChart"></div>
+          <div class="hint" style="margin-top:6px">La courbe descend quand le sol se vide (ET). Quand elle atteint le seuil <b>RFU</b> (pointillé orange), une irrigation ramène le sol à la capacité au champ. Sous le seuil = stress.</div>
+        </div>
+        <div class="card"><h2 style="font-size:.95rem">📅 Planning d'irrigation <span id="irrPlanCount" class="chip"></span></h2>
+          <div class="hint" style="margin-bottom:8px">Dates recommandées, dose et durée de pompage (selon le débit des sources).</div>
+          <div id="irrPlanNote" class="notice" style="margin-bottom:8px"></div>
+          <div style="overflow:auto;max-height:300px"><table class="dt" id="irrPlan"></table></div>
+          <div class="toolbar" style="margin-top:10px"><button class="btn" id="irrPlanCsv">⬇ Planning CSV</button><button class="btn" id="irrDailyCsv">⬇ Bilan quotidien CSV</button></div>
+        </div>
+        <div class="card"><h2 style="font-size:.95rem">📊 Résumé mensuel</h2>
+          <div style="overflow:auto"><table class="dt" id="irrMonth"></table></div>
+        </div>
+        <div class="card"><h2 style="font-size:.95rem">Bilan quotidien détaillé <span id="irrDailyCount" class="chip"></span></h2>
+          <div style="overflow:auto;max-height:420px"><table class="dt" id="irrDaily"></table></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin:0 0 12px;padding:13px">
+          <h2 style="font-size:.92rem">Paramètres — culture</h2>
+          <div class="field"><label>Culture (Kc FAO-56)</label><select id="ir_crop"></select></div>
+          <div class="field"><label>Couverture du sol Kr (%) — hyper-intensif</label><input id="ir_kr" type="number" value="75"></div>
+          <div class="field"><label>Début de saison (Kc)</label><input id="ir_seed" type="date"></div>
+          <div class="hint" id="ir_kcinfo"></div>
+        </div>
+        <div class="card" style="margin:0 0 12px;padding:13px">
+          <h2 style="font-size:.92rem">Stratégie d'irrigation</h2>
+          <div class="field"><label>Mode</label><select id="ir_strat">
+            <option value="freq" selected>Goutte-à-goutte haute fréquence</option>
+            <option value="rfu">Au seuil RFU (déficit, doses fortes)</option></select></div>
+          <div class="field" id="ir_intWrap"><label>Intervalle cible (jours)</label><input id="ir_int" type="number" min="1" max="14" value="2"></div>
+          <div class="hint">Haute fréquence = petites doses tous les N jours (adapté goutte-à-goutte / hyper-intensif). RFU = on attend l'épuisement de la réserve facilement utilisable.</div>
+        </div>
+        <div class="card" style="margin:0 0 12px;padding:13px">
+          <h2 style="font-size:.92rem">Paramètres — sol</h2>
+          <div class="field"><label>Texture</label><select id="ir_tex"></select></div>
+          <div class="field"><label>Profondeur racinaire Zr (m)</label><input id="ir_zr" type="number" step="0.1" value="1.2"></div>
+          <div class="field"><label>Fraction de tarissement p (RFU/RU)</label><input id="ir_p" type="number" step="0.05" value="0.65"></div>
+          <div class="field"><label>Efficience du système (%)</label><input id="ir_eff" type="number" value="90"></div>
+          <div class="hint" id="ir_soilinfo"></div>
+        </div>
+        <div class="card" style="margin:0 0 12px;padding:13px">
+          <h2 style="font-size:.92rem">Période</h2>
+          <div class="field"><label>Du</label><input type="date" id="ir_from"></div>
+          <div class="field"><label>Au</label><input type="date" id="ir_to"></div>
+          <button class="btn" id="ir_seasonBtn" style="width:100%">Saison d'irrigation (avr→oct)</button>
+        </div>
+        <div class="card" style="margin:0;padding:13px">
+          <h2 style="font-size:.92rem">💦 Sources d'eau &amp; débit</h2>
+          <div class="hint" style="margin-bottom:8px">Sert à calculer la <b>durée</b> d'irrigation et la faisabilité.</div>
+          <div id="ir_sources"></div>
+          <button class="btn" id="ir_addSrc" style="width:100%;margin-top:6px">+ Ajouter une source</button>
+          <div class="hint" id="ir_srcInfo" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 5 : SOL ============ -->
+  <section class="panel" id="tab-sol">
+    <div class="card">
+      <h2>🌱 Sondes de sol <span class="pill">étape 5</span></h2>
+      <div class="lead">Importez un fichier de sondes (format horaire imbriqué type <code>olivier_soil_horaire.json</code>, ou CSV/JSON à plat), visualisez humidité / température / salinité par profondeur, interprétez, puis <b>exportez</b> la version corrigée.</div>
+      <div class="toolbar">
+        <button class="btn primary" id="soImport">⬆ Importer un fichier</button>
+        <button class="btn" id="soExportJson">⬇ Exporter JSON</button>
+        <button class="btn" id="soExportCsv">⬇ Exporter CSV</button>
+        <a class="btn" href="sondes-iot.html" target="_blank">↗ Tableau de bord sondes complet</a>
+      </div>
+      <div id="soStatus" class="hint"></div>
+    </div>
+
+    <div class="grid2" id="soGrid" style="display:none">
+      <div>
+        <div id="soKpis" class="kpirow"></div>
+        <div class="card"><h2 style="font-size:.95rem" id="soChartTitle">Série temporelle</h2><div id="soChart"></div>
+          <div id="soInterp" class="hint" style="margin-top:8px"></div>
+        </div>
+        <div class="card"><h2 style="font-size:.95rem">Profil vertical (moyenne par profondeur)</h2><div id="soProfile"></div></div>
+      </div>
+      <div>
+        <div class="card" style="margin:0 0 12px;padding:13px">
+          <h2 style="font-size:.92rem">Sélection</h2>
+          <div class="field"><label>Site</label><select id="so_site"></select></div>
+          <div class="field"><label>Mesure</label><select id="so_meas">
+            <option value="moisture">Humidité (%VWC)</option>
+            <option value="temperature">Température (°C)</option>
+            <option value="salinity">Salinité (dS/m)</option></select></div>
+          <div class="field"><label>Profondeurs (cm)</label><div id="so_depths" class="hint"></div></div>
+          <div class="field"><label>Période</label>
+            <div class="row"><input type="date" id="so_from"><input type="date" id="so_to"></div></div>
+        </div>
+        <div class="card" style="margin:0;padding:13px">
+          <h2 style="font-size:.92rem">Seuils sol (humidité)</h2>
+          <div class="hint" id="so_texinfo"></div>
+          <div class="hint" style="margin-top:6px">Seuils issus de l'<b>Analyse du sol</b> ci-dessous (CC / RFU / PF). Modifiez-les là.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="soAnalyse">
+      <h2 style="font-size:.95rem">🧪 Analyse du sol <span class="pill">source unique</span></h2>
+      <div class="toolbar">
+        <button class="btn primary" id="an_api">↻ Récupérer via SoilGrids</button>
+        <div class="field" style="margin:0"><label>Ou choisir une texture (12 classes)</label><select id="an_tex" style="min-width:240px"></select></div>
+      </div>
+      <div id="an_src" class="hint" style="margin-bottom:10px"></div>
+
+      <div class="soilgrp">Texture du sol — proportions (modifiables)</div>
+      <div class="tilerow" id="an_prop"></div>
+
+      <div class="soilgrp">Propriétés hydriques — CC / PF modifiables → réserve utile</div>
+      <div class="tilerow" id="an_hydro"></div>
+
+      <div class="toolbar" style="margin-top:12px">
+        <div class="field" style="margin:0"><label>Profondeur racinaire Zr (m)</label><input id="an_zr" type="number" step="0.1" value="1.2" style="width:110px"></div>
+        <div class="field" style="margin:0"><label>Fraction tarissement p</label><input id="an_p" type="number" step="0.05" value="0.65" style="width:100px"></div>
+      </div>
+      <div class="notice" style="margin-top:8px">CC et PF alimentent directement le <b>bilan hydrique</b> et les <b>seuils d'irrigation</b> (étape 4). Modifiez les proportions, la texture ou CC/PF → les besoins en eau se recalculent.</div>
+    </div>
+  </section>
+
+  <div class="footer">EU4Skills · AgriTech Libya — cas d'usage oliveraie · données parcelles : BD_SDA_ZITOUNA · météo : Open-Meteo · imagerie : Sentinel-2</div>
+</div>
+
+<!-- Bases partagées de la plateforme -->
+<script src="platform/public/assets/js/crops.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script src="platform/public/assets/js/agrimap-draw.js"></script>
+<script src="sh-config.js"></script>
+
+<script>
+/* ============================================================
+   ÉTAT GLOBAL
+   ============================================================ */
+const APP = {
+  farm:{ name:"SDA Zitouna", lat:36.461670, lng:10.005668, zoom:14, elev:135 },
+  geojsonUrl:"data/zitouna_parcelles.geojson",
+  carto:null,
+  agro:{},        // name -> {crop,variete,annee,ecart_m,interrang_m,couvert}
+  selected:null   // {name, coords:[[lat,lng]], area_ha, center:[lat,lng], crop, variete, annee}
+};
+
+/* Défauts d'écartement par variété (super-intensif pour Arbequina/Arbosana) */
+const ECART_DEF = {
+  arbequina:{ecart:1.5, interrang:4.0, couvert:45},
+  arbosana:{ecart:1.35, interrang:3.75, couvert:45},
+  koroneiki:{ecart:2.0, interrang:5.0, couvert:40},
+  _def:{ecart:6.0, interrang:6.0, couvert:35}
+};
+
+/* ============================================================
+   NAVIGATION PAR ONGLETS
+   ============================================================ */
+function showTab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on', p.id==='tab-'+id));
+  document.querySelectorAll('.step').forEach(s=>s.classList.toggle('on', s.dataset.tab===id));
+  if(id==='parc' && APP.carto){ setTimeout(()=>APP.carto.invalidate(),50); }
+  if(id==='meteo' && !APP.weather){ loadMeteo(); }
+  if(id==='irrig'){ if(!APP.weather){ loadMeteo(); } else if(typeof renderIrrig==='function'){ renderIrrig(); } }
+  if(id==='ndvi' && typeof onNdviTab==='function'){ onNdviTab(); }
+  try{ history.replaceState(null,'','#'+id); }catch(e){}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.step').forEach(s=>s.onclick=()=>showTab(s.dataset.tab));
+
+/* ============================================================
+   ÉTAPE 1 — CARTE / PARCELLES
+   ============================================================ */
+function initMap(){
+  APP.carto = AgriMap.create('#mapParc', {
+    basemap:'sat', center:[APP.farm.lat,APP.farm.lng], zoom:APP.farm.zoom,
+    name:APP.farm.name, panel:false
+  });
+  APP.carto.on('select', sel=>{
+    if(sel && sel.kind==='parcel' && sel.item){ setSelected(sel.item); }
+    renderPlist();
+  });
+  APP.carto.on('change', ()=>{ renderPlist(); });
+}
+
+function varieteOf(name){ const a=APP.agro[name]; return a?a.variete:''; }
+
+async function loadZitouna(){
+  try{
+    const r = await fetch(APP.geojsonUrl,{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const fc = await r.json();
+    // table agronomique annexe (indexée par nom de parcelle) — préserve les champs perdus à l'import
+    APP.agro = {};
+    (fc.features||[]).forEach(f=>{
+      const p=f.properties||{};
+      APP.agro[p.name]={ crop:p.crop||'olivier', variete:p.variete||'', annee:p.annee||'',
+        nb_pieds:p.nb_pieds||0, densite:p.densite_pl_ha||0,
+        ecart_m:p.ecart_rang_m||0, interrang_m:p.ecart_inter_m||0, date_plantation:p.date_plantation||'',
+        couvert: couvertFromDensity(p.densite_pl_ha||0) };
+    });
+    // charge dans le moteur (efface l'existant d'abord)
+    APP.carto.load({name:APP.farm.name, parcels:[], equipment:[]});
+    APP.carto.importGeoJSON(fc);
+    APP.carto.setName(APP.farm.name);
+    setTimeout(()=>{ APP.carto.fitAll(); APP.carto.invalidate(); },80);
+    renderPlist();
+    const first=APP.carto.state.parcels[0]; if(first && !APP.selected) setSelected(first);
+    fillFormats();
+    toast('SDA Zitouna chargée — '+(fc.features||[]).length+' blocs.');
+  }catch(e){
+    alert("Impossible de charger "+APP.geojsonUrl+"\n"+e.message+"\n\nOuvrez la page via un serveur HTTP (pas file://).");
+  }
+}
+function varieteOf_raw(v){ return v?String(v).toLowerCase():''; }
+
+function renderPlist(){
+  const ul=document.getElementById('plist'); const ps=APP.carto?APP.carto.state.parcels:[];
+  document.getElementById('pcount').textContent=ps.length;
+  ul.innerHTML = ps.map(p=>{
+    const a=APP.agro[p.name]||{};
+    const sel = APP.selected && APP.selected.name===p.name;
+    const meta = [a.variete||null, a.annee||null].filter(Boolean).join(' · ');
+    return `<li data-p="${enc(p.name)}" class="${sel?'sel':''}">
+      <div class="pn"><span>${esc(p.name)}</span><span class="chip">${(p.area_ha||0)} ha</span></div>
+      <div class="pm">${esc(p.crop||'olivier')}${meta?' — '+esc(meta):''}</div></li>`;
+  }).join('') || '<div class="hint">Aucune parcelle. Chargez Zitouna ou dessinez.</div>';
+  ul.querySelectorAll('[data-p]').forEach(li=>li.onclick=()=>{
+    const p=ps.find(x=>x.name===li.dataset.p); if(p) setSelected(p);
+  });
+}
+
+function setSelected(p){
+  const a=APP.agro[p.name]||(APP.agro[p.name]={crop:p.crop||'olivier',variete:'',annee:'',
+    ...(ECART_DEF._def), ecart_m:ECART_DEF._def.ecart, interrang_m:ECART_DEF._def.interrang, couvert:ECART_DEF._def.couvert});
+  APP.selected = {
+    name:p.name, coords:p.coords||[], area_ha:p.area_ha||0,
+    center:p.center||(p.coords?p.coords[0]:[APP.farm.lat,APP.farm.lng]),
+    crop:a.crop, variete:a.variete, annee:a.annee
+  };
+  document.getElementById('selName').textContent=p.name;
+  const dens=densOf({...a,_area:p.area_ha||0});
+  document.getElementById('selMeta').innerHTML =
+    `<span class="chip">${(p.area_ha||0)} ha</span> `+
+    (a.variete?`<span class="chip">${esc(a.variete)}</span> `:'')+
+    (a.annee?`<span class="chip">planté ${esc(a.annee)}</span> `:'')+
+    (a.nb_pieds?`<span class="chip">${a.nb_pieds.toLocaleString('fr')} pieds</span> `:'')+
+    (dens?`<span class="chip">${dens.toLocaleString('fr')} pl/ha</span>`:'');
+  renderPlist();
+  renderParams(p);
+  const kr=document.getElementById('ir_kr'); if(kr && a.couvert) kr.value=a.couvert;
+  if(document.getElementById('tab-irrig').classList.contains('on')) renderIrrig();
+}
+
+function couvertFromDensity(d){ if(d>=1500)return 45; if(d>=1000)return 40; if(d>=600)return 33; if(d>0)return 28; return 35; }
+function densOf(a){ if(a.nb_pieds>0 && a._area>0) return Math.round(a.nb_pieds/a._area);
+  return (a.ecart_m>0&&a.interrang_m>0)?Math.round(10000/(a.ecart_m*a.interrang_m)):0; }
+function renderParams(p){
+  const a=APP.agro[p.name]; a._area=p.area_ha||0; const body=document.getElementById('paramBody');
+  const age = a.annee? (new Date().getFullYear()-parseInt(a.annee,10)) : null;
+  body.innerHTML = `
+    <div class="field"><label>Culture</label><input id="pa_crop" value="${esc(a.crop||'olivier')}"></div>
+    <div class="field"><label>Variété</label><input id="pa_var" value="${esc(a.variete||'')}" placeholder="Arbequina…"></div>
+    <div class="field"><label>Date / année de plantation</label><input id="pa_year" value="${esc(a.date_plantation||a.annee||'')}" placeholder="2010-07-01"></div>
+    <div class="field"><label>Nombre de pieds (réel)</label><input id="pa_pieds" type="number" value="${a.nb_pieds||''}"></div>
+    <div class="field"><label>Écartement (m) — inter-rang × sur-rang</label>
+      <div class="row"><input id="pa_ir" type="number" step="0.05" value="${a.interrang_m||''}"><input id="pa_ec" type="number" step="0.05" value="${a.ecart_m||''}"></div></div>
+    <div class="field"><label>Couverture du sol / Kr (%)</label><input id="pa_cv" type="number" value="${a.couvert||''}"></div>
+    <div class="hint" id="pa_info"></div>`;
+  const info=()=>{ const dens=densOf(a);
+    document.getElementById('pa_info').innerHTML=(age!=null?('Âge ≈ <b>'+age+' ans</b> · '):'')+
+      (dens?('densité <b>'+dens.toLocaleString('fr')+' pl/ha</b> · '):'')+
+      (a.nb_pieds?('<b>'+a.nb_pieds.toLocaleString('fr')+' pieds</b> · '):'')+
+      'surface plantée <b>'+(p.area_ha||0)+' ha</b>. Source : BD_SDA_ZITOUNA.<br>Alimente le calcul des besoins (étape 4).'; };
+  info();
+  document.getElementById('pa_crop').oninput=e=>{a.crop=e.target.value;p.crop=e.target.value;renderPlist();};
+  document.getElementById('pa_var').oninput =e=>{a.variete=e.target.value;renderPlist();};
+  document.getElementById('pa_year').oninput=e=>{a.date_plantation=e.target.value;a.annee=(e.target.value.match(/(19|20)\d{2}/)||[''])[0];info();};
+  document.getElementById('pa_pieds').oninput=e=>{a.nb_pieds=parseInt(e.target.value)||0;info();};
+  document.getElementById('pa_ec').oninput  =e=>{a.ecart_m=parseFloat(e.target.value)||0;info();};
+  document.getElementById('pa_ir').oninput  =e=>{a.interrang_m=parseFloat(e.target.value)||0;info();};
+  document.getElementById('pa_cv').oninput  =e=>{a.couvert=parseFloat(e.target.value)||0;
+    const k=document.getElementById('ir_kr'); if(k){k.value=a.couvert; renderIrrig();}};
+}
+
+/* ---- import / export / clear ---- */
+function doImport(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.geojson,.json,.csv';
+  inp.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader();
+    rd.onload=()=>{ try{
+      let n=0;
+      if(/\.csv$/i.test(f.name)){ n=APP.carto.importCSV(rd.result); }
+      else { n=APP.carto.importGeoJSON(JSON.parse(rd.result)); }
+      renderPlist(); toast(n+' parcelle(s) importée(s).');
+    }catch(err){ alert('Import : '+err.message); } };
+    rd.readAsText(f); };
+  inp.click();
+}
+function download(name,text,mime){ const b=new Blob([text],{type:mime||'text/plain'});
+  const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(u),1500); }
+
+document.getElementById('btnLoadZit').onclick=loadZitouna;
+document.getElementById('btnImport').onclick=doImport;
+document.getElementById('btnExpGeo').onclick=()=>download('parcelles.geojson',JSON.stringify(APP.carto.exportGeoJSON(),null,1),'application/geo+json');
+document.getElementById('btnExpCsv').onclick=()=>download('parcelles.csv',APP.carto.exportCSV(),'text/csv');
+document.getElementById('btnClear').onclick=()=>{
+  if(!confirm('Effacer toutes les parcelles de la carte ? (les fichiers data/ ne sont pas touchés)'))return;
+  APP.carto.load({name:'Nouveau projet',parcels:[],equipment:[]});
+  APP.selected=null; document.getElementById('selName').textContent='— (aucune sélection)';
+  document.getElementById('selMeta').innerHTML='';
+  document.getElementById('paramBody').innerHTML='<div class="hint">Dessinez une parcelle ou importez un fichier.</div>';
+  renderPlist();
+};
+document.getElementById('btnExpProj').onclick=()=>download('projet_zitouna.json',JSON.stringify(projectBundle(),null,1),'application/json');
+document.getElementById('btnImpProj').onclick=()=>{
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader();
+    rd.onload=()=>{ try{ importProjectData(JSON.parse(rd.result)); }catch(err){ alert('JSON invalide : '+err.message); } }; rd.readAsText(f); };
+  inp.click();
+};
+
+/* ---- utils ---- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function enc(s){return String(s==null?'':s).replace(/"/g,'&quot;');}
+let _toastT=null;
+function toast(msg){ let t=document.getElementById('_toast');
+  if(!t){ t=document.createElement('div'); t.id='_toast';
+    t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#22301c;color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:.85rem;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.3);opacity:0;transition:.2s';
+    document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1'; clearTimeout(_toastT);
+  _toastT=setTimeout(()=>t.style.opacity='0',2600);
+}
+
+/* ============================================================
+   PROJET — export / import global (toutes les données)
+   ============================================================ */
+function projectBundle(){
+  return { format:'agritech-usecase', version:1, exportedAt:new Date().toISOString(),
+    farm:APP.farm,
+    parcels: APP.carto? APP.carto.exportGeoJSON() : null,
+    agro: APP.agro, soil: SOIL, sources: IRR_SOURCES,
+    irrig: { crop:val('ir_crop'), kr:parseFloat(val('ir_kr')), seed:val('ir_seed'),
+             strat:val('ir_strat'), interval:parseInt(val('ir_int')), from:val('ir_from'), to:val('ir_to') },
+    weather: APP.weather };
+}
+function val(id){ const e=document.getElementById(id); return e?e.value:undefined; }
+function setV(id,v){ const e=document.getElementById(id); if(e&&v!=null)e.value=v; }
+function importProjectData(j){
+  try{
+    if(j.parcels){ APP.carto.load({name:'Projet',parcels:[],equipment:[]}); APP.carto.importGeoJSON(j.parcels); }
+    if(j.agro) APP.agro=j.agro;
+    if(j.soil) Object.assign(SOIL,j.soil);
+    if(j.sources) IRR_SOURCES=j.sources;
+    if(j.irrig){ const g=j.irrig; setV('ir_crop',g.crop); setV('ir_kr',g.kr!=null?Math.round(g.kr*100):null);
+      setV('ir_seed',g.seed); setV('ir_strat',g.strat); setV('ir_int',g.interval); setV('ir_from',g.from); setV('ir_to',g.to); }
+    if(j.weather) APP.weather=j.weather;
+    renderPlist(); syncSoilUI(); renderSoilEditor(); renderSources();
+    const first=APP.carto.state.parcels[0]; if(first) setSelected(first);
+    if(APP.weather) renderMeteo();
+    renderIrrig(); fillFormats();
+    toast('Projet importé.');
+  }catch(e){ alert('Import projet : '+e.message); }
+}
+function fillFormats(){
+  const g=APP.carto?APP.carto.exportGeoJSON():{type:'FeatureCollection',features:[]};
+  const one={type:'FeatureCollection',features:(g.features||[]).slice(0,1)};
+  const set=(id,t)=>{ const e=document.getElementById(id); if(e)e.textContent=t; };
+  set('fmtParcGeo', JSON.stringify(one,null,1).slice(0,720));
+  set('fmtParcCsv', (APP.carto?APP.carto.exportCSV():'').split('\n').slice(0,2).join('\n'));
+  set('fmtMeteoCsv','date,tmax_C,tmin_C,tmean_C,rh_pct,wind_kmh,rad_MJ,et0_mm,rain_mm\n2024-06-01,26.6,15.3,20.8,76,11.9,21.4,4.2,1.3');
+  set('fmtSondeJson', JSON.stringify({"P1 - Oliviers Nord":{moisture:{"10":[["2024-06-01T00:00",28.8],["2024-06-01T01:00",28.6]],"30":[["2024-06-01T00:00",31.2]]},temperature:{"10":[["2024-06-01T00:00",22.1]]},units:{moisture:"%VWC",temperature:"°C"}}},null,1));
+  set('fmtSondeCsv','local_time,site_name,probe_measure,soil_value,unit\n2024-06-01T00:00,"P1 - Oliviers Nord",Soil Moisture 10cm,28.8,%VWC');
+  set('fmtProj', JSON.stringify({format:'agritech-usecase',version:1,farm:'{name,lat,lng}',parcels:'{GeoJSON FeatureCollection}',agro:'{ "Bloc A":{variete,annee,nb_pieds,...} }',soil:'{texId,fc,wp,zr,p,eff}',sources:'[{name,debit,hours}]',irrig:'{crop,kr,strat,interval,from,to}',weather:'{daily:[{d,tmax,...,et0,rain}]}'},null,1));
+}
+
+/* ============================================================
+   GRAPHIQUES SVG (léger, sans dépendance)
+   opts: {bars:[{label,color}], lines:[{label,color,dash}], height, unitL, unitR, y2:bool}
+   data: [{x:label, bars:{k:v}, lines:{k:v}}]
+   ============================================================ */
+function svgChart(el, data, opts){
+  opts=opts||{}; const W=920, H=opts.height||240, mL=46, mR=opts.y2?46:14, mT=12, mB=46;
+  const iw=W-mL-mR, ih=H-mT-mB;
+  if(!data.length){ el.innerHTML='<div class="hint">Aucune donnée.</div>'; return; }
+  const bars=opts.bars||[], lines=opts.lines||[];
+  // échelles
+  let lMax=0,lMin=0,rMax=0;
+  data.forEach(d=>{ lines.forEach(s=>{ const v=d.lines&&d.lines[s.label]; if(v!=null){lMax=Math.max(lMax,v);lMin=Math.min(lMin,v);} });
+    bars.forEach(s=>{ const v=d.bars&&d.bars[s.label]; if(v!=null){ if(opts.y2)rMax=Math.max(rMax,v); else lMax=Math.max(lMax,v);} }); });
+  lMax=lMax*1.1||1; if(lMin>0)lMin=0; lMin=lMin*1.1; rMax=rMax*1.15||1;
+  const xN=data.length, bw=Math.max(2,Math.min(26,iw/xN*0.6));
+  const xAt=i=>mL+iw*(xN<=1?0.5:(i/(xN-1)));
+  const xBar=i=>mL+ (iw/xN)*(i+0.5);
+  const yL=v=>mT+ih*(1-(v-lMin)/(lMax-lMin));
+  const yR=v=>mT+ih*(1-v/rMax);
+  let s='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+  // grille + axe Y gauche
+  for(let g=0;g<=4;g++){ const v=lMin+(lMax-lMin)*g/4, y=yL(v);
+    s+='<line x1="'+mL+'" y1="'+y+'" x2="'+(W-mR)+'" y2="'+y+'" stroke="#eef2e6"/>';
+    s+='<text x="'+(mL-6)+'" y="'+(y+3)+'" text-anchor="end" font-size="10" fill="#8a97ad">'+(+v.toFixed(v>10?0:1))+'</text>'; }
+  if(opts.y2){ for(let g=0;g<=4;g++){ const v=rMax*g/4, y=yR(v);
+    s+='<text x="'+(W-mR+6)+'" y="'+(y+3)+'" text-anchor="start" font-size="10" fill="#8a97ad">'+(+v.toFixed(v>10?0:1))+'</text>'; } }
+  // barres (pluie)
+  bars.forEach(bs=>{ data.forEach((d,i)=>{ const v=d.bars&&d.bars[bs.label]; if(v==null)return;
+    const y=opts.y2?yR(v):yL(v), y0=opts.y2?yR(0):yL(0);
+    s+='<rect x="'+(xBar(i)-bw/2)+'" y="'+Math.min(y,y0)+'" width="'+bw+'" height="'+Math.abs(y0-y)+'" fill="'+bs.color+'" opacity=".55"/>'; }); });
+  // lignes
+  lines.forEach(ls=>{ let path=''; data.forEach((d,i)=>{ const v=d.lines&&d.lines[ls.label]; if(v==null)return;
+    path+=(path?'L':'M')+xAt(i)+' '+yL(v)+' '; });
+    s+='<path d="'+path+'" fill="none" stroke="'+ls.color+'" stroke-width="2"'+(ls.dash?' stroke-dasharray="5 4"':'')+'/>'; });
+  // axe X labels (max ~14)
+  const step=Math.ceil(xN/14);
+  data.forEach((d,i)=>{ if(i%step)return; const x=xN<=1?xAt(i):(bars.length?xBar(i):xAt(i));
+    s+='<text x="'+x+'" y="'+(H-mB+16)+'" text-anchor="middle" font-size="9.5" fill="#8a97ad">'+esc(d.x)+'</text>'; });
+  s+='</svg>';
+  let leg='<div class="legend">'+bars.concat(lines).map(z=>'<span><i style="background:'+z.color+'"></i>'+esc(z.label)+'</span>').join('')+'</div>';
+  el.className='chart'; el.innerHTML=s+leg;
+}
+
+/* ============================================================
+   GRAPHIQUE TEMPOREL (axe temps réel, quadrillage adaptatif,
+   seuils, marqueurs, crosshair + boîte de survol) — style sondes-iot
+   opts:{ lines:[{label,color,dash,width,points:[[tms,v]]}], hlines:[{label,color,value}],
+          marks:[{t,color,symbol}], bars:[{label,color,points:[[tms,v]]}], height, yUnit, y2Unit }
+   ============================================================ */
+function tsChart(el, opts){
+  opts=opts||{}; const lines=opts.lines||[], hlines=opts.hlines||[], marks=opts.marks||[], bars=opts.bars||[];
+  const W=960,H=opts.height||300, mL=48, mR=(bars.length?48:16), mT=16, mB=42;
+  const x0=mL,x1=W-mR,y0=mT,y1=H-mB, DAY=864e5;
+  let tmin=Infinity,tmax=-Infinity,vmin=Infinity,vmax=-Infinity,rmax=0;
+  lines.forEach(s=>s.points.forEach(p=>{ if(p[1]==null)return; tmin=Math.min(tmin,p[0]);tmax=Math.max(tmax,p[0]);vmin=Math.min(vmin,p[1]);vmax=Math.max(vmax,p[1]); }));
+  bars.forEach(s=>s.points.forEach(p=>{ if(p[1]==null)return; tmin=Math.min(tmin,p[0]);tmax=Math.max(tmax,p[0]);rmax=Math.max(rmax,p[1]); }));
+  hlines.forEach(h=>{ vmin=Math.min(vmin,h.value);vmax=Math.max(vmax,h.value); });
+  if(!isFinite(tmin)){ el.innerHTML='<div class="hint">Aucune donnée.</div>'; return; }
+  if(tmax<=tmin)tmax=tmin+DAY;
+  const pad=(vmax-vmin)*0.10||1; vmax+=pad; vmin-=pad*0.4; if(vmin>0&&vmin<pad)vmin=0; if(vmax<=vmin)vmax=vmin+1;
+  rmax=rmax*1.2||1;
+  const sx=t=>x0+(t-tmin)/(tmax-tmin)*(x1-x0), sy=v=>y1-(v-vmin)/(vmax-vmin)*(y1-y0), syR=v=>y1-v/rmax*(y1-y0);
+  const span=tmax-tmin; let ticks=[];
+  if(span>700*DAY){ let y=new Date(tmin).getFullYear(),ey=new Date(tmax).getFullYear(); const st=Math.ceil((ey-y+1)/12)||1;
+    for(;y<=ey;y+=st){ const t=new Date(y,0,1).getTime(); if(t>=tmin&&t<=tmax)ticks.push([t,String(y)]); } }
+  else if(span>70*DAY){ let d=new Date(tmin); d=new Date(d.getFullYear(),d.getMonth(),1);
+    while(d.getTime()<=tmax){ const t=d.getTime(); if(t>=tmin)ticks.push([t,d.toLocaleDateString('fr',{month:'short',year:'2-digit'})]); d=new Date(d.getFullYear(),d.getMonth()+1,1); } }
+  else { let d=new Date(tmin); d.setHours(0,0,0,0); const stepD=Math.max(1,Math.ceil(span/DAY/12));
+    for(let t=d.getTime();t<=tmax;t+=stepD*DAY){ if(t>=tmin)ticks.push([t,new Date(t).toLocaleDateString('fr',{day:'numeric',month:'short'})]); } }
+  let s='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+  for(let g=0;g<=4;g++){ const v=vmin+(vmax-vmin)*g/4, y=sy(v);
+    s+='<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="#eef3e5"/>';
+    s+='<text x="'+(x0-6)+'" y="'+(y+3)+'" text-anchor="end" font-size="10.5" fill="#9aa890">'+(+v.toFixed(vmax-vmin>40?0:1))+(opts.yUnit||'')+'</text>'; }
+  if(bars.length){ for(let g=0;g<=4;g++){ const v=rmax*g/4,y=syR(v);
+    s+='<text x="'+(x1+6)+'" y="'+(y+3)+'" text-anchor="start" font-size="10" fill="#9aa890">'+(+v.toFixed(v>10?0:1))+'</text>'; } }
+  ticks.forEach(tk=>{ s+='<line x1="'+sx(tk[0])+'" y1="'+y0+'" x2="'+sx(tk[0])+'" y2="'+y1+'" stroke="#f2f6ec"/>'+
+    '<text x="'+sx(tk[0])+'" y="'+(y1+15)+'" text-anchor="middle" font-size="10" fill="#9aa890">'+esc(tk[1])+'</text>'; });
+  // bars (secondary axis)
+  const bw=bars.length? Math.max(1.5, (x1-x0)/Math.max(30, (bars[0].points||[]).length)*0.7) : 0;
+  bars.forEach(bs=>bs.points.forEach(p=>{ if(!p[1])return; const y=syR(p[1]);
+    s+='<rect x="'+(sx(p[0])-bw/2)+'" y="'+y+'" width="'+bw+'" height="'+(y1-y)+'" fill="'+bs.color+'" opacity=".5"/>'; }));
+  // horizontal thresholds
+  hlines.forEach(h=>{ const y=sy(h.value);
+    s+='<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="'+h.color+'" stroke-width="1.4" stroke-dasharray="6 5" opacity=".85"/>'+
+      '<text x="'+(x1-3)+'" y="'+(y-4)+'" text-anchor="end" font-size="10.5" font-weight="700" fill="'+h.color+'">'+esc(h.label)+'</text>'; });
+  // vertical marks
+  marks.forEach(m=>{ const x=sx(m.t); s+='<line x1="'+x+'" y1="'+y0+'" x2="'+x+'" y2="'+y1+'" stroke="'+(m.color||'#3a9bd0')+'" stroke-width="2" opacity=".28"/>'+
+    (m.symbol?'<text x="'+x+'" y="'+(y0+11)+'" text-anchor="middle" font-size="12">'+m.symbol+'</text>':''); });
+  // lines
+  lines.forEach((ls,idx)=>{ let path=''; ls.points.forEach(p=>{ if(p[1]==null)return; path+=(path?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)+' '; });
+    s+='<path d="'+path+'" fill="none" stroke="'+ls.color+'" stroke-width="'+(ls.width||2)+'"'+(ls.dash?' stroke-dasharray="5 4"':'')+' stroke-linejoin="round"/>'; });
+  // hover overlay
+  s+='<line id="cx" y1="'+y0+'" y2="'+y1+'" stroke="#7cb342" stroke-width="1" opacity="0"/>';
+  s+='<rect id="hz" x="'+x0+'" y="'+y0+'" width="'+(x1-x0)+'" height="'+(y1-y0)+'" fill="transparent" style="cursor:crosshair"/>';
+  s+='</svg>';
+  const leg='<div class="legend">'+lines.map(l=>'<span style="color:'+l.color+'"><i style="background:'+l.color+'"></i>'+esc(l.label)+'</span>').join('')
+    + hlines.map(h=>'<span style="color:'+h.color+'"><i class="dash" style="color:'+h.color+'"></i>'+esc(h.label)+'</span>').join('')
+    + (bars.length?bars.map(b=>'<span style="color:'+b.color+'"><i style="background:'+b.color+';opacity:.5"></i>'+esc(b.label)+'</span>').join(''):'')+'</div>';
+  el.className='chart'; el.innerHTML=s+leg+'<div class="hoverbox" id="'+(el.id)+'_hv">Survolez le graphique…</div>';
+  const svg=el.querySelector('svg'), hz=el.querySelector('#hz'), cx=el.querySelector('#cx'), hv=document.getElementById(el.id+'_hv');
+  function nearest(pts,t){ let b=pts[0],bd=Infinity; for(const p of pts){ if(p[1]==null)continue; const dd=Math.abs(p[0]-t); if(dd<bd){bd=dd;b=p;} } return b; }
+  function move(ev){ const r=svg.getBoundingClientRect(); const px=(ev.clientX-r.left)/r.width*W;
+    const t=Math.max(tmin,Math.min(tmax,tmin+(px-x0)/(x1-x0)*(tmax-tmin)));
+    cx.setAttribute('x1',sx(t)); cx.setAttribute('x2',sx(t)); cx.setAttribute('opacity','.5');
+    const dd=new Date(t), ds=dd.toLocaleDateString('fr',{day:'numeric',month:'short',year:'numeric'});
+    const parts=lines.map(l=>{ const p=nearest(l.points,t); return p&&p[1]!=null?'<b style="color:'+l.color+'">'+esc(l.label)+' '+(+p[1].toFixed(2))+(opts.yUnit||'')+'</b>':''; }).filter(Boolean);
+    hv.innerHTML='<b>'+ds+'</b> — '+parts.join(' · '); }
+  hz.addEventListener('mousemove',move);
+  hz.addEventListener('touchmove',e=>{ if(e.touches[0])move(e.touches[0]); },{passive:true});
+}
+
+/* ============================================================
+   ÉTAPE 3 — MÉTÉO (Open-Meteo Archive)
+   ============================================================ */
+const OM_VARS='temperature_2m_max,temperature_2m_min,temperature_2m_mean,relative_humidity_2m_mean,wind_speed_10m_max,shortwave_radiation_sum,et0_fao_evapotranspiration,precipitation_sum';
+function fmtDate(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function setMeteoPreset(p){
+  const to=new Date(); let from=new Date();
+  if(p==='cur'){ from=new Date(to.getFullYear(),0,1); }
+  else if(p==='12m'){ from.setFullYear(to.getFullYear()-1); }
+  else if(p==='2017'){ from=new Date(2017,0,1); }
+  document.getElementById('mtFrom').value=fmtDate(from);
+  document.getElementById('mtTo').value=fmtDate(to);
+}
+async function loadMeteo(){
+  const from=document.getElementById('mtFrom').value, to=document.getElementById('mtTo').value;
+  if(!from||!to){ setMeteoPreset('cur'); return loadMeteo(); }
+  const st=document.getElementById('mtStatus'); st.textContent='Chargement Open-Meteo…';
+  const url='https://archive-api.open-meteo.com/v1/archive?latitude='+APP.farm.lat+'&longitude='+APP.farm.lng+
+    '&start_date='+from+'&end_date='+to+'&daily='+OM_VARS+'&timezone=Africa%2FTunis';
+  try{
+    const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json(); const D=j.daily;
+    if(!D||!D.time){ throw new Error('réponse vide'); }
+    APP.farm.elev=j.elevation||APP.farm.elev;
+    const daily=D.time.map((t,i)=>({ d:t,
+      tmax:D.temperature_2m_max[i], tmin:D.temperature_2m_min[i], tmean:D.temperature_2m_mean[i],
+      rh:D.relative_humidity_2m_mean[i], wind:D.wind_speed_10m_max[i], rad:D.shortwave_radiation_sum[i],
+      et0:D.et0_fao_evapotranspiration[i], rain:D.precipitation_sum[i] }))
+      .filter(x=>x.tmax!=null);
+    APP.weather={ from, to, daily, elev:APP.farm.elev };
+    st.innerHTML='✓ '+daily.length+' jours · altitude '+Math.round(APP.farm.elev)+' m · point ERA5 '+j.latitude.toFixed(3)+', '+j.longitude.toFixed(3);
+    renderMeteo();
+    if(typeof onWeatherReady==='function') onWeatherReady();
+  }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur : '+esc(e.message)+'</span>'; }
+}
+function aggMeteo(daily, mode){
+  if(mode==='day') return daily.map(x=>({x:x.d.slice(5), _d:x.d, ...x}));
+  const groups={};
+  daily.forEach(x=>{ const k= mode==='year'? x.d.slice(0,4) : x.d.slice(0,7);
+    (groups[k]=groups[k]||[]).push(x); });
+  return Object.keys(groups).sort().map(k=>{ const g=groups[k]; const n=g.length;
+    const sum=f=>g.reduce((a,b)=>a+(b[f]||0),0), avg=f=>sum(f)/n;
+    return { x:k, _d:k, n, tmax:avg('tmax'), tmin:avg('tmin'), tmean:avg('tmean'), rh:avg('rh'),
+      wind:avg('wind'), rad:sum('rad'), et0:sum('et0'), rain:sum('rain') }; });
+}
+function renderMeteo(){
+  if(!APP.weather){ return; }
+  const mode=document.getElementById('mtAgg').value;
+  const rows=aggMeteo(APP.weather.daily, mode);
+  const tot=f=>APP.weather.daily.reduce((a,b)=>a+(b[f]||0),0);
+  const mean=f=>tot(f)/APP.weather.daily.length;
+  // KPIs
+  document.getElementById('mtKpis').innerHTML=[
+    ['ET₀ cumulée',(+tot('et0').toFixed(0)),'mm','accent'],
+    ['Pluie cumulée',(+tot('rain').toFixed(0)),'mm','ok'],
+    ['Déficit (ET₀−P)',(+(tot('et0')-tot('rain')).toFixed(0)),'mm','warn'],
+    ['T max moyenne',(+mean('tmax').toFixed(1)),'°C','bad'],
+    ['T min moyenne',(+mean('tmin').toFixed(1)),'°C',''],
+    ['HR moyenne',(+mean('rh').toFixed(0)),'%','']
+  ].map(k=>'<div class="kpi '+k[3]+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+' <span class="u">'+k[2]+'</span></div></div>').join('');
+  // charts
+  const isAgg=mode!=='day';
+  svgChart(document.getElementById('mtChart1'),
+    rows.map(r=>({x:r.x, bars:{'Pluie (mm)':+r.rain.toFixed(1)}, lines:{'ET₀ (mm)':+r.et0.toFixed(2)}})),
+    {bars:[{label:'Pluie (mm)',color:'#3a9bd0'}], lines:[{label:'ET₀ (mm)',color:'#e0912b'}], y2:true, height:230});
+  svgChart(document.getElementById('mtChart2'),
+    rows.map(r=>({x:r.x, lines:{'T max':+r.tmax.toFixed(1),'T moy':+r.tmean.toFixed(1),'T min':+r.tmin.toFixed(1)}})),
+    {lines:[{label:'T max',color:'#d1584e'},{label:'T moy',color:'#e0912b'},{label:'T min',color:'#3a9bd0'}], height:210});
+  // table
+  const unit = isAgg? (mode==='year'?'/an':'/mois') : '/j';
+  const th=['Période','T max','T min','T moy','HR %','Vent','Ray. MJ','ET₀ mm'+ (isAgg?unit:''),'Pluie mm'+(isAgg?unit:'')];
+  let html='<thead><tr>'+th.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>';
+  rows.forEach(r=>{ html+='<tr><td>'+esc(r.x)+'</td>'+
+    [r.tmax,r.tmin,r.tmean,r.rh,r.wind,r.rad,r.et0,r.rain].map((v,i)=>'<td>'+(v==null?'—':(+v.toFixed(i>=5?1:1)))+'</td>').join('')+'</tr>'; });
+  html+='</tbody>';
+  document.getElementById('mtTable').innerHTML=html;
+  document.getElementById('mtTblCount').textContent=rows.length+' lignes';
+}
+function meteoCSV(){
+  if(!APP.weather) return '';
+  const h=['date','tmax_C','tmin_C','tmean_C','rh_pct','wind_kmh','rad_MJ','et0_mm','rain_mm'];
+  return h.join(',')+'\n'+APP.weather.daily.map(x=>[x.d,x.tmax,x.tmin,x.tmean,x.rh,x.wind,x.rad,x.et0,x.rain].join(',')).join('\n');
+}
+document.getElementById('mtLoad').onclick=loadMeteo;
+document.getElementById('mtAgg').onchange=renderMeteo;
+document.getElementById('mtCsv').onclick=()=>download('meteo_zitouna.csv',meteoCSV(),'text/csv');
+document.getElementById('mtJson').onclick=()=>download('meteo_zitouna.json',JSON.stringify(APP.weather||{},null,1),'application/json');
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{ setMeteoPreset(b.dataset.preset); loadMeteo(); });
+
+/* ============================================================
+   ÉTAPE 4 — ET0 & BESOINS EN IRRIGATION (bilan FAO-56 quotidien)
+   ============================================================ */
+/* 12 classes texturales USDA — CC (θ capacité au champ) / PF (point flétrissement) en fraction volumique */
+const TEX=[
+  {id:'sand',   fr:'Sableux',                 fc:0.10, wp:0.04},
+  {id:'lsand',  fr:'Sable limoneux',          fc:0.14, wp:0.06},
+  {id:'sloam',  fr:'Limono-sableux',          fc:0.18, wp:0.08},
+  {id:'loam',   fr:'Limoneux (terre franche)',fc:0.26, wp:0.12},
+  {id:'silt',   fr:'Silteux',                 fc:0.30, wp:0.10},
+  {id:'siloam', fr:'Limono-silteux',          fc:0.31, wp:0.14},
+  {id:'scloam', fr:'Limon argilo-sableux',    fc:0.27, wp:0.17},
+  {id:'sclay',  fr:'Argile sableuse',         fc:0.36, wp:0.25},
+  {id:'cloam',  fr:'Argilo-limoneux',         fc:0.38, wp:0.20},
+  {id:'sicloam',fr:'Limon argilo-silteux',    fc:0.39, wp:0.22},
+  {id:'siclay', fr:'Argile silteuse',         fc:0.41, wp:0.27},
+  {id:'clay',   fr:'Argileux',                fc:0.42, wp:0.24}
+];
+function texLabel(t){ return t.fr+' · CC '+(t.fc*100).toFixed(0)+' / PF '+(t.wp*100).toFixed(0); }
+/* Centroïdes texturaux (sable%, argile%) + infiltration indicative mm/h */
+const TEX_CENTROID={sand:[92,3],lsand:[82,6],sloam:[65,10],loam:[40,18],silt:[8,6],siloam:[20,14],
+  scloam:[60,27],sclay:[52,42],cloam:[32,33],sicloam:[10,34],siclay:[7,47],clay:[20,55]};
+const TEX_INFIL={sand:30,lsand:25,sloam:20,loam:13,silt:8,siloam:10,scloam:12,sclay:7,cloam:6,sicloam:5,siclay:4,clay:3};
+function texById(id){ return TEX.find(t=>t.id===id); }
+/* Classification USDA (triangle) à partir de sable% et argile% */
+function usdaClass(sand,clay){ const silt=100-sand-clay;
+  if(clay>=40){ if(silt>=40)return 'siclay'; if(sand>=45)return 'sclay'; return 'clay'; }
+  if(clay>=35 && sand>=45) return 'sclay';
+  if(clay>=27){ if(sand<=20)return 'sicloam'; if(sand<=45)return 'cloam'; return 'scloam'; }
+  if(clay>=20){ if(sand>=45 && silt<28)return 'scloam'; if(silt>=28&&silt<50)return 'loam'; return 'loam'; }
+  if(silt>=80 && clay<12) return 'silt';
+  if(silt>=50){ return (clay>=12)?'siloam':'siloam'; }
+  if(sand>=85) return 'sand';
+  if(sand>=70) return 'lsand';
+  if(sand>=52) return 'sloam';
+  return 'loam';
+}
+/* Modèle sol PARTAGÉ (source unique) — SoilGrids par défaut, éditable — alimente le calcul des besoins */
+const SOIL={ texId:'cloam', clay:33, sand:32, silt:35, fc:0.38, wp:0.20, zr:1.2, p:0.65, eff:0.90,
+  infil:TEX_INFIL.cloam, source:'Défaut (argilo-limoneux)' };
+function soilRU(){ return 1000*(SOIL.fc-SOIL.wp)*SOIL.zr; }        // RU mm
+function soilRFU(){ return SOIL.p*soilRU(); }                       // RFU mm
+async function soilGridsFetch(){
+  const el=document.getElementById('an_src'); if(el)el.innerHTML='⏳ Récupération SoilGrids…';
+  const url='https://rest.isric.org/soilgrids/v2.0/properties/query?lon='+APP.farm.lng+'&lat='+APP.farm.lat+
+    '&property=clay&property=sand&property=silt&property=wv0033&property=wv1500&depth=0-5cm&depth=5-15cm&value=mean';
+  try{
+    const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json(); const lay={}; (j.properties.layers||[]).forEach(L=>{
+      const vals=L.depths.map(d=>d.values.mean).filter(v=>v!=null); const df=L.unit_measure.d_factor||1;
+      lay[L.name]= vals.length? (vals.reduce((a,b)=>a+b,0)/vals.length)/df : null; });
+    if(lay.clay==null||lay.sand==null){ throw new Error('valeurs manquantes'); }
+    SOIL.clay=+lay.clay.toFixed(0); SOIL.sand=+lay.sand.toFixed(0); SOIL.silt=+(100-SOIL.clay-SOIL.sand).toFixed(0);
+    SOIL.texId=usdaClass(SOIL.sand,SOIL.clay); SOIL.infil=TEX_INFIL[SOIL.texId];
+    if(lay.wv0033!=null) SOIL.fc=+(lay.wv0033/100).toFixed(3);
+    if(lay.wv1500!=null) SOIL.wp=+(lay.wv1500/100).toFixed(3);
+    SOIL.source='SoilGrids (wv0033/wv1500) · '+APP.farm.lat.toFixed(4)+', '+APP.farm.lng.toFixed(4);
+    syncSoilUI(); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde();
+    toast('Sol chargé depuis SoilGrids.');
+  }catch(e){
+    if(el)el.innerHTML='<span style="color:var(--warn)">⚠ SoilGrids inaccessible ('+esc(e.message)+') — valeurs par défaut du type de sol. Choisissez une texture ou saisissez CC/PF manuellement.</span>';
+    SOIL.source='Défaut / manuel'; renderSoilEditor();
+  }
+}
+let IRR_SOURCES=[{name:'Forage principal', debit:40, hours:12}];
+
+function cropSelectOptions(sel){
+  const DB=window.CROPS_DB||[]; if(!DB.length) return '<option value="olive">Olivier</option>';
+  const G=window.CROPS_GROUPS||{}, gr={}; DB.forEach(c=>{(gr[c.g]=gr[c.g]||[]).push(c);});
+  return Object.keys(gr).map(gk=>'<optgroup label="'+((G[gk]&&G[gk].fr)||gk)+'">'+
+    gr[gk].map(c=>'<option value="'+c.id+'"'+(sel===c.id?' selected':'')+'>'+(c.fr||c.id)+'</option>').join('')+'</optgroup>').join('');
+}
+function kcAtDay(cr,day){
+  const [Li,Ld,Lm,Ll]=cr.L, [Ki,Km,Ke]=cr.Kc;
+  if(day<0) return {kc:Ki,stage:'hors-saison'};
+  if(day<Li) return {kc:Ki,stage:'initial'};
+  if(day<Li+Ld) return {kc:Ki+(Km-Ki)*(day-Li)/Ld,stage:'développement'};
+  if(day<Li+Ld+Lm) return {kc:Km,stage:'mi-saison'};
+  if(day<Li+Ld+Lm+Ll) return {kc:Km+(Ke-Km)*Math.min(1,(day-Li-Ld-Lm)/Ll),stage:'arrière-saison'};
+  return {kc:Ke,stage:'repos'};
+}
+function irrFillControls(){
+  document.getElementById('ir_crop').innerHTML=cropSelectOptions('olive');
+  document.getElementById('ir_tex').innerHTML=TEX.map(t=>'<option value="'+t.id+'">'+texLabel(t)+'</option>').join('');
+  const y=new Date().getFullYear();
+  document.getElementById('ir_seed').value=y+'-03-01';
+  document.getElementById('ir_from').value=y+'-01-01';
+  document.getElementById('ir_to').value=fmtDate(new Date());
+  syncSoilUI();
+  renderSources();
+}
+function srcTotals(){ return { deb:IRR_SOURCES.reduce((a,s)=>a+(s.debit||0),0),
+  hours:Math.max(...IRR_SOURCES.map(s=>s.hours||0),0),
+  cap:IRR_SOURCES.reduce((a,s)=>a+(s.debit||0)*(s.hours||0),0) }; }
+function updateSrcInfo(){ const t=srcTotals();
+  document.getElementById('ir_srcInfo').innerHTML='Débit total : <b>'+t.deb+' m³/h</b> · '+t.hours+' h/j max · capacité <b>'+Math.round(t.cap).toLocaleString('fr')+' m³/jour</b>'; }
+function renderSources(){
+  const box=document.getElementById('ir_sources');
+  box.innerHTML=IRR_SOURCES.map((s,i)=>`
+    <div class="srcrow">
+      <input type="text" data-si="${i}" data-sk="name" value="${esc(s.name)}" placeholder="Nom de la source">
+      <div class="srcline">
+        <input data-si="${i}" data-sk="debit" type="number" value="${s.debit}"><span class="u">m³/h</span>
+        <input data-si="${i}" data-sk="hours" type="number" value="${s.hours}"><span class="u">h/j</span>
+        <button class="del" data-del="${i}">✕ suppr.</button>
+      </div>
+    </div>`).join('');
+  box.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{
+    const i=+inp.dataset.si,k=inp.dataset.sk; IRR_SOURCES[i][k]= k==='name'?inp.value:(parseFloat(inp.value)||0); updateSrcInfo(); renderIrrig(); });
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ IRR_SOURCES.splice(+b.dataset.del,1); renderSources(); renderIrrig(); });
+  updateSrcInfo();
+}
+function irrParams(){
+  const cropId=document.getElementById('ir_crop').value;
+  const cr=(window.CROPS&&CROPS.byId(cropId))||{L:[30,90,60,90],Kc:[0.65,0.70,0.70]};
+  return {
+    cropId, cr,
+    tex:{fc:SOIL.fc, wp:SOIL.wp, fr:(texById(SOIL.texId)||{}).fr||'sol'},
+    kr:(parseFloat(document.getElementById('ir_kr').value)||100)/100,
+    seed:document.getElementById('ir_seed').value,
+    zr:SOIL.zr, p:SOIL.p, eff:SOIL.eff,
+    strat:document.getElementById('ir_strat').value,
+    interval:parseInt(document.getElementById('ir_int').value)||2,
+    from:document.getElementById('ir_from').value, to:document.getElementById('ir_to').value
+  };
+}
+function computeIrrig(){
+  if(!APP.weather||!APP.selected) return null;
+  const P=irrParams();
+  const area=APP.selected.area_ha||1;
+  const TAW=1000*(P.tex.fc-P.tex.wp)*P.zr, RAW=P.p*TAW;
+  const seed=new Date(P.seed+'T00:00:00');
+  const days=APP.weather.daily.filter(d=>d.d>=P.from && d.d<=P.to);
+  const T=srcTotals(); const totDeb=T.deb, totHours=T.hours||24;
+  let Dr=RAW*0.4, drain=0, stressDays=0, sinceIrr=0, acc=0;
+  const rows=[], events=[];
+  days.forEach(d=>{
+    const et0=d.et0||0, rain=d.rain||0;
+    const dIdx=Math.round((new Date(d.d+'T00:00:00')-seed)/864e5);
+    const k=kcAtDay(P.cr,dIdx); const etc=k.kc*P.kr*et0;
+    let irr=0;
+    if(P.strat==='freq'){
+      // goutte-à-goutte haute fréquence : petites doses tous les N jours = ETc − pluie accumulés
+      acc += Math.max(0, etc-rain); sinceIrr++;
+      Dr += etc-rain; if(Dr<0){ drain+=-Dr; Dr=0; } if(Dr>TAW)Dr=TAW;
+      if(sinceIrr>=P.interval && acc>0.5){ irr=Math.min(acc, RAW); acc=Math.max(0,acc-irr); sinceIrr=0; Dr=Math.max(0,Dr-irr); }
+    } else {
+      // seuil RFU : on attend l'épuisement puis on ramène à la capacité au champ
+      if(Dr>=RAW){ irr=Dr; }
+      Dr -= (rain+irr); if(Dr<0){ drain+=-Dr; Dr=0; }
+      Dr += etc; if(Dr>TAW)Dr=TAW;
+    }
+    const Ks = Dr>RAW ? Math.max(0,(TAW-Dr)/(TAW-RAW)) : 1;
+    if(Ks<0.999) stressDays++;
+    const AW=TAW-Dr, ruPct=Math.max(0,Math.min(100,AW/TAW*100));
+    const status = irr>0?'irr' : (Dr>RAW?'stress':(Dr>RAW*0.6?'pilot':'confort'));
+    let gross=0,vol=0,dur=0;
+    if(irr>0){ gross=irr/P.eff; vol=gross*10*area; dur= totDeb>0? vol/totDeb : 0;
+      events.push({date:d.d, net:irr, gross, vol, dur, feasible: dur<=totHours+0.01}); }
+    rows.push({date:d.d, et0, kc:k.kc, stage:k.stage, etc, rain, irr, Dr, AW, ruPct, Ks, status, TAW, RAW});
+  });
+  const sum=f=>rows.reduce((a,r)=>a+(r[f]||0),0);
+  const gnet=events.reduce((a,e)=>a+e.net,0), ggross=events.reduce((a,e)=>a+e.gross,0);
+  const vtot=events.reduce((a,e)=>a+e.vol,0), dtot=events.reduce((a,e)=>a+e.dur,0);
+  const peakDur=events.reduce((a,e)=>Math.max(a,e.dur),0);
+  const nInfeasible=events.filter(e=>!e.feasible).length;
+  // débit nécessaire pour tenir l'événement le plus lourd dans les heures dispo
+  const peakVol=events.reduce((a,e)=>Math.max(a,e.vol),0);
+  const debNeeded= totHours>0? Math.ceil(peakVol/totHours) : 0;
+  return {P,area,TAW,RAW,rows,events,drain,stressDays,totDeb,totHours,peakDur,nInfeasible,debNeeded,
+    et0Tot:sum('et0'),etcTot:sum('etc'),rainTot:sum('rain'),
+    net:gnet,gross:ggross,vol:vtot,dur:dtot};
+}
+function renderIrrig(){
+  const noSel=document.getElementById('irrNoSel'), noWx=document.getElementById('irrNoWx'), grid=document.getElementById('irrGrid');
+  noSel.style.display = APP.selected? 'none':'block';
+  noWx.style.display = APP.weather? 'none':'block';
+  grid.style.display = (APP.selected&&APP.weather)?'grid':'none';
+  if(!APP.selected||!APP.weather) return;
+  const R=computeIrrig(); if(!R) return;
+  // KPIs
+  document.getElementById('irrKpis').innerHTML=[
+    ['Besoin net',(+R.net.toFixed(0)),'mm','accent'],
+    ['Besoin brut',(+R.gross.toFixed(0)),'mm','warn'],
+    ['Volume total',(+R.vol.toFixed(0)).toLocaleString('fr'),'m³','bad'],
+    ['Irrigations',R.events.length,'× ',''],
+    ['Pompage/irrig. (pic)',(+R.peakDur.toFixed(1)),'h',R.nInfeasible>0?'bad':'ok'],
+    ['ET₀ / Pluie',(+R.et0Tot.toFixed(0))+' / '+(+R.rainTot.toFixed(0)),'mm','']
+  ].map(k=>'<div class="kpi '+k[3]+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+' <span class="u">'+k[2]+'</span></div></div>').join('');
+  // chart : eau disponible + seuil RFU + irrigations
+  const seuil=+(R.TAW-R.RAW).toFixed(1); const toMs=d=>Date.parse(d+'T00:00:00');
+  tsChart(document.getElementById('irrChart'),{
+    lines:[{label:'Eau disponible (mm)',color:'#3fa66a',width:2.2,points:R.rows.map(r=>[toMs(r.date),+r.AW.toFixed(1)])}],
+    hlines:[{label:'Seuil RFU',color:'#e0912b',value:seuil}],
+    bars:[{label:'Irrigation brute (mm)',color:'#3a9bd0',points:R.rows.map(r=>[toMs(r.date),+(r.gross||0).toFixed(1)])}],
+    height:250, yUnit:' mm'});
+  // planning
+  const pc=document.getElementById('irrPlan');
+  pc.innerHTML='<thead><tr><th>Date</th><th>Dose nette mm</th><th>Dose brute mm</th><th>Volume m³</th><th>Durée pompage h</th></tr></thead><tbody>'+
+    R.events.map(e=>'<tr class="'+(e.feasible?'irr':'stress')+'"><td>'+e.date+'</td><td>'+e.net.toFixed(1)+'</td><td>'+e.gross.toFixed(1)+'</td><td>'+Math.round(e.vol).toLocaleString('fr')+'</td><td>'+e.dur.toFixed(1)+(e.feasible?'':' ⚠')+'</td></tr>').join('')+'</tbody>';
+  document.getElementById('irrPlanCount').textContent=R.events.length+' irrigations';
+  const pn=document.getElementById('irrPlanNote');
+  if(R.nInfeasible>0){
+    pn.className='notice warn';
+    pn.innerHTML='⚠ '+R.nInfeasible+' irrigation(s) dépassent les <b>'+R.totHours+' h/j</b> disponibles (durée = temps de pompage pour toute la parcelle de '+R.area+' ha). '+
+      'Pour les rendre réalistes : <b>sectoriser</b> la parcelle, <b>ajouter des sources</b>, ou porter le débit à ≈ <b>'+R.debNeeded.toLocaleString('fr')+' m³/h</b>. Débit actuel : '+R.totDeb+' m³/h.';
+  } else { pn.className='notice'; pn.innerHTML='✅ Planning faisable avec le débit actuel ('+R.totDeb+' m³/h · '+R.totHours+' h/j). Pic : '+R.peakDur.toFixed(1)+' h/irrigation.'; }
+  // daily
+  const dc=document.getElementById('irrDaily');
+  dc.innerHTML='<thead><tr><th>Date</th><th>ET₀</th><th>Kc</th><th>ETc</th><th>Pluie</th><th>Irrig.</th><th>Réserve util. mm</th><th>RU %</th><th>État</th></tr></thead><tbody>'+
+    R.rows.map(r=>'<tr class="'+(r.status==='irr'?'irr':(r.status==='stress'?'stress':''))+'"><td>'+r.date+'</td><td>'+r.et0.toFixed(1)+'</td><td>'+r.kc.toFixed(2)+'</td><td>'+r.etc.toFixed(1)+'</td><td>'+r.rain.toFixed(1)+'</td><td>'+(r.irr?r.irr.toFixed(1):'—')+'</td><td>'+r.Dr.toFixed(1)+'</td><td>'+r.ruPct.toFixed(0)+'</td><td>'+({irr:'💧 irrig.',stress:'⚠ stress',pilot:'pilotage',confort:'confort'}[r.status])+'</td></tr>').join('')+'</tbody>';
+  document.getElementById('irrDailyCount').textContent=R.rows.length+' jours';
+  renderMonth(R);
+  // infos params
+  document.getElementById('ir_kcinfo').innerHTML='Kc (FAO-56) : ini '+R.P.cr.Kc[0]+' · mi '+R.P.cr.Kc[1]+' · fin '+R.P.cr.Kc[2]+' · Kr '+Math.round(R.P.kr*100)+'% → <b>ETc = Kc·Kr·ET₀</b>';
+  document.getElementById('ir_soilinfo').innerHTML='θCC '+(R.P.tex.fc*100).toFixed(0)+'% · θPF '+(R.P.tex.wp*100).toFixed(0)+'% · Zr '+R.P.zr+' m → <b>RU '+Math.round(R.TAW)+' mm</b>, RFU '+Math.round(R.RAW)+' mm';
+  APP._irr=R;
+}
+function renderMonth(R){
+  const g={};
+  R.rows.forEach(r=>{ const k=r.date.slice(0,7); (g[k]=g[k]||{et0:0,rain:0,etc:0,irrNet:0,irrGross:0,vol:0,n:0});
+    const o=g[k]; o.et0+=r.et0; o.rain+=r.rain; o.etc+=r.etc; if(r.irr>0){o.irrNet+=r.irr; o.n++;} });
+  R.events.forEach(e=>{ const k=e.date.slice(0,7); if(g[k]){ g[k].irrGross+=e.gross; g[k].vol+=e.vol; } });
+  const keys=Object.keys(g).sort();
+  let html='<thead><tr><th>Mois</th><th>ET₀ mm</th><th>Pluie mm</th><th>ETc mm</th><th>Irrig. nette mm</th><th>Volume m³</th><th>Nb irrig.</th></tr></thead><tbody>';
+  keys.forEach(k=>{ const o=g[k]; html+='<tr><td>'+k+'</td><td>'+o.et0.toFixed(0)+'</td><td>'+o.rain.toFixed(0)+'</td><td>'+o.etc.toFixed(0)+'</td><td>'+o.irrNet.toFixed(0)+'</td><td>'+Math.round(o.vol).toLocaleString('fr')+'</td><td>'+o.n+'</td></tr>'; });
+  html+='</tbody>';
+  document.getElementById('irrMonth').innerHTML=html;
+}
+function onWeatherReady(){ if(document.getElementById('tab-irrig').classList.contains('on')) renderIrrig(); }
+function irrCSV(kind){
+  const R=APP._irr; if(!R) return '';
+  if(kind==='plan') return 'date,dose_nette_mm,dose_brute_mm,volume_m3,duree_h\n'+R.events.map(e=>[e.date,e.net.toFixed(1),e.gross.toFixed(1),Math.round(e.vol),e.dur.toFixed(1)].join(',')).join('\n');
+  return 'date,et0_mm,kc,etc_mm,pluie_mm,irrig_mm,reserve_utilisee_mm,ru_pct,etat\n'+
+    R.rows.map(r=>[r.date,r.et0.toFixed(2),r.kc.toFixed(2),r.etc.toFixed(2),r.rain.toFixed(1),r.irr.toFixed(1),r.Dr.toFixed(1),r.ruPct.toFixed(0),r.status].join(',')).join('\n');
+}
+document.getElementById('ir_tex').addEventListener('change',e=>setSoilTexture(e.target.value));
+document.getElementById('ir_zr').addEventListener('input',e=>{ SOIL.zr=parseFloat(e.target.value)||1.2; syncSoilUI(e.target); renderSoilEditor(); renderIrrig(); });
+document.getElementById('ir_p').addEventListener('input',e=>{ SOIL.p=parseFloat(e.target.value)||0.65; syncSoilUI(e.target); renderSoilEditor(); renderIrrig(); });
+document.getElementById('ir_eff').addEventListener('input',e=>{ SOIL.eff=(parseFloat(e.target.value)||90)/100; renderIrrig(); });
+['ir_crop','ir_kr','ir_seed','ir_from','ir_to','ir_int'].forEach(id=>document.getElementById(id).addEventListener('input',renderIrrig));
+document.getElementById('ir_strat').addEventListener('change',e=>{ document.getElementById('ir_intWrap').style.display = e.target.value==='freq'?'flex':'none'; renderIrrig(); });
+document.getElementById('ir_addSrc').onclick=()=>{ IRR_SOURCES.push({name:'Source '+(IRR_SOURCES.length+1),debit:20,hours:10}); renderSources(); renderIrrig(); };
+document.getElementById('ir_seasonBtn').onclick=()=>{ const y=new Date(document.getElementById('ir_from').value||Date.now()).getFullYear();
+  document.getElementById('ir_from').value=y+'-04-01'; document.getElementById('ir_to').value=y+'-10-31'; renderIrrig(); };
+document.getElementById('irrPlanCsv').onclick=()=>download('planning_irrigation.csv',irrCSV('plan'),'text/csv');
+document.getElementById('irrDailyCsv').onclick=()=>download('bilan_quotidien.csv',irrCSV('daily'),'text/csv');
+
+/* ============================================================
+   ÉTAPE 5 — SOL & SONDES
+   ============================================================ */
+let SDB=null;                                   // {site:{moisture:{depth:[[tms,v]]},temperature,salinity,precip,units}}
+const MEAS=['moisture','temperature','salinity','precip'];
+const DEPTH_COLORS=['#3a9bd0','#5a8f2c','#e0912b','#d1584e','#8e6fc7','#3fa66a'];
+function tsFmt(ms){ const d=new Date(ms);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+
+    'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function isNested(j){ if(!j||typeof j!=='object'||Array.isArray(j))return false;
+  const f=Object.values(j)[0]; return !!(f&&typeof f==='object'&&!Array.isArray(f)&&(f.moisture||f.temperature||f.salinity)); }
+function fromNestedFull(j){
+  const db={}, DEF={moisture:'%VWC',temperature:'°C',salinity:'dS/m',precip:'mm'};
+  for(const site in j){ const src=j[site]; if(!src||typeof src!=='object')continue;
+    const S={moisture:{},temperature:{},salinity:{},precip:{},units:{}};
+    MEAS.forEach(ty=>{ const g=src[ty]; if(!g||typeof g!=='object')return;
+      for(const d in g){ const arr=(g[d]||[]).map(p=>[Date.parse(p[0]),+p[1]]).filter(p=>isFinite(p[0])&&isFinite(p[1]));
+        arr.sort((a,b)=>a[0]-b[0]); if(arr.length)S[ty][parseInt(d,10)||0]=arr; }
+      S.units[ty]=(src.units&&src.units[ty])||DEF[ty]; });
+    db[site]=S; }
+  return db;
+}
+function ingestFlat(records){
+  const db={};
+  const pm=s=>{s=String(s||'');const type=/salinit/i.test(s)?'salinity':/temperat/i.test(s)?'temperature':/moist/i.test(s)?'moisture':/precip|pluie|rain/i.test(s)?'precip':null;
+    const m=s.match(/(\d{1,3})\s*cm/i);return{type,depth:m?+m[1]:0};};
+  for(const r of records){ const site=r.site_name||r.site||'—'; const {type,depth}=pm(r.probe_measure); if(!type)continue;
+    const t=Date.parse(r.local_time||r.time||r.date), v=parseFloat(r.soil_value); if(isNaN(t)||isNaN(v))continue;
+    db[site]=db[site]||{moisture:{},temperature:{},salinity:{},precip:{},units:{}};
+    (db[site][type][depth]=db[site][type][depth]||[]).push([t,v]); if(r.unit)db[site].units[type]=r.unit; }
+  for(const s in db)MEAS.forEach(ty=>{for(const d in db[s][ty])db[s][ty][d].sort((a,b)=>a[0]-b[0]);});
+  return db;
+}
+function parseCSVsonde(txt){
+  const L=txt.split(/\r?\n/).filter(l=>l.trim()); const h=L[0].split(',').map(s=>s.trim().replace(/^"|"$/g,''));
+  const ix=n=>h.findIndex(x=>x.toLowerCase()===n);
+  const iT=ix('local_time')>=0?ix('local_time'):ix('time'),iS=ix('site_name')>=0?ix('site_name'):ix('site'),
+    iM=ix('probe_measure'),iV=ix('soil_value'),iU=ix('unit'); const out=[];
+  for(let k=1;k<L.length;k++){const c=L[k].split(',').map(s=>s.trim().replace(/^"|"$/g,''));
+    out.push({local_time:c[iT],site_name:c[iS],probe_measure:c[iM],soil_value:c[iV],unit:iU>=0?c[iU]:''});}
+  return out;
+}
+function downS(arr,max){ max=max||2200; if(arr.length<=max)return arr; const st=arr.length/max,out=[];
+  for(let i=0;i<max;i++)out.push(arr[Math.floor(i*st)]); if(out[out.length-1]!==arr[arr.length-1])out.push(arr[arr.length-1]); return out; }
+
+function doImportSonde(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,.csv';
+  inp.onchange=e=>{ const f=e.target.files[0]; if(!f)return;
+    document.getElementById('soStatus').textContent='Lecture de '+f.name+' ('+(f.size/1048576).toFixed(1)+' Mo)…';
+    const rd=new FileReader();
+    rd.onload=()=>{ try{
+      let db;
+      if(/\.csv$/i.test(f.name)){ db=ingestFlat(parseCSVsonde(rd.result)); }
+      else { const j=JSON.parse(rd.result); db=isNested(j)?fromNestedFull(j):ingestFlat(Array.isArray(j)?j:(j.readings||j.records||[])); }
+      if(!Object.keys(db).length){ throw new Error('aucune donnée reconnue'); }
+      SDB=db; APP.sonde={file:f.name}; setupSonde(); toast('Sondes importées : '+Object.keys(db).length+' site(s).');
+    }catch(err){ document.getElementById('soStatus').innerHTML='<span style="color:var(--bad)">Erreur : '+esc(err.message)+'</span>'; } };
+    rd.readAsText(f); };
+  inp.click();
+}
+function sondeRange(){ // min/max ts across DB
+  let lo=Infinity,hi=-Infinity;
+  for(const s in SDB)MEAS.forEach(ty=>{for(const d in SDB[s][ty]){const a=SDB[s][ty][d];if(a.length){lo=Math.min(lo,a[0][0]);hi=Math.max(hi,a[a.length-1][0]);}}});
+  return {lo,hi};
+}
+function setupSonde(){
+  document.getElementById('soGrid').style.display='grid';
+  const sites=Object.keys(SDB);
+  document.getElementById('so_site').innerHTML=sites.map(s=>'<option>'+esc(s)+'</option>').join('');
+  const R=sondeRange();
+  if(isFinite(R.lo)){ document.getElementById('so_from').value=fmtDate(new Date(R.lo)); document.getElementById('so_to').value=fmtDate(new Date(R.hi)); }
+  document.getElementById('soStatus').innerHTML='✓ '+sites.length+' site(s) · '+(isFinite(R.lo)?(fmtDate(new Date(R.lo))+' → '+fmtDate(new Date(R.hi))):'')+' · fichier '+esc(APP.sonde.file);
+  renderSonde();
+}
+function currentDepths(){ const site=document.getElementById('so_site').value, meas=document.getElementById('so_meas').value;
+  return Object.keys((SDB[site]||{})[meas]||{}).map(Number).sort((a,b)=>a-b); }
+function renderSonde(){
+  if(!SDB) return;
+  const site=document.getElementById('so_site').value, meas=document.getElementById('so_meas').value;
+  const S=SDB[site]||{}; const depths=currentDepths();
+  // depth checkboxes
+  const dc=document.getElementById('so_depths');
+  if(dc.dataset.for!==site+'|'+meas){ dc.dataset.for=site+'|'+meas;
+    dc.innerHTML=depths.map((d,i)=>'<label style="display:inline-flex;gap:4px;margin-inline-end:10px;font-weight:700"><input type="checkbox" class="dchk" value="'+d+'" checked> <span style="color:'+DEPTH_COLORS[i%6]+'">'+d+' cm</span></label>').join('')||'—';
+    dc.querySelectorAll('.dchk').forEach(c=>c.onchange=renderSonde); }
+  const chosen=[...dc.querySelectorAll('.dchk:checked')].map(c=>+c.value);
+  const from=Date.parse(document.getElementById('so_from').value+'T00:00:00'), to=Date.parse(document.getElementById('so_to').value+'T23:59:59');
+  const unit=(S.units&&S.units[meas])||'';
+  document.getElementById('soChartTitle').textContent=({moisture:'Humidité',temperature:'Température',salinity:'Salinité',precip:'Précipitations'}[meas]||meas)+' — '+site+' ('+unit+')';
+  const tex={fc:SOIL.fc, wp:SOIL.wp};
+  const chartLines=chosen.map((d,i)=>({label:d+' cm', color:DEPTH_COLORS[i%6], width:i===0?2.4:1.9,
+    points:downS((S[meas][d]||[]).filter(p=>p[0]>=from&&p[0]<=to),1600)}));
+  let hl=[]; const CC=tex.fc*100, PF=tex.wp*100, RFU=CC-SOIL.p*(CC-PF);
+  if(meas==='moisture'){
+    hl=[{label:'CC '+CC.toFixed(0),color:'#3fa66a',value:CC},{label:'RFU '+RFU.toFixed(0),color:'#e0912b',value:+RFU.toFixed(1)},{label:'PF '+PF.toFixed(0),color:'#d1584e',value:PF}];
+    document.getElementById('so_texinfo').innerHTML=(texById(SOIL.texId)||{}).fr+' · CC '+CC.toFixed(0)+'% · RFU '+RFU.toFixed(0)+'% · PF '+PF.toFixed(0)+'% (%VWC)';
+  } else document.getElementById('so_texinfo').innerHTML='Seuils affichés uniquement pour l\'humidité.';
+  tsChart(document.getElementById('soChart'), {lines:chartLines, hlines:hl, height:300, yUnit:''});
+  // KPIs + interpretation (dernière valeur, sur profondeur la plus faible)
+  renderSondeKpis(S,meas,chosen,from,to,tex,unit);
+  renderProfile(S,meas,chosen,from,to,unit);
+}
+function renderSondeKpis(S,meas,chosen,from,to,tex,unit){
+  const box=document.getElementById('soKpis'); const K=[];
+  chosen.forEach((d)=>{ const arr=(S[meas][d]||[]).filter(p=>p[0]>=from&&p[0]<=to); if(!arr.length)return;
+    const vals=arr.map(p=>p[1]); const last=vals[vals.length-1], mn=Math.min(...vals),mx=Math.max(...vals),mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    K.push([d+' cm — dernier',(+last.toFixed(1)),unit, meas==='moisture'?moistClass(last,tex):'' ]);
+  });
+  box.innerHTML=K.map(k=>'<div class="kpi '+(k[3]||'')+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+' <span class="u">'+k[2]+'</span></div></div>').join('');
+  // interpretation
+  if(meas==='moisture'&&chosen.length){ const d=chosen[0]; const arr=(S[meas][d]||[]).filter(p=>p[0]>=from&&p[0]<=to);
+    if(arr.length){ const v=arr[arr.length-1][1], CC=tex.fc*100,PF=tex.wp*100,RFU=CC-SOIL.p*(CC-PF);
+      let msg;
+      if(v>CC) msg='💧 Sol au-dessus de la capacité au champ — risque de drainage/excès.';
+      else if(v>=RFU) msg='✅ Zone de confort (entre RFU et CC) — pas d\'irrigation nécessaire.';
+      else if(v>=PF) msg='⚠ Sous le seuil RFU — irrigation recommandée avant l\'entrée en stress.';
+      else msg='🔴 Sous le point de flétrissement — stress hydrique sévère.';
+      document.getElementById('soInterp').innerHTML='<b>Interprétation ('+d+' cm)</b> : '+msg+' Valeur '+v.toFixed(1)+' %VWC · CC '+CC.toFixed(0)+' · RFU '+RFU.toFixed(0)+' · PF '+PF.toFixed(0)+'.';
+    }
+  } else document.getElementById('soInterp').textContent='';
+}
+function moistClass(v,tex){ const CC=tex.fc*100,PF=tex.wp*100,RFU=CC-SOIL.p*(CC-PF); return v>CC?'accent':v>=RFU?'ok':v>=PF?'warn':'bad'; }
+function renderProfile(S,meas,chosen,from,to,unit){
+  // barres horizontales : moyenne par profondeur
+  const depthsAll=Object.keys(S[meas]||{}).map(Number).sort((a,b)=>a-b);
+  const rows=depthsAll.map(d=>{ const arr=(S[meas][d]||[]).filter(p=>p[0]>=from&&p[0]<=to);
+    const m=arr.length?arr.reduce((a,b)=>a+b[1],0)/arr.length:0; return {d,m}; });
+  const max=Math.max(1,...rows.map(r=>r.m));
+  document.getElementById('soProfile').innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'+
+    rows.map((r,i)=>'<div style="display:flex;align-items:center;gap:8px"><span style="width:52px;font-size:.78rem;font-weight:700;color:var(--muted)">'+r.d+' cm</span>'+
+      '<div style="flex:1;background:#eef2e6;border-radius:6px;overflow:hidden"><div style="width:'+(r.m/max*100)+'%;background:'+DEPTH_COLORS[i%6]+';height:16px"></div></div>'+
+      '<span style="width:70px;text-align:right;font-weight:700">'+r.m.toFixed(1)+' '+esc(unit)+'</span></div>').join('')+'</div>';
+}
+function exportSondeJSON(){
+  if(!SDB) return '{}'; const out={};
+  for(const s in SDB){ const S=SDB[s]; out[s]={units:S.units||{}};
+    MEAS.forEach(ty=>{ if(S[ty]&&Object.keys(S[ty]).length){ out[s][ty]={};
+      for(const d in S[ty]) out[s][ty][d]=S[ty][d].map(p=>[tsFmt(p[0]),p[1]]); } }); }
+  return JSON.stringify(out);
+}
+function exportSondeCSV(){
+  if(!SDB) return ''; const lines=['local_time,site_name,probe_measure,soil_value,unit'];
+  for(const s in SDB){ const S=SDB[s]; MEAS.forEach(ty=>{ if(!S[ty])return;
+    const u=(S.units&&S.units[ty])||''; const lbl={moisture:'Soil Moisture',temperature:'Soil Temperature',salinity:'Salinity',precip:'Precipitation'}[ty];
+    for(const d in S[ty]) S[ty][d].forEach(p=>lines.push([tsFmt(p[0]),'"'+s+'"',lbl+' '+d+'cm',p[1],u].join(','))); }); }
+  return lines.join('\n');
+}
+function initSol(){
+  document.getElementById('an_tex').innerHTML=TEX.map(t=>'<option value="'+t.id+'">'+texLabel(t)+'</option>').join('');
+  document.getElementById('soImport').onclick=doImportSonde;
+  document.getElementById('soExportJson').onclick=()=>download('sondes_export.json',exportSondeJSON(),'application/json');
+  document.getElementById('soExportCsv').onclick=()=>download('sondes_export.csv',exportSondeCSV(),'text/csv');
+  ['so_site','so_meas','so_from','so_to'].forEach(id=>document.getElementById(id).addEventListener('input',renderSonde));
+  document.getElementById('an_tex').addEventListener('change',e=>setSoilTexture(e.target.value));
+  document.getElementById('an_api').onclick=soilGridsFetch;
+  document.getElementById('an_zr').addEventListener('input',e=>{ SOIL.zr=parseFloat(e.target.value)||1.2; syncSoilUI(e.target); renderSoilEditor(); renderIrrig(); });
+  document.getElementById('an_p').addEventListener('input',e=>{ SOIL.p=parseFloat(e.target.value)||0.65; syncSoilUI(e.target); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde(); });
+  syncSoilUI(); renderSoilEditor();
+  soilGridsFetch();   // charge le sol par défaut depuis SoilGrids
+}
+function setSoilTexture(id){ const t=texById(id); if(!t)return;
+  SOIL.texId=id; SOIL.fc=t.fc; SOIL.wp=t.wp; SOIL.infil=TEX_INFIL[id];
+  const c=TEX_CENTROID[id]; if(c){ SOIL.sand=c[0]; SOIL.clay=c[1]; SOIL.silt=100-c[0]-c[1]; }
+  SOIL.source='Texture choisie : '+t.fr;
+  syncSoilUI(); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde();
+}
+function setSoilProp(which,val){ val=Math.max(0,Math.min(100,isFinite(val)?val:0)); SOIL[which]=val;
+  if(which==='silt') SOIL.sand=Math.max(0,+(100-SOIL.clay-SOIL.silt).toFixed(0));
+  else SOIL.silt=Math.max(0,+(100-SOIL.clay-SOIL.sand).toFixed(0));
+  SOIL.texId=usdaClass(SOIL.sand,SOIL.clay); const t=texById(SOIL.texId);
+  SOIL.fc=t.fc; SOIL.wp=t.wp; SOIL.infil=TEX_INFIL[SOIL.texId];
+  SOIL.source='Proportions manuelles → '+t.fr;
+  syncSoilUI(); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde();
+}
+function setSoilCCPF(which,val){ if(which==='fc')SOIL.fc=(val||0)/100; else SOIL.wp=(val||0)/100;
+  SOIL.source='CC/PF manuels'; syncSoilUI(); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde(); }
+function syncSoilUI(except){ const set=(id,v)=>{ const el=document.getElementById(id); if(el&&el!==except&&String(el.value)!=String(v))el.value=v; };
+  set('ir_tex',SOIL.texId); set('an_tex',SOIL.texId);
+  set('ir_zr',SOIL.zr); set('an_zr',SOIL.zr);
+  set('ir_p',SOIL.p); set('an_p',SOIL.p);
+  set('ir_eff',Math.round(SOIL.eff*100)); }
+function renderSoilEditor(){
+  const t=texById(SOIL.texId)||{fr:'—'};
+  document.getElementById('an_src').innerHTML='Source : <b>'+esc(SOIL.source)+'</b> · type de sol : <b>'+esc(t.fr)+'</b>';
+  const ts=document.getElementById('an_tex'); if(ts)ts.value=SOIL.texId;
+  const prop=[['clay','Argile','#8e6fc7',SOIL.clay],['sand','Sable','#e0a92b',SOIL.sand],['silt','Limon','#5a8f2c',SOIL.silt]];
+  document.getElementById('an_prop').innerHTML=prop.map(p=>
+    '<div class="tile"><div class="tl">'+p[1]+'</div><div class="tv"><input type="number" min="0" max="100" data-prop="'+p[0]+'" value="'+p[3]+'"><span class="u">%</span></div>'+
+    '<div class="bar"><span style="width:'+Math.max(0,Math.min(100,p[3]))+'%;background:'+p[2]+'"></span></div></div>').join('');
+  document.getElementById('an_prop').querySelectorAll('[data-prop]').forEach(inp=>inp.onchange=()=>setSoilProp(inp.dataset.prop,parseFloat(inp.value)));
+  const CC=SOIL.fc*100, PF=SOIL.wp*100, RU=soilRU(), RFU=soilRFU();
+  document.getElementById('an_hydro').innerHTML=
+    '<div class="tile"><div class="tl">Capacité au champ (CC)</div><div class="tv"><input type="number" step="0.5" data-ccpf="fc" value="'+CC.toFixed(0)+'"><span class="u">% vol</span></div><div class="bar"><span style="width:'+Math.min(100,CC)+'%;background:#3a9bd0"></span></div></div>'+
+    '<div class="tile"><div class="tl">Point de flétrissement (PF)</div><div class="tv"><input type="number" step="0.5" data-ccpf="wp" value="'+PF.toFixed(0)+'"><span class="u">% vol</span></div><div class="bar"><span style="width:'+Math.min(100,PF)+'%;background:#d1584e"></span></div></div>'+
+    '<div class="tile readonly"><div class="tl">Réserve utile (RU)</div><div class="tv"><span class="big">'+Math.round(RU)+'</span><span class="u">mm · '+(CC-PF).toFixed(0)+'% vol</span></div><div class="bar"><span style="width:'+Math.min(100,(CC-PF)*3)+'%;background:#3fa66a"></span></div></div>'+
+    '<div class="tile readonly"><div class="tl">RFU (p='+SOIL.p+')</div><div class="tv"><span class="big">'+Math.round(RFU)+'</span><span class="u">mm</span></div></div>'+
+    '<div class="tile readonly"><div class="tl">Infiltration</div><div class="tv"><span class="big">'+SOIL.infil+'</span><span class="u">mm/h</span></div></div>';
+  document.getElementById('an_hydro').querySelectorAll('[data-ccpf]').forEach(inp=>inp.onchange=()=>setSoilCCPF(inp.dataset.ccpf,parseFloat(inp.value)));
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.addEventListener('DOMContentLoaded',()=>{
+  initMap();
+  loadZitouna();
+  setMeteoPreset('cur');
+  irrFillControls();
+  initSol();
+  const h=(location.hash||'').replace('#',''); if(['parc','ndvi','meteo','irrig','sol'].includes(h)) showTab(h);
+});
+</script>
+</body>
+</html>
