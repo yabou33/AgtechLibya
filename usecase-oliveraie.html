@@ -149,6 +149,13 @@ table.dt tr.stress{background:#fdf0ee}
 .srcline .u{font-size:.72rem;color:var(--muted);font-weight:700}
 .srcline .del{margin-inline-start:auto;border:1px solid #f2cfca;color:var(--bad);background:#fff;border-radius:7px;padding:5px 8px;cursor:pointer;font-weight:700;font-size:.78rem}
 .srcline .del:hover{background:#fdecea}
+
+/* Gantt */
+.gantt-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.gantt-head select{border:1px solid var(--line);border-radius:8px;padding:6px 9px;font:inherit}
+.gantt svg{display:block;width:100%;height:auto}
+.gantt .glabel{font:700 11px system-ui;fill:#4a5c37}
+.gantt .gaxis{font:10px system-ui;fill:#9aa890}
 </style>
 </head>
 <body>
@@ -158,7 +165,7 @@ table.dt tr.stress{background:#fdf0ee}
     <div class="logo">SDA<br>ZIT</div>
     <div>
       <h1>De la parcelle à l'irrigation</h1>
-      <div class="sub">SDA Zitouna · oliveraie · Testour (36.4617, 10.0057) — flux guidé : parcelle → NDVI → météo → besoins → sol</div>
+      <div class="sub">SDA Zitouna · oliveraie · Testour (36.4617, 10.0057) — flux guidé : parcelle → NDVI → météo → sol → irrigation</div>
     </div>
     <div class="spacer"></div>
     <a class="home" href="platform/public/index.html">← Accueil</a>
@@ -171,8 +178,8 @@ table.dt tr.stress{background:#fdf0ee}
     <div class="step on" data-tab="parc"><div class="n">1</div><div class="t">🗺️ Parcelles</div><div class="d">Charger / dessiner les contours</div><div class="arrow">›</div></div>
     <div class="step" data-tab="ndvi"><div class="n">2</div><div class="t">🛰️ NDVI Sentinel</div><div class="d">Vigueur, série & diagnostic</div><div class="arrow">›</div></div>
     <div class="step" data-tab="meteo"><div class="n">3</div><div class="t">🌦️ Météo</div><div class="d">Open-Meteo depuis 2017</div><div class="arrow">›</div></div>
-    <div class="step" data-tab="irrig"><div class="n">4</div><div class="t">💧 Irrigation</div><div class="d">ET₀ & besoins jour par jour</div><div class="arrow">›</div></div>
-    <div class="step" data-tab="sol"><div class="n">5</div><div class="t">🌱 Sol & sondes</div><div class="d">Analyses & capteurs</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="sol"><div class="n">4</div><div class="t">🌱 Sol & sondes</div><div class="d">Analyses & capteurs</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="irrig"><div class="n">5</div><div class="t">💧 Irrigation</div><div class="d">ET₀, besoins & planning</div><div class="arrow">›</div></div>
   </div>
 
   <!-- selection courante -->
@@ -231,9 +238,34 @@ table.dt tr.stress{background:#fdf0ee}
 
   <!-- ============ TAB 2 : NDVI ============ -->
   <section class="panel" id="tab-ndvi">
-    <div class="card"><h2>🛰️ NDVI Sentinel-2 <span class="pill">étape 2</span></h2>
-      <div class="lead">Images NDVI de la parcelle entre deux dates (2 mois par défaut), interprétation, série temporelle et diagnostic agronomique.</div>
-      <div class="wip" id="ndviWip">Onglet en cours de construction — sélectionnez d'abord une parcelle à l'étape 1.</div>
+    <div class="card">
+      <h2>🛰️ NDVI Sentinel-2 <span class="pill">étape 2</span></h2>
+      <div class="lead">Images d'indice de végétation de la parcelle entre deux dates (2 mois par défaut), <b>série temporelle</b>, interprétation et <b>diagnostic agronomique</b> pour l'olivier. Nécessite les clés Sentinel (bouton ⚙️ en bas).</div>
+      <div id="ndNoSel" class="notice warn" style="display:none">Sélectionnez d'abord une parcelle à l'étape 1.</div>
+      <div class="toolbar">
+        <div class="field" style="margin:0"><label>Indice</label><select id="nd_idx">
+          <option value="NDVI">NDVI — vigueur</option>
+          <option value="NDRE">NDRE — chlorophylle</option>
+          <option value="NDMI">NDMI — eau/stress</option></select></div>
+        <div class="field" style="margin:0"><label>Du</label><input type="date" id="nd_from"></div>
+        <div class="field" style="margin:0"><label>Au</label><input type="date" id="nd_to"></div>
+        <div class="field" style="margin:0"><label>Nuages max %</label><input type="number" id="nd_cloud" value="30" style="width:90px"></div>
+        <button class="btn primary" id="nd_load">↻ Charger</button>
+        <div class="field" style="margin:0"><label>Opacité raster</label><input type="range" id="nd_op" min="0" max="100" value="80"></div>
+      </div>
+      <div id="nd_status" class="hint"></div>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="mapwrap"><div id="ndviMap" style="height:460px;border-radius:12px;border:1px solid var(--line)"></div></div>
+        <div class="card"><h2 style="font-size:.95rem">Série temporelle <span id="nd_serieName" class="chip"></span></h2><div id="nd_serie"></div></div>
+      </div>
+      <div>
+        <div id="nd_kpis" class="kpirow" style="grid-template-columns:1fr 1fr"></div>
+        <div class="card"><h2 style="font-size:.95rem">🩺 Diagnostic agronomique</h2><div id="nd_diag" class="hint">Chargez une image pour l'interprétation.</div></div>
+        <div class="card"><h2 style="font-size:.95rem">Scènes disponibles <span id="nd_scnCount" class="chip"></span></h2>
+          <div style="overflow:auto;max-height:220px"><table class="dt" id="nd_scenes"></table></div></div>
+      </div>
     </div>
   </section>
 
@@ -270,7 +302,7 @@ table.dt tr.stress{background:#fdf0ee}
   <!-- ============ TAB 4 : IRRIGATION ============ -->
   <section class="panel" id="tab-irrig">
     <div class="card">
-      <h2>💧 ET₀ &amp; besoins en irrigation <span class="pill">étape 4</span></h2>
+      <h2>💧 ET₀ &amp; besoins en irrigation <span class="pill">étape 5</span></h2>
       <div class="lead">Bilan hydrique <b>FAO-56 jour par jour</b> pour la parcelle sélectionnée : <code>ETc = Kc·Kr·ET₀</code>, réserve du sol (TAW/RAW), et <b>planning d'irrigation guidé</b>. Modifiez un paramètre → recalcul immédiat.</div>
       <div id="irrNoSel" class="notice warn" style="display:none">Sélectionnez d'abord une parcelle à l'étape 1.</div>
       <div id="irrNoWx" class="notice" style="display:none">Chargement de la météo…</div>
@@ -285,6 +317,7 @@ table.dt tr.stress{background:#fdf0ee}
         <div class="card"><h2 style="font-size:.95rem">📅 Planning d'irrigation <span id="irrPlanCount" class="chip"></span></h2>
           <div class="hint" style="margin-bottom:8px">Dates recommandées, dose et durée de pompage (selon le débit des sources).</div>
           <div id="irrPlanNote" class="notice" style="margin-bottom:8px"></div>
+          <div id="irrGantt" style="margin-bottom:12px"></div>
           <div style="overflow:auto;max-height:300px"><table class="dt" id="irrPlan"></table></div>
           <div class="toolbar" style="margin-top:10px"><button class="btn" id="irrPlanCsv">⬇ Planning CSV</button><button class="btn" id="irrDailyCsv">⬇ Bilan quotidien CSV</button></div>
         </div>
@@ -310,7 +343,8 @@ table.dt tr.stress{background:#fdf0ee}
             <option value="freq" selected>Goutte-à-goutte haute fréquence</option>
             <option value="rfu">Au seuil RFU (déficit, doses fortes)</option></select></div>
           <div class="field" id="ir_intWrap"><label>Intervalle cible (jours)</label><input id="ir_int" type="number" min="1" max="14" value="2"></div>
-          <div class="hint">Haute fréquence = petites doses tous les N jours (adapté goutte-à-goutte / hyper-intensif). RFU = on attend l'épuisement de la réserve facilement utilisable.</div>
+          <div class="field"><label>Durée max par passe (h) — fractionnement <span id="ir_passAuto" class="chip"></span></label><input id="ir_maxpass" type="number" min="0" max="24" step="0.5" value="6"></div>
+          <div class="hint">Haute fréquence = petites doses tous les N jours (goutte-à-goutte / hyper-intensif). Sur <b>sol lourd (argileux)</b>, une passe trop longue ruisselle : elle est <b>fractionnée</b> automatiquement (ex. 12 h → 2×6 h) avec ressuyage. 0 = pas de fractionnement.</div>
         </div>
         <div class="card" style="margin:0 0 12px;padding:13px">
           <h2 style="font-size:.92rem">Paramètres — sol</h2>
@@ -340,7 +374,7 @@ table.dt tr.stress{background:#fdf0ee}
   <!-- ============ TAB 5 : SOL ============ -->
   <section class="panel" id="tab-sol">
     <div class="card">
-      <h2>🌱 Sondes de sol <span class="pill">étape 5</span></h2>
+      <h2>🌱 Sondes de sol <span class="pill">étape 4</span></h2>
       <div class="lead">Importez un fichier de sondes (format horaire imbriqué type <code>olivier_soil_horaire.json</code>, ou CSV/JSON à plat), visualisez humidité / température / salinité par profondeur, interprétez, puis <b>exportez</b> la version corrigée.</div>
       <div class="toolbar">
         <button class="btn primary" id="soImport">⬆ Importer un fichier</button>
@@ -527,6 +561,7 @@ function setSelected(p){
   renderParams(p);
   const kr=document.getElementById('ir_kr'); if(kr && a.couvert) kr.value=a.couvert;
   if(document.getElementById('tab-irrig').classList.contains('on')) renderIrrig();
+  if(ndviMap){ drawNdviParcel(); }
 }
 
 function couvertFromDensity(d){ if(d>=1500)return 45; if(d>=1000)return 40; if(d>=600)return 33; if(d>0)return 28; return 35; }
@@ -975,6 +1010,7 @@ function irrParams(){
     zr:SOIL.zr, p:SOIL.p, eff:SOIL.eff,
     strat:document.getElementById('ir_strat').value,
     interval:parseInt(document.getElementById('ir_int').value)||2,
+    maxpass:parseFloat(document.getElementById('ir_maxpass').value)||0,
     from:document.getElementById('ir_from').value, to:document.getElementById('ir_to').value
   };
 }
@@ -1010,7 +1046,9 @@ function computeIrrig(){
     const status = irr>0?'irr' : (Dr>RAW?'stress':(Dr>RAW*0.6?'pilot':'confort'));
     let gross=0,vol=0,dur=0;
     if(irr>0){ gross=irr/P.eff; vol=gross*10*area; dur= totDeb>0? vol/totDeb : 0;
-      events.push({date:d.d, net:irr, gross, vol, dur, feasible: dur<=totHours+0.01}); }
+      let passes=1; if(P.maxpass>0 && dur>P.maxpass+0.01) passes=Math.ceil(dur/P.maxpass);
+      events.push({date:d.d, net:irr, gross, vol, dur, passes, passDur:dur/passes, passVol:vol/passes,
+        feasible: dur<=totHours+0.01}); }
     rows.push({date:d.d, et0, kc:k.kc, stage:k.stage, etc, rain, irr, Dr, AW, ruPct, Ks, status, TAW, RAW});
   });
   const sum=f=>rows.reduce((a,r)=>a+(r[f]||0),0);
@@ -1021,7 +1059,8 @@ function computeIrrig(){
   // débit nécessaire pour tenir l'événement le plus lourd dans les heures dispo
   const peakVol=events.reduce((a,e)=>Math.max(a,e.vol),0);
   const debNeeded= totHours>0? Math.ceil(peakVol/totHours) : 0;
-  return {P,area,TAW,RAW,rows,events,drain,stressDays,totDeb,totHours,peakDur,nInfeasible,debNeeded,
+  const nSplit=events.filter(e=>e.passes>1).length;
+  return {P,area,TAW,RAW,rows,events,drain,stressDays,totDeb,totHours,peakDur,nInfeasible,debNeeded,nSplit,
     et0Tot:sum('et0'),etcTot:sum('etc'),rainTot:sum('rain'),
     net:gnet,gross:ggross,vol:vtot,dur:dtot};
 }
@@ -1059,6 +1098,10 @@ function renderIrrig(){
     pn.innerHTML='⚠ '+R.nInfeasible+' irrigation(s) dépassent les <b>'+R.totHours+' h/j</b> disponibles (durée = temps de pompage pour toute la parcelle de '+R.area+' ha). '+
       'Pour les rendre réalistes : <b>sectoriser</b> la parcelle, <b>ajouter des sources</b>, ou porter le débit à ≈ <b>'+R.debNeeded.toLocaleString('fr')+' m³/h</b>. Débit actuel : '+R.totDeb+' m³/h.';
   } else { pn.className='notice'; pn.innerHTML='✅ Planning faisable avec le débit actuel ('+R.totDeb+' m³/h · '+R.totHours+' h/j). Pic : '+R.peakDur.toFixed(1)+' h/irrigation.'; }
+  if(R.nSplit>0){ pn.innerHTML+=' · 🔀 <b>'+R.nSplit+'</b> irrigation(s) fractionnée(s) en plusieurs passes (sol '+((texById(SOIL.texId)||{}).fr||'')+', infiltration '+SOIL.infil+' mm/h) pour éviter le ruissellement.'; }
+  const sug = SOIL.infil<=5?6:(SOIL.infil<=10?8:12);
+  document.getElementById('ir_passAuto').textContent='suggéré '+sug+' h';
+  renderGantt(R);
   // daily
   const dc=document.getElementById('irrDaily');
   dc.innerHTML='<thead><tr><th>Date</th><th>ET₀</th><th>Kc</th><th>ETc</th><th>Pluie</th><th>Irrig.</th><th>Réserve util. mm</th><th>RU %</th><th>État</th></tr></thead><tbody>'+
@@ -1081,6 +1124,44 @@ function renderMonth(R){
   html+='</tbody>';
   document.getElementById('irrMonth').innerHTML=html;
 }
+function renderGantt(R){
+  const el=document.getElementById('irrGantt');
+  const months=[...new Set(R.events.map(e=>e.date.slice(0,7)))];
+  if(!months.length){ el.innerHTML='<div class="hint">Aucune irrigation à planifier sur la période.</div>'; return; }
+  let sel=el.dataset.month; if(!sel||!months.includes(sel)){ // mois le plus demandeur par défaut
+    let best=months[0],bv=-1; const vol={}; R.events.forEach(e=>{const m=e.date.slice(0,7);vol[m]=(vol[m]||0)+e.vol;});
+    months.forEach(m=>{ if(vol[m]>bv){bv=vol[m];best=m;} }); sel=best; }
+  el.dataset.month=sel;
+  const evs=R.events.filter(e=>e.date.slice(0,7)===sel).sort((a,b)=>a.date<b.date?-1:1);
+  const REST=2; // h de ressuyage entre passes
+  const maxH=Math.max(24, ...evs.map(e=> e.passes>1 ? (e.dur + (e.passes-1)*REST) : e.dur));
+  const W=900,padL=112,padR=16,axisH=20,rowH=26,H=axisH+evs.length*rowH+8;
+  const pxH=(W-padL-padR)/maxH;
+  const maxDose=Math.max(...evs.map(e=>e.gross),0.001);
+  const col=g=>{ const t=Math.min(1,g/maxDose); const r=Math.round(58+ (46-58)*t), gg=Math.round(155+(110-155)*t), b=Math.round(208+(70-208)*t); return 'rgb('+r+','+gg+','+b+')'; };
+  let s='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+  // axe heures
+  for(let h=0;h<=maxH;h+=(maxH>24?6:4)){ const x=padL+h*pxH;
+    s+='<line x1="'+x+'" y1="'+axisH+'" x2="'+x+'" y2="'+(H-6)+'" stroke="#f1f5ea"/>';
+    s+='<text class="gaxis" x="'+x+'" y="'+(axisH-6)+'" text-anchor="middle">'+h+'h</text>'; }
+  // repère 24h (limite jour)
+  if(maxH>24){ const x=padL+24*pxH; s+='<line x1="'+x+'" y1="'+axisH+'" x2="'+x+'" y2="'+(H-6)+'" stroke="#d1584e" stroke-dasharray="4 3"/>'
+    +'<text class="gaxis" x="'+(x+3)+'" y="'+(axisH-6)+'" fill="#d1584e">24h</text>'; }
+  evs.forEach((e,i)=>{ const y=axisH+i*rowH+3, bh=rowH-9;
+    s+='<text class="glabel" x="6" y="'+(y+bh-2)+'">'+e.date.slice(5)+'</text>';
+    let x=padL;
+    for(let k=0;k<e.passes;k++){ const w=Math.max(2,e.passDur*pxH);
+      s+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+bh+'" rx="3" fill="'+col(e.gross)+'"><title>'+e.date+' — passe '+(k+1)+'/'+e.passes+' : '+e.passDur.toFixed(1)+' h · '+(e.passVol).toFixed(0)+' m³</title></rect>';
+      if(w>34) s+='<text x="'+(x+4)+'" y="'+(y+bh-4)+'" font-size="10" fill="#fff" font-weight="700">'+e.passDur.toFixed(1)+'h</text>';
+      x+=w+ (k<e.passes-1?REST*pxH:0); }
+    s+='<text x="'+(x+5)+'" y="'+(y+bh-3)+'" font-size="10" fill="#6f7d64">'+e.gross.toFixed(1)+' mm · '+Math.round(e.vol).toLocaleString('fr')+' m³'+(e.passes>1?' · '+e.passes+' passes':'')+'</text>';
+  });
+  s+='</svg>';
+  el.className='gantt';
+  el.innerHTML='<div class="gantt-head"><b>Gantt — '+sel+'</b> <select id="ganttMonth">'+months.map(m=>'<option'+(m===sel?' selected':'')+'>'+m+'</option>').join('')+'</select>'
+    +'<span class="hint">longueur = durée de pompage · couleur/label = dose · barres multiples = fractionnement (ressuyage '+REST+'h)</span></div>'+s;
+  document.getElementById('ganttMonth').onchange=ev=>{ el.dataset.month=ev.target.value; renderGantt(APP._irr); };
+}
 function onWeatherReady(){ if(document.getElementById('tab-irrig').classList.contains('on')) renderIrrig(); }
 function irrCSV(kind){
   const R=APP._irr; if(!R) return '';
@@ -1092,13 +1173,134 @@ document.getElementById('ir_tex').addEventListener('change',e=>setSoilTexture(e.
 document.getElementById('ir_zr').addEventListener('input',e=>{ SOIL.zr=parseFloat(e.target.value)||1.2; syncSoilUI(e.target); renderSoilEditor(); renderIrrig(); });
 document.getElementById('ir_p').addEventListener('input',e=>{ SOIL.p=parseFloat(e.target.value)||0.65; syncSoilUI(e.target); renderSoilEditor(); renderIrrig(); });
 document.getElementById('ir_eff').addEventListener('input',e=>{ SOIL.eff=(parseFloat(e.target.value)||90)/100; renderIrrig(); });
-['ir_crop','ir_kr','ir_seed','ir_from','ir_to','ir_int'].forEach(id=>document.getElementById(id).addEventListener('input',renderIrrig));
+['ir_crop','ir_kr','ir_seed','ir_from','ir_to','ir_int','ir_maxpass'].forEach(id=>document.getElementById(id).addEventListener('input',renderIrrig));
 document.getElementById('ir_strat').addEventListener('change',e=>{ document.getElementById('ir_intWrap').style.display = e.target.value==='freq'?'flex':'none'; renderIrrig(); });
 document.getElementById('ir_addSrc').onclick=()=>{ IRR_SOURCES.push({name:'Source '+(IRR_SOURCES.length+1),debit:20,hours:10}); renderSources(); renderIrrig(); };
 document.getElementById('ir_seasonBtn').onclick=()=>{ const y=new Date(document.getElementById('ir_from').value||Date.now()).getFullYear();
   document.getElementById('ir_from').value=y+'-04-01'; document.getElementById('ir_to').value=y+'-10-31'; renderIrrig(); };
 document.getElementById('irrPlanCsv').onclick=()=>download('planning_irrigation.csv',irrCSV('plan'),'text/csv');
 document.getElementById('irrDailyCsv').onclick=()=>download('bilan_quotidien.csv',irrCSV('daily'),'text/csv');
+
+/* ============================================================
+   ÉTAPE 2 — NDVI SENTINEL-2
+   ============================================================ */
+const SH={ process:"https://services.sentinel-hub.com/api/v1/process",
+  stats:"https://services.sentinel-hub.com/api/v1/statistics" };
+const NDV_IDX={
+  NDVI:{bands:['B04','B08'], f:'(B08-B04)/(B08+B04)', min:0, max:0.9},
+  NDRE:{bands:['B05','B08'], f:'(B08-B05)/(B08+B05)', min:0, max:0.8},
+  NDMI:{bands:['B08','B11'], f:'(B08-B11)/(B08+B11)', min:-0.2, max:0.6}
+};
+const NDV_STOPS=[[0,[165,30,38]],[0.25,[220,150,60]],[0.5,[255,240,150]],[0.75,[120,190,70]],[1,[20,110,40]]];
+let ndviMap=null, ndviParcelLayer=null, ndviRaster=null, ndviReady=false;
+async function shFetch(url,payload,expect){
+  const tk=await window.SHConfig.getToken();
+  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+tk,
+    "Accept":expect==="blob"?"image/png":"application/json"},body:JSON.stringify(payload)});
+  if(!r.ok){ const t=await r.text(); throw new Error("API "+r.status+" "+t.slice(0,140)); }
+  return expect==="blob"?r.blob():r.json();
+}
+function selRingLonLat(){ const c=(APP.selected&&APP.selected.coords)||[]; if(c.length<3)return null;
+  const ring=c.map(p=>[p[1],p[0]]); ring.push(ring[0]); return ring; }
+function selBBox(){ const c=(APP.selected&&APP.selected.coords)||[]; let a=90,b=180,d=-90,e=-180;
+  c.forEach(p=>{a=Math.min(a,p[0]);d=Math.max(d,p[0]);b=Math.min(b,p[1]);e=Math.max(e,p[1]);}); return [b,a,e,d]; }
+function bboxDims(bb,cap){ const midLat=(bb[1]+bb[3])/2*Math.PI/180;
+  const w=(bb[2]-bb[0])*111320*Math.cos(midLat), h=(bb[3]-bb[1])*110540;
+  let pw=Math.round(w/10), ph=Math.round(h/10); const m=Math.max(pw,ph);
+  if(m>(cap||768)){ const s=(cap||768)/m; pw=Math.round(pw*s); ph=Math.round(ph*s); }
+  return {w:Math.max(2,pw),h:Math.max(2,ph)}; }
+function ndviVizEval(ix){ const stops=NDV_STOPS.map(s=>'['+(ix.min+(ix.max-ix.min)*s[0])+',['+s[1].join(',')+']]').join(',');
+  return `//VERSION=3
+function setup(){return{input:[{bands:[${ix.bands.map(b=>'"'+b+'"').join(',')},"dataMask"]}],output:{bands:4}};}
+const stops=[${stops}];
+function col(v){ if(v<=stops[0][0])return stops[0][1]; for(let i=1;i<stops.length;i++){ if(v<=stops[i][0]){ const f=(v-stops[i-1][0])/(stops[i][0]-stops[i-1][0]),a=stops[i-1][1],b=stops[i][1]; return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f]; } } return stops[stops.length-1][1]; }
+function evaluatePixel(s){ const B03=s.B03||0,B04=s.B04||0,B05=s.B05||0,B08=s.B08||0,B11=s.B11||0; const v=${ix.f}; const c=col(v); return [c[0]/255,c[1]/255,c[2]/255,s.dataMask]; }`; }
+function ndviStatEval(ix){ return `//VERSION=3
+function setup(){return{input:[{bands:[${ix.bands.map(b=>'"'+b+'"').join(',')},"dataMask"]}],output:[{id:"data",bands:1,sampleType:"FLOAT32"},{id:"dataMask",bands:1}]};}
+function evaluatePixel(s){ const B03=s.B03||0,B04=s.B04||0,B05=s.B05||0,B08=s.B08||0,B11=s.B11||0; return {data:[${ix.f}],dataMask:[s.dataMask]}; }`; }
+function initNdviMap(){
+  if(ndviMap) return;
+  ndviMap=L.map('ndviMap',{doubleClickZoom:false}).setView([APP.farm.lat,APP.farm.lng],14);
+  L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri"}).addTo(ndviMap);
+}
+function onNdviTab(){
+  document.getElementById('ndNoSel').style.display=APP.selected?'none':'block';
+  initNdviMap(); setTimeout(()=>ndviMap.invalidateSize(),60);
+  drawNdviParcel();
+  if(!document.getElementById('nd_from').value){ const to=new Date(),from=new Date(); from.setMonth(from.getMonth()-2);
+    document.getElementById('nd_from').value=fmtDate(from); document.getElementById('nd_to').value=fmtDate(to); }
+}
+function drawNdviParcel(){
+  const c=(APP.selected&&APP.selected.coords)||[]; if(!c.length)return;
+  if(ndviParcelLayer)ndviMap.removeLayer(ndviParcelLayer);
+  ndviParcelLayer=L.polygon(c,{color:'#f28c28',weight:3,fill:false}).addTo(ndviMap);
+  ndviMap.fitBounds(ndviParcelLayer.getBounds().pad(0.4));
+}
+async function loadNdvi(){
+  if(!APP.selected){ document.getElementById('ndNoSel').style.display='block'; return; }
+  const ix=NDV_IDX[document.getElementById('nd_idx').value];
+  const from=document.getElementById('nd_from').value, to=document.getElementById('nd_to').value;
+  const cloud=+document.getElementById('nd_cloud').value||30;
+  const st=document.getElementById('nd_status'); st.textContent='Requête Sentinel Hub…';
+  const geom={type:"Polygon",coordinates:[selRingLonLat()]};
+  const bb=selBBox(), dim=bboxDims(bb,768);
+  try{
+    // raster (composite moins nuageux sur la période)
+    const blob=await shFetch(SH.process,{
+      input:{bounds:{geometry:geom,properties:{crs:"http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},
+        data:[{type:"sentinel-2-l2a",dataFilter:{timeRange:{from:from+"T00:00:00Z",to:to+"T23:59:59Z"},maxCloudCoverage:cloud,mosaickingOrder:"leastCC"}}]},
+      output:{width:dim.w,height:dim.h,responses:[{identifier:"default",format:{type:"image/png"}}]},
+      evalscript:ndviVizEval(ix)},"blob");
+    if(ndviRaster)ndviMap.removeLayer(ndviRaster);
+    ndviRaster=L.imageOverlay(URL.createObjectURL(blob),[[bb[1],bb[0]],[bb[3],bb[2]]],{opacity:+document.getElementById('nd_op').value/100}).addTo(ndviMap);
+    // série temporelle (stats P1D)
+    const j=await shFetch(SH.stats,{
+      input:{bounds:{geometry:geom,properties:{crs:"http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},
+        data:[{type:"sentinel-2-l2a",dataFilter:{maxCloudCoverage:cloud,mosaickingOrder:"leastCC"}}]},
+      aggregation:{timeRange:{from:from+"T00:00:00Z",to:to+"T23:59:59Z"},aggregationInterval:{of:"P1D"},width:dim.w,height:dim.h,evalscript:ndviStatEval(ix)},
+      calculations:{default:{statistics:{default:{}}}}},"json");
+    const pts=(j.data||[]).map(it=>({d:it.interval.from.slice(0,10),v:it.outputs&&it.outputs.data&&it.outputs.data.bands.B0.stats.mean}))
+      .filter(p=>p.v!=null&&!isNaN(p.v));
+    renderNdvi(ix,pts);
+    st.innerHTML='✓ '+pts.length+' scène(s) exploitable(s) · '+from+' → '+to;
+  }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur : '+esc(e.message)+' — vérifiez les clés Sentinel (⚙️).</span>'; }
+}
+function renderNdvi(ix,pts){
+  const name=document.getElementById('nd_idx').value;
+  document.getElementById('nd_serieName').textContent=name;
+  tsChart(document.getElementById('nd_serie'),{lines:[{label:name,color:'#3fa66a',width:2.4,points:pts.map(p=>[Date.parse(p.d),+p.v.toFixed(3)])}],height:230,yUnit:''});
+  const vals=pts.map(p=>p.v); const last=vals.length?vals[vals.length-1]:null;
+  const mean=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+  const mn=vals.length?Math.min(...vals):null, mx=vals.length?Math.max(...vals):null;
+  document.getElementById('nd_kpis').innerHTML=[
+    [name+' actuel', last!=null?last.toFixed(2):'—','','accent'],
+    ['Moyenne', mean!=null?mean.toFixed(2):'—','',''],
+    ['Min', mn!=null?mn.toFixed(2):'—','',''],
+    ['Max', mx!=null?mx.toFixed(2):'—','','']
+  ].map(k=>'<div class="kpi '+k[3]+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div></div>').join('');
+  // scenes
+  document.getElementById('nd_scenes').innerHTML='<thead><tr><th>Date</th><th>'+name+'</th></tr></thead><tbody>'+
+    pts.slice().reverse().map(p=>'<tr><td>'+p.d+'</td><td>'+p.v.toFixed(3)+'</td></tr>').join('')+'</tbody>';
+  document.getElementById('nd_scnCount').textContent=pts.length;
+  // diagnostic
+  document.getElementById('nd_diag').innerHTML=ndviDiag(name,last,mean,vals);
+}
+function ndviDiag(name,last,mean,vals){
+  if(last==null) return 'Aucune donnée exploitable (couvert nuageux ? élargir la période ou augmenter le seuil nuages).';
+  let trend=''; if(vals.length>=3){ const a=vals.slice(0,Math.ceil(vals.length/2)),b=vals.slice(-Math.ceil(vals.length/2));
+    const ma=a.reduce((x,y)=>x+y,0)/a.length, mb=b.reduce((x,y)=>x+y,0)/b.length; const d=mb-ma;
+    trend = d>0.03?'📈 tendance à la <b>hausse</b> (reprise de vigueur / croissance).':d<-0.03?'📉 tendance à la <b>baisse</b> (sénescence, stress ou récolte).':'➡️ vigueur <b>stable</b>.'; }
+  if(name==='NDVI'){ let cls;
+    if(last<0.2)cls='<b>Très faible</b> — sol nu dominant ou stress sévère.';
+    else if(last<0.35)cls='<b>Faible</b> — verger clairsemé / jeune, ou stress hydrique probable.';
+    else if(last<0.5)cls='<b>Modérée</b> — valeur typique d\'une oliveraie (canopée ouverte + sol).';
+    else if(last<0.65)cls='<b>Bonne</b> vigueur — canopée dense et active.';
+    else cls='<b>Très bonne</b> vigueur / forte couverture foliaire.';
+    return 'NDVI '+last.toFixed(2)+' → '+cls+' '+trend+'<br><span class="hint">Olivier : la canopée ouverte dilue le NDVI avec le sol — comparer entre parcelles et suivre l\'évolution plutôt que la valeur absolue. Croiser avec l\'humidité du sol (étape 5) et l\'ET₀ (étape 3).</span>';
+  }
+  if(name==='NDRE') return 'NDRE '+last.toFixed(2)+' — indicateur de teneur en chlorophylle / azote. '+trend+' Une baisse peut signaler une carence ou un stress avant le NDVI.';
+  return 'NDMI '+last.toFixed(2)+' — teneur en eau de la canopée. '+trend+' Valeurs basses = stress hydrique : déclencher/vérifier l\'irrigation (étape 4).';
+}
 
 /* ============================================================
    ÉTAPE 5 — SOL & SONDES
@@ -1309,6 +1511,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   setMeteoPreset('cur');
   irrFillControls();
   initSol();
+  document.getElementById('nd_load').onclick=loadNdvi;
+  document.getElementById('nd_op').oninput=e=>{ if(ndviRaster)ndviRaster.setOpacity(+e.target.value/100); };
   const h=(location.hash||'').replace('#',''); if(['parc','ndvi','meteo','irrig','sol'].includes(h)) showTab(h);
 });
 </script>
