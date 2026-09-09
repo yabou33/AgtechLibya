@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topographie de parcelle — altitude & pente</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<style>
+:root{--green:#7cb342;--green-d:#5a8f2c;--ink:#22301c;--muted:#6f7d64;--line:#dfe8d2;--paper:#f6f8f1;--card:#fff;--accent:#2ea8d8;--warn:#e0912b;--bad:#d1584e;--ok:#3fa66a;--geo:#e0912b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Nunito Sans","Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px}
+header{background:linear-gradient(120deg,#5a3d12,#8a5a12);color:#fff;padding:14px 0}
+.hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#e0a92b,#c07c12);display:grid;place-items:center;font-weight:900;font-size:1.4rem}
+.hd h1{font-size:1.12rem;font-weight:800}.hd .sub{font-size:.82rem;opacity:.85}.hd .spacer{flex:1}
+.hd a.home{color:#ffe9c7;text-decoration:none;font-weight:700;font-size:.85rem;border:1px solid #ffffff33;padding:7px 12px;border-radius:9px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.card h2{font-size:1rem;font-weight:800;margin-bottom:4px}
+.lead{color:var(--muted);font-size:.86rem;margin-bottom:12px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:.83rem;padding:8px 13px;border-radius:9px;cursor:pointer}
+.btn:hover{border-color:var(--geo);color:#8a5a12}
+.btn.primary{background:var(--geo);border-color:var(--geo);color:#fff}.btn.primary:hover{background:#c07c12;color:#fff}
+.btn.danger{color:var(--bad);border-color:#f2cfca}
+.grid2{display:grid;grid-template-columns:1fr 320px;gap:14px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+#map{height:560px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.kpirow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi{background:#fbfdf7;border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+.kpi .k{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase}
+.kpi .v{font-size:1.35rem;font-weight:900;margin-top:2px}.kpi .u{font-size:.72rem;color:var(--muted);font-weight:700}
+.kpi.accent .v{color:var(--accent)}.kpi.warn .v{color:var(--warn)}.kpi.ok .v{color:var(--ok)}.kpi.bad .v{color:var(--bad)}
+.hint{font-size:.8rem;color:var(--muted);line-height:1.4}
+.notice{background:#fdf3e3;border:1px solid #f2dcb4;color:#8a5a12;border-radius:10px;padding:10px 12px;font-size:.83rem}
+.legbar{height:14px;border-radius:7px;margin:8px 0 3px;background:linear-gradient(90deg,rgb(90,150,60),rgb(230,215,120),rgb(150,90,50))}
+.leglbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);font-weight:700}
+.footer{padding:22px 0;color:var(--muted);font-size:.78rem;text-align:center}
+</style>
+</head>
+<body>
+<header><div class="wrap hd">
+  <div class="logo">⛰️</div>
+  <div><h1>Topographie de parcelle</h1><div class="sub">Géologie & Hydrogéologie · altitude, pente & exposition (MNT Open-Meteo) — dessinez ou importez une parcelle</div></div>
+  <div class="spacer"></div>
+  <a class="home" href="platform/public/index.html">← Accueil</a>
+</div></header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Parcelle</h2>
+    <div class="lead">Dessinez une parcelle (outils en haut-gauche de la carte), importez un fichier (GeoJSON / CSV), ou chargez l'oliveraie SDA Zitouna. Sélectionnez-la puis calculez la topographie.</div>
+    <div class="toolbar">
+      <button class="btn" id="btnZit">↻ Charger SDA Zitouna</button>
+      <button class="btn" id="btnImport">⬆ Importer GeoJSON/CSV</button>
+      <button class="btn primary" id="btnTopo">⛰️ Calculer la topographie</button>
+      <button class="btn danger" id="btnClear">🗑 Effacer</button>
+      <span class="hint" id="curName">Aucune parcelle sélectionnée</span>
+    </div>
+    <div class="grid2">
+      <div id="map"></div>
+      <div>
+        <div class="card" style="margin:0 0 12px;padding:13px">
+          <h2 style="font-size:.92rem">Relief de la parcelle</h2>
+          <div id="topoStatus" class="hint" style="margin-bottom:8px">Sélectionnez une parcelle puis « Calculer ».</div>
+          <div id="topoKpis" class="kpirow"></div>
+          <div id="topoLeg"></div>
+          <div id="topoInterp" class="hint" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">EU4Skills · AgriTech Libya — Topographie · MNT : Open-Meteo Elevation (Copernicus GLO-90)</div>
+</div>
+
+<script src="platform/public/assets/js/crops.js"></script>
+<script src="platform/public/assets/js/store.js"></script>
+<script src="platform/public/assets/js/agrimap-draw.js"></script>
+<script>
+const FARM={lat:36.461670,lng:10.005668,zoom:14};
+let carto=null, cur=null, topoLayer=null;
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function sleepMs(ms){return new Promise(r=>setTimeout(r,ms));}
+function pip(lat,lng,V){let inside=false;for(let i=0,j=V.length-1;i<V.length;j=i++){const yi=V[i][0],xi=V[i][1],yj=V[j][0],xj=V[j][1];if(((yi>lat)!=(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi)+xi))inside=!inside;}return inside;}
+function octant(a){return ['N','NE','E','SE','S','SO','O','NO'][Math.round(a/45)%8];}
+function elevColor(t){t=Math.max(0,Math.min(1,t));const st=[[0,[90,150,60]],[0.5,[230,215,120]],[1,[150,90,50]]];
+  for(let i=1;i<st.length;i++){if(t<=st[i][0]){const f=(t-st[i-1][0])/(st[i][0]-st[i-1][0]),a=st[i-1][1],b=st[i][1];return 'rgb('+Math.round(a[0]+(b[0]-a[0])*f)+','+Math.round(a[1]+(b[1]-a[1])*f)+','+Math.round(a[2]+(b[2]-a[2])*f)+')';}}return 'rgb(150,90,50)';}
+
+function initMap(){
+  carto=AgriMap.create('#map',{basemap:'sat',center:[FARM.lat,FARM.lng],zoom:FARM.zoom,name:'Topographie',panel:false});
+  carto.on('select',sel=>{ if(sel&&sel.kind==='parcel'&&sel.item){ cur=sel.item; document.getElementById('curName').innerHTML='Sélection : <b>'+esc(cur.name)+'</b> · '+(cur.area_ha||0)+' ha'; } });
+}
+async function loadZit(){
+  try{ const r=await fetch('data/zitouna_parcelles.geojson',{cache:'no-store'}); const fc=await r.json();
+    carto.load({name:'SDA Zitouna',parcels:[],equipment:[]}); carto.importGeoJSON(fc);
+    setTimeout(()=>{carto.fitAll();carto.invalidate();},80);
+    const p=carto.state.parcels[0]; if(p){ cur=p; document.getElementById('curName').innerHTML='Sélection : <b>'+esc(p.name)+'</b> · '+(p.area_ha||0)+' ha'; }
+  }catch(e){ alert('Chargement Zitouna : '+e.message+'\n(ouvrez via HTTP, pas file://)'); }
+}
+function doImport(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.geojson,.json,.csv';
+  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+    rd.onload=()=>{try{let n=/\.csv$/i.test(f.name)?carto.importCSV(rd.result):carto.importGeoJSON(JSON.parse(rd.result));
+      const p=carto.state.parcels[carto.state.parcels.length-1]; if(p)cur=p; }catch(err){alert('Import : '+err.message);}};
+    rd.readAsText(f);};
+  inp.click();
+}
+async function fetchElev(points){
+  const out=new Array(points.length),B=100;
+  for(let s=0;s<points.length;s+=B){const batch=points.slice(s,s+B);
+    const url='https://api.open-meteo.com/v1/elevation?latitude='+batch.map(p=>p.lat.toFixed(6)).join(',')+'&longitude='+batch.map(p=>p.lng.toFixed(6)).join(',');
+    let ok=false;
+    for(let a=0;a<4&&!ok;a++){try{const r=await fetch(url);
+      if(r.status===429){document.getElementById('topoStatus').textContent='Limite API, patiente…';await sleepMs(1200*Math.pow(2,a));continue;}
+      if(!r.ok)throw new Error('HTTP '+r.status);(await r.json()).elevation.forEach((v,k)=>out[s+k]=v);ok=true;
+    }catch(e){if(a===3)throw e;await sleepMs(1200*Math.pow(2,a));}}
+    document.getElementById('topoStatus').textContent='Élévation… '+Math.min(s+B,points.length)+'/'+points.length;
+    if(s+B<points.length)await sleepMs(350);}
+  return out;
+}
+async function computeTopo(){
+  const st=document.getElementById('topoStatus');
+  if(!cur||!cur.coords||cur.coords.length<3){ st.textContent='Dessinez / sélectionnez une parcelle d\'abord.'; return; }
+  const V=cur.coords;
+  let latMin=Infinity,latMax=-Infinity,lngMin=Infinity,lngMax=-Infinity;
+  V.forEach(p=>{latMin=Math.min(latMin,p[0]);latMax=Math.max(latMax,p[0]);lngMin=Math.min(lngMin,p[1]);lngMax=Math.max(lngMax,p[1]);});
+  const midLat=(latMin+latMax)/2*Math.PI/180;
+  const latM=(latMax-latMin)*111320,lngM=(lngMax-lngMin)*111320*Math.cos(midLat),diag=Math.sqrt(latM*latM+lngM*lngM);
+  const N=Math.max(10,Math.min(18,Math.ceil(diag/60))),dim=N+1;
+  const pts=[];for(let i=0;i<=N;i++)for(let j=0;j<=N;j++)pts.push({lat:latMin+(i/N)*(latMax-latMin),lng:lngMin+(j/N)*(lngMax-lngMin)});
+  st.textContent='Requête MNT…';
+  try{
+    const elev=await fetchElev(pts);
+    const dxm=(lngMax-lngMin)/N*111320*Math.cos(midLat),dym=(latMax-latMin)/N*111320;
+    const E=(i,j)=>elev[Math.max(0,Math.min(N,i))*dim+Math.max(0,Math.min(N,j))];
+    const slope=new Array(dim*dim);
+    for(let i=0;i<=N;i++)for(let j=0;j<=N;j++){const gx=(E(i,j+1)-E(i,j-1))/(2*dxm),gy=(E(i+1,j)-E(i-1,j))/(2*dym);slope[i*dim+j]=Math.sqrt(gx*gx+gy*gy)*100;}
+    let minE=Infinity,maxE=-Infinity,minP=null,maxP=null,sum=0,cnt=0,sSlope=0,sGx=0,sGy=0;
+    for(let i=0;i<=N;i++)for(let j=0;j<=N;j++){const k=i*dim+j,p=pts[k];if(!pip(p.lat,p.lng,V))continue;
+      if(elev[k]<minE){minE=elev[k];minP=p;}if(elev[k]>maxE){maxE=elev[k];maxP=p;}
+      sum+=elev[k];cnt++;sSlope+=slope[k];sGx+=(E(i,j+1)-E(i,j-1))/(2*dxm);sGy+=(E(i+1,j)-E(i-1,j))/(2*dym);}
+    if(!isFinite(minE)){elev.forEach((e,k)=>{if(e<minE){minE=e;minP=pts[k];}if(e>maxE){maxE=e;maxP=pts[k];}});cnt=elev.length;sum=elev.reduce((a,b)=>a+b,0);sSlope=slope.reduce((a,b)=>a+b,0);}
+    const meanE=sum/Math.max(1,cnt),meanS=sSlope/Math.max(1,cnt);
+    let meanA=Math.atan2(-sGx/Math.max(1,cnt),-sGy/Math.max(1,cnt))*180/Math.PI;if(meanA<0)meanA+=360;
+    const map=carto.map;if(topoLayer)map.removeLayer(topoLayer);topoLayer=L.layerGroup().addTo(map);
+    const rng=(maxE-minE)||1;
+    for(let k=0;k<pts.length;k++){const p=pts[k];if(!pip(p.lat,p.lng,V))continue;
+      L.circleMarker([p.lat,p.lng],{radius:6,color:'#0003',weight:.5,fillColor:elevColor((elev[k]-minE)/rng),fillOpacity:.85})
+        .bindTooltip(elev[k].toFixed(0)+' m · pente '+slope[k].toFixed(1)+'%').addTo(topoLayer);}
+    if(minP)L.marker([minP.lat,minP.lng]).addTo(topoLayer).bindTooltip('▼ bas '+minE.toFixed(0)+' m');
+    if(maxP)L.marker([maxP.lat,maxP.lng]).addTo(topoLayer).bindTooltip('▲ haut '+maxE.toFixed(0)+' m');
+    const slCls=meanS<2?'plat':meanS<5?'faible':meanS<10?'moyen':'fort';
+    document.getElementById('topoKpis').innerHTML=[
+      ['Altitude moyenne',meanE.toFixed(0),'m','accent'],
+      ['Min / Max',minE.toFixed(0)+' / '+maxE.toFixed(0),'m',''],
+      ['Amplitude',(maxE-minE).toFixed(1),'m','warn'],
+      ['Pente moyenne',meanS.toFixed(1),'%',meanS<5?'ok':'bad'],
+      ['Exposition',meanS<2?'—':octant(meanA),'',''],
+      ['Points MNT',cnt,'','']
+    ].map(k=>'<div class="kpi '+k[3]+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+' <span class="u">'+k[2]+'</span></div></div>').join('');
+    document.getElementById('topoLeg').innerHTML='<div class="legbar"></div><div class="leglbl"><span>'+minE.toFixed(0)+' m</span><span>altitude</span><span>'+maxE.toFixed(0)+' m</span></div>';
+    const note={plat:'terrain plat — pas de ruissellement ; surveiller le drainage/engorgement.',
+      faible:'pente faible — irrigation classique, ruissellement limité.',
+      moyen:'pente moyenne — risque de ruissellement : fractionner les apports, débit réduit, goutte-à-goutte.',
+      fort:'pente forte — ruissellement/érosion : sectoriser, banquettes/terrasses, doses courtes et fréquentes.'}[slCls];
+    document.getElementById('topoInterp').innerHTML='Relief <b>'+slCls+'</b> ('+meanS.toFixed(1)+' %'+(meanS>=2?', exposé '+octant(meanA):'')+'). '+note;
+    st.textContent='✔ topographie calculée ('+cnt+' points MNT)';
+    setTimeout(()=>carto.map.fitBounds(L.polygon(V).getBounds().pad(0.3)),100);
+  }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur MNT : '+esc(e.message)+'</span>'; }
+}
+document.getElementById('btnZit').onclick=loadZit;
+document.getElementById('btnImport').onclick=doImport;
+document.getElementById('btnTopo').onclick=computeTopo;
+document.getElementById('btnClear').onclick=()=>{ carto.load({name:'Vide',parcels:[],equipment:[]}); cur=null;
+  if(topoLayer){carto.map.removeLayer(topoLayer);topoLayer=null;}
+  document.getElementById('curName').textContent='Aucune parcelle sélectionnée';
+  document.getElementById('topoKpis').innerHTML=''; document.getElementById('topoLeg').innerHTML='';
+  document.getElementById('topoInterp').innerHTML=''; document.getElementById('topoStatus').textContent='Sélectionnez une parcelle puis « Calculer ».'; };
+window.addEventListener('DOMContentLoaded',()=>{ initMap(); loadZit(); });
+</script>
+</body>
+</html>
