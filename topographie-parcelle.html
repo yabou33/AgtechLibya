@@ -12,13 +12,13 @@
 :root{--green:#7cb342;--green-d:#5a8f2c;--ink:#22301c;--muted:#6f7d64;--line:#dfe8d2;--paper:#f6f8f1;--card:#fff;--accent:#2ea8d8;--warn:#e0912b;--bad:#d1584e;--ok:#3fa66a;--geo:#e0912b}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Nunito Sans","Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink)}
-.wrap{max-width:1280px;margin:0 auto;padding:0 16px}
+.wrap{max-width:1320px;margin:0 auto;padding:0 16px}
 header{background:linear-gradient(120deg,#5a3d12,#8a5a12);color:#fff;padding:14px 0}
 .hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.logo{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#e0a92b,#c07c12);display:grid;place-items:center;font-weight:900;font-size:1.4rem}
+.logo{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#e0a92b,#c07c12);display:grid;place-items:center;font-size:1.4rem}
 .hd h1{font-size:1.12rem;font-weight:800}.hd .sub{font-size:.82rem;opacity:.85}.hd .spacer{flex:1}
 .hd a.home{color:#ffe9c7;text-decoration:none;font-weight:700;font-size:.85rem;border:1px solid #ffffff33;padding:7px 12px;border-radius:9px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0}
 .card h2{font-size:1rem;font-weight:800;margin-bottom:4px}
 .lead{color:var(--muted);font-size:.86rem;margin-bottom:12px}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
@@ -28,23 +28,31 @@ header{background:linear-gradient(120deg,#5a3d12,#8a5a12);color:#fff;padding:14p
 .btn.danger{color:var(--bad);border-color:#f2cfca}
 .grid2{display:grid;grid-template-columns:1fr 320px;gap:14px}
 @media(max-width:900px){.grid2{grid-template-columns:1fr}}
-#map{height:560px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
-.kpirow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.kpi{background:#fbfdf7;border:1px solid var(--line);border-radius:12px;padding:11px 13px}
-.kpi .k{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase}
-.kpi .v{font-size:1.35rem;font-weight:900;margin-top:2px}.kpi .u{font-size:.72rem;color:var(--muted);font-weight:700}
-.kpi.accent .v{color:var(--accent)}.kpi.warn .v{color:var(--warn)}.kpi.ok .v{color:var(--ok)}.kpi.bad .v{color:var(--bad)}
+#map{height:600px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.pcard{background:#fbfdf7;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.pcard h3{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px}
+.rrow{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line);font-size:.86rem}
+.rrow:last-child{border-bottom:none}.rrow b{font-weight:800}
+.badge{display:inline-block;font-weight:800;font-size:.8rem;padding:2px 10px;border-radius:20px}
+#modeSeg{display:flex;gap:4px;margin:4px 0 8px}
+#modeSeg button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px;font:700 12px system-ui;cursor:pointer;color:var(--ink)}
+#modeSeg button.active{background:var(--geo);border-color:var(--geo);color:#fff}
+.oprow{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted);margin-bottom:6px}
+.oprow input{flex:1}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:.8rem;padding:2px 0}
+.legend-swatch{width:16px;height:12px;border-radius:3px;display:inline-block;border:1px solid #0002}
 .hint{font-size:.8rem;color:var(--muted);line-height:1.4}
-.notice{background:#fdf3e3;border:1px solid #f2dcb4;color:#8a5a12;border-radius:10px;padding:10px 12px;font-size:.83rem}
-.legbar{height:14px;border-radius:7px;margin:8px 0 3px;background:linear-gradient(90deg,rgb(90,150,60),rgb(230,215,120),rgb(150,90,50))}
-.leglbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);font-weight:700}
 .footer{padding:22px 0;color:var(--muted);font-size:.78rem;text-align:center}
+.minmax-label{background:#111a;color:#fff;border:none;font-weight:800;font-size:11px;box-shadow:none}
+#elevTip{position:fixed;z-index:9999;background:#0e1512;color:#e8efe6;font:700 12px system-ui;padding:5px 9px;border-radius:6px;border:1px solid #2b3a30;pointer-events:none;display:none}
+.loader{position:absolute;inset:0;background:#0006;display:none;place-items:center;z-index:800;border-radius:12px}
+.loader .box{background:#fff;padding:14px 20px;border-radius:10px;font-weight:800;color:var(--ink)}
 </style>
 </head>
 <body>
 <header><div class="wrap hd">
   <div class="logo">⛰️</div>
-  <div><h1>Topographie de parcelle</h1><div class="sub">Géologie & Hydrogéologie · altitude, pente & exposition (MNT Open-Meteo) — dessinez ou importez une parcelle</div></div>
+  <div><h1>Topographie de parcelle</h1><div class="sub">Géologie & Hydrogéologie · relief, pente & exposition (MNT Open-Meteo) — dessinez ou importez une parcelle</div></div>
   <div class="spacer"></div>
   <a class="home" href="platform/public/index.html">← Accueil</a>
 </div></header>
@@ -52,132 +60,224 @@ header{background:linear-gradient(120deg,#5a3d12,#8a5a12);color:#fff;padding:14p
 <div class="wrap">
   <div class="card">
     <h2>Parcelle</h2>
-    <div class="lead">Dessinez une parcelle (outils en haut-gauche de la carte) ou importez un fichier (GeoJSON / CSV). Sélectionnez-la puis calculez la topographie (altitude, pente, exposition).</div>
+    <div class="lead">Dessinez une parcelle (outil <b>polygone</b>, en haut-gauche de la carte) ou importez un fichier (GeoJSON / CSV). À la fermeture du polygone → relief + pente/exposition.</div>
     <div class="toolbar">
       <button class="btn" id="btnImport">⬆ Importer GeoJSON/CSV</button>
-      <button class="btn primary" id="btnTopo">⛰️ Calculer la topographie</button>
       <button class="btn danger" id="btnClear">🗑 Effacer</button>
-      <span class="hint" id="curName">Aucune parcelle sélectionnée</span>
+      <span class="hint" id="curName">Aucune parcelle — dessinez ou importez.</span>
     </div>
     <div class="grid2">
-      <div id="map"></div>
+      <div style="position:relative"><div id="map"></div>
+        <div class="loader" id="loader"><div class="box" id="loaderTxt">Calcul…</div></div>
+      </div>
       <div>
-        <div class="card" style="margin:0 0 12px;padding:13px">
-          <h2 style="font-size:.92rem">Relief de la parcelle</h2>
-          <div id="topoStatus" class="hint" style="margin-bottom:8px">Sélectionnez une parcelle puis « Calculer ».</div>
-          <div id="topoKpis" class="kpirow"></div>
-          <div id="topoLeg"></div>
-          <div id="topoInterp" class="hint" style="margin-top:8px"></div>
+        <div class="pcard" id="terrainCard" style="display:none">
+          <h3>Relief & terrain</h3>
+          <div class="rrow"><span>Surface</span><b id="rArea">—</b></div>
+          <div class="rrow"><span>Altitude min / max</span><b id="rAlt">—</b></div>
+          <div class="rrow"><span>Amplitude</span><b id="rAmp">—</b></div>
+          <div class="rrow"><span>Pente moyenne</span><b id="rSlope">—</b></div>
+          <div class="rrow"><span>Exposition dominante</span><b id="rAspect">—</b></div>
+          <div class="rrow"><span>Aptitude terrain</span><b id="rTerrain">—</b></div>
+          <div class="rrow"><span>Relevé MNT</span><b>Copernicus GLO-90 · unique</b></div>
+          <div id="modeSeg" style="margin-top:10px">
+            <button data-mode="alt" class="active">Altitude</button>
+            <button data-mode="slope">Pente</button>
+            <button data-mode="aspect">Exposition</button>
+          </div>
+          <div class="oprow"><span>Opacité</span><input type="range" id="opacity" min="0" max="100" value="82"><span id="opVal">82</span>%</div>
+        </div>
+        <div class="pcard" id="legendCard" style="display:none">
+          <h3 id="legendTitle">Légende</h3>
+          <div id="legend"></div>
+        </div>
+        <div class="pcard" id="helpCard">
+          <h3>Mode d'emploi</h3>
+          <div class="hint">1. Zoome sur la zone.<br>2. Dessine la parcelle (outil polygone).<br>3. Ferme le polygone → relief + pente/exposition.<br>4. Bascule Altitude / Pente / Exposition.</div>
+          <div class="hint" id="status" style="margin-top:8px">En attente d'une parcelle…</div>
         </div>
       </div>
     </div>
   </div>
   <div class="footer">EU4Skills · AgriTech Libya — Topographie · MNT : Open-Meteo Elevation (Copernicus GLO-90)</div>
 </div>
+<div id="elevTip"></div>
 
 <script src="platform/public/assets/js/crops.js"></script>
 <script src="platform/public/assets/js/store.js"></script>
 <script src="platform/public/assets/js/agrimap-draw.js"></script>
 <script>
-const FARM={lat:36.461670,lng:10.005668,zoom:14};
-let carto=null, cur=null, topoLayer=null;
+/* ===== palette hypsométrique (SICAM) ===== */
+const COLOR_PALETTE=[[0,80,45],[1,97,51],[43,161,74],[116,194,92],[203,237,137],[254,240,165],[253,206,126],[244,137,75],[227,56,39],[150,0,21]];
+const FULL_THRESH=15;
+function getAdjustedColor(elev,minE,maxE){ const diff=maxE-minE, spread=Math.min(1,diff/FULL_THRESH);
+  let ratio=Math.max(0,Math.min(1,(elev-minE)/(diff||1))); const centered=0.5+(ratio-0.5)*spread;
+  const lvl=Math.floor(centered*COLOR_PALETTE.length); return COLOR_PALETTE[Math.max(0,Math.min(lvl,COLOR_PALETTE.length-1))]; }
+const SLOPE_PAL=[[43,161,74],[116,194,92],[203,237,137],[254,240,165],[253,206,126],[244,137,75],[227,56,39],[150,0,21]];
+function slopeColor(pct){ const r=Math.max(0,Math.min(1,pct/15)); return SLOPE_PAL[Math.max(0,Math.min(SLOPE_PAL.length-1,Math.floor(r*SLOPE_PAL.length)))]; }
+function octant(b){ return ['N','NE','E','SE','S','SO','O','NO'][Math.round(b/45)%8]; }
+const ASPECT_COLOR={S:[43,161,74],SE:[116,194,92],SO:[116,194,92],E:[254,240,165],O:[254,240,165],NE:[244,137,75],NO:[244,137,75],N:[227,56,39]};
+function aspectColor(b,sl){ if(sl<2)return [120,140,160]; return ASPECT_COLOR[octant(b)]||[150,150,150]; }
+function terrainAptitude(slope){
+  let label,color;
+  if(slope<=3){label='Excellent';color='#22c55e';}
+  else if(slope<=8){label='Bon';color='#84cc16';}
+  else if(slope<=15){label='Moyen';color='#f59e0b';}
+  else {label='Contraignant';color='#ef4444';}
+  return {label,color}; }
+
+/* ===== carte (moteur partagé pour dessin/import) ===== */
+let carto=null, cur=null, overlay=null, minMaxLayer=null, gridState=null, currentMode='alt', areaHa=0;
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function sleepMs(ms){return new Promise(r=>setTimeout(r,ms));}
-function pip(lat,lng,V){let inside=false;for(let i=0,j=V.length-1;i<V.length;j=i++){const yi=V[i][0],xi=V[i][1],yj=V[j][0],xj=V[j][1];if(((yi>lat)!=(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi)+xi))inside=!inside;}return inside;}
-function octant(a){return ['N','NE','E','SE','S','SO','O','NO'][Math.round(a/45)%8];}
-function elevColor(t){t=Math.max(0,Math.min(1,t));const st=[[0,[90,150,60]],[0.5,[230,215,120]],[1,[150,90,50]]];
-  for(let i=1;i<st.length;i++){if(t<=st[i][0]){const f=(t-st[i-1][0])/(st[i][0]-st[i-1][0]),a=st[i-1][1],b=st[i][1];return 'rgb('+Math.round(a[0]+(b[0]-a[0])*f)+','+Math.round(a[1]+(b[1]-a[1])*f)+','+Math.round(a[2]+(b[2]-a[2])*f)+')';}}return 'rgb(150,90,50)';}
+function pointInPoly(lat,lng,V){ let inside=false; for(let i=0,j=V.length-1;i<V.length;j=i++){ const yi=V[i].lat,xi=V[i].lng,yj=V[j].lat,xj=V[j].lng;
+  if(((yi>lat)!=(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi)+xi))inside=!inside; } return inside; }
 
 function initMap(){
-  carto=AgriMap.create('#map',{basemap:'sat',center:[FARM.lat,FARM.lng],zoom:FARM.zoom,name:'Topographie',panel:false});
-  carto.on('select',sel=>{ if(sel&&sel.kind==='parcel'&&sel.item){ cur=sel.item; document.getElementById('curName').innerHTML='Sélection : <b>'+esc(cur.name)+'</b> · '+(cur.area_ha||0)+' ha'; } });
+  carto=AgriMap.create('#map',{basemap:'sat',center:[34.5,9.5],zoom:7,name:'Topographie',panel:false});
+  carto.on('select',sel=>{ if(sel&&sel.kind==='parcel'&&sel.item){ startParcel(sel.item); } });
 }
-async function loadZit(){
-  try{ const r=await fetch('data/zitouna_parcelles.geojson',{cache:'no-store'}); const fc=await r.json();
-    carto.load({name:'SDA Zitouna',parcels:[],equipment:[]}); carto.importGeoJSON(fc);
-    setTimeout(()=>{carto.fitAll();carto.invalidate();},80);
-    const p=carto.state.parcels[0]; if(p){ cur=p; document.getElementById('curName').innerHTML='Sélection : <b>'+esc(p.name)+'</b> · '+(p.area_ha||0)+' ha'; }
-  }catch(e){ alert('Chargement Zitouna : '+e.message+'\n(ouvrez via HTTP, pas file://)'); }
+function startParcel(p){
+  cur=p; areaHa=p.area_ha||0;
+  $('curName').innerHTML='Parcelle : <b>'+esc(p.name)+'</b> · '+areaHa+' ha';
+  computeTopography(p.coords.map(c=>({lat:c[0],lng:c[1]})));
 }
 function doImport(){
   const inp=document.createElement('input');inp.type='file';inp.accept='.geojson,.json,.csv';
   inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
-    rd.onload=()=>{try{let n=/\.csv$/i.test(f.name)?carto.importCSV(rd.result):carto.importGeoJSON(JSON.parse(rd.result));
-      const p=carto.state.parcels[carto.state.parcels.length-1]; if(p)cur=p; }catch(err){alert('Import : '+err.message);}};
+    rd.onload=()=>{try{ /\.csv$/i.test(f.name)?carto.importCSV(rd.result):carto.importGeoJSON(JSON.parse(rd.result));
+      const p=carto.state.parcels[carto.state.parcels.length-1]; if(p){ setTimeout(()=>{carto.fitAll();carto.invalidate();},60); startParcel(p);} }catch(err){alert('Import : '+err.message);}};
     rd.readAsText(f);};
   inp.click();
 }
+
 async function fetchElev(points){
   const out=new Array(points.length),B=100;
   for(let s=0;s<points.length;s+=B){const batch=points.slice(s,s+B);
     const url='https://api.open-meteo.com/v1/elevation?latitude='+batch.map(p=>p.lat.toFixed(6)).join(',')+'&longitude='+batch.map(p=>p.lng.toFixed(6)).join(',');
     let ok=false;
     for(let a=0;a<4&&!ok;a++){try{const r=await fetch(url);
-      if(r.status===429){document.getElementById('topoStatus').textContent='Limite API, patiente…';await sleepMs(1200*Math.pow(2,a));continue;}
+      if(r.status===429){$('status').textContent='Limite API, patiente…';await sleep(1200*Math.pow(2,a));continue;}
       if(!r.ok)throw new Error('HTTP '+r.status);(await r.json()).elevation.forEach((v,k)=>out[s+k]=v);ok=true;
-    }catch(e){if(a===3)throw e;await sleepMs(1200*Math.pow(2,a));}}
-    document.getElementById('topoStatus').textContent='Élévation… '+Math.min(s+B,points.length)+'/'+points.length;
-    if(s+B<points.length)await sleepMs(350);}
+    }catch(e){if(a===3)throw e;await sleep(1200*Math.pow(2,a));}}
+    $('status').textContent='Élévation… '+Math.min(s+B,points.length)+'/'+points.length;
+    if(s+B<points.length)await sleep(350);}
   return out;
 }
-async function computeTopo(){
-  const st=document.getElementById('topoStatus');
-  if(!cur||!cur.coords||cur.coords.length<3){ st.textContent='Dessinez / sélectionnez une parcelle d\'abord.'; return; }
-  const V=cur.coords;
-  let latMin=Infinity,latMax=-Infinity,lngMin=Infinity,lngMax=-Infinity;
-  V.forEach(p=>{latMin=Math.min(latMin,p[0]);latMax=Math.max(latMax,p[0]);lngMin=Math.min(lngMin,p[1]);lngMax=Math.max(lngMax,p[1]);});
-  const midLat=(latMin+latMax)/2*Math.PI/180;
-  const latM=(latMax-latMin)*111320,lngM=(lngMax-lngMin)*111320*Math.cos(midLat),diag=Math.sqrt(latM*latM+lngM*lngM);
-  const N=Math.max(10,Math.min(18,Math.ceil(diag/60))),dim=N+1;
-  const pts=[];for(let i=0;i<=N;i++)for(let j=0;j<=N;j++)pts.push({lat:latMin+(i/N)*(latMax-latMin),lng:lngMin+(j/N)*(lngMax-lngMin)});
-  st.textContent='Requête MNT…';
+function interpGrid(lat,lng,arr){ const g=gridState;
+  const xR=(lng-g.lngMin)/(g.lngMax-g.lngMin),yR=(lat-g.latMin)/(g.latMax-g.latMin);
+  if(xR<0||xR>1||yR<0||yR>1)return null;
+  let i=Math.floor(yR*g.N),j=Math.floor(xR*g.N);if(i>=g.N)i=g.N-1;if(j>=g.N)j=g.N-1;
+  const d=g.dim,a=arr[i*d+j],b=arr[i*d+j+1],c=arr[(i+1)*d+j],e=arr[(i+1)*d+j+1];
+  const fx=xR*g.N-j,fy=yR*g.N-i; return (a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+e*fx)*fy; }
+function nearestNode(lat,lng,arr){ const g=gridState;
+  const xR=(lng-g.lngMin)/(g.lngMax-g.lngMin),yR=(lat-g.latMin)/(g.latMax-g.latMin);
+  let i=Math.round(yR*g.N),j=Math.round(xR*g.N);i=Math.max(0,Math.min(g.N,i));j=Math.max(0,Math.min(g.N,j));
+  return arr[i*g.dim+j]; }
+
+async function computeTopography(verts){
+  $('loader').style.display='grid'; $('loaderTxt').textContent='Calcul de l\'élévation…'; $('status').textContent='Préparation de la grille…';
   try{
-    const elev=await fetchElev(pts);
+    let latMin=Infinity,latMax=-Infinity,lngMin=Infinity,lngMax=-Infinity;
+    verts.forEach(v=>{latMin=Math.min(latMin,v.lat);latMax=Math.max(latMax,v.lat);lngMin=Math.min(lngMin,v.lng);lngMax=Math.max(lngMax,v.lng);});
+    const midLat=(latMin+latMax)/2*Math.PI/180;
+    const latM=(latMax-latMin)*111320,lngM=(lngMax-lngMin)*111320*Math.cos(midLat),diag=Math.sqrt(latM*latM+lngM*lngM);
+    const N=Math.max(10,Math.min(16,Math.ceil(diag/70))),dim=N+1;
+    const points=[]; for(let i=0;i<=N;i++)for(let j=0;j<=N;j++)points.push({lat:latMin+(i/N)*(latMax-latMin),lng:lngMin+(j/N)*(lngMax-lngMin)});
+    const elev=await fetchElev(points);
     const dxm=(lngMax-lngMin)/N*111320*Math.cos(midLat),dym=(latMax-latMin)/N*111320;
     const E=(i,j)=>elev[Math.max(0,Math.min(N,i))*dim+Math.max(0,Math.min(N,j))];
-    const slope=new Array(dim*dim);
-    for(let i=0;i<=N;i++)for(let j=0;j<=N;j++){const gx=(E(i,j+1)-E(i,j-1))/(2*dxm),gy=(E(i+1,j)-E(i-1,j))/(2*dym);slope[i*dim+j]=Math.sqrt(gx*gx+gy*gy)*100;}
-    let minE=Infinity,maxE=-Infinity,minP=null,maxP=null,sum=0,cnt=0,sSlope=0,sGx=0,sGy=0;
-    for(let i=0;i<=N;i++)for(let j=0;j<=N;j++){const k=i*dim+j,p=pts[k];if(!pip(p.lat,p.lng,V))continue;
-      if(elev[k]<minE){minE=elev[k];minP=p;}if(elev[k]>maxE){maxE=elev[k];maxP=p;}
-      sum+=elev[k];cnt++;sSlope+=slope[k];sGx+=(E(i,j+1)-E(i,j-1))/(2*dxm);sGy+=(E(i+1,j)-E(i-1,j))/(2*dym);}
-    if(!isFinite(minE)){elev.forEach((e,k)=>{if(e<minE){minE=e;minP=pts[k];}if(e>maxE){maxE=e;maxP=pts[k];}});cnt=elev.length;sum=elev.reduce((a,b)=>a+b,0);sSlope=slope.reduce((a,b)=>a+b,0);}
-    const meanE=sum/Math.max(1,cnt),meanS=sSlope/Math.max(1,cnt);
-    let meanA=Math.atan2(-sGx/Math.max(1,cnt),-sGy/Math.max(1,cnt))*180/Math.PI;if(meanA<0)meanA+=360;
-    const map=carto.map;if(topoLayer)map.removeLayer(topoLayer);topoLayer=L.layerGroup().addTo(map);
-    const rng=(maxE-minE)||1;
-    for(let k=0;k<pts.length;k++){const p=pts[k];if(!pip(p.lat,p.lng,V))continue;
-      L.circleMarker([p.lat,p.lng],{radius:6,color:'#0003',weight:.5,fillColor:elevColor((elev[k]-minE)/rng),fillOpacity:.85})
-        .bindTooltip(elev[k].toFixed(0)+' m · pente '+slope[k].toFixed(1)+'%').addTo(topoLayer);}
-    if(minP)L.marker([minP.lat,minP.lng]).addTo(topoLayer).bindTooltip('▼ bas '+minE.toFixed(0)+' m');
-    if(maxP)L.marker([maxP.lat,maxP.lng]).addTo(topoLayer).bindTooltip('▲ haut '+maxE.toFixed(0)+' m');
-    const slCls=meanS<2?'plat':meanS<5?'faible':meanS<10?'moyen':'fort';
-    document.getElementById('topoKpis').innerHTML=[
-      ['Altitude moyenne',meanE.toFixed(0),'m','accent'],
-      ['Min / Max',minE.toFixed(0)+' / '+maxE.toFixed(0),'m',''],
-      ['Amplitude',(maxE-minE).toFixed(1),'m','warn'],
-      ['Pente moyenne',meanS.toFixed(1),'%',meanS<5?'ok':'bad'],
-      ['Exposition',meanS<2?'—':octant(meanA),'',''],
-      ['Points MNT',cnt,'','']
-    ].map(k=>'<div class="kpi '+k[3]+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+' <span class="u">'+k[2]+'</span></div></div>').join('');
-    document.getElementById('topoLeg').innerHTML='<div class="legbar"></div><div class="leglbl"><span>'+minE.toFixed(0)+' m</span><span>altitude</span><span>'+maxE.toFixed(0)+' m</span></div>';
-    const note={plat:'terrain plat — pas de ruissellement ; surveiller le drainage/engorgement.',
-      faible:'pente faible — irrigation classique, ruissellement limité.',
-      moyen:'pente moyenne — risque de ruissellement : fractionner les apports, débit réduit, goutte-à-goutte.',
-      fort:'pente forte — ruissellement/érosion : sectoriser, banquettes/terrasses, doses courtes et fréquentes.'}[slCls];
-    document.getElementById('topoInterp').innerHTML='Relief <b>'+slCls+'</b> ('+meanS.toFixed(1)+' %'+(meanS>=2?', exposé '+octant(meanA):'')+'). '+note;
-    st.textContent='✔ topographie calculée ('+cnt+' points MNT)';
-    setTimeout(()=>carto.map.fitBounds(L.polygon(V).getBounds().pad(0.3)),100);
-  }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur MNT : '+esc(e.message)+'</span>'; }
+    const slopeGrid=new Array(dim*dim),aspectGrid=new Array(dim*dim);
+    for(let i=0;i<=N;i++)for(let j=0;j<=N;j++){ const gx=(E(i,j+1)-E(i,j-1))/(2*dxm),gy=(E(i+1,j)-E(i-1,j))/(2*dym);
+      slopeGrid[i*dim+j]=Math.sqrt(gx*gx+gy*gy)*100; let b=Math.atan2(-gx,-gy)*180/Math.PI; if(b<0)b+=360; aspectGrid[i*dim+j]=b; }
+    let minE=Infinity,maxE=-Infinity,minP=null,maxP=null,sumElev=0,cnt=0,sSlope=0,sGx=0,sGy=0;
+    for(let i=0;i<=N;i++)for(let j=0;j<=N;j++){ const k=i*dim+j,p=points[k]; if(!pointInPoly(p.lat,p.lng,verts))continue;
+      if(elev[k]<minE){minE=elev[k];minP=p;} if(elev[k]>maxE){maxE=elev[k];maxP=p;}
+      sumElev+=elev[k];cnt++;sSlope+=slopeGrid[k];sGx+=(E(i,j+1)-E(i,j-1))/(2*dxm);sGy+=(E(i+1,j)-E(i-1,j))/(2*dym); }
+    if(!isFinite(minE)){ elev.forEach((e,k)=>{if(e<minE){minE=e;minP=points[k];}if(e>maxE){maxE=e;maxP=points[k];}}); cnt=elev.length;sumElev=elev.reduce((a,b)=>a+b,0);sSlope=slopeGrid.reduce((a,b)=>a+b,0); }
+    const meanSlope=cnt?sSlope/cnt:0, meanElev=sumElev/Math.max(1,cnt);
+    let meanAspect=Math.atan2(-sGx/Math.max(1,cnt),-sGy/Math.max(1,cnt))*180/Math.PI; if(meanAspect<0)meanAspect+=360;
+    gridState={latMin,latMax,lngMin,lngMax,N,dim,elev,slopeGrid,aspectGrid,minE,maxE,verts,meanSlope,meanAspect,meanElev};
+    renderOverlay();
+    if(minMaxLayer)carto.map.removeLayer(minMaxLayer); minMaxLayer=L.layerGroup().addTo(carto.map);
+    addMinMax(minP,minE,'min'); addMinMax(maxP,maxE,'max');
+    buildLegend();
+    $('rArea').textContent=(areaHa||0).toFixed(2)+' ha';
+    $('rAlt').textContent=minE.toFixed(0)+' / '+maxE.toFixed(0)+' m';
+    $('rAmp').textContent=(maxE-minE).toFixed(1)+' m';
+    $('rSlope').textContent=meanSlope.toFixed(1)+' %';
+    $('rAspect').textContent=meanSlope<2?'plat (n/a)':octant(meanAspect);
+    const ta=terrainAptitude(meanSlope);
+    $('rTerrain').innerHTML='<span class="badge" style="background:'+ta.color+'22;color:'+ta.color+'">'+ta.label+'</span>';
+    $('terrainCard').style.display='block'; $('legendCard').style.display='block';
+    $('status').textContent='Relief + pente/exposition calculés ✔';
+    setTimeout(()=>carto.map.fitBounds(L.latLngBounds(verts.map(v=>[v.lat,v.lng])).pad(0.25)),100);
+  }catch(err){ $('status').textContent='Erreur : '+err.message; }
+  finally{ $('loader').style.display='none'; }
 }
+
+function renderOverlay(){
+  const g=gridState;
+  const wM=(g.lngMax-g.lngMin)*111320*Math.cos((g.latMin+g.latMax)/2*Math.PI/180), hM=(g.latMax-g.latMin)*111320, asp=wM/hM;
+  let W,H; if(asp>=1){W=460;H=Math.max(64,Math.round(460/asp));} else {H=460;W=Math.max(64,Math.round(460*asp));}
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d'),img=ctx.createImageData(W,H),d=img.data;
+  for(let py=0;py<H;py++){ const lat=g.latMax-(py/(H-1))*(g.latMax-g.latMin);
+    for(let px=0;px<W;px++){ const lng=g.lngMin+(px/(W-1))*(g.lngMax-g.lngMin),idx=(py*W+px)*4;
+      if(!pointInPoly(lat,lng,g.verts)){ d[idx+3]=0; continue; }
+      let c; if(currentMode==='alt'){ c=getAdjustedColor(interpGrid(lat,lng,g.elev),g.minE,g.maxE); }
+      else if(currentMode==='slope'){ c=slopeColor(interpGrid(lat,lng,g.slopeGrid)); }
+      else { c=aspectColor(nearestNode(lat,lng,g.aspectGrid),nearestNode(lat,lng,g.slopeGrid)); }
+      d[idx]=c[0];d[idx+1]=c[1];d[idx+2]=c[2];d[idx+3]=220; } }
+  ctx.putImageData(img,0,0);
+  if(overlay)carto.map.removeLayer(overlay);
+  overlay=L.imageOverlay(cv.toDataURL(),[[g.latMin,g.lngMin],[g.latMax,g.lngMax]],{opacity:$('opacity').value/100,interactive:false}).addTo(carto.map);
+}
+function addMinMax(p,e,type){ if(!p)return;
+  L.circleMarker([p.lat,p.lng],{radius:6,color:'#fff',weight:2,fillColor:type==='min'?'#0b5d2d':'#960015',fillOpacity:1})
+    .bindTooltip((type==='min'?'Min':'Max')+' : '+e.toFixed(0)+' m',{permanent:true,direction:'top',className:'minmax-label'}).addTo(minMaxLayer); }
+function buildLegend(){
+  const g=gridState; let html='',title='';
+  if(currentMode==='alt'){ title='Altitude (m)';
+    const step=(g.maxE-g.minE)/COLOR_PALETTE.length;
+    const raw=COLOR_PALETTE.map((_,i)=>{const mid=g.minE+(i+0.5)*step,c=getAdjustedColor(mid,g.minE,g.maxE);return{color:'rgb('+c[0]+','+c[1]+','+c[2]+')',min:g.minE+i*step,max:g.minE+(i+1)*step};});
+    const gr=[]; let curc={...raw[0]}; for(let i=1;i<raw.length;i++){if(raw[i].color===curc.color)curc.max=raw[i].max;else{gr.push(curc);curc={...raw[i]};}} gr.push(curc); gr.reverse();
+    html=gr.map(it=>'<div class="legend-item"><span class="legend-swatch" style="background:'+it.color+'"></span>'+it.min.toFixed(0)+' – '+it.max.toFixed(0)+' m</div>').join('');
+  } else if(currentMode==='slope'){ title='Pente (%)';
+    const ranges=[[0,3,'Idéal'],[3,8,'Bon'],[8,15,'Moyen'],[15,25,'Fort'],[25,99,'Très fort']];
+    html=ranges.map(a=>{const c=slopeColor((a[0]+a[1])/2);return '<div class="legend-item"><span class="legend-swatch" style="background:rgb('+c[0]+','+c[1]+','+c[2]+')"></span>'+a[0]+'–'+(a[1]===99?'+':a[1])+' % · '+a[2]+'</div>';}).join('');
+  } else { title='Exposition';
+    const items=[['S','chaude / sèche'],['SE','chaude'],['SO','chaude'],['E','tempérée'],['O','tempérée'],['NE','fraîche'],['NO','fraîche'],['N','fraîche / humide']];
+    html=items.map(a=>{const c=ASPECT_COLOR[a[0]];return '<div class="legend-item"><span class="legend-swatch" style="background:rgb('+c[0]+','+c[1]+','+c[2]+')"></span>'+a[0]+' · '+a[1]+'</div>';}).join('');
+    html+='<div class="legend-item"><span class="legend-swatch" style="background:rgb(120,140,160)"></span>quasi-plat (n/a)</div>';
+  }
+  $('legendTitle').textContent='Légende — '+title; $('legend').innerHTML=html;
+}
+
+/* survol : altitude + pente */
+const tip=$('elevTip');
+function bindHover(){ carto.map.on('mousemove',e=>{ if(!gridState){tip.style.display='none';return;}
+  const {lat,lng}=e.latlng; if(!pointInPoly(lat,lng,gridState.verts)){tip.style.display='none';return;}
+  const el=interpGrid(lat,lng,gridState.elev),sl=interpGrid(lat,lng,gridState.slopeGrid);
+  if(el===null){tip.style.display='none';return;}
+  const oe=e.originalEvent; tip.innerHTML=el.toFixed(0)+' m · pente '+sl.toFixed(1)+'%';
+  tip.style.left=(oe.clientX+14)+'px'; tip.style.top=(oe.clientY-34)+'px'; tip.style.display='block'; });
+  carto.map.on('mouseout',()=>tip.style.display='none'); }
+
 document.getElementById('btnImport').onclick=doImport;
-document.getElementById('btnTopo').onclick=computeTopo;
-document.getElementById('btnClear').onclick=()=>{ carto.load({name:'Vide',parcels:[],equipment:[]}); cur=null;
-  if(topoLayer){carto.map.removeLayer(topoLayer);topoLayer=null;}
-  document.getElementById('curName').textContent='Aucune parcelle sélectionnée';
-  document.getElementById('topoKpis').innerHTML=''; document.getElementById('topoLeg').innerHTML='';
-  document.getElementById('topoInterp').innerHTML=''; document.getElementById('topoStatus').textContent='Sélectionnez une parcelle puis « Calculer ».'; };
-window.addEventListener('DOMContentLoaded',()=>{ initMap(); });
+document.getElementById('btnClear').onclick=()=>{ carto.load({name:'Vide',parcels:[],equipment:[]}); cur=null; gridState=null;
+  [overlay,minMaxLayer].forEach(l=>{if(l)carto.map.removeLayer(l);}); overlay=minMaxLayer=null;
+  $('terrainCard').style.display='none'; $('legendCard').style.display='none';
+  $('curName').textContent='Aucune parcelle — dessinez ou importez.'; $('status').textContent='En attente d\'une parcelle…'; };
+$('opacity').oninput=e=>{ $('opVal').textContent=e.target.value; if(overlay)overlay.setOpacity(e.target.value/100); };
+document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); currentMode=b.dataset.mode; if(gridState){ renderOverlay(); buildLegend(); } });
+
+async function demoLoad(){ try{ const r=await fetch('data/zitouna_parcelles.geojson',{cache:'no-store'}); const fc=await r.json();
+  carto.importGeoJSON(fc); setTimeout(()=>{carto.fitAll();carto.invalidate();},60);
+  const p=carto.state.parcels[0]; if(p) startParcel(p); }catch(e){} }
+window.addEventListener('DOMContentLoaded',()=>{ initMap(); bindHover(); if(location.search.indexOf('demo')>=0) setTimeout(demoLoad,400); });
 </script>
 </body>
 </html>
