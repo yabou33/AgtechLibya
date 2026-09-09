@@ -177,6 +177,16 @@ body[dir=rtl] .agri-stdbar .tool .tip{inset-inline-start:auto; inset-inline-end:
 </style>
 </head>
 <body>
+<!-- Barre retour accueil AgriTech (injectee) -->
+<div id="agriHomeBar"><a href="platform/public/index.html" title="Accueil / Home / الرئيسية" aria-label="Accueil / Home">🏠</a></div>
+<style>
+#agriHomeBar{position:fixed;top:0;left:0;right:0;height:30px;z-index:2147483600;background:linear-gradient(90deg,#7cb342,#5a8f2c);display:flex;align-items:center;padding:0 12px;box-shadow:0 1px 5px rgba(0,0,0,.22)}
+#agriHomeBar a{color:#fff;text-decoration:none;font-size:17px;line-height:1;display:inline-flex;align-items:center;height:100%;transition:transform .12s}
+#agriHomeBar a:hover{transform:scale(1.15)}
+body{padding-top:30px!important}
+@media print{#agriHomeBar{display:none}body{padding-top:0!important}}
+</style>
+
 
 <header>
   <div class="logo">
@@ -364,11 +374,18 @@ body[dir=rtl] .agri-stdbar .tool .tip{inset-inline-start:auto; inset-inline-end:
     <div class="field">
       <label style="color:var(--sub);font-size:12px" data-i18n="gl_cfg_mode">Mode d'accès</label>
       <select id="cfgMode">
-        <option value="proxy" selected>Proxy PHP local (sh_token.php)</option>
+        <option value="direct_keys" selected>Direct OAuth Keys (Client ID + Secret)</option>
         <option value="direct_token" data-i18n="gl_cfg_direct">Jeton Bearer direct</option>
+        <option value="proxy">Proxy (sh_token.php / /api/sh_token)</option>
       </select>
     </div>
-    <div id="cfgGroupProxy" class="field">
+    <div id="cfgGroupKeys" class="field">
+      <label style="color:var(--sub);font-size:12px">Client ID</label>
+      <input type="text" id="cfgClientId" value="" placeholder="Votre Sentinel Hub Client ID">
+      <label style="color:var(--sub);font-size:12px;margin-top:8px;display:block">Client Secret</label>
+      <input type="password" id="cfgClientSecret" value="" placeholder="Votre Sentinel Hub Client Secret">
+    </div>
+    <div id="cfgGroupProxy" class="field" style="display:none">
       <label style="color:var(--sub);font-size:12px" data-i18n="gl_cfg_proxy">URL du proxy</label>
       <input type="text" id="cfgProxyUrl" value="sh_token.php">
     </div>
@@ -385,6 +402,7 @@ body[dir=rtl] .agri-stdbar .tool .tip{inset-inline-start:auto; inset-inline-end:
   </div>
 </div>
 
+<script src="sh-config.js"></script>
 <script>
 "use strict";
 /* ============ Configuration Sentinel Hub ============ */
@@ -395,30 +413,18 @@ const SH = {
 };
 
 const authCfg = {
-  mode: localStorage.getItem('sh_auth_mode') || 'proxy',
+  mode: localStorage.getItem('sh_auth_mode') || 'direct_keys',
   proxyUrl: localStorage.getItem('sh_proxy_url') || 'sh_token.php',
+  clientId: localStorage.getItem('sh_client_id') || '',
+  clientSecret: localStorage.getItem('sh_client_secret') || '',
   directToken: localStorage.getItem('sh_direct_token') || ''
 };
 
 let token = null, tokenExp = 0;
 
-async function getToken(){
-  if(token && Date.now() < tokenExp - 60000) return token;
-  if (authCfg.mode === 'direct_token' && authCfg.directToken) {
-    token = authCfg.directToken.trim(); tokenExp = Date.now() + 3600000; return token;
-  }
-  const r = await fetch(authCfg.proxyUrl, { cache: "no-store" });
-  if(!r.ok){
-    const txt = await r.text();
-    let msg = "Proxy jeton erreur (" + r.status + ")";
-    try { const j = JSON.parse(txt); msg = j.detail || j.error || msg; }catch(e){}
-    throw new Error(msg);
-  }
-  const j = await r.json();
-  if(!j.access_token) throw new Error("Proxy jeton invalide");
-  token = j.access_token; tokenExp = Date.now() + (j.expires_in || 3500) * 1000;
-  return token;
-}
+// Délégué au magasin d'identifiants partagé (sh-config.js) :
+// mêmes clés sur toutes les pages → saisir une fois vaut partout.
+async function getToken(){ return window.SHConfig.getToken(); }
 
 async function shFetch(url, payload, expect="json"){
   const tk = await getToken();
@@ -1169,15 +1175,35 @@ document.getElementById("wfPrev").onclick = () => { if (wfI > 0) { wfI--; wfAppl
 
 /* ============ Modal Configuration ============ */
 const modalConfig = document.getElementById("modalConfig");
-document.getElementById("btnConfig").onclick = () => { modalConfig.style.display = "flex"; };
+function cfgVisibility(){
+  const m = document.getElementById("cfgMode").value;
+  document.getElementById("cfgGroupKeys").style.display  = m === 'direct_keys'  ? 'block' : 'none';
+  document.getElementById("cfgGroupToken").style.display = m === 'direct_token' ? 'block' : 'none';
+  document.getElementById("cfgGroupProxy").style.display = m === 'proxy'         ? 'block' : 'none';
+}
+document.getElementById("cfgMode").onchange = cfgVisibility;
+document.getElementById("btnConfig").onclick = () => {
+  document.getElementById("cfgMode").value = authCfg.mode;
+  document.getElementById("cfgClientId").value = authCfg.clientId;
+  document.getElementById("cfgClientSecret").value = authCfg.clientSecret;
+  document.getElementById("cfgToken").value = authCfg.directToken;
+  document.getElementById("cfgProxyUrl").value = authCfg.proxyUrl;
+  cfgVisibility();
+  modalConfig.style.display = "flex";
+};
 document.getElementById("btnCloseConfig").onclick = () => { modalConfig.style.display = "none"; };
 document.getElementById("btnSaveConfig").onclick = () => {
   authCfg.mode = document.getElementById("cfgMode").value;
-  authCfg.proxyUrl = document.getElementById("cfgProxyUrl").value;
-  authCfg.directToken = document.getElementById("cfgToken").value;
+  authCfg.clientId = document.getElementById("cfgClientId").value.trim();
+  authCfg.clientSecret = document.getElementById("cfgClientSecret").value.trim();
+  authCfg.directToken = document.getElementById("cfgToken").value.trim();
+  authCfg.proxyUrl = document.getElementById("cfgProxyUrl").value.trim() || 'sh_token.php';
   localStorage.setItem('sh_auth_mode', authCfg.mode);
   localStorage.setItem('sh_proxy_url', authCfg.proxyUrl);
+  localStorage.setItem('sh_client_id', authCfg.clientId);
+  localStorage.setItem('sh_client_secret', authCfg.clientSecret);
   localStorage.setItem('sh_direct_token', authCfg.directToken);
+  window.SHConfig && window.SHConfig.reset();
   modalConfig.style.display = "none";
 };
 

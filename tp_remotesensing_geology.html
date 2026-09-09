@@ -244,6 +244,16 @@
 </style>
 </head>
 <body>
+<!-- Barre retour accueil AgriTech (injectee) -->
+<div id="agriHomeBar"><a href="platform/public/index.html" title="Accueil / Home / الرئيسية" aria-label="Accueil / Home">🏠</a></div>
+<style>
+#agriHomeBar{position:fixed;top:0;left:0;right:0;height:30px;z-index:2147483600;background:linear-gradient(90deg,#7cb342,#5a8f2c);display:flex;align-items:center;padding:0 12px;box-shadow:0 1px 5px rgba(0,0,0,.22)}
+#agriHomeBar a{color:#fff;text-decoration:none;font-size:17px;line-height:1;display:inline-flex;align-items:center;height:100%;transition:transform .12s}
+#agriHomeBar a:hover{transform:scale(1.15)}
+body{padding-top:30px!important}
+@media print{#agriHomeBar{display:none}body{padding-top:0!important}}
+</style>
+
 
 <header>
   <div class="logo">
@@ -512,6 +522,7 @@
   </aside>
 </main>
 
+<script src="sh-config.js"></script>
 <script>
 "use strict";
 /* ============ Configuration Sentinel Hub OAuth ============ */
@@ -523,14 +534,9 @@ const SH = {
 
 let token = null, tokenExp = 0;
 
-async function getToken(){
-  if(token && Date.now() < tokenExp - 60000) return token;
-  const r = await fetch("sh_token.php", { cache: "no-store" });
-  if(!r.ok) throw new Error("Erreur jeton proxy (" + r.status + ")");
-  const j = await r.json();
-  token = j.access_token; tokenExp = Date.now() + (j.expires_in || 3500) * 1000;
-  return token;
-}
+// Délégué au magasin d'identifiants partagé (sh-config.js) :
+// saisir Client ID + Secret une fois (bouton ⚙️) vaut sur toutes les pages.
+async function getToken(){ return window.SHConfig.getToken(); }
 
 async function shFetch(url, payload, expect="json"){
   const tk = await getToken();

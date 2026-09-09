@@ -63,6 +63,16 @@
 </style>
 </head>
 <body>
+<!-- Barre retour accueil AgriTech (injectee) -->
+<div id="agriHomeBar"><a href="platform/public/index.html" title="Accueil / Home / الرئيسية" aria-label="Accueil / Home">🏠</a></div>
+<style>
+#agriHomeBar{position:fixed;top:0;left:0;right:0;height:30px;z-index:2147483600;background:linear-gradient(90deg,#7cb342,#5a8f2c);display:flex;align-items:center;padding:0 12px;box-shadow:0 1px 5px rgba(0,0,0,.22)}
+#agriHomeBar a{color:#fff;text-decoration:none;font-size:17px;line-height:1;display:inline-flex;align-items:center;height:100%;transition:transform .12s}
+#agriHomeBar a:hover{transform:scale(1.15)}
+body{padding-top:30px!important}
+@media print{#agriHomeBar{display:none}body{padding-top:0!important}}
+</style>
+
 
 <header class="app">
   <div class="logo"><span class="es-logo">SOL</span> <b data-i18n="cs_brand">Calibration</b> <span data-i18n="cs_brand2">sonde</span></div>

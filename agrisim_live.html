@@ -243,6 +243,16 @@ footer{color:var(--sub)}
 </style>
 </head>
 <body>
+<!-- Barre retour accueil AgriTech (injectee) -->
+<div id="agriHomeBar"><a href="platform/public/index.html" title="Accueil / Home / الرئيسية" aria-label="Accueil / Home">🏠</a></div>
+<style>
+#agriHomeBar{position:fixed;top:0;left:0;right:0;height:30px;z-index:2147483600;background:linear-gradient(90deg,#7cb342,#5a8f2c);display:flex;align-items:center;padding:0 12px;box-shadow:0 1px 5px rgba(0,0,0,.22)}
+#agriHomeBar a{color:#fff;text-decoration:none;font-size:17px;line-height:1;display:inline-flex;align-items:center;height:100%;transition:transform .12s}
+#agriHomeBar a:hover{transform:scale(1.15)}
+body{padding-top:30px!important}
+@media print{#agriHomeBar{display:none}body{padding-top:0!important}}
+</style>
+
 
 <header>
   <h1>AgriSim Live — Real Parcels &amp; Vegetation Indices</h1>
@@ -386,6 +396,7 @@ footer{color:var(--sub)}
   </div>
 </div>
 
+<script src="sh-config.js"></script>
 <script>
 "use strict";
 /* ============ Sentinel Hub Configuration ============ */
@@ -397,7 +408,7 @@ const SH = {
 };
 
 const authCfg = {
-  mode: localStorage.getItem('sh_auth_mode') || 'proxy',
+  mode: localStorage.getItem('sh_auth_mode') || 'direct_keys',
   proxyUrl: localStorage.getItem('sh_proxy_url') || 'sh_token.php',
   clientId: localStorage.getItem('sh_client_id') || '',
   clientSecret: localStorage.getItem('sh_client_secret') || '',
@@ -406,40 +417,9 @@ const authCfg = {
 
 let token = null, tokenExp = 0;
 
-async function getToken(){
-  if(token && Date.now() < tokenExp - 60000) return token;
-
-  // 1. Direct Bearer token
-  if (authCfg.mode === 'direct_token' && authCfg.directToken) {
-    token = authCfg.directToken.trim();
-    tokenExp = Date.now() + 3600000;
-    return token;
-  }
-  
-  // 2. Query via local proxy (avoids browser CORS block)
-  let targetUrl = authCfg.proxyUrl;
-  if (authCfg.mode === 'direct_keys' && authCfg.clientId && authCfg.clientSecret) {
-    const sep = targetUrl.includes('?') ? '&' : '?';
-    targetUrl += sep + 'client_id=' + encodeURIComponent(authCfg.clientId) + '&client_secret=' + encodeURIComponent(authCfg.clientSecret);
-  }
-
-  try {
-    const r = await fetch(targetUrl, { cache: "no-store" });
-    if (!r.ok) {
-      const txt = await r.text();
-      let msg = "Token proxy error (" + r.status + ")";
-      try { const j = JSON.parse(txt); msg = j.detail || j.error || msg; }catch(e){}
-      throw new Error(msg);
-    }
-    const j = await r.json();
-    if (!j.access_token) throw new Error("Token proxy: " + (j.error || "invalid response"));
-    token = j.access_token;
-    tokenExp = Date.now() + (j.expires_in || 3500) * 1000;
-    return token;
-  } catch(e) {
-    throw new Error("Sentinel Hub Auth failed: " + e.message + " — Check ⚙️ API / Clés.");
-  }
-}
+// Délégué au magasin d'identifiants partagé (sh-config.js) :
+// mêmes clés sur toutes les pages → saisir une fois vaut partout.
+async function getToken(){ return window.SHConfig.getToken(); }
 
 async function shFetch(url, payload, expect="json"){
   const tk = await getToken();
@@ -1376,7 +1356,7 @@ document.getElementById("btnSaveConfig").onclick = () => {
   localStorage.setItem('sh_client_secret', authCfg.clientSecret);
   localStorage.setItem('sh_direct_token', authCfg.directToken);
   
-  token = null; tokenExp = 0;
+  token = null; tokenExp = 0; window.SHConfig && window.SHConfig.reset();
   modalConfig.style.display = "none";
   setStatus("API settings saved.");
 };
@@ -1391,7 +1371,12 @@ document.getElementById("btnTestAuth").onclick = async () => {
   authCfg.clientId = document.getElementById("cfgClientId").value;
   authCfg.clientSecret = document.getElementById("cfgClientSecret").value;
   authCfg.directToken = document.getElementById("cfgToken").value;
-  token = null; tokenExp = 0;
+  localStorage.setItem('sh_auth_mode', authCfg.mode);
+  localStorage.setItem('sh_client_id', authCfg.clientId);
+  localStorage.setItem('sh_client_secret', authCfg.clientSecret);
+  localStorage.setItem('sh_direct_token', authCfg.directToken);
+  localStorage.setItem('sh_proxy_url', authCfg.proxyUrl);
+  token = null; tokenExp = 0; window.SHConfig && window.SHConfig.reset();
 
   try {
     const tk = await getToken();

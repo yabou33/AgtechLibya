@@ -114,6 +114,16 @@
 </style>
 </head>
 <body>
+<!-- Barre retour accueil AgriTech (injectee) -->
+<div id="agriHomeBar"><a href="platform/public/index.html" title="Accueil / Home / الرئيسية" aria-label="Accueil / Home">🏠</a></div>
+<style>
+#agriHomeBar{position:fixed;top:0;left:0;right:0;height:30px;z-index:2147483600;background:linear-gradient(90deg,#7cb342,#5a8f2c);display:flex;align-items:center;padding:0 12px;box-shadow:0 1px 5px rgba(0,0,0,.22)}
+#agriHomeBar a{color:#fff;text-decoration:none;font-size:17px;line-height:1;display:inline-flex;align-items:center;height:100%;transition:transform .12s}
+#agriHomeBar a:hover{transform:scale(1.15)}
+body{padding-top:30px!important}
+@media print{#agriHomeBar{display:none}body{padding-top:0!important}}
+</style>
+
 <header>
   <div class="logo"><b>Agri</b><span>Map</span></div>
   <div class="sub" data-i18n="hdr_sub">Formation SKILLS4EU · Sentinel-2 L2A en direct (Sentinel Hub)</div>
@@ -202,6 +212,7 @@
 <!-- i18n partagé + recherche géo partagée (APRÈS Leaflet) -->
 <script src="platform/public/assets/i18n/i18n.js"></script>
 <script src="platform/public/assets/js/geo-search.js"></script>
+<script src="sh-config.js"></script>
 <script>
 /* =====================================================================
    AgriMap Formation — Sentinel Hub temps réel (OAuth + Catalog + Process + Statistical)
@@ -265,15 +276,9 @@ let token = null, tokenExp = 0;
 let lastStats = null, lastSerie = [];   // dernières stats zonales + série temporelle (pour export CSV/GeoJSON)
 
 /* ---------------- OAuth ---------------- */
-async function getToken(){
-  if(token && Date.now() < tokenExp - 60000) return token;
-  const r = await fetch(SH.tokenProxy, {cache:"no-store"});
-  if(!r.ok) throw new Error("Proxy jeton injoignable ("+r.status+") — sh_token.php est-il déposé à côté de cette page ?");
-  const j = await r.json();
-  if(!j.access_token) throw new Error("Proxy jeton : "+(j.error||"réponse invalide"));
-  token = j.access_token; tokenExp = Date.now() + (j.expires_in||3500)*1000;
-  return token;
-}
+// Délégué au magasin d'identifiants partagé (sh-config.js) :
+// saisir Client ID + Secret une fois (bouton ⚙️) vaut sur toutes les pages.
+async function getToken(){ return window.SHConfig.getToken(); }
 async function shFetch(url, payload, expect="json"){
   const tk = await getToken();
   const r = await fetch(url, {method:"POST",
