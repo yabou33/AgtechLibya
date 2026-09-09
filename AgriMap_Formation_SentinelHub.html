@@ -282,7 +282,7 @@ async function getToken(){ return window.SHConfig.getToken(); }
 async function shFetch(url, payload, expect="json"){
   const tk = await getToken();
   const r = await fetch(url, {method:"POST",
-    headers:{"Content-Type":"application/json", "Authorization":"Bearer "+tk, "Accept": expect==="blob"?"image/png":"application/json"},
+    headers:{"Content-Type":"application/json", "Authorization":"Bearer "+tk, "Accept": expect==="blob"?"image/png":"application/json, application/geo+json, */*"},
     body: JSON.stringify(payload)});
   if(!r.ok){ const txt = await r.text(); throw new Error("API "+r.status+" — "+txt.slice(0,180)); }
   return expect==="blob" ? r.blob() : r.json();
