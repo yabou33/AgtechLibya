@@ -569,13 +569,20 @@ async function loadStats(){
   try{
     // maxCloud=100 : mesurer exactement la scène affichée par le raster (aligné sur loadRaster).
     const j=await shFetch(SH.stats, statPayload(curDate+"T00:00:00Z", curDate+"T23:59:59Z", "P1D", 100));
+    console.log("[NDVI stats] réponse Statistical API :", j);   // DIAG temporaire
     const it=(j.data||[]).find(d=>d && d.outputs && d.outputs.data);   // ignore les intervalles NO_DATA (outputs vide)
     const band=it && it.outputs.data.bands && it.outputs.data.bands.B0;
     const st=band && band.stats, hg=band && band.histogram;
     // sampleCount==0 (ou tout no-data) → mean/min/max reviennent en NaN : on traite comme « pas de donnée »
     if(!st || st.sampleCount===0 || (st.sampleCount!==undefined && st.sampleCount===st.noDataCount)){
       setTiles(null);
-      document.getElementById("histNote").textContent="Aucune donnée exploitable sur la parcelle pour cette date (couvert nuageux ou pixels masqués). Essayez une autre image.";
+      // DIAG : indique la vraie raison (réponse vide vs pixels masqués) + compteurs
+      let why;
+      if(!(j.data||[]).length) why="réponse vide (data:[]) — aucune scène retenue par la Statistical API";
+      else if(!it) why="intervalle sans sortie (outputs vide)";
+      else if(!st) why="stats absentes dans la réponse";
+      else why="tous les pixels masqués — "+(st.sampleCount||0)+" px, no-data="+(st.noDataCount||0);
+      document.getElementById("histNote").textContent="Aucune donnée exploitable pour cette date. Essayez une autre image. [diag : "+why+"]";
       return;
     }
     setTiles(st); drawHisto(hg, st);
