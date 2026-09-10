@@ -111,6 +111,11 @@ function injectCSS(){
   .plabel{background:rgba(20,30,25,.7);color:#fff;border:none;font-weight:700;font-size:11px;box-shadow:none}
   .eqpin{width:30px;height:38px;display:grid;place-items:center;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4))}
   .eqpin svg{width:17px;height:17px;color:#fff}
+  /* Poignées de sommets (dessin/édition de polygone) — plus petites */
+  .leaflet-editing-icon{
+    width:6px!important;height:6px!important;
+    margin-left:-3px!important;margin-top:-3px!important;
+    border-radius:50%!important;border:1px solid #04202c!important;background:#fff!important;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
   @media(max-width:760px){.agrimap-root{flex-direction:column}.agrimap-panel{width:100%;border-inline-start:none;border-top:1px solid #e6eaf2}}
   `;
   document.head.appendChild(s);
