@@ -169,6 +169,20 @@ table.dt tr.stress{background:#fdf0ee}
 .idxbtn:disabled{opacity:.4;cursor:not-allowed}
 .rampbar{height:14px;border-radius:7px;margin:8px 0 3px}
 .ramplbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);font-weight:700}
+
+/* Sélecteur de langue (même style partagé que les autres pages) */
+.langbox{display:inline-flex;gap:6px;flex-shrink:0}
+.langbox button{border:1px solid #ffffff40;background:#ffffff14;color:#eaf5dd;font:inherit;font-weight:700;
+  padding:6px 12px;border-radius:8px;cursor:pointer;transition:.15s;font-size:.82rem}
+.langbox button:hover{border-color:#fff;color:#fff}
+.langbox button.on{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* Arabe / RTL */
+body[dir=rtl]{direction:rtl}
+body[dir=rtl] .step .arrow{transform:translateY(-50%) scaleX(-1)}
+body[dir=rtl] table.dt th,body[dir=rtl] table.dt td{text-align:left}
+body[dir=rtl] table.dt td:first-child,body[dir=rtl] table.dt th:first-child{text-align:right}
+body[dir=rtl] .fmt{direction:ltr;text-align:left}
 </style>
 </head>
 <body>
@@ -177,27 +191,32 @@ table.dt tr.stress{background:#fdf0ee}
   <div class="wrap hd">
     <div class="logo">SDA<br>ZIT</div>
     <div>
-      <h1>De la parcelle à l'irrigation</h1>
-      <div class="sub">SDA Zitouna · oliveraie · Testour (36.4617, 10.0057) — flux guidé : parcelle → NDVI → météo → sol → irrigation</div>
+      <h1 data-i18n="u_title">De la parcelle à l'irrigation</h1>
+      <div class="sub" data-i18n="u_sub">SDA Zitouna · oliveraie · Testour (36.4617, 10.0057) — flux guidé : parcelle → NDVI → météo → sol → irrigation</div>
     </div>
     <div class="spacer"></div>
-    <a class="home" href="platform/public/index.html">← Accueil</a>
+    <div class="langbox">
+      <button data-lang="fr" onclick="I18N.set('fr')">FR</button>
+      <button data-lang="ar" onclick="I18N.set('ar')">ع</button>
+      <button data-lang="en" onclick="I18N.set('en')">EN</button>
+    </div>
+    <a class="home" href="platform/public/index.html" data-i18n="u_home">← Accueil</a>
   </div>
 </header>
 
 <div class="wrap">
   <!-- FLUX / WORKFLOW -->
   <div class="flow" id="flow">
-    <div class="step on" data-tab="parc"><div class="n">1</div><div class="t">🗺️ Parcelles</div><div class="d">Charger / dessiner les contours</div><div class="arrow">›</div></div>
-    <div class="step" data-tab="ndvi"><div class="n">2</div><div class="t">🛰️ NDVI Sentinel</div><div class="d">Vigueur, série & diagnostic</div><div class="arrow">›</div></div>
-    <div class="step" data-tab="meteo"><div class="n">3</div><div class="t">🌦️ Météo</div><div class="d">Open-Meteo depuis 2017</div><div class="arrow">›</div></div>
-    <div class="step" data-tab="sol"><div class="n">4</div><div class="t">🌱 Sol & sondes</div><div class="d">Analyses & capteurs</div><div class="arrow">›</div></div>
-    <div class="step" data-tab="irrig"><div class="n">5</div><div class="t">💧 Irrigation</div><div class="d">ET₀, besoins & planning</div><div class="arrow">›</div></div>
+    <div class="step on" data-tab="parc"><div class="n">1</div><div class="t">🗺️ <span data-i18n="u_step1">Parcelles</span></div><div class="d" data-i18n="u_step1d">Charger / dessiner les contours</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="ndvi"><div class="n">2</div><div class="t">🛰️ <span data-i18n="u_step2">NDVI Sentinel</span></div><div class="d" data-i18n="u_step2d">Vigueur, série & diagnostic</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="meteo"><div class="n">3</div><div class="t">🌦️ <span data-i18n="u_step3">Météo</span></div><div class="d" data-i18n="u_step3d">Open-Meteo depuis 2017</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="sol"><div class="n">4</div><div class="t">🌱 <span data-i18n="u_step4">Sol & sondes</span></div><div class="d" data-i18n="u_step4d">Analyses & capteurs</div><div class="arrow">›</div></div>
+    <div class="step" data-tab="irrig"><div class="n">5</div><div class="t">💧 <span data-i18n="u_step5">Irrigation</span></div><div class="d" data-i18n="u_step5d">ET₀, besoins & planning</div><div class="arrow">›</div></div>
   </div>
 
   <!-- selection courante (globale, sur tous les onglets) -->
   <div class="card" style="padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    <span class="selbadge">Parcelle :</span>
+    <span class="selbadge" data-i18n="u_parcel_label">Parcelle :</span>
     <select id="selPick" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;font-weight:800;min-width:160px"></select>
     <b id="selName" style="display:none"></b>
     <span id="selMeta"></span>
@@ -206,47 +225,47 @@ table.dt tr.stress{background:#fdf0ee}
   <!-- ============ TAB 1 : PARCELLES ============ -->
   <section class="panel on" id="tab-parc">
     <div class="card">
-      <h2>🗺️ Parcelles <span class="pill">étape 1</span></h2>
-      <div class="lead">L'oliveraie SDA Zitouna est chargée automatiquement (13 blocs, contours réels de la base). Sélectionnez une parcelle pour l'analyser dans les étapes suivantes. Vous pouvez aussi <b>dessiner</b>, <b>importer</b> (GeoJSON / CSV) ou <b>tout effacer</b> pour travailler sur d'autres parcelles.</div>
+      <h2>🗺️ <span data-i18n="u_p1_h">Parcelles</span> <span class="pill" data-i18n="u_stepn1">étape 1</span></h2>
+      <div class="lead" data-i18n="u_p1_lead">L'oliveraie SDA Zitouna est chargée automatiquement (13 blocs, contours réels de la base). Sélectionnez une parcelle pour l'analyser dans les étapes suivantes. Vous pouvez aussi <b>dessiner</b>, <b>importer</b> (GeoJSON / CSV) ou <b>tout effacer</b> pour travailler sur d'autres parcelles.</div>
       <div class="toolbar">
-        <button class="btn primary" id="btnLoadZit">↻ Charger SDA Zitouna</button>
-        <button class="btn" id="btnImport">⬆ Importer GeoJSON/CSV</button>
-        <button class="btn" id="btnExpGeo">⬇ Exporter GeoJSON</button>
-        <button class="btn" id="btnExpCsv">⬇ Exporter CSV</button>
-        <button class="btn danger" id="btnClear">🗑 Tout effacer</button>
-        <span class="hint">Dessin : outils en haut-gauche de la carte (polygone, rectangle, pivot). Double-clic pour fermer un polygone.</span>
+        <button class="btn primary" id="btnLoadZit" data-i18n="u_btn_loadzit">↻ Charger SDA Zitouna</button>
+        <button class="btn" id="btnImport" data-i18n="u_btn_impgeo">⬆ Importer GeoJSON/CSV</button>
+        <button class="btn" id="btnExpGeo" data-i18n="u_btn_expgeo">⬇ Exporter GeoJSON</button>
+        <button class="btn" id="btnExpCsv" data-i18n="u_btn_expcsv">⬇ Exporter CSV</button>
+        <button class="btn danger" id="btnClear" data-i18n="u_btn_clear">🗑 Tout effacer</button>
+        <span class="hint" data-i18n="u_p1_drawhint">Dessin : outils en haut-gauche de la carte (polygone, rectangle, pivot). Double-clic pour fermer un polygone.</span>
       </div>
       <div class="grid2">
         <div class="mapwrap"><div id="mapParc"></div></div>
         <div>
           <div class="card" style="margin:0 0 12px;padding:12px">
-            <h2 style="font-size:.92rem">Blocs <span id="pcount" class="chip">0</span></h2>
+            <h2 style="font-size:.92rem"><span data-i18n="u_blocks">Blocs</span> <span id="pcount" class="chip">0</span></h2>
             <ul class="plist" id="plist"></ul>
           </div>
           <div class="card" id="paramCard" style="margin:0;padding:12px">
-            <h2 style="font-size:.92rem">Paramètres agronomiques</h2>
-            <div id="paramBody"><div class="hint">Sélectionnez une parcelle pour éditer sa culture, variété, année de plantation et écartement.</div></div>
+            <h2 style="font-size:.92rem" data-i18n="u_agro_params">Paramètres agronomiques</h2>
+            <div id="paramBody"><div class="hint" data-i18n="u_p1_selecthint">Sélectionnez une parcelle pour éditer sa culture, variété, année de plantation et écartement.</div></div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2>💾 Projet — sauvegarder / importer <span class="pill">toutes les données</span></h2>
-      <div class="lead">Exportez ou importez l'ensemble du cas d'usage (parcelles, cultures, sol, sources d'eau, paramètres, météo). Chaque jeu de données a aussi son export dédié (GeoJSON/CSV parcelles, CSV/JSON météo, JSON/CSV sondes).</div>
+      <h2>💾 <span data-i18n="u_proj_h">Projet — sauvegarder / importer</span> <span class="pill" data-i18n="u_proj_pill">toutes les données</span></h2>
+      <div class="lead" data-i18n="u_proj_lead">Exportez ou importez l'ensemble du cas d'usage (parcelles, cultures, sol, sources d'eau, paramètres, météo). Chaque jeu de données a aussi son export dédié (GeoJSON/CSV parcelles, CSV/JSON météo, JSON/CSV sondes).</div>
       <div class="toolbar">
-        <button class="btn primary" id="btnExpProj">⬇ Exporter le projet (JSON)</button>
-        <button class="btn" id="btnImpProj">⬆ Importer un projet (JSON)</button>
+        <button class="btn primary" id="btnExpProj" data-i18n="u_btn_expproj">⬇ Exporter le projet (JSON)</button>
+        <button class="btn" id="btnImpProj" data-i18n="u_btn_impproj">⬆ Importer un projet (JSON)</button>
       </div>
       <details style="margin-top:6px">
-        <summary style="cursor:pointer;font-weight:800;color:var(--green-d)">📄 Formats d'import / export — exemples</summary>
+        <summary style="cursor:pointer;font-weight:800;color:var(--green-d)" data-i18n="u_fmt_summary">📄 Formats d'import / export — exemples</summary>
         <div class="fmtgrid">
-          <div><div class="fmttitle">Parcelles — GeoJSON</div><pre class="fmt" id="fmtParcGeo"></pre></div>
-          <div><div class="fmttitle">Parcelles — CSV</div><pre class="fmt" id="fmtParcCsv"></pre></div>
-          <div><div class="fmttitle">Météo — CSV</div><pre class="fmt" id="fmtMeteoCsv"></pre></div>
-          <div><div class="fmttitle">Sondes — JSON (horaire imbriqué)</div><pre class="fmt" id="fmtSondeJson"></pre></div>
-          <div><div class="fmttitle">Sondes — CSV (à plat)</div><pre class="fmt" id="fmtSondeCsv"></pre></div>
-          <div><div class="fmttitle">Projet complet — JSON</div><pre class="fmt" id="fmtProj"></pre></div>
+          <div><div class="fmttitle" data-i18n="u_fmt_parcgeo">Parcelles — GeoJSON</div><pre class="fmt" id="fmtParcGeo"></pre></div>
+          <div><div class="fmttitle" data-i18n="u_fmt_parccsv">Parcelles — CSV</div><pre class="fmt" id="fmtParcCsv"></pre></div>
+          <div><div class="fmttitle" data-i18n="u_fmt_meteocsv">Météo — CSV</div><pre class="fmt" id="fmtMeteoCsv"></pre></div>
+          <div><div class="fmttitle" data-i18n="u_fmt_sondejson">Sondes — JSON (horaire imbriqué)</div><pre class="fmt" id="fmtSondeJson"></pre></div>
+          <div><div class="fmttitle" data-i18n="u_fmt_sondecsv">Sondes — CSV (à plat)</div><pre class="fmt" id="fmtSondeCsv"></pre></div>
+          <div><div class="fmttitle" data-i18n="u_fmt_proj">Projet complet — JSON</div><pre class="fmt" id="fmtProj"></pre></div>
         </div>
       </details>
     </div>
@@ -255,17 +274,17 @@ table.dt tr.stress{background:#fdf0ee}
   <!-- ============ TAB 2 : NDVI ============ -->
   <section class="panel" id="tab-ndvi">
     <div class="card">
-      <h2>🛰️ NDVI Sentinel-2 <span class="pill">étape 2</span></h2>
-      <div class="lead">Images d'indice de végétation de la parcelle entre deux dates (2 mois par défaut), <b>série temporelle</b>, interprétation et <b>diagnostic agronomique</b> pour l'olivier. Nécessite les clés Sentinel (bouton ⚙️ en bas).</div>
-      <div id="ndNoSel" class="notice warn" style="display:none">Sélectionnez d'abord une parcelle à l'étape 1.</div>
+      <h2>🛰️ <span data-i18n="u_nd_h">NDVI Sentinel-2</span> <span class="pill" data-i18n="u_stepn2">étape 2</span></h2>
+      <div class="lead" data-i18n-html="u_nd_lead">Images d'indice de végétation de la parcelle entre deux dates (2 mois par défaut), <b>série temporelle</b>, interprétation et <b>diagnostic agronomique</b> pour l'olivier. Nécessite les clés Sentinel (bouton ⚙️ en bas).</div>
+      <div id="ndNoSel" class="notice warn" style="display:none" data-i18n="u_needsel">Sélectionnez d'abord une parcelle à l'étape 1.</div>
       <div class="toolbar">
-        <div class="field" style="margin:0"><label>Du</label><input type="date" id="nd_from"></div>
-        <div class="field" style="margin:0"><label>Au</label><input type="date" id="nd_to"></div>
-        <div class="field" style="margin:0"><label>Nuages max %</label><input type="number" id="nd_cloud" value="30" style="width:90px"></div>
-        <button class="btn primary" id="nd_load">↻ Charger</button>
-        <div class="field" style="margin:0"><label>Opacité raster</label><input type="range" id="nd_op" min="0" max="100" value="80"></div>
+        <div class="field" style="margin:0"><label data-i18n="u_from">Du</label><input type="date" id="nd_from"></div>
+        <div class="field" style="margin:0"><label data-i18n="u_to">Au</label><input type="date" id="nd_to"></div>
+        <div class="field" style="margin:0"><label data-i18n="u_nd_cloud">Nuages max %</label><input type="number" id="nd_cloud" value="30" style="width:90px"></div>
+        <button class="btn primary" id="nd_load" data-i18n="u_btn_load">↻ Charger</button>
+        <div class="field" style="margin:0"><label data-i18n="u_nd_op">Opacité raster</label><input type="range" id="nd_op" min="0" max="100" value="80"></div>
       </div>
-      <div style="font-weight:800;font-size:.9rem;margin:6px 0 2px">Indice spectral <span id="nd_idxName" class="chip">NDVI</span></div>
+      <div style="font-weight:800;font-size:.9rem;margin:6px 0 2px"><span data-i18n="u_nd_spectral">Indice spectral</span> <span id="nd_idxName" class="chip">NDVI</span></div>
       <div id="nd_picker"></div>
       <div id="nd_ramp"></div>
       <div id="nd_status" class="hint" style="margin-top:6px"></div>
@@ -274,12 +293,12 @@ table.dt tr.stress{background:#fdf0ee}
       <div>
         <div class="mapwrap"><div id="ndviMap" style="height:460px;border-radius:12px;border:1px solid var(--line)"></div></div>
         <div id="nd_shown" class="notice" style="margin:8px 0"></div>
-        <div class="card"><h2 style="font-size:.95rem">Série temporelle <span id="nd_serieName" class="chip"></span> <span class="hint">— cliquez un point pour son image</span></h2><div id="nd_serie"></div></div>
+        <div class="card"><h2 style="font-size:.95rem"><span data-i18n="u_nd_serie">Série temporelle</span> <span id="nd_serieName" class="chip"></span> <span class="hint" data-i18n="u_nd_clickpt">— cliquez un point pour son image</span></h2><div id="nd_serie"></div></div>
       </div>
       <div>
         <div id="nd_kpis" class="kpirow" style="grid-template-columns:1fr 1fr"></div>
-        <div class="card"><h2 style="font-size:.95rem">🩺 Diagnostic agronomique</h2><div id="nd_diag" class="hint">Chargez une image pour l'interprétation.</div></div>
-        <div class="card"><h2 style="font-size:.95rem">Scènes disponibles <span id="nd_scnCount" class="chip"></span></h2>
+        <div class="card"><h2 style="font-size:.95rem" data-i18n="u_nd_diagt">🩺 Diagnostic agronomique</h2><div id="nd_diag" class="hint" data-i18n="u_nd_diagempty">Chargez une image pour l'interprétation.</div></div>
+        <div class="card"><h2 style="font-size:.95rem"><span data-i18n="u_nd_scenes">Scènes disponibles</span> <span id="nd_scnCount" class="chip"></span></h2>
           <div style="overflow:auto;max-height:220px"><table class="dt" id="nd_scenes"></table></div></div>
       </div>
     </div>
@@ -288,30 +307,30 @@ table.dt tr.stress{background:#fdf0ee}
   <!-- ============ TAB 3 : METEO ============ -->
   <section class="panel" id="tab-meteo">
     <div class="card">
-      <h2>🌦️ Météo — Open-Meteo <span class="pill">étape 3</span></h2>
-      <div class="lead">Données climatiques réelles de l'emplacement de la ferme (ERA5, depuis 2017) : T°, humidité, vent, rayonnement, pluie et <b>ET₀ FAO-56</b>. Elles alimentent le calcul des besoins (étape 4).</div>
+      <h2>🌦️ <span data-i18n="u_mt_h">Météo — Open-Meteo</span> <span class="pill" data-i18n="u_stepn3">étape 3</span></h2>
+      <div class="lead" data-i18n-html="u_mt_lead">Données climatiques réelles de l'emplacement de la ferme (ERA5, depuis 2017) : T°, humidité, vent, rayonnement, pluie et <b>ET₀ FAO-56</b>. Elles alimentent le calcul des besoins (étape 4).</div>
       <div class="toolbar">
-        <div class="field" style="margin:0"><label>Du</label><input type="date" id="mtFrom"></div>
-        <div class="field" style="margin:0"><label>Au</label><input type="date" id="mtTo"></div>
-        <div class="field" style="margin:0"><label>Agrégation</label>
-          <select id="mtAgg"><option value="day">Jour</option><option value="month" selected>Mois</option><option value="year">Année</option></select></div>
-        <button class="btn primary" id="mtLoad">↻ Charger la météo</button>
-        <button class="btn" id="mtImport">⬆ Importer JSON/CSV</button>
+        <div class="field" style="margin:0"><label data-i18n="u_from">Du</label><input type="date" id="mtFrom"></div>
+        <div class="field" style="margin:0"><label data-i18n="u_to">Au</label><input type="date" id="mtTo"></div>
+        <div class="field" style="margin:0"><label data-i18n="u_mt_agg">Agrégation</label>
+          <select id="mtAgg"><option value="day" data-i18n="u_day">Jour</option><option value="month" selected data-i18n="u_month">Mois</option><option value="year" data-i18n="u_year">Année</option></select></div>
+        <button class="btn primary" id="mtLoad" data-i18n="u_mt_load">↻ Charger la météo</button>
+        <button class="btn" id="mtImport" data-i18n="u_mt_import">⬆ Importer JSON/CSV</button>
         <button class="btn" id="mtCsv">⬇ CSV</button>
         <button class="btn" id="mtJson">⬇ JSON</button>
       </div>
       <div class="toolbar" style="margin-top:-4px">
-        <span class="hint">Rapide :</span>
-        <button class="btn" data-preset="cur">Année courante</button>
-        <button class="btn" data-preset="12m">12 derniers mois</button>
-        <button class="btn" data-preset="2017">Depuis 2017</button>
+        <span class="hint" data-i18n="u_quick">Rapide :</span>
+        <button class="btn" data-preset="cur" data-i18n="u_mt_cur">Année courante</button>
+        <button class="btn" data-preset="12m" data-i18n="u_mt_12m">12 derniers mois</button>
+        <button class="btn" data-preset="2017" data-i18n="u_mt_2017">Depuis 2017</button>
       </div>
       <div id="mtStatus" class="hint"></div>
     </div>
     <div id="mtKpis" class="kpirow"></div>
-    <div class="card"><h2 style="font-size:.95rem">ET₀ &amp; pluie</h2><div id="mtChart1"></div></div>
-    <div class="card"><h2 style="font-size:.95rem">Températures</h2><div id="mtChart2"></div></div>
-    <div class="card"><h2 style="font-size:.95rem">Tableau <span id="mtTblCount" class="chip"></span></h2>
+    <div class="card"><h2 style="font-size:.95rem" data-i18n="u_mt_et0rain">ET₀ &amp; pluie</h2><div id="mtChart1"></div></div>
+    <div class="card"><h2 style="font-size:.95rem" data-i18n="u_mt_temps">Températures</h2><div id="mtChart2"></div></div>
+    <div class="card"><h2 style="font-size:.95rem"><span data-i18n="u_table">Tableau</span> <span id="mtTblCount" class="chip"></span></h2>
       <div style="overflow:auto;max-height:420px"><table class="dt" id="mtTable"></table></div>
     </div>
   </section>
@@ -319,69 +338,69 @@ table.dt tr.stress{background:#fdf0ee}
   <!-- ============ TAB 4 : IRRIGATION ============ -->
   <section class="panel" id="tab-irrig">
     <div class="card">
-      <h2>💧 ET₀ &amp; besoins en irrigation <span class="pill">étape 5</span></h2>
-      <div class="lead">Bilan hydrique <b>FAO-56 jour par jour</b> pour la parcelle sélectionnée : <code>ETc = Kc·Kr·ET₀</code>, réserve du sol (TAW/RAW), et <b>planning d'irrigation guidé</b>. Modifiez un paramètre → recalcul immédiat.</div>
-      <div id="irrNoSel" class="notice warn" style="display:none">Sélectionnez d'abord une parcelle à l'étape 1.</div>
-      <div id="irrNoWx" class="notice" style="display:none">Chargement de la météo…</div>
+      <h2>💧 <span data-i18n="u_ir_h">ET₀ &amp; besoins en irrigation</span> <span class="pill" data-i18n="u_stepn5">étape 5</span></h2>
+      <div class="lead" data-i18n-html="u_ir_lead">Bilan hydrique <b>FAO-56 jour par jour</b> pour la parcelle sélectionnée : <code>ETc = Kc·Kr·ET₀</code>, réserve du sol (TAW/RAW), et <b>planning d'irrigation guidé</b>. Modifiez un paramètre → recalcul immédiat.</div>
+      <div id="irrNoSel" class="notice warn" style="display:none" data-i18n="u_needsel">Sélectionnez d'abord une parcelle à l'étape 1.</div>
+      <div id="irrNoWx" class="notice" style="display:none" data-i18n="u_loadingwx">Chargement de la météo…</div>
     </div>
 
     <div class="grid2" id="irrGrid">
       <div>
         <div id="irrKpis" class="kpirow"></div>
-        <div class="card"><h2 style="font-size:.95rem">Réserve du sol &amp; irrigations</h2><div id="irrChart"></div>
-          <div class="hint" style="margin-top:6px">La courbe descend quand le sol se vide (ET). Quand elle atteint le seuil <b>RFU</b> (pointillé orange), une irrigation ramène le sol à la capacité au champ. Sous le seuil = stress.</div>
+        <div class="card"><h2 style="font-size:.95rem" data-i18n="u_ir_reserve">Réserve du sol &amp; irrigations</h2><div id="irrChart"></div>
+          <div class="hint" style="margin-top:6px" data-i18n-html="u_ir_reservehint">La courbe descend quand le sol se vide (ET). Quand elle atteint le seuil <b>RFU</b> (pointillé orange), une irrigation ramène le sol à la capacité au champ. Sous le seuil = stress.</div>
         </div>
-        <div class="card"><h2 style="font-size:.95rem">📅 Planning d'irrigation <span id="irrPlanCount" class="chip"></span></h2>
-          <div class="hint" style="margin-bottom:8px">Dates recommandées, dose et durée de pompage (selon le débit des sources).</div>
+        <div class="card"><h2 style="font-size:.95rem">📅 <span data-i18n="u_ir_plan">Planning d'irrigation</span> <span id="irrPlanCount" class="chip"></span></h2>
+          <div class="hint" style="margin-bottom:8px" data-i18n="u_ir_planhint">Dates recommandées, dose et durée de pompage (selon le débit des sources).</div>
           <div id="irrPlanNote" class="notice" style="margin-bottom:8px"></div>
           <div id="irrGantt" style="margin-bottom:12px"></div>
           <div style="overflow:auto;max-height:300px"><table class="dt" id="irrPlan"></table></div>
-          <div class="toolbar" style="margin-top:10px"><button class="btn" id="irrPlanCsv">⬇ Planning CSV</button><button class="btn" id="irrDailyCsv">⬇ Bilan quotidien CSV</button></div>
+          <div class="toolbar" style="margin-top:10px"><button class="btn" id="irrPlanCsv" data-i18n="u_ir_plancsv">⬇ Planning CSV</button><button class="btn" id="irrDailyCsv" data-i18n="u_ir_dailycsv">⬇ Bilan quotidien CSV</button></div>
         </div>
-        <div class="card"><h2 style="font-size:.95rem">📊 Résumé mensuel</h2>
+        <div class="card"><h2 style="font-size:.95rem" data-i18n="u_ir_monthly">📊 Résumé mensuel</h2>
           <div style="overflow:auto"><table class="dt" id="irrMonth"></table></div>
         </div>
-        <div class="card"><h2 style="font-size:.95rem">Bilan quotidien détaillé <span id="irrDailyCount" class="chip"></span></h2>
+        <div class="card"><h2 style="font-size:.95rem"><span data-i18n="u_ir_dailyt">Bilan quotidien détaillé</span> <span id="irrDailyCount" class="chip"></span></h2>
           <div style="overflow:auto;max-height:420px"><table class="dt" id="irrDaily"></table></div>
         </div>
       </div>
 
       <div>
         <div class="card" style="margin:0 0 12px;padding:13px">
-          <h2 style="font-size:.92rem">Paramètres — culture</h2>
-          <div class="field"><label>Culture (Kc FAO-56)</label><select id="ir_crop"></select></div>
-          <div class="field"><label>Couverture du sol Kr (%) — hyper-intensif</label><input id="ir_kr" type="number" value="75"></div>
-          <div class="field"><label>Début de saison (Kc)</label><input id="ir_seed" type="date"></div>
+          <h2 style="font-size:.92rem" data-i18n="u_ir_pcrop">Paramètres — culture</h2>
+          <div class="field"><label data-i18n="u_ir_crop">Culture (Kc FAO-56)</label><select id="ir_crop"></select></div>
+          <div class="field"><label data-i18n="u_ir_kr">Couverture du sol Kr (%) — hyper-intensif</label><input id="ir_kr" type="number" value="75"></div>
+          <div class="field"><label data-i18n="u_ir_seed">Début de saison (Kc)</label><input id="ir_seed" type="date"></div>
           <div class="hint" id="ir_kcinfo"></div>
         </div>
         <div class="card" style="margin:0 0 12px;padding:13px">
-          <h2 style="font-size:.92rem">Stratégie d'irrigation</h2>
-          <div class="field"><label>Mode</label><select id="ir_strat">
-            <option value="freq" selected>Goutte-à-goutte haute fréquence</option>
-            <option value="rfu">Au seuil RFU (déficit, doses fortes)</option></select></div>
-          <div class="field" id="ir_intWrap"><label>Intervalle cible (jours)</label><input id="ir_int" type="number" min="1" max="14" value="2"></div>
-          <div class="field"><label>Durée max par passe (h) — fractionnement <span id="ir_passAuto" class="chip"></span></label><input id="ir_maxpass" type="number" min="0" max="24" step="0.5" value="6"></div>
-          <div class="hint">Haute fréquence = petites doses tous les N jours (goutte-à-goutte / hyper-intensif). Sur <b>sol lourd (argileux)</b>, une passe trop longue ruisselle : elle est <b>fractionnée</b> automatiquement (ex. 12 h → 2×6 h) avec ressuyage. 0 = pas de fractionnement.</div>
+          <h2 style="font-size:.92rem" data-i18n="u_ir_strategy">Stratégie d'irrigation</h2>
+          <div class="field"><label data-i18n="u_ir_mode">Mode</label><select id="ir_strat">
+            <option value="freq" selected data-i18n="u_ir_freq">Goutte-à-goutte haute fréquence</option>
+            <option value="rfu" data-i18n="u_ir_rfu">Au seuil RFU (déficit, doses fortes)</option></select></div>
+          <div class="field" id="ir_intWrap"><label data-i18n="u_ir_interval">Intervalle cible (jours)</label><input id="ir_int" type="number" min="1" max="14" value="2"></div>
+          <div class="field"><label><span data-i18n="u_ir_maxpass">Durée max par passe (h) — fractionnement</span> <span id="ir_passAuto" class="chip"></span></label><input id="ir_maxpass" type="number" min="0" max="24" step="0.5" value="6"></div>
+          <div class="hint" data-i18n-html="u_ir_maxpasshint">Haute fréquence = petites doses tous les N jours (goutte-à-goutte / hyper-intensif). Sur <b>sol lourd (argileux)</b>, une passe trop longue ruisselle : elle est <b>fractionnée</b> automatiquement (ex. 12 h → 2×6 h) avec ressuyage. 0 = pas de fractionnement.</div>
         </div>
         <div class="card" style="margin:0 0 12px;padding:13px">
-          <h2 style="font-size:.92rem">Paramètres — sol</h2>
-          <div class="field"><label>Texture</label><select id="ir_tex"></select></div>
-          <div class="field"><label>Profondeur racinaire Zr (m)</label><input id="ir_zr" type="number" step="0.1" value="1.2"></div>
-          <div class="field"><label>Fraction de tarissement p (RFU/RU)</label><input id="ir_p" type="number" step="0.05" value="0.65"></div>
-          <div class="field"><label>Efficience du système (%)</label><input id="ir_eff" type="number" value="90"></div>
+          <h2 style="font-size:.92rem" data-i18n="u_ir_psoil">Paramètres — sol</h2>
+          <div class="field"><label data-i18n="u_ir_tex">Texture</label><select id="ir_tex"></select></div>
+          <div class="field"><label data-i18n="u_ir_zr">Profondeur racinaire Zr (m)</label><input id="ir_zr" type="number" step="0.1" value="1.2"></div>
+          <div class="field"><label data-i18n="u_ir_p">Fraction de tarissement p (RFU/RU)</label><input id="ir_p" type="number" step="0.05" value="0.65"></div>
+          <div class="field"><label data-i18n="u_ir_eff">Efficience du système (%)</label><input id="ir_eff" type="number" value="90"></div>
           <div class="hint" id="ir_soilinfo"></div>
         </div>
         <div class="card" style="margin:0 0 12px;padding:13px">
-          <h2 style="font-size:.92rem">Période</h2>
-          <div class="field"><label>Du</label><input type="date" id="ir_from"></div>
-          <div class="field"><label>Au</label><input type="date" id="ir_to"></div>
-          <button class="btn" id="ir_seasonBtn" style="width:100%">Saison d'irrigation (avr→oct)</button>
+          <h2 style="font-size:.92rem" data-i18n="u_period">Période</h2>
+          <div class="field"><label data-i18n="u_from">Du</label><input type="date" id="ir_from"></div>
+          <div class="field"><label data-i18n="u_to">Au</label><input type="date" id="ir_to"></div>
+          <button class="btn" id="ir_seasonBtn" style="width:100%" data-i18n="u_ir_season">Saison d'irrigation (avr→oct)</button>
         </div>
         <div class="card" style="margin:0;padding:13px">
-          <h2 style="font-size:.92rem">💦 Sources d'eau &amp; débit</h2>
-          <div class="hint" style="margin-bottom:8px">Sert à calculer la <b>durée</b> d'irrigation et la faisabilité.</div>
+          <h2 style="font-size:.92rem" data-i18n="u_ir_sources">💦 Sources d'eau &amp; débit</h2>
+          <div class="hint" style="margin-bottom:8px" data-i18n-html="u_ir_srchint">Sert à calculer la <b>durée</b> d'irrigation et la faisabilité.</div>
           <div id="ir_sources"></div>
-          <button class="btn" id="ir_addSrc" style="width:100%;margin-top:6px">+ Ajouter une source</button>
+          <button class="btn" id="ir_addSrc" style="width:100%;margin-top:6px" data-i18n="u_ir_addsrc">+ Ajouter une source</button>
           <div class="hint" id="ir_srcInfo" style="margin-top:8px"></div>
         </div>
       </div>
@@ -391,13 +410,13 @@ table.dt tr.stress{background:#fdf0ee}
   <!-- ============ TAB 5 : SOL ============ -->
   <section class="panel" id="tab-sol">
     <div class="card">
-      <h2>🌱 Sondes de sol <span class="pill">étape 4</span></h2>
-      <div class="lead">Importez un fichier de sondes (format horaire imbriqué type <code>olivier_soil_horaire.json</code>, ou CSV/JSON à plat), visualisez humidité / température / salinité par profondeur, interprétez, puis <b>exportez</b> la version corrigée.</div>
+      <h2>🌱 <span data-i18n="u_so_h">Sondes de sol</span> <span class="pill" data-i18n="u_stepn4">étape 4</span></h2>
+      <div class="lead" data-i18n-html="u_so_lead">Importez un fichier de sondes (format horaire imbriqué type <code>olivier_soil_horaire.json</code>, ou CSV/JSON à plat), visualisez humidité / température / salinité par profondeur, interprétez, puis <b>exportez</b> la version corrigée.</div>
       <div class="toolbar">
-        <button class="btn primary" id="soImport">⬆ Importer un fichier</button>
-        <button class="btn" id="soExportJson">⬇ Exporter JSON</button>
-        <button class="btn" id="soExportCsv">⬇ Exporter CSV</button>
-        <a class="btn" href="sondes-iot.html" target="_blank">↗ Tableau de bord sondes complet</a>
+        <button class="btn primary" id="soImport" data-i18n="u_so_import">⬆ Importer un fichier</button>
+        <button class="btn" id="soExportJson" data-i18n="u_so_expjson">⬇ Exporter JSON</button>
+        <button class="btn" id="soExportCsv" data-i18n="u_so_expcsv">⬇ Exporter CSV</button>
+        <a class="btn" href="sondes-iot.html" target="_blank" data-i18n="u_so_dashboard">↗ Tableau de bord sondes complet</a>
       </div>
       <div id="soStatus" class="hint"></div>
     </div>
@@ -405,57 +424,58 @@ table.dt tr.stress{background:#fdf0ee}
     <div class="grid2" id="soGrid" style="display:none">
       <div>
         <div id="soKpis" class="kpirow"></div>
-        <div class="card"><h2 style="font-size:.95rem" id="soChartTitle">Série temporelle</h2><div id="soChart"></div>
+        <div class="card"><h2 style="font-size:.95rem" id="soChartTitle" data-i18n="u_nd_serie">Série temporelle</h2><div id="soChart"></div>
           <div id="soInterp" class="hint" style="margin-top:8px"></div>
         </div>
-        <div class="card"><h2 style="font-size:.95rem">Profil vertical (moyenne par profondeur)</h2><div id="soProfile"></div></div>
+        <div class="card"><h2 style="font-size:.95rem" data-i18n="u_so_profile">Profil vertical (moyenne par profondeur)</h2><div id="soProfile"></div></div>
       </div>
       <div>
         <div class="card" style="margin:0 0 12px;padding:13px">
-          <h2 style="font-size:.92rem">Sélection</h2>
-          <div class="field"><label>Site</label><select id="so_site"></select></div>
-          <div class="field"><label>Mesure</label><select id="so_meas">
-            <option value="moisture">Humidité (%VWC)</option>
-            <option value="temperature">Température (°C)</option>
-            <option value="salinity">Salinité (dS/m)</option></select></div>
-          <div class="field"><label>Profondeurs (cm)</label><div id="so_depths" class="hint"></div></div>
-          <div class="field"><label>Période</label>
+          <h2 style="font-size:.92rem" data-i18n="u_selection">Sélection</h2>
+          <div class="field"><label data-i18n="u_site">Site</label><select id="so_site"></select></div>
+          <div class="field"><label data-i18n="u_measure">Mesure</label><select id="so_meas">
+            <option value="moisture" data-i18n="u_meas_moisture">Humidité (%VWC)</option>
+            <option value="temperature" data-i18n="u_meas_temp">Température (°C)</option>
+            <option value="salinity" data-i18n="u_meas_salin">Salinité (dS/m)</option></select></div>
+          <div class="field"><label data-i18n="u_depths">Profondeurs (cm)</label><div id="so_depths" class="hint"></div></div>
+          <div class="field"><label data-i18n="u_period">Période</label>
             <div class="row"><input type="date" id="so_from"><input type="date" id="so_to"></div></div>
         </div>
         <div class="card" style="margin:0;padding:13px">
-          <h2 style="font-size:.92rem">Seuils sol (humidité)</h2>
+          <h2 style="font-size:.92rem" data-i18n="u_so_thresholds">Seuils sol (humidité)</h2>
           <div class="hint" id="so_texinfo"></div>
-          <div class="hint" style="margin-top:6px">Seuils issus de l'<b>Analyse du sol</b> ci-dessous (CC / RFU / PF). Modifiez-les là.</div>
+          <div class="hint" style="margin-top:6px" data-i18n-html="u_so_threshhint">Seuils issus de l'<b>Analyse du sol</b> ci-dessous (CC / RFU / PF). Modifiez-les là.</div>
         </div>
       </div>
     </div>
 
     <div class="card" id="soAnalyse">
-      <h2 style="font-size:.95rem">🧪 Analyse du sol <span class="pill">source unique</span></h2>
+      <h2 style="font-size:.95rem">🧪 <span data-i18n="u_an_h">Analyse du sol</span> <span class="pill" data-i18n="u_an_pill">source unique</span></h2>
       <div class="toolbar">
-        <button class="btn primary" id="an_api">↻ Récupérer via SoilGrids</button>
-        <div class="field" style="margin:0"><label>Ou choisir une texture (12 classes)</label><select id="an_tex" style="min-width:240px"></select></div>
+        <button class="btn primary" id="an_api" data-i18n="u_an_api">↻ Récupérer via SoilGrids</button>
+        <div class="field" style="margin:0"><label data-i18n="u_an_choosetex">Ou choisir une texture (12 classes)</label><select id="an_tex" style="min-width:240px"></select></div>
       </div>
       <div id="an_src" class="hint" style="margin-bottom:10px"></div>
 
-      <div class="soilgrp">Texture du sol — proportions (modifiables)</div>
+      <div class="soilgrp" data-i18n="u_an_prop">Texture du sol — proportions (modifiables)</div>
       <div class="tilerow" id="an_prop"></div>
 
-      <div class="soilgrp">Propriétés hydriques — CC / PF modifiables → réserve utile</div>
+      <div class="soilgrp" data-i18n="u_an_hydro">Propriétés hydriques — CC / PF modifiables → réserve utile</div>
       <div class="tilerow" id="an_hydro"></div>
 
       <div class="toolbar" style="margin-top:12px">
-        <div class="field" style="margin:0"><label>Profondeur racinaire Zr (m)</label><input id="an_zr" type="number" step="0.1" value="1.2" style="width:110px"></div>
-        <div class="field" style="margin:0"><label>Fraction tarissement p</label><input id="an_p" type="number" step="0.05" value="0.65" style="width:100px"></div>
+        <div class="field" style="margin:0"><label data-i18n="u_ir_zr">Profondeur racinaire Zr (m)</label><input id="an_zr" type="number" step="0.1" value="1.2" style="width:110px"></div>
+        <div class="field" style="margin:0"><label data-i18n="u_an_p">Fraction tarissement p</label><input id="an_p" type="number" step="0.05" value="0.65" style="width:100px"></div>
       </div>
-      <div class="notice" style="margin-top:8px">CC et PF alimentent directement le <b>bilan hydrique</b> et les <b>seuils d'irrigation</b> (étape 4). Modifiez les proportions, la texture ou CC/PF → les besoins en eau se recalculent.</div>
+      <div class="notice" style="margin-top:8px" data-i18n-html="u_an_notice">CC et PF alimentent directement le <b>bilan hydrique</b> et les <b>seuils d'irrigation</b> (étape 4). Modifiez les proportions, la texture ou CC/PF → les besoins en eau se recalculent.</div>
     </div>
   </section>
 
-  <div class="footer">EU4Skills · AgriTech Libya — cas d'usage oliveraie · données parcelles : BD_SDA_ZITOUNA · météo : Open-Meteo · imagerie : Sentinel-2</div>
+  <div class="footer" data-i18n="u_footer">EU4Skills · AgriTech Libya — cas d'usage oliveraie · données parcelles : BD_SDA_ZITOUNA · météo : Open-Meteo · imagerie : Sentinel-2</div>
 </div>
 
 <!-- Bases partagées de la plateforme -->
+<script src="platform/public/assets/i18n/i18n.js"></script>
 <script src="platform/public/assets/js/crops.js"></script>
 <script src="platform/public/assets/js/store.js"></script>
 <script src="platform/public/assets/js/agrimap-draw.js"></script>
@@ -480,6 +500,367 @@ const ECART_DEF = {
   koroneiki:{ecart:2.0, interrang:5.0, couvert:40},
   _def:{ecart:6.0, interrang:6.0, couvert:35}
 };
+
+/* ============================================================
+   I18N — dictionnaire trilingue de la page (AR / EN / FR)
+   S'appuie sur le moteur partagé platform/public/assets/i18n/i18n.js
+   ============================================================ */
+const t  = k => I18N.t(k);
+function T(k, map){ let s = I18N.t(k); if(map) for(const p in map) s = s.split('%{'+p+'}').join(map[p]); return s; }
+function pick(o){ return o ? (o[I18N.lang] || o.fr || o.en) : null; }
+function NLoc(){ return I18N.lang==='en' ? 'en-US' : 'fr'; }               // séparateur de milliers
+function DLoc(){ return {fr:'fr', en:'en', ar:'ar-TN'}[I18N.lang] || 'fr'; } // noms de mois/jours
+function nfmt(n){ return Number(n).toLocaleString(NLoc()); }
+function applyHTML(root){ (root||document).querySelectorAll('[data-i18n-html]').forEach(el=> el.innerHTML = I18N.t(el.getAttribute('data-i18n-html'))); }
+
+Object.assign(I18N.DICT, {
+  /* --- Header / flux --- */
+  u_title:{fr:"De la parcelle à l'irrigation", ar:"من القطعة إلى الري", en:"From parcel to irrigation"},
+  u_sub:{fr:"SDA Zitouna · oliveraie · Testour (36.4617, 10.0057) — flux guidé : parcelle → NDVI → météo → sol → irrigation", ar:"مزرعة زيتونة · بستان زيتون · تستور (36.4617, 10.0057) — مسار موجّه: القطعة ← NDVI ← المناخ ← التربة ← الري", en:"SDA Zitouna · olive grove · Testour (36.4617, 10.0057) — guided flow: parcel → NDVI → weather → soil → irrigation"},
+  u_home:{fr:"← Accueil", ar:"← الرئيسية", en:"← Home"},
+  u_step1:{fr:"Parcelles", ar:"القطع", en:"Parcels"},
+  u_step1d:{fr:"Charger / dessiner les contours", ar:"تحميل / رسم الحدود", en:"Load / draw boundaries"},
+  u_step2:{fr:"NDVI Sentinel", ar:"NDVI سنتينل", en:"NDVI Sentinel"},
+  u_step2d:{fr:"Vigueur, série & diagnostic", ar:"الحيوية، السلسلة والتشخيص", en:"Vigour, series & diagnosis"},
+  u_step3:{fr:"Météo", ar:"المناخ", en:"Weather"},
+  u_step3d:{fr:"Open-Meteo depuis 2017", ar:"Open-Meteo منذ 2017", en:"Open-Meteo since 2017"},
+  u_step4:{fr:"Sol & sondes", ar:"التربة والمجسّات", en:"Soil & probes"},
+  u_step4d:{fr:"Analyses & capteurs", ar:"التحاليل وأجهزة الاستشعار", en:"Analyses & sensors"},
+  u_step5:{fr:"Irrigation", ar:"الري", en:"Irrigation"},
+  u_step5d:{fr:"ET₀, besoins & planning", ar:"ET₀، الاحتياجات والجدولة", en:"ET₀, needs & schedule"},
+  u_parcel_label:{fr:"Parcelle :", ar:"القطعة:", en:"Parcel:"},
+  u_stepn1:{fr:"étape 1", ar:"الخطوة 1", en:"step 1"},
+  u_stepn2:{fr:"étape 2", ar:"الخطوة 2", en:"step 2"},
+  u_stepn3:{fr:"étape 3", ar:"الخطوة 3", en:"step 3"},
+  u_stepn4:{fr:"étape 4", ar:"الخطوة 4", en:"step 4"},
+  u_stepn5:{fr:"étape 5", ar:"الخطوة 5", en:"step 5"},
+
+  /* --- communs --- */
+  u_from:{fr:"Du", ar:"من", en:"From"},
+  u_to:{fr:"Au", ar:"إلى", en:"To"},
+  u_period:{fr:"Période", ar:"الفترة", en:"Period"},
+  u_table:{fr:"Tableau", ar:"الجدول", en:"Table"},
+  u_quick:{fr:"Rapide :", ar:"سريع:", en:"Quick:"},
+  u_day:{fr:"Jour", ar:"يوم", en:"Day"},
+  u_month:{fr:"Mois", ar:"شهر", en:"Month"},
+  u_year:{fr:"Année", ar:"سنة", en:"Year"},
+  u_needsel:{fr:"Sélectionnez d'abord une parcelle à l'étape 1.", ar:"اختر أولاً قطعة في الخطوة 1.", en:"First select a parcel in step 1."},
+  u_nodata:{fr:"Aucune donnée.", ar:"لا توجد بيانات.", en:"No data."},
+  u_hover:{fr:"Survolez le graphique…", ar:"مرّر فوق الرسم…", en:"Hover over the chart…"},
+  u_error:{fr:"Erreur :", ar:"خطأ:", en:"Error:"},
+
+  /* --- étape 1 : parcelles --- */
+  u_p1_h:{fr:"Parcelles", ar:"القطع", en:"Parcels"},
+  u_p1_lead:{fr:"L'oliveraie SDA Zitouna est chargée automatiquement (13 blocs, contours réels de la base). Sélectionnez une parcelle pour l'analyser dans les étapes suivantes. Vous pouvez aussi <b>dessiner</b>, <b>importer</b> (GeoJSON / CSV) ou <b>tout effacer</b> pour travailler sur d'autres parcelles.", ar:"بستان زيتون مزرعة زيتونة يُحمَّل تلقائياً (13 كتلة، حدود حقيقية من قاعدة البيانات). اختر قطعة لتحليلها في الخطوات التالية. يمكنك أيضاً <b>الرسم</b> أو <b>الاستيراد</b> (GeoJSON / CSV) أو <b>مسح الكل</b> للعمل على قطع أخرى.", en:"The SDA Zitouna olive grove loads automatically (13 blocks, real boundaries from the database). Select a parcel to analyse it in the next steps. You can also <b>draw</b>, <b>import</b> (GeoJSON / CSV) or <b>clear all</b> to work on other parcels."},
+  u_btn_loadzit:{fr:"↻ Charger SDA Zitouna", ar:"↻ تحميل مزرعة زيتونة", en:"↻ Load SDA Zitouna"},
+  u_btn_impgeo:{fr:"⬆ Importer GeoJSON/CSV", ar:"⬆ استيراد GeoJSON/CSV", en:"⬆ Import GeoJSON/CSV"},
+  u_btn_expgeo:{fr:"⬇ Exporter GeoJSON", ar:"⬇ تصدير GeoJSON", en:"⬇ Export GeoJSON"},
+  u_btn_expcsv:{fr:"⬇ Exporter CSV", ar:"⬇ تصدير CSV", en:"⬇ Export CSV"},
+  u_btn_clear:{fr:"🗑 Tout effacer", ar:"🗑 مسح الكل", en:"🗑 Clear all"},
+  u_p1_drawhint:{fr:"Dessin : outils en haut-gauche de la carte (polygone, rectangle, pivot). Double-clic pour fermer un polygone.", ar:"الرسم: الأدوات أعلى يسار الخريطة (مضلّع، مستطيل، دوران). نقر مزدوج لإغلاق المضلّع.", en:"Drawing: tools at the top-left of the map (polygon, rectangle, rotate). Double-click to close a polygon."},
+  u_blocks:{fr:"Blocs", ar:"كتل", en:"Blocks"},
+  u_agro_params:{fr:"Paramètres agronomiques", ar:"المعطيات الزراعية", en:"Agronomic parameters"},
+  u_p1_selecthint:{fr:"Sélectionnez une parcelle pour éditer sa culture, variété, année de plantation et écartement.", ar:"اختر قطعة لتعديل محصولها وصنفها وسنة الغرس والمسافات.", en:"Select a parcel to edit its crop, variety, planting year and spacing."},
+  u_proj_h:{fr:"Projet — sauvegarder / importer", ar:"المشروع — حفظ / استيراد", en:"Project — save / import"},
+  u_proj_pill:{fr:"toutes les données", ar:"كل البيانات", en:"all data"},
+  u_proj_lead:{fr:"Exportez ou importez l'ensemble du cas d'usage (parcelles, cultures, sol, sources d'eau, paramètres, météo). Chaque jeu de données a aussi son export dédié (GeoJSON/CSV parcelles, CSV/JSON météo, JSON/CSV sondes).", ar:"صدّر أو استورد كامل حالة الاستخدام (القطع، المحاصيل، التربة، مصادر المياه، المعطيات، المناخ). لكل مجموعة بيانات تصديرها الخاص أيضاً (GeoJSON/CSV للقطع، CSV/JSON للمناخ، JSON/CSV للمجسّات).", en:"Export or import the whole use case (parcels, crops, soil, water sources, parameters, weather). Each dataset also has its own dedicated export (GeoJSON/CSV parcels, CSV/JSON weather, JSON/CSV probes)."},
+  u_btn_expproj:{fr:"⬇ Exporter le projet (JSON)", ar:"⬇ تصدير المشروع (JSON)", en:"⬇ Export project (JSON)"},
+  u_btn_impproj:{fr:"⬆ Importer un projet (JSON)", ar:"⬆ استيراد مشروع (JSON)", en:"⬆ Import a project (JSON)"},
+  u_fmt_summary:{fr:"📄 Formats d'import / export — exemples", ar:"📄 صيغ الاستيراد / التصدير — أمثلة", en:"📄 Import / export formats — examples"},
+  u_fmt_parcgeo:{fr:"Parcelles — GeoJSON", ar:"القطع — GeoJSON", en:"Parcels — GeoJSON"},
+  u_fmt_parccsv:{fr:"Parcelles — CSV", ar:"القطع — CSV", en:"Parcels — CSV"},
+  u_fmt_meteocsv:{fr:"Météo — CSV", ar:"المناخ — CSV", en:"Weather — CSV"},
+  u_fmt_sondejson:{fr:"Sondes — JSON (horaire imbriqué)", ar:"المجسّات — JSON (ساعي متداخل)", en:"Probes — JSON (nested hourly)"},
+  u_fmt_sondecsv:{fr:"Sondes — CSV (à plat)", ar:"المجسّات — CSV (مسطّح)", en:"Probes — CSV (flat)"},
+  u_fmt_proj:{fr:"Projet complet — JSON", ar:"المشروع الكامل — JSON", en:"Full project — JSON"},
+  u_no_parcel:{fr:"Aucune parcelle. Chargez Zitouna ou dessinez.", ar:"لا توجد قطعة. حمّل زيتونة أو ارسم.", en:"No parcel. Load Zitouna or draw."},
+  u_no_parcel_opt:{fr:"— aucune parcelle —", ar:"— لا توجد قطعة —", en:"— no parcel —"},
+  u_no_selection:{fr:"— (aucune sélection)", ar:"— (لا اختيار)", en:"— (no selection)"},
+  u_draw_hint:{fr:"Dessinez une parcelle ou importez un fichier.", ar:"ارسم قطعة أو استورد ملفاً.", en:"Draw a parcel or import a file."},
+  u_toast_zit:{fr:"SDA Zitouna chargée — %{n} blocs.", ar:"تم تحميل مزرعة زيتونة — %{n} كتلة.", en:"SDA Zitouna loaded — %{n} blocks."},
+  u_alert_loadfail:{fr:"Impossible de charger %{u}\n%{m}\n\nOuvrez la page via un serveur HTTP (pas file://).", ar:"تعذّر تحميل %{u}\n%{m}\n\nافتح الصفحة عبر خادم HTTP (ليس file://).", en:"Could not load %{u}\n%{m}\n\nOpen the page via an HTTP server (not file://)."},
+  u_toast_imp:{fr:"%{n} parcelle(s) importée(s).", ar:"تم استيراد %{n} قطعة.", en:"%{n} parcel(s) imported."},
+  u_err_import:{fr:"Import :", ar:"استيراد:", en:"Import:"},
+  u_confirm_clear:{fr:"Effacer toutes les parcelles de la carte ? (les fichiers data/ ne sont pas touchés)", ar:"مسح كل القطع من الخريطة؟ (ملفات data/ لن تُمَسّ)", en:"Clear all parcels from the map? (data/ files are not affected)"},
+  u_err_json:{fr:"JSON invalide :", ar:"JSON غير صالح:", en:"Invalid JSON:"},
+  u_toast_proj:{fr:"Projet importé.", ar:"تم استيراد المشروع.", en:"Project imported."},
+  u_err_impproj:{fr:"Import projet :", ar:"استيراد المشروع:", en:"Project import:"},
+
+  /* --- paramètres parcelle --- */
+  u_pa_crop:{fr:"Culture", ar:"المحصول", en:"Crop"},
+  u_pa_var:{fr:"Variété", ar:"الصنف", en:"Variety"},
+  u_pa_year:{fr:"Date / année de plantation", ar:"تاريخ / سنة الغرس", en:"Planting date / year"},
+  u_pa_pieds:{fr:"Nombre de pieds (réel)", ar:"عدد الأشجار (فعلي)", en:"Number of trees (actual)"},
+  u_pa_ecart:{fr:"Écartement (m) — inter-rang × sur-rang", ar:"المسافات (م) — بين الصفوف × داخل الصف", en:"Spacing (m) — inter-row × in-row"},
+  u_pa_cover:{fr:"Couverture du sol / Kr (%)", ar:"تغطية التربة / Kr (%)", en:"Ground cover / Kr (%)"},
+  u_age:{fr:"Âge ≈ <b>%{n} ans</b> · ", ar:"العمر ≈ <b>%{n} سنة</b> · ", en:"Age ≈ <b>%{n} yrs</b> · "},
+  u_density:{fr:"densité <b>%{n} pl/ha</b> · ", ar:"الكثافة <b>%{n} شجرة/هك</b> · ", en:"density <b>%{n} pl/ha</b> · "},
+  u_trees_c:{fr:"<b>%{n} pieds</b> · ", ar:"<b>%{n} شجرة</b> · ", en:"<b>%{n} trees</b> · "},
+  u_planted_area:{fr:"surface plantée <b>%{a} ha</b>. Source : BD_SDA_ZITOUNA.<br>Alimente le calcul des besoins (étape 4).", ar:"المساحة المغروسة <b>%{a} هك</b>. المصدر: BD_SDA_ZITOUNA.<br>تُغذّي حساب الاحتياجات (الخطوة 4).", en:"planted area <b>%{a} ha</b>. Source: BD_SDA_ZITOUNA.<br>Feeds the needs calculation (step 4)."},
+  u_planted:{fr:"planté %{y}", ar:"غُرِس %{y}", en:"planted %{y}"},
+  u_trees:{fr:"%{n} pieds", ar:"%{n} شجرة", en:"%{n} trees"},
+  u_plha:{fr:"%{n} pl/ha", ar:"%{n} شجرة/هك", en:"%{n} pl/ha"},
+
+  /* --- étape 2 : NDVI --- */
+  u_nd_h:{fr:"NDVI Sentinel-2", ar:"NDVI Sentinel-2", en:"NDVI Sentinel-2"},
+  u_nd_lead:{fr:"Images d'indice de végétation de la parcelle entre deux dates (2 mois par défaut), <b>série temporelle</b>, interprétation et <b>diagnostic agronomique</b> pour l'olivier. Nécessite les clés Sentinel (bouton ⚙️ en bas).", ar:"صور مؤشر الغطاء النباتي للقطعة بين تاريخين (شهران افتراضياً)، <b>سلسلة زمنية</b>، تفسير و<b>تشخيص زراعي</b> للزيتون. يتطلب مفاتيح Sentinel (زر ⚙️ بالأسفل).", en:"Vegetation-index images of the parcel between two dates (2 months by default), <b>time series</b>, interpretation and <b>agronomic diagnosis</b> for the olive tree. Requires Sentinel keys (⚙️ button below)."},
+  u_nd_cloud:{fr:"Nuages max %", ar:"الغيوم القصوى %", en:"Max clouds %"},
+  u_btn_load:{fr:"↻ Charger", ar:"↻ تحميل", en:"↻ Load"},
+  u_nd_op:{fr:"Opacité raster", ar:"شفافية الصورة", en:"Raster opacity"},
+  u_nd_spectral:{fr:"Indice spectral", ar:"المؤشر الطيفي", en:"Spectral index"},
+  u_nd_serie:{fr:"Série temporelle", ar:"سلسلة زمنية", en:"Time series"},
+  u_nd_clickpt:{fr:"— cliquez un point pour son image", ar:"— انقر نقطة لعرض صورتها", en:"— click a point for its image"},
+  u_nd_diagt:{fr:"🩺 Diagnostic agronomique", ar:"🩺 التشخيص الزراعي", en:"🩺 Agronomic diagnosis"},
+  u_nd_diagempty:{fr:"Chargez une image pour l'interprétation.", ar:"حمّل صورة للحصول على التفسير.", en:"Load an image for interpretation."},
+  u_nd_scenes:{fr:"Scènes disponibles", ar:"المشاهد المتاحة", en:"Available scenes"},
+  u_nd_reqserie:{fr:"Requête Sentinel Hub (série)…", ar:"طلب Sentinel Hub (السلسلة)…", en:"Sentinel Hub request (series)…"},
+  u_nd_okserie:{fr:"✓ %{n} scène(s) exploitable(s) · %{f} → %{t} — cliquez une date pour afficher son image", ar:"✓ %{n} مشهد قابل للاستغلال · %{f} ← %{t} — انقر تاريخاً لعرض صورته", en:"✓ %{n} usable scene(s) · %{f} → %{t} — click a date to show its image"},
+  u_nd_errkeys:{fr:"Erreur : %{m} — vérifiez les clés Sentinel (⚙️).", ar:"خطأ: %{m} — تحقّق من مفاتيح Sentinel (⚙️).", en:"Error: %{m} — check the Sentinel keys (⚙️)."},
+  u_nd_loadimg:{fr:"Chargement image %{s}…", ar:"تحميل صورة %{s}…", en:"Loading image %{s}…"},
+  u_nd_shown:{fr:"🖼️ Image affichée : <b>%{s}</b> · %{x} <span class=\"hint\">(cliquez une autre date dans « Scènes disponibles »)</span>", ar:"🖼️ الصورة المعروضة: <b>%{s}</b> · %{x} <span class=\"hint\">(انقر تاريخاً آخر في «المشاهد المتاحة»)</span>", en:"🖼️ Image shown: <b>%{s}</b> · %{x} <span class=\"hint\">(click another date in “Available scenes”)</span>"},
+  u_nd_imgok:{fr:"✓ image %{s} chargée", ar:"✓ تم تحميل صورة %{s}", en:"✓ image %{s} loaded"},
+  u_nd_imgerr:{fr:"Image %{s} : %{m}", ar:"صورة %{s} : %{m}", en:"Image %{s}: %{m}"},
+  u_nd_kpi_cur:{fr:"%{x} actuel", ar:"%{x} الحالي", en:"%{x} current"},
+  u_nd_kpi_mean:{fr:"Moyenne", ar:"المتوسط", en:"Mean"},
+  u_nd_kpi_min:{fr:"Min", ar:"الأدنى", en:"Min"},
+  u_nd_kpi_max:{fr:"Max", ar:"الأقصى", en:"Max"},
+  u_nd_scene_tip:{fr:"Afficher l'image de cette date", ar:"عرض صورة هذا التاريخ", en:"Show this date's image"},
+  u_nd_diag_nodata:{fr:"Aucune donnée exploitable (couvert nuageux ? élargir la période ou augmenter le seuil nuages).", ar:"لا بيانات قابلة للاستغلال (غطاء سحابي؟ وسّع الفترة أو ارفع عتبة الغيوم).", en:"No usable data (cloud cover? widen the period or raise the cloud threshold)."},
+  u_nd_trend_up:{fr:"📈 tendance à la <b>hausse</b> (reprise de vigueur / croissance).", ar:"📈 اتجاه <b>صاعد</b> (استعادة الحيوية / نمو).", en:"📈 <b>upward</b> trend (recovery / growth)."},
+  u_nd_trend_down:{fr:"📉 tendance à la <b>baisse</b> (sénescence, stress ou récolte).", ar:"📉 اتجاه <b>هابط</b> (شيخوخة، إجهاد أو حصاد).", en:"📉 <b>downward</b> trend (senescence, stress or harvest)."},
+  u_nd_trend_stable:{fr:"➡️ vigueur <b>stable</b>.", ar:"➡️ حيوية <b>مستقرّة</b>.", en:"➡️ <b>stable</b> vigour."},
+  u_nd_cls_verylow:{fr:"<b>Très faible</b> — sol nu dominant ou stress sévère.", ar:"<b>ضعيفة جداً</b> — تربة عارية غالبة أو إجهاد شديد.", en:"<b>Very low</b> — dominant bare soil or severe stress."},
+  u_nd_cls_low:{fr:"<b>Faible</b> — verger clairsemé / jeune, ou stress hydrique probable.", ar:"<b>ضعيفة</b> — بستان متناثر / فتيّ، أو إجهاد مائي محتمل.", en:"<b>Low</b> — sparse / young grove, or likely water stress."},
+  u_nd_cls_mod:{fr:"<b>Modérée</b> — valeur typique d'une oliveraie (canopée ouverte + sol).", ar:"<b>متوسطة</b> — قيمة نموذجية لبستان زيتون (مظلّة مفتوحة + تربة).", en:"<b>Moderate</b> — typical of an olive grove (open canopy + soil)."},
+  u_nd_cls_good:{fr:"<b>Bonne</b> vigueur — canopée dense et active.", ar:"<b>حيوية جيدة</b> — مظلّة كثيفة ونشطة.", en:"<b>Good</b> vigour — dense, active canopy."},
+  u_nd_cls_verygood:{fr:"<b>Très bonne</b> vigueur / forte couverture foliaire.", ar:"<b>حيوية ممتازة</b> / تغطية ورقية عالية.", en:"<b>Very good</b> vigour / high leaf cover."},
+  u_nd_diag_ndvi:{fr:"NDVI %{v} → %{c} %{tr}<br><span class=\"hint\">Olivier : la canopée ouverte dilue le NDVI avec le sol — comparer entre parcelles et suivre l'évolution plutôt que la valeur absolue. Croiser avec l'humidité du sol (étape 5) et l'ET₀ (étape 3).</span>", ar:"NDVI %{v} → %{c} %{tr}<br><span class=\"hint\">الزيتون: المظلّة المفتوحة تخفّف NDVI بالتربة — قارن بين القطع وتابع التطوّر بدل القيمة المطلقة. اربطها برطوبة التربة (الخطوة 5) وET₀ (الخطوة 3).</span>", en:"NDVI %{v} → %{c} %{tr}<br><span class=\"hint\">Olive: the open canopy dilutes NDVI with soil — compare between parcels and track the trend rather than the absolute value. Cross-check with soil moisture (step 5) and ET₀ (step 3).</span>"},
+  u_nd_diag_ndre:{fr:"NDRE %{v} — indicateur de teneur en chlorophylle / azote. %{tr} Une baisse peut signaler une carence ou un stress avant le NDVI.", ar:"NDRE %{v} — مؤشّر محتوى الكلوروفيل / الآزوت. %{tr} قد يشير الانخفاض إلى نقص أو إجهاد قبل NDVI.", en:"NDRE %{v} — chlorophyll / nitrogen content indicator. %{tr} A drop may signal a deficiency or stress before NDVI."},
+  u_nd_diag_ndmi:{fr:"NDMI %{v} — teneur en eau de la canopée. %{tr} Valeurs basses = stress hydrique : déclencher/vérifier l'irrigation (étape 4).", ar:"NDMI %{v} — محتوى ماء المظلّة. %{tr} القيم المنخفضة = إجهاد مائي: ابدأ/تحقّق من الري (الخطوة 4).", en:"NDMI %{v} — canopy water content. %{tr} Low values = water stress: trigger/check irrigation (step 4)."},
+  u_grp_thermal:{fr:"Thermique", ar:"حراري", en:"Thermal"},
+  u_nd_lst_sub:{fr:"Température surface", ar:"حرارة السطح", en:"Surface temperature"},
+  u_nd_lst_tip:{fr:"Nécessite Landsat/MODIS — pas de bande thermique sur Sentinel-2", ar:"يتطلب Landsat/MODIS — لا نطاق حراري في Sentinel-2", en:"Requires Landsat/MODIS — no thermal band on Sentinel-2"},
+
+  /* --- étape 3 : météo --- */
+  u_mt_h:{fr:"Météo — Open-Meteo", ar:"المناخ — Open-Meteo", en:"Weather — Open-Meteo"},
+  u_mt_lead:{fr:"Données climatiques réelles de l'emplacement de la ferme (ERA5, depuis 2017) : T°, humidité, vent, rayonnement, pluie et <b>ET₀ FAO-56</b>. Elles alimentent le calcul des besoins (étape 4).", ar:"بيانات مناخية حقيقية لموقع المزرعة (ERA5، منذ 2017): الحرارة، الرطوبة، الرياح، الإشعاع، المطر و<b>ET₀ FAO-56</b>. تُغذّي حساب الاحتياجات (الخطوة 4).", en:"Real climate data for the farm location (ERA5, since 2017): temperature, humidity, wind, radiation, rain and <b>ET₀ FAO-56</b>. They feed the needs calculation (step 4)."},
+  u_mt_agg:{fr:"Agrégation", ar:"التجميع", en:"Aggregation"},
+  u_mt_load:{fr:"↻ Charger la météo", ar:"↻ تحميل المناخ", en:"↻ Load weather"},
+  u_mt_import:{fr:"⬆ Importer JSON/CSV", ar:"⬆ استيراد JSON/CSV", en:"⬆ Import JSON/CSV"},
+  u_mt_cur:{fr:"Année courante", ar:"السنة الحالية", en:"Current year"},
+  u_mt_12m:{fr:"12 derniers mois", ar:"آخر 12 شهراً", en:"Last 12 months"},
+  u_mt_2017:{fr:"Depuis 2017", ar:"منذ 2017", en:"Since 2017"},
+  u_mt_et0rain:{fr:"ET₀ & pluie", ar:"ET₀ والمطر", en:"ET₀ & rain"},
+  u_mt_temps:{fr:"Températures", ar:"درجات الحرارة", en:"Temperatures"},
+  u_mt_loading:{fr:"Chargement Open-Meteo…", ar:"جارٍ تحميل Open-Meteo…", en:"Loading Open-Meteo…"},
+  u_mt_ok:{fr:"✓ %{n} jours · altitude %{a} m · point ERA5 %{lat}, %{lng}", ar:"✓ %{n} يوم · الارتفاع %{a} م · نقطة ERA5 %{lat}، %{lng}", en:"✓ %{n} days · altitude %{a} m · ERA5 point %{lat}, %{lng}"},
+  u_mt_clamped:{fr:" · <span style=\"color:var(--warn)\">fin plafonnée au %{s} (archive ERA5 ~5 j de retard)</span>", ar:" · <span style=\"color:var(--warn)\">النهاية محدّدة إلى %{s} (أرشيف ERA5 بتأخّر ~5 أيام)</span>", en:" · <span style=\"color:var(--warn)\">end capped at %{s} (ERA5 archive ~5-day lag)</span>"},
+  u_mt_empty:{fr:"réponse vide", ar:"استجابة فارغة", en:"empty response"},
+  u_kpi_et0cum:{fr:"ET₀ cumulée", ar:"ET₀ التراكمي", en:"Cumulative ET₀"},
+  u_kpi_raincum:{fr:"Pluie cumulée", ar:"المطر التراكمي", en:"Cumulative rain"},
+  u_kpi_deficit:{fr:"Déficit (ET₀−P)", ar:"العجز (ET₀−P)", en:"Deficit (ET₀−P)"},
+  u_kpi_tmaxavg:{fr:"T max moyenne", ar:"متوسط الحرارة العظمى", en:"Mean max T"},
+  u_kpi_tminavg:{fr:"T min moyenne", ar:"متوسط الحرارة الصغرى", en:"Mean min T"},
+  u_kpi_rhavg:{fr:"HR moyenne", ar:"متوسط الرطوبة", en:"Mean RH"},
+  u_lbl_rain:{fr:"Pluie (mm)", ar:"المطر (مم)", en:"Rain (mm)"},
+  u_lbl_et0:{fr:"ET₀ (mm)", ar:"ET₀ (مم)", en:"ET₀ (mm)"},
+  u_lbl_tmax:{fr:"T max", ar:"الحرارة العظمى", en:"Max T"},
+  u_lbl_tmean:{fr:"T moy", ar:"الحرارة المتوسطة", en:"Mean T"},
+  u_lbl_tmin:{fr:"T min", ar:"الحرارة الصغرى", en:"Min T"},
+  u_th_rh:{fr:"HR %", ar:"الرطوبة %", en:"RH %"},
+  u_th_wind:{fr:"Vent", ar:"الرياح", en:"Wind"},
+  u_th_rad:{fr:"Ray. MJ", ar:"الإشعاع MJ", en:"Rad. MJ"},
+  u_th_et0mm:{fr:"ET₀ mm", ar:"ET₀ مم", en:"ET₀ mm"},
+  u_th_rainmm:{fr:"Pluie mm", ar:"المطر مم", en:"Rain mm"},
+  u_per_year:{fr:"/an", ar:"/سنة", en:"/yr"},
+  u_per_month:{fr:"/mois", ar:"/شهر", en:"/mo"},
+  u_per_day:{fr:"/j", ar:"/يوم", en:"/day"},
+  u_rows:{fr:"%{n} lignes", ar:"%{n} سطر", en:"%{n} rows"},
+  u_mt_unrecognized:{fr:"aucune donnée reconnue (attendu : colonnes date,tmax_C,… ou {daily:[...]})", ar:"لا بيانات معروفة (المتوقّع: أعمدة date,tmax_C,… أو {daily:[...]})", en:"no recognised data (expected: columns date,tmax_C,… or {daily:[...]})"},
+  u_mt_imported:{fr:"✓ importé : %{n} jours (%{s})", ar:"✓ مستورد: %{n} يوم (%{s})", en:"✓ imported: %{n} days (%{s})"},
+
+  /* --- étape 5 : irrigation --- */
+  u_ir_h:{fr:"ET₀ & besoins en irrigation", ar:"ET₀ واحتياجات الري", en:"ET₀ & irrigation needs"},
+  u_ir_lead:{fr:"Bilan hydrique <b>FAO-56 jour par jour</b> pour la parcelle sélectionnée : <code>ETc = Kc·Kr·ET₀</code>, réserve du sol (TAW/RAW), et <b>planning d'irrigation guidé</b>. Modifiez un paramètre → recalcul immédiat.", ar:"الميزان المائي <b>FAO-56 يوماً بيوم</b> للقطعة المختارة: <code>ETc = Kc·Kr·ET₀</code>، مخزون التربة (TAW/RAW)، و<b>جدولة ري موجّهة</b>. عدّل معطىً ← إعادة حساب فورية.", en:"<b>Day-by-day FAO-56</b> water balance for the selected parcel: <code>ETc = Kc·Kr·ET₀</code>, soil reserve (TAW/RAW), and a <b>guided irrigation schedule</b>. Change a parameter → immediate recalculation."},
+  u_loadingwx:{fr:"Chargement de la météo…", ar:"جارٍ تحميل المناخ…", en:"Loading weather…"},
+  u_ir_reserve:{fr:"Réserve du sol & irrigations", ar:"مخزون التربة والريّات", en:"Soil reserve & irrigations"},
+  u_ir_reservehint:{fr:"La courbe descend quand le sol se vide (ET). Quand elle atteint le seuil <b>RFU</b> (pointillé orange), une irrigation ramène le sol à la capacité au champ. Sous le seuil = stress.", ar:"ينخفض المنحنى عندما تفرغ التربة (البخر-نتح). عند بلوغ عتبة <b>RFU</b> (خط برتقالي متقطع) تُعيد ريّة التربة إلى السعة الحقلية. تحت العتبة = إجهاد.", en:"The curve drops as the soil empties (ET). When it reaches the <b>RAW</b> threshold (orange dashes), an irrigation returns the soil to field capacity. Below the threshold = stress."},
+  u_ir_plan:{fr:"Planning d'irrigation", ar:"جدولة الري", en:"Irrigation schedule"},
+  u_ir_planhint:{fr:"Dates recommandées, dose et durée de pompage (selon le débit des sources).", ar:"التواريخ الموصى بها، الجرعة ومدة الضخ (حسب تدفّق المصادر).", en:"Recommended dates, dose and pumping duration (based on source flow rate)."},
+  u_ir_plancsv:{fr:"⬇ Planning CSV", ar:"⬇ الجدولة CSV", en:"⬇ Schedule CSV"},
+  u_ir_dailycsv:{fr:"⬇ Bilan quotidien CSV", ar:"⬇ الميزان اليومي CSV", en:"⬇ Daily balance CSV"},
+  u_ir_monthly:{fr:"📊 Résumé mensuel", ar:"📊 ملخّص شهري", en:"📊 Monthly summary"},
+  u_ir_dailyt:{fr:"Bilan quotidien détaillé", ar:"الميزان اليومي المفصّل", en:"Detailed daily balance"},
+  u_ir_pcrop:{fr:"Paramètres — culture", ar:"المعطيات — المحصول", en:"Parameters — crop"},
+  u_ir_crop:{fr:"Culture (Kc FAO-56)", ar:"المحصول (Kc FAO-56)", en:"Crop (Kc FAO-56)"},
+  u_ir_kr:{fr:"Couverture du sol Kr (%) — hyper-intensif", ar:"تغطية التربة Kr (%) — فائق الكثافة", en:"Ground cover Kr (%) — hyper-intensive"},
+  u_ir_seed:{fr:"Début de saison (Kc)", ar:"بداية الموسم (Kc)", en:"Season start (Kc)"},
+  u_ir_strategy:{fr:"Stratégie d'irrigation", ar:"استراتيجية الري", en:"Irrigation strategy"},
+  u_ir_mode:{fr:"Mode", ar:"الوضع", en:"Mode"},
+  u_ir_freq:{fr:"Goutte-à-goutte haute fréquence", ar:"تنقيط عالي التردد", en:"High-frequency drip"},
+  u_ir_rfu:{fr:"Au seuil RFU (déficit, doses fortes)", ar:"عند عتبة RFU (عجز، جرعات قوية)", en:"At RAW threshold (deficit, large doses)"},
+  u_ir_interval:{fr:"Intervalle cible (jours)", ar:"الفاصل المستهدف (أيام)", en:"Target interval (days)"},
+  u_ir_maxpass:{fr:"Durée max par passe (h) — fractionnement", ar:"المدة القصوى للدورة (ساعة) — تجزئة", en:"Max duration per pass (h) — splitting"},
+  u_ir_maxpasshint:{fr:"Haute fréquence = petites doses tous les N jours (goutte-à-goutte / hyper-intensif). Sur <b>sol lourd (argileux)</b>, une passe trop longue ruisselle : elle est <b>fractionnée</b> automatiquement (ex. 12 h → 2×6 h) avec ressuyage. 0 = pas de fractionnement.", ar:"التردد العالي = جرعات صغيرة كل N يوم (تنقيط / فائق الكثافة). على <b>تربة ثقيلة (طينية)</b>، الدورة الطويلة جداً تنساب سطحياً: تُجزّأ <b>تلقائياً</b> (مثال 12 س ← 2×6 س) مع فترة تصفية. 0 = بلا تجزئة.", en:"High frequency = small doses every N days (drip / hyper-intensive). On <b>heavy (clay) soil</b>, a pass that is too long runs off: it is <b>split</b> automatically (e.g. 12 h → 2×6 h) with a draining pause. 0 = no splitting."},
+  u_ir_psoil:{fr:"Paramètres — sol", ar:"المعطيات — التربة", en:"Parameters — soil"},
+  u_ir_tex:{fr:"Texture", ar:"القوام", en:"Texture"},
+  u_ir_zr:{fr:"Profondeur racinaire Zr (m)", ar:"عمق الجذور Zr (م)", en:"Root depth Zr (m)"},
+  u_ir_p:{fr:"Fraction de tarissement p (RFU/RU)", ar:"معامل النضوب p (RFU/RU)", en:"Depletion fraction p (RAW/AW)"},
+  u_ir_eff:{fr:"Efficience du système (%)", ar:"كفاءة النظام (%)", en:"System efficiency (%)"},
+  u_ir_season:{fr:"Saison d'irrigation (avr→oct)", ar:"موسم الري (أبريل←أكتوبر)", en:"Irrigation season (Apr→Oct)"},
+  u_ir_sources:{fr:"💦 Sources d'eau & débit", ar:"💦 مصادر المياه والتدفّق", en:"💦 Water sources & flow"},
+  u_ir_srchint:{fr:"Sert à calculer la <b>durée</b> d'irrigation et la faisabilité.", ar:"يُستخدم لحساب <b>مدة</b> الري وجدواه.", en:"Used to compute irrigation <b>duration</b> and feasibility."},
+  u_ir_addsrc:{fr:"+ Ajouter une source", ar:"+ إضافة مصدر", en:"+ Add a source"},
+  u_kpi_netneed:{fr:"Besoin net", ar:"الحاجة الصافية", en:"Net need"},
+  u_kpi_grossneed:{fr:"Besoin brut", ar:"الحاجة الإجمالية", en:"Gross need"},
+  u_kpi_totvol:{fr:"Volume total", ar:"الحجم الإجمالي", en:"Total volume"},
+  u_kpi_irrig:{fr:"Irrigations", ar:"الريّات", en:"Irrigations"},
+  u_kpi_peakpump:{fr:"Pompage/irrig. (pic)", ar:"الضخ/ريّة (الذروة)", en:"Pumping/irrig. (peak)"},
+  u_kpi_et0rain:{fr:"ET₀ / Pluie", ar:"ET₀ / المطر", en:"ET₀ / Rain"},
+  u_lbl_availwater:{fr:"Eau disponible (mm)", ar:"الماء المتاح (مم)", en:"Available water (mm)"},
+  u_lbl_rfu:{fr:"Seuil RFU", ar:"عتبة RFU", en:"RAW threshold"},
+  u_lbl_irrgross:{fr:"Irrigation brute (mm)", ar:"الري الإجمالي (مم)", en:"Gross irrigation (mm)"},
+  u_th_date:{fr:"Date", ar:"التاريخ", en:"Date"},
+  u_th_dosenet:{fr:"Dose nette mm", ar:"الجرعة الصافية مم", en:"Net dose mm"},
+  u_th_dosegross:{fr:"Dose brute mm", ar:"الجرعة الإجمالية مم", en:"Gross dose mm"},
+  u_th_volume:{fr:"Volume m³", ar:"الحجم م³", en:"Volume m³"},
+  u_th_pumpdur:{fr:"Durée pompage h", ar:"مدة الضخ س", en:"Pumping time h"},
+  u_n_irrig:{fr:"%{n} irrigations", ar:"%{n} ريّة", en:"%{n} irrigations"},
+  u_plan_infeasible:{fr:"⚠ %{n} irrigation(s) dépassent les <b>%{h} h/j</b> disponibles (durée = temps de pompage pour toute la parcelle de %{a} ha). Pour les rendre réalistes : <b>sectoriser</b> la parcelle, <b>ajouter des sources</b>, ou porter le débit à ≈ <b>%{d} m³/h</b>. Débit actuel : %{c} m³/h.", ar:"⚠ %{n} ريّة تتجاوز <b>%{h} س/يوم</b> المتاحة (المدة = زمن ضخ كامل القطعة البالغة %{a} هك). لجعلها واقعية: <b>تقسيم</b> القطعة إلى قطاعات، <b>إضافة مصادر</b>، أو رفع التدفّق إلى ≈ <b>%{d} م³/س</b>. التدفّق الحالي: %{c} م³/س.", en:"⚠ %{n} irrigation(s) exceed the <b>%{h} h/day</b> available (duration = pumping time for the whole %{a}-ha parcel). To make them realistic: <b>split</b> the parcel into sectors, <b>add sources</b>, or raise the flow to ≈ <b>%{d} m³/h</b>. Current flow: %{c} m³/h."},
+  u_plan_feasible:{fr:"✅ Planning faisable avec le débit actuel (%{c} m³/h · %{h} h/j). Pic : %{p} h/irrigation.", ar:"✅ الجدولة ممكنة بالتدفّق الحالي (%{c} م³/س · %{h} س/يوم). الذروة: %{p} س/ريّة.", en:"✅ Schedule feasible with the current flow (%{c} m³/h · %{h} h/day). Peak: %{p} h/irrigation."},
+  u_plan_split:{fr:" · 🔀 <b>%{n}</b> irrigation(s) fractionnée(s) en plusieurs passes (sol %{s}, infiltration %{i} mm/h) pour éviter le ruissellement.", ar:" · 🔀 <b>%{n}</b> ريّة مجزّأة إلى عدة دورات (تربة %{s}، تسرّب %{i} مم/س) لتفادي الجريان السطحي.", en:" · 🔀 <b>%{n}</b> irrigation(s) split into several passes (soil %{s}, infiltration %{i} mm/h) to avoid runoff."},
+  u_suggested:{fr:"suggéré %{n} h", ar:"مقترح %{n} س", en:"suggested %{n} h"},
+  u_th_rain:{fr:"Pluie", ar:"المطر", en:"Rain"},
+  u_th_irr:{fr:"Irrig.", ar:"ريّ", en:"Irrig."},
+  u_th_reserve:{fr:"Réserve util. mm", ar:"الرصيد المستعمَل مم", en:"Used reserve mm"},
+  u_th_rupct:{fr:"RU %", ar:"الرصيد %", en:"AW %"},
+  u_th_state:{fr:"État", ar:"الحالة", en:"State"},
+  u_st_irr:{fr:"💧 irrig.", ar:"💧 ريّ", en:"💧 irrig."},
+  u_st_stress:{fr:"⚠ stress", ar:"⚠ إجهاد", en:"⚠ stress"},
+  u_st_pilot:{fr:"pilotage", ar:"متابعة", en:"monitoring"},
+  u_st_confort:{fr:"confort", ar:"ارتياح", en:"comfort"},
+  u_n_days:{fr:"%{n} jours", ar:"%{n} يوم", en:"%{n} days"},
+  u_kcinfo:{fr:"Kc (FAO-56) : ini %{i} · mi %{m} · fin %{f} · Kr %{k}% → <b>ETc = Kc·Kr·ET₀</b>", ar:"Kc (FAO-56): بداية %{i} · وسط %{m} · نهاية %{f} · Kr %{k}% ← <b>ETc = Kc·Kr·ET₀</b>", en:"Kc (FAO-56): ini %{i} · mid %{m} · end %{f} · Kr %{k}% → <b>ETc = Kc·Kr·ET₀</b>"},
+  u_soilinfo:{fr:"θCC %{cc}% · θPF %{pf}% · Zr %{z} m → <b>RU %{ru} mm</b>, RFU %{rfu} mm", ar:"θCC %{cc}% · θPF %{pf}% · Zr %{z} م ← <b>RU %{ru} مم</b>، RFU %{rfu} مم", en:"θFC %{cc}% · θWP %{pf}% · Zr %{z} m → <b>AW %{ru} mm</b>, RAW %{rfu} mm"},
+  u_th_month:{fr:"Mois", ar:"الشهر", en:"Month"},
+  u_th_etcmm:{fr:"ETc mm", ar:"ETc مم", en:"ETc mm"},
+  u_th_irrnet:{fr:"Irrig. nette mm", ar:"الري الصافي مم", en:"Net irrig. mm"},
+  u_th_nirr:{fr:"Nb irrig.", ar:"عدد الريّات", en:"# irrig."},
+  u_gantt_none:{fr:"Aucune irrigation à planifier sur la période.", ar:"لا ريّ للجدولة في هذه الفترة.", en:"No irrigation to schedule over the period."},
+  u_gantt_title:{fr:"Gantt — %{s}", ar:"غانت — %{s}", en:"Gantt — %{s}"},
+  u_gantt_hint:{fr:"longueur = durée de pompage · couleur/label = dose · barres multiples = fractionnement (ressuyage %{r} h)", ar:"الطول = مدة الضخ · اللون/التسمية = الجرعة · أشرطة متعددة = تجزئة (تصفية %{r} س)", en:"length = pumping duration · colour/label = dose · multiple bars = splitting (draining %{r} h)"},
+  u_gantt_pass:{fr:"%{d} — passe %{k}/%{n} : %{h} h · %{v} m³", ar:"%{d} — دورة %{k}/%{n} : %{h} س · %{v} م³", en:"%{d} — pass %{k}/%{n}: %{h} h · %{v} m³"},
+  u_gantt_passes:{fr:" · %{n} passes", ar:" · %{n} دورات", en:" · %{n} passes"},
+  u_srcinfo:{fr:"Débit total : <b>%{d} m³/h</b> · %{h} h/j max · capacité <b>%{c} m³/jour</b>", ar:"التدفّق الإجمالي: <b>%{d} م³/س</b> · %{h} س/يوم كحد أقصى · السعة <b>%{c} م³/يوم</b>", en:"Total flow: <b>%{d} m³/h</b> · %{h} h/day max · capacity <b>%{c} m³/day</b>"},
+  u_src_name:{fr:"Nom de la source", ar:"اسم المصدر", en:"Source name"},
+  u_src_del:{fr:"✕ suppr.", ar:"✕ حذف", en:"✕ del."},
+  u_src_default:{fr:"Source %{n}", ar:"مصدر %{n}", en:"Source %{n}"},
+
+  /* --- étape 4 : sol & sondes --- */
+  u_so_h:{fr:"Sondes de sol", ar:"مجسّات التربة", en:"Soil probes"},
+  u_so_lead:{fr:"Importez un fichier de sondes (format horaire imbriqué type <code>olivier_soil_horaire.json</code>, ou CSV/JSON à plat), visualisez humidité / température / salinité par profondeur, interprétez, puis <b>exportez</b> la version corrigée.", ar:"استورد ملف مجسّات (صيغة ساعية متداخلة من نوع <code>olivier_soil_horaire.json</code>، أو CSV/JSON مسطّح)، اعرض الرطوبة / الحرارة / الملوحة حسب العمق، فسّر، ثم <b>صدّر</b> النسخة المصحّحة.", en:"Import a probe file (nested hourly format like <code>olivier_soil_horaire.json</code>, or flat CSV/JSON), view moisture / temperature / salinity by depth, interpret, then <b>export</b> the corrected version."},
+  u_so_import:{fr:"⬆ Importer un fichier", ar:"⬆ استيراد ملف", en:"⬆ Import a file"},
+  u_so_expjson:{fr:"⬇ Exporter JSON", ar:"⬇ تصدير JSON", en:"⬇ Export JSON"},
+  u_so_expcsv:{fr:"⬇ Exporter CSV", ar:"⬇ تصدير CSV", en:"⬇ Export CSV"},
+  u_so_dashboard:{fr:"↗ Tableau de bord sondes complet", ar:"↗ لوحة تحكم المجسّات الكاملة", en:"↗ Full probe dashboard"},
+  u_so_profile:{fr:"Profil vertical (moyenne par profondeur)", ar:"المقطع العمودي (المتوسط حسب العمق)", en:"Vertical profile (average per depth)"},
+  u_selection:{fr:"Sélection", ar:"الاختيار", en:"Selection"},
+  u_site:{fr:"Site", ar:"الموقع", en:"Site"},
+  u_measure:{fr:"Mesure", ar:"القياس", en:"Measurement"},
+  u_meas_moisture:{fr:"Humidité (%VWC)", ar:"الرطوبة (%VWC)", en:"Moisture (%VWC)"},
+  u_meas_temp:{fr:"Température (°C)", ar:"الحرارة (°C)", en:"Temperature (°C)"},
+  u_meas_salin:{fr:"Salinité (dS/m)", ar:"الملوحة (dS/m)", en:"Salinity (dS/m)"},
+  u_meas_moist_s:{fr:"Humidité", ar:"الرطوبة", en:"Moisture"},
+  u_meas_temp_s:{fr:"Température", ar:"الحرارة", en:"Temperature"},
+  u_meas_salin_s:{fr:"Salinité", ar:"الملوحة", en:"Salinity"},
+  u_meas_precip_s:{fr:"Précipitations", ar:"التساقطات", en:"Precipitation"},
+  u_depths:{fr:"Profondeurs (cm)", ar:"الأعماق (سم)", en:"Depths (cm)"},
+  u_so_thresholds:{fr:"Seuils sol (humidité)", ar:"عتبات التربة (الرطوبة)", en:"Soil thresholds (moisture)"},
+  u_so_threshhint:{fr:"Seuils issus de l'<b>Analyse du sol</b> ci-dessous (CC / RFU / PF). Modifiez-les là.", ar:"العتبات مستمدّة من <b>تحليل التربة</b> أدناه (CC / RFU / PF). عدّلها هناك.", en:"Thresholds derived from the <b>Soil analysis</b> below (FC / RAW / WP). Edit them there."},
+  u_so_moistonly:{fr:"Seuils affichés uniquement pour l'humidité.", ar:"العتبات معروضة للرطوبة فقط.", en:"Thresholds shown for moisture only."},
+  u_so_texinfo:{fr:"%{t} · CC %{cc}% · RFU %{rfu}% · PF %{pf}% (%VWC)", ar:"%{t} · CC %{cc}% · RFU %{rfu}% · PF %{pf}% (%VWC)", en:"%{t} · FC %{cc}% · RAW %{rfu}% · WP %{pf}% (%VWC)"},
+  u_last_suffix:{fr:"%{d} cm — dernier", ar:"%{d} سم — آخر", en:"%{d} cm — latest"},
+  u_interp:{fr:"Interprétation (%{d} cm)", ar:"التفسير (%{d} سم)", en:"Interpretation (%{d} cm)"},
+  u_so_msg_over:{fr:"💧 Sol au-dessus de la capacité au champ — risque de drainage/excès.", ar:"💧 التربة فوق السعة الحقلية — خطر تصريف/فيض.", en:"💧 Soil above field capacity — drainage/excess risk."},
+  u_so_msg_comfort:{fr:"✅ Zone de confort (entre RFU et CC) — pas d'irrigation nécessaire.", ar:"✅ منطقة ارتياح (بين RFU وCC) — لا حاجة للري.", en:"✅ Comfort zone (between RAW and FC) — no irrigation needed."},
+  u_so_msg_raw:{fr:"⚠ Sous le seuil RFU — irrigation recommandée avant l'entrée en stress.", ar:"⚠ تحت عتبة RFU — يُنصح بالري قبل دخول الإجهاد.", en:"⚠ Below the RAW threshold — irrigation recommended before stress sets in."},
+  u_so_msg_wp:{fr:"🔴 Sous le point de flétrissement — stress hydrique sévère.", ar:"🔴 تحت نقطة الذبول — إجهاد مائي شديد.", en:"🔴 Below the wilting point — severe water stress."},
+  u_so_interp_tail:{fr:" Valeur %{v} %VWC · CC %{cc} · RFU %{rfu} · PF %{pf}.", ar:" القيمة %{v} %VWC · CC %{cc} · RFU %{rfu} · PF %{pf}.", en:" Value %{v} %VWC · FC %{cc} · RAW %{rfu} · WP %{pf}."},
+  u_so_sites:{fr:"✓ %{n} site(s) · %{r} · fichier %{f}", ar:"✓ %{n} موقع · %{r} · ملف %{f}", en:"✓ %{n} site(s) · %{r} · file %{f}"},
+  u_so_reading:{fr:"Lecture de %{f} (%{s} Mo)…", ar:"قراءة %{f} (%{s} م.ب)…", en:"Reading %{f} (%{s} MB)…"},
+  u_unrecognized:{fr:"aucune donnée reconnue", ar:"لا بيانات معروفة", en:"no recognised data"},
+  u_toast_sondes:{fr:"Sondes importées : %{n} site(s).", ar:"تم استيراد المجسّات: %{n} موقع.", en:"Probes imported: %{n} site(s)."},
+  u_an_h:{fr:"Analyse du sol", ar:"تحليل التربة", en:"Soil analysis"},
+  u_an_pill:{fr:"source unique", ar:"مصدر وحيد", en:"single source"},
+  u_an_api:{fr:"↻ Récupérer via SoilGrids", ar:"↻ الجلب عبر SoilGrids", en:"↻ Fetch via SoilGrids"},
+  u_an_choosetex:{fr:"Ou choisir une texture (12 classes)", ar:"أو اختر قواماً (12 صنفاً)", en:"Or choose a texture (12 classes)"},
+  u_an_prop:{fr:"Texture du sol — proportions (modifiables)", ar:"قوام التربة — النسب (قابلة للتعديل)", en:"Soil texture — proportions (editable)"},
+  u_an_hydro:{fr:"Propriétés hydriques — CC / PF modifiables → réserve utile", ar:"الخصائص المائية — CC / PF قابلة للتعديل ← الرصيد المائي المتاح", en:"Hydraulic properties — FC / WP editable → available water"},
+  u_an_p:{fr:"Fraction tarissement p", ar:"معامل النضوب p", en:"Depletion fraction p"},
+  u_an_notice:{fr:"CC et PF alimentent directement le <b>bilan hydrique</b> et les <b>seuils d'irrigation</b> (étape 4). Modifiez les proportions, la texture ou CC/PF → les besoins en eau se recalculent.", ar:"يُغذّي CC وPF مباشرةً <b>الميزان المائي</b> و<b>عتبات الري</b> (الخطوة 4). عدّل النسب أو القوام أو CC/PF ← تُعاد الاحتياجات المائية حسابها.", en:"FC and WP directly feed the <b>water balance</b> and the <b>irrigation thresholds</b> (step 4). Change the proportions, texture or FC/WP → the water needs are recomputed."},
+  u_soil_fetching:{fr:"⏳ Récupération SoilGrids…", ar:"⏳ جلب SoilGrids…", en:"⏳ Fetching SoilGrids…"},
+  u_soil_error:{fr:"⚠ SoilGrids inaccessible (%{m}) — valeurs par défaut du type de sol. Choisissez une texture ou saisissez CC/PF manuellement.", ar:"⚠ SoilGrids غير متاح (%{m}) — القيم الافتراضية لنوع التربة. اختر قواماً أو أدخِل CC/PF يدوياً.", en:"⚠ SoilGrids unavailable (%{m}) — default values for the soil type. Choose a texture or enter FC/WP manually."},
+  u_toast_soil:{fr:"Sol chargé depuis SoilGrids.", ar:"تم تحميل التربة من SoilGrids.", en:"Soil loaded from SoilGrids."},
+  u_soil_missing:{fr:"valeurs manquantes", ar:"قيم مفقودة", en:"missing values"},
+  u_src_manual:{fr:"Défaut / manuel", ar:"افتراضي / يدوي", en:"Default / manual"},
+  u_src_texchosen:{fr:"Texture choisie : %{s}", ar:"قوام مختار: %{s}", en:"Chosen texture: %{s}"},
+  u_src_propman:{fr:"Proportions manuelles → %{s}", ar:"نسب يدوية ← %{s}", en:"Manual proportions → %{s}"},
+  u_src_ccpfman:{fr:"CC/PF manuels", ar:"CC/PF يدوي", en:"Manual FC/WP"},
+  u_src_default_soil:{fr:"Défaut (argilo-limoneux)", ar:"افتراضي (طَمْيي طيني)", en:"Default (clay loam)"},
+  u_soil_src_line:{fr:"Source : <b>%{s}</b> · type de sol : <b>%{t}</b>", ar:"المصدر: <b>%{s}</b> · نوع التربة: <b>%{t}</b>", en:"Source: <b>%{s}</b> · soil type: <b>%{t}</b>"},
+  u_clay:{fr:"Argile", ar:"طين", en:"Clay"},
+  u_sand:{fr:"Sable", ar:"رمل", en:"Sand"},
+  u_silt:{fr:"Limon", ar:"غرين", en:"Silt"},
+  u_cc:{fr:"Capacité au champ (CC)", ar:"السعة الحقلية (CC)", en:"Field capacity (FC)"},
+  u_pf:{fr:"Point de flétrissement (PF)", ar:"نقطة الذبول (PF)", en:"Wilting point (WP)"},
+  u_ru:{fr:"Réserve utile (RU)", ar:"الرصيد المائي المتاح (RU)", en:"Available water (AW)"},
+  u_ru_unit:{fr:"mm · %{n}% vol", ar:"مم · %{n}% حجمي", en:"mm · %{n}% vol"},
+  u_rfu_p:{fr:"RFU (p=%{p})", ar:"RFU (p=%{p})", en:"RAW (p=%{p})"},
+  u_infil:{fr:"Infiltration", ar:"التسرّب", en:"Infiltration"},
+  u_vol_unit:{fr:"% vol", ar:"% حجمي", en:"% vol"},
+
+  u_footer:{fr:"EU4Skills · AgriTech Libya — cas d'usage oliveraie · données parcelles : BD_SDA_ZITOUNA · météo : Open-Meteo · imagerie : Sentinel-2", ar:"EU4Skills · AgriTech Libya — حالة استخدام بستان الزيتون · بيانات القطع: BD_SDA_ZITOUNA · المناخ: Open-Meteo · الصور: Sentinel-2", en:"EU4Skills · AgriTech Libya — olive-grove use case · parcel data: BD_SDA_ZITOUNA · weather: Open-Meteo · imagery: Sentinel-2"}
+});
+
+/* Traductions AR/EN des groupes / sous-titres / descriptions d'indices (fr = dans NDV_IDX) */
+const GRP_TR = {
+  'Végétation':{ar:"الغطاء النباتي", en:"Vegetation"},
+  'Red Edge · nutrition':{ar:"الحافة الحمراء · التغذية", en:"Red Edge · nutrition"},
+  'Eau / hydrique':{ar:"الماء / الهيدري", en:"Water / hydric"},
+  'Sénescence · récolte':{ar:"الشيخوخة · الحصاد", en:"Senescence · harvest"},
+  'Chlorophylle':{ar:"الكلوروفيل", en:"Chlorophyll"},
+  'Sol':{ar:"التربة", en:"Soil"}
+};
+const SUB_TR = {
+  NDVI:{ar:"الحيوية النباتية", en:"Vegetative vigour"}, GNDVI:{ar:"كشف مبكّر", en:"Early detection"},
+  EVI:{ar:"الكتلة الحيوية · ذروة النمو", en:"Biomass · veg. peak"}, MSAVI2:{ar:"نبات + تربة عارية", en:"Veg. + bare soil"},
+  NDRE:{ar:"إجهاد آزوتي", en:"Nitrogen stress"}, CIRE:{ar:"كلوروفيل الحافة الحمراء", en:"Red Edge chloro."},
+  MTCI:{ar:"كلوروفيل دقيق", en:"Fine chloro."}, REIP:{ar:"المرحلة الظواهرية", en:"Pheno. stage"},
+  NDMI:{ar:"الرطوبة · الإجهاد", en:"Moisture · stress"}, CWSI:{ar:"الإجهاد (بديل S2)", en:"Stress (S2 proxy)"},
+  NDWI:{ar:"ماء حر / ري", en:"Open water / irrigation"}, PSRI:{ar:"الشيخوخة", en:"Senescence"},
+  GCI:{ar:"الكلوروفيل الكلّي", en:"Total chlorophyll"}, BSI:{ar:"تربة عارية", en:"Bare soil"},
+  SI:{ar:"الملوحة (تقريبية)", en:"Salinity (approx.)"}
+};
+const DESC_TR = {
+  NDVI:{ar:"الكتلة الحيوية / الحيوية. الزيتون في أوج النمو: 0.3–0.55 (مظلّة مفتوحة).", en:"Biomass / vigour. Olive at full growth: 0.3–0.55 (open canopy)."},
+  GNDVI:{ar:"حسّاس للكلوروفيل — يكشف الإجهاد قبل NDVI.", en:"Chlorophyll-sensitive — detects stress before NDVI."},
+  EVI:{ar:"الكتلة الحيوية — يصحّح التربة+الغلاف الجوي، يتشبّع أقل من NDVI.", en:"Biomass — corrects soil+atmosphere, saturates less than NDVI."},
+  MSAVI2:{ar:"مناسب لبداية الدورة / غطاء جزئي (يقلّل أثر التربة).", en:"Suited to early cycle / partial cover (reduces soil effect)."},
+  NDRE:{ar:"الآزوت / الكلوروفيل على نبات كثيف.", en:"Nitrogen / chlorophyll on dense vegetation."},
+  CIRE:{ar:"مؤشّر كلوروفيل الحافة الحمراء.", en:"Red Edge chlorophyll index."},
+  MTCI:{ar:"MERIS Terrestrial Chlorophyll Index (حافة حمراء دقيقة).", en:"MERIS Terrestrial Chlorophyll Index (fine red-edge)."},
+  REIP:{ar:"نقطة انعطاف الحافة الحمراء (nm) ← المرحلة الظواهرية.", en:"Red Edge inflection point (nm) → phenological stage."},
+  NDMI:{ar:"محتوى ماء المظلّة / إجهاد مائي.", en:"Canopy water content / water stress."},
+  CWSI:{ar:"بديل الإجهاد المائي (MSI = B11/B08). مرتفع = إجهاد.", en:"Water-stress proxy (MSI = B11/B08). High = stress."},
+  NDWI:{ar:"ماء حر / مسطّحات مائية (McFeeters).", en:"Open water / water bodies (McFeeters)."},
+  PSRI:{ar:"الشيخوخة / النضج (يرتفع نحو الحصاد).", en:"Senescence / ripening (rises towards harvest)."},
+  GCI:{ar:"Green Chlorophyll Index (مؤشّر أخضر).", en:"Green Chlorophyll Index."},
+  BSI:{ar:"تربة عارية / بداية الدورة.", en:"Bare soil / early cycle."},
+  SI:{ar:"مؤشّر ملوحة بصري (تقريبي، تونس).", en:"Optical salinity index (approx. Tunisia)."}
+};
+function idxGrp(fr){ const tr=GRP_TR[fr]; return (I18N.lang==='fr'||!tr)? fr : (tr[I18N.lang]||fr); }
+function idxSub(k){ const tr=SUB_TR[k]; return (I18N.lang==='fr'||!tr)? NDV_IDX[k].sub : (tr[I18N.lang]||NDV_IDX[k].sub); }
+function idxDesc(k){ const tr=DESC_TR[k]; return (I18N.lang==='fr'||!tr)? NDV_IDX[k].desc : (tr[I18N.lang]||NDV_IDX[k].desc); }
 
 /* ============================================================
    NAVIGATION PAR ONGLETS
@@ -535,9 +916,9 @@ async function loadZitouna(){
     renderPlist();
     const first=APP.carto.state.parcels[0]; if(first && !APP.selected) setSelected(first);
     fillFormats();
-    toast('SDA Zitouna chargée — '+(fc.features||[]).length+' blocs.');
+    toast(T('u_toast_zit',{n:(fc.features||[]).length}));
   }catch(e){
-    alert("Impossible de charger "+APP.geojsonUrl+"\n"+e.message+"\n\nOuvrez la page via un serveur HTTP (pas file://).");
+    alert(T('u_alert_loadfail',{u:APP.geojsonUrl, m:e.message}));
   }
 }
 function varieteOf_raw(v){ return v?String(v).toLowerCase():''; }
@@ -552,7 +933,7 @@ function renderPlist(){
     return `<li data-p="${enc(p.name)}" class="${sel?'sel':''}">
       <div class="pn"><span>${esc(p.name)}</span><span class="chip">${(p.area_ha||0)} ha</span></div>
       <div class="pm">${esc(cropName(p.crop))}${meta?' — '+esc(meta):''}</div></li>`;
-  }).join('') || '<div class="hint">Aucune parcelle. Chargez Zitouna ou dessinez.</div>';
+  }).join('') || '<div class="hint">'+t('u_no_parcel')+'</div>';
   ul.querySelectorAll('[data-p]').forEach(li=>li.onclick=()=>{
     const p=ps.find(x=>x.name===li.dataset.p); if(p) setSelected(p);
   });
@@ -561,7 +942,7 @@ function renderPlist(){
 function updateParcelPicker(){
   const sel=document.getElementById('selPick'); if(!sel)return;
   const ps=APP.carto?APP.carto.state.parcels:[];
-  if(!ps.length){ sel.innerHTML='<option value="">— aucune parcelle —</option>'; return; }
+  if(!ps.length){ sel.innerHTML='<option value="">'+t('u_no_parcel_opt')+'</option>'; return; }
   sel.innerHTML=ps.map(p=>'<option value="'+enc(p.name)+'"'+(APP.selected&&APP.selected.name===p.name?' selected':'')+'>'+esc(p.name)+' · '+(p.area_ha||0)+' ha</option>').join('');
 }
 
@@ -578,9 +959,9 @@ function setSelected(p){
   document.getElementById('selMeta').innerHTML =
     `<span class="chip">${(p.area_ha||0)} ha</span> `+
     (a.variete?`<span class="chip">${esc(a.variete)}</span> `:'')+
-    (a.annee?`<span class="chip">planté ${esc(a.annee)}</span> `:'')+
-    (a.nb_pieds?`<span class="chip">${a.nb_pieds.toLocaleString('fr')} pieds</span> `:'')+
-    (dens?`<span class="chip">${dens.toLocaleString('fr')} pl/ha</span>`:'');
+    (a.annee?`<span class="chip">${T('u_planted',{y:esc(a.annee)})}</span> `:'')+
+    (a.nb_pieds?`<span class="chip">${T('u_trees',{n:nfmt(a.nb_pieds)})}</span> `:'')+
+    (dens?`<span class="chip">${T('u_plha',{n:nfmt(dens)})}</span>`:'');
   renderPlist();
   renderParams(p);
   const kr=document.getElementById('ir_kr'); if(kr && a.couvert) kr.value=a.couvert;
@@ -592,7 +973,7 @@ function setSelected(p){
 function cropIdOf(v){ v=String(v||'').toLowerCase(); const DB=window.CROPS_DB||[];
   let c=DB.find(x=>x.id===v)||DB.find(x=>(x.fr||'').toLowerCase()===v)||DB.find(x=>(x.fr||'').toLowerCase().startsWith(v));
   return c?c.id:(v||'olive'); }
-function cropName(v){ const c=(window.CROPS&&CROPS.byId)?CROPS.byId(cropIdOf(v)):null; return (c&&c.fr)||v||'—'; }
+function cropName(v){ const c=(window.CROPS&&CROPS.byId)?CROPS.byId(cropIdOf(v)):null; return (c&&(c[I18N.lang]||c.fr))||v||'—'; }
 function couvertFromDensity(d){ if(d>=1500)return 45; if(d>=1000)return 40; if(d>=600)return 33; if(d>0)return 28; return 35; }
 function densOf(a){ if(a.nb_pieds>0 && a._area>0) return Math.round(a.nb_pieds/a._area);
   return (a.ecart_m>0&&a.interrang_m>0)?Math.round(10000/(a.ecart_m*a.interrang_m)):0; }
@@ -600,19 +981,19 @@ function renderParams(p){
   const a=APP.agro[p.name]; a._area=p.area_ha||0; const body=document.getElementById('paramBody');
   const age = a.annee? (new Date().getFullYear()-parseInt(a.annee,10)) : null;
   body.innerHTML = `
-    <div class="field"><label>Culture</label><select id="pa_crop">${cropSelectOptions(cropIdOf(a.crop))}</select></div>
-    <div class="field"><label>Variété</label><input id="pa_var" value="${esc(a.variete||'')}" placeholder="Arbequina…"></div>
-    <div class="field"><label>Date / année de plantation</label><input id="pa_year" value="${esc(a.date_plantation||a.annee||'')}" placeholder="2010-07-01"></div>
-    <div class="field"><label>Nombre de pieds (réel)</label><input id="pa_pieds" type="number" value="${a.nb_pieds||''}"></div>
-    <div class="field"><label>Écartement (m) — inter-rang × sur-rang</label>
+    <div class="field"><label>${t('u_pa_crop')}</label><select id="pa_crop">${cropSelectOptions(cropIdOf(a.crop))}</select></div>
+    <div class="field"><label>${t('u_pa_var')}</label><input id="pa_var" value="${esc(a.variete||'')}" placeholder="Arbequina…"></div>
+    <div class="field"><label>${t('u_pa_year')}</label><input id="pa_year" value="${esc(a.date_plantation||a.annee||'')}" placeholder="2010-07-01"></div>
+    <div class="field"><label>${t('u_pa_pieds')}</label><input id="pa_pieds" type="number" value="${a.nb_pieds||''}"></div>
+    <div class="field"><label>${t('u_pa_ecart')}</label>
       <div class="row"><input id="pa_ir" type="number" step="0.05" value="${a.interrang_m||''}"><input id="pa_ec" type="number" step="0.05" value="${a.ecart_m||''}"></div></div>
-    <div class="field"><label>Couverture du sol / Kr (%)</label><input id="pa_cv" type="number" value="${a.couvert||''}"></div>
+    <div class="field"><label>${t('u_pa_cover')}</label><input id="pa_cv" type="number" value="${a.couvert||''}"></div>
     <div class="hint" id="pa_info"></div>`;
   const info=()=>{ const dens=densOf(a);
-    document.getElementById('pa_info').innerHTML=(age!=null?('Âge ≈ <b>'+age+' ans</b> · '):'')+
-      (dens?('densité <b>'+dens.toLocaleString('fr')+' pl/ha</b> · '):'')+
-      (a.nb_pieds?('<b>'+a.nb_pieds.toLocaleString('fr')+' pieds</b> · '):'')+
-      'surface plantée <b>'+(p.area_ha||0)+' ha</b>. Source : BD_SDA_ZITOUNA.<br>Alimente le calcul des besoins (étape 4).'; };
+    document.getElementById('pa_info').innerHTML=(age!=null?T('u_age',{n:age}):'')+
+      (dens?T('u_density',{n:nfmt(dens)}):'')+
+      (a.nb_pieds?T('u_trees_c',{n:nfmt(a.nb_pieds)}):'')+
+      T('u_planted_area',{a:(p.area_ha||0)}); };
   info();
   document.getElementById('pa_crop').onchange=e=>{a.crop=e.target.value;p.crop=e.target.value;
     if(APP.selected)APP.selected.crop=e.target.value; renderPlist();};
@@ -633,8 +1014,8 @@ function doImport(){
       let n=0;
       if(/\.csv$/i.test(f.name)){ n=APP.carto.importCSV(rd.result); }
       else { n=APP.carto.importGeoJSON(JSON.parse(rd.result)); }
-      renderPlist(); toast(n+' parcelle(s) importée(s).');
-    }catch(err){ alert('Import : '+err.message); } };
+      renderPlist(); toast(T('u_toast_imp',{n:n}));
+    }catch(err){ alert(t('u_err_import')+' '+err.message); } };
     rd.readAsText(f); };
   inp.click();
 }
@@ -647,18 +1028,18 @@ document.getElementById('btnImport').onclick=doImport;
 document.getElementById('btnExpGeo').onclick=()=>download('parcelles.geojson',JSON.stringify(APP.carto.exportGeoJSON(),null,1),'application/geo+json');
 document.getElementById('btnExpCsv').onclick=()=>download('parcelles.csv',APP.carto.exportCSV(),'text/csv');
 document.getElementById('btnClear').onclick=()=>{
-  if(!confirm('Effacer toutes les parcelles de la carte ? (les fichiers data/ ne sont pas touchés)'))return;
+  if(!confirm(t('u_confirm_clear')))return;
   APP.carto.load({name:'Nouveau projet',parcels:[],equipment:[]});
-  APP.selected=null; document.getElementById('selName').textContent='— (aucune sélection)';
+  APP.selected=null; document.getElementById('selName').textContent=t('u_no_selection');
   document.getElementById('selMeta').innerHTML='';
-  document.getElementById('paramBody').innerHTML='<div class="hint">Dessinez une parcelle ou importez un fichier.</div>';
+  document.getElementById('paramBody').innerHTML='<div class="hint">'+t('u_draw_hint')+'</div>';
   renderPlist();
 };
 document.getElementById('btnExpProj').onclick=()=>download('projet_zitouna.json',JSON.stringify(projectBundle(),null,1),'application/json');
 document.getElementById('btnImpProj').onclick=()=>{
   const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
   inp.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader();
-    rd.onload=()=>{ try{ importProjectData(JSON.parse(rd.result)); }catch(err){ alert('JSON invalide : '+err.message); } }; rd.readAsText(f); };
+    rd.onload=()=>{ try{ importProjectData(JSON.parse(rd.result)); }catch(err){ alert(t('u_err_json')+' '+err.message); } }; rd.readAsText(f); };
   inp.click();
 };
 
@@ -701,8 +1082,8 @@ function importProjectData(j){
     const first=APP.carto.state.parcels[0]; if(first) setSelected(first);
     if(APP.weather) renderMeteo();
     renderIrrig(); fillFormats();
-    toast('Projet importé.');
-  }catch(e){ alert('Import projet : '+e.message); }
+    toast(t('u_toast_proj'));
+  }catch(e){ alert(t('u_err_impproj')+' '+e.message); }
 }
 function fillFormats(){
   const g=APP.carto?APP.carto.exportGeoJSON():{type:'FeatureCollection',features:[]};
@@ -724,7 +1105,7 @@ function fillFormats(){
 function svgChart(el, data, opts){
   opts=opts||{}; const W=920, H=opts.height||240, mL=46, mR=opts.y2?46:14, mT=12, mB=46;
   const iw=W-mL-mR, ih=H-mT-mB;
-  if(!data.length){ el.innerHTML='<div class="hint">Aucune donnée.</div>'; return; }
+  if(!data.length){ el.innerHTML='<div class="hint">'+t('u_nodata')+'</div>'; return; }
   const bars=opts.bars||[], lines=opts.lines||[];
   // échelles
   let lMax=0,lMin=0,rMax=0;
@@ -774,7 +1155,7 @@ function tsChart(el, opts){
   lines.forEach(s=>s.points.forEach(p=>{ if(p[1]==null)return; tmin=Math.min(tmin,p[0]);tmax=Math.max(tmax,p[0]);vmin=Math.min(vmin,p[1]);vmax=Math.max(vmax,p[1]); }));
   bars.forEach(s=>s.points.forEach(p=>{ if(p[1]==null)return; tmin=Math.min(tmin,p[0]);tmax=Math.max(tmax,p[0]);rmax=Math.max(rmax,p[1]); }));
   hlines.forEach(h=>{ vmin=Math.min(vmin,h.value);vmax=Math.max(vmax,h.value); });
-  if(!isFinite(tmin)){ el.innerHTML='<div class="hint">Aucune donnée.</div>'; return; }
+  if(!isFinite(tmin)){ el.innerHTML='<div class="hint">'+t('u_nodata')+'</div>'; return; }
   if(tmax<=tmin)tmax=tmin+DAY;
   const pad=(vmax-vmin)*0.10||1; vmax+=pad; vmin-=pad*0.4; if(vmin>0&&vmin<pad)vmin=0; if(vmax<=vmin)vmax=vmin+1;
   rmax=rmax*1.2||1;
@@ -783,9 +1164,9 @@ function tsChart(el, opts){
   if(span>700*DAY){ let y=new Date(tmin).getFullYear(),ey=new Date(tmax).getFullYear(); const st=Math.ceil((ey-y+1)/12)||1;
     for(;y<=ey;y+=st){ const t=new Date(y,0,1).getTime(); if(t>=tmin&&t<=tmax)ticks.push([t,String(y)]); } }
   else if(span>70*DAY){ let d=new Date(tmin); d=new Date(d.getFullYear(),d.getMonth(),1);
-    while(d.getTime()<=tmax){ const t=d.getTime(); if(t>=tmin)ticks.push([t,d.toLocaleDateString('fr',{month:'short',year:'2-digit'})]); d=new Date(d.getFullYear(),d.getMonth()+1,1); } }
+    while(d.getTime()<=tmax){ const tt=d.getTime(); if(tt>=tmin)ticks.push([tt,d.toLocaleDateString(DLoc(),{month:'short',year:'2-digit'})]); d=new Date(d.getFullYear(),d.getMonth()+1,1); } }
   else { let d=new Date(tmin); d.setHours(0,0,0,0); const stepD=Math.max(1,Math.ceil(span/DAY/12));
-    for(let t=d.getTime();t<=tmax;t+=stepD*DAY){ if(t>=tmin)ticks.push([t,new Date(t).toLocaleDateString('fr',{day:'numeric',month:'short'})]); } }
+    for(let tt=d.getTime();tt<=tmax;tt+=stepD*DAY){ if(tt>=tmin)ticks.push([tt,new Date(tt).toLocaleDateString(DLoc(),{day:'numeric',month:'short'})]); } }
   let s='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
   for(let g=0;g<=4;g++){ const v=vmin+(vmax-vmin)*g/4, y=sy(v);
     s+='<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="#eef3e5"/>';
@@ -815,13 +1196,13 @@ function tsChart(el, opts){
   const leg='<div class="legend">'+lines.map(l=>'<span style="color:'+l.color+'"><i style="background:'+l.color+'"></i>'+esc(l.label)+'</span>').join('')
     + hlines.map(h=>'<span style="color:'+h.color+'"><i class="dash" style="color:'+h.color+'"></i>'+esc(h.label)+'</span>').join('')
     + (bars.length?bars.map(b=>'<span style="color:'+b.color+'"><i style="background:'+b.color+';opacity:.5"></i>'+esc(b.label)+'</span>').join(''):'')+'</div>';
-  el.className='chart'; el.innerHTML=s+leg+'<div class="hoverbox" id="'+(el.id)+'_hv">Survolez le graphique…</div>';
+  el.className='chart'; el.innerHTML=s+leg+'<div class="hoverbox" id="'+(el.id)+'_hv">'+t('u_hover')+'</div>';
   const svg=el.querySelector('svg'), hz=el.querySelector('#hz'), cx=el.querySelector('#cx'), hv=document.getElementById(el.id+'_hv');
   function nearest(pts,t){ let b=pts[0],bd=Infinity; for(const p of pts){ if(p[1]==null)continue; const dd=Math.abs(p[0]-t); if(dd<bd){bd=dd;b=p;} } return b; }
   function move(ev){ const r=svg.getBoundingClientRect(); const px=(ev.clientX-r.left)/r.width*W;
     const t=Math.max(tmin,Math.min(tmax,tmin+(px-x0)/(x1-x0)*(tmax-tmin)));
     cx.setAttribute('x1',sx(t)); cx.setAttribute('x2',sx(t)); cx.setAttribute('opacity','.5');
-    const dd=new Date(t), ds=dd.toLocaleDateString('fr',{day:'numeric',month:'short',year:'numeric'});
+    const dd=new Date(t), ds=dd.toLocaleDateString(DLoc(),{day:'numeric',month:'short',year:'numeric'});
     const parts=lines.map(l=>{ const p=nearest(l.points,t); return p&&p[1]!=null?'<b style="color:'+l.color+'">'+esc(l.label)+' '+(+p[1].toFixed(2))+(opts.yUnit||'')+'</b>':''; }).filter(Boolean);
     hv.innerHTML='<b>'+ds+'</b> — '+parts.join(' · '); }
   hz.addEventListener('mousemove',move);
@@ -852,13 +1233,13 @@ async function loadMeteo(){
   // l'archive ERA5 a ~5 j de latence : on plafonne la date de fin
   const maxOK=fmtDate(new Date(Date.now()-6*864e5));
   let clamped=false; if(to>maxOK){ to=maxOK; clamped=true; }
-  const st=document.getElementById('mtStatus'); st.textContent='Chargement Open-Meteo…';
+  const st=document.getElementById('mtStatus'); st.textContent=t('u_mt_loading');
   const url='https://archive-api.open-meteo.com/v1/archive?latitude='+APP.farm.lat+'&longitude='+APP.farm.lng+
     '&start_date='+from+'&end_date='+to+'&daily='+OM_VARS+'&timezone=Africa%2FTunis';
   try{
     const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status);
     const j=await r.json(); const D=j.daily;
-    if(!D||!D.time){ throw new Error('réponse vide'); }
+    if(!D||!D.time){ throw new Error(t('u_mt_empty')); }
     APP.farm.elev=j.elevation||APP.farm.elev;
     const daily=D.time.map((t,i)=>({ d:t,
       tmax:D.temperature_2m_max[i], tmin:D.temperature_2m_min[i], tmean:D.temperature_2m_mean[i],
@@ -866,10 +1247,10 @@ async function loadMeteo(){
       et0:D.et0_fao_evapotranspiration[i], rain:D.precipitation_sum[i] }))
       .filter(x=>x.tmax!=null);
     APP.weather={ from, to, daily, elev:APP.farm.elev };
-    st.innerHTML='✓ '+daily.length+' jours · altitude '+Math.round(APP.farm.elev)+' m · point ERA5 '+j.latitude.toFixed(3)+', '+j.longitude.toFixed(3)+(clamped?' · <span style="color:var(--warn)">fin plafonnée au '+to+' (archive ERA5 ~5 j de retard)</span>':'');
+    st.innerHTML=T('u_mt_ok',{n:daily.length, a:Math.round(APP.farm.elev), lat:j.latitude.toFixed(3), lng:j.longitude.toFixed(3)})+(clamped?T('u_mt_clamped',{s:to}):'');
     renderMeteo();
     if(typeof onWeatherReady==='function') onWeatherReady();
-  }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur : '+esc(e.message)+'</span>'; }
+  }catch(e){ st.innerHTML='<span style="color:var(--bad)">'+t('u_error')+' '+esc(e.message)+'</span>'; }
 }
 function aggMeteo(daily, mode){
   if(mode==='day') return daily.map(x=>({x:x.d.slice(5), _d:x.d, ...x}));
@@ -888,31 +1269,32 @@ function renderMeteo(){
   const tot=f=>APP.weather.daily.reduce((a,b)=>a+(b[f]||0),0);
   const mean=f=>tot(f)/APP.weather.daily.length;
   // KPIs
+  const LR=t('u_lbl_rain'), LE=t('u_lbl_et0'), LTx=t('u_lbl_tmax'), LTm=t('u_lbl_tmean'), LTn=t('u_lbl_tmin');
   document.getElementById('mtKpis').innerHTML=[
-    ['ET₀ cumulée',(+tot('et0').toFixed(0)),'mm','accent'],
-    ['Pluie cumulée',(+tot('rain').toFixed(0)),'mm','ok'],
-    ['Déficit (ET₀−P)',(+(tot('et0')-tot('rain')).toFixed(0)),'mm','warn'],
-    ['T max moyenne',(+mean('tmax').toFixed(1)),'°C','bad'],
-    ['T min moyenne',(+mean('tmin').toFixed(1)),'°C',''],
-    ['HR moyenne',(+mean('rh').toFixed(0)),'%','']
+    [t('u_kpi_et0cum'),(+tot('et0').toFixed(0)),'mm','accent'],
+    [t('u_kpi_raincum'),(+tot('rain').toFixed(0)),'mm','ok'],
+    [t('u_kpi_deficit'),(+(tot('et0')-tot('rain')).toFixed(0)),'mm','warn'],
+    [t('u_kpi_tmaxavg'),(+mean('tmax').toFixed(1)),'°C','bad'],
+    [t('u_kpi_tminavg'),(+mean('tmin').toFixed(1)),'°C',''],
+    [t('u_kpi_rhavg'),(+mean('rh').toFixed(0)),'%','']
   ].map(k=>'<div class="kpi '+k[3]+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+' <span class="u">'+k[2]+'</span></div></div>').join('');
   // charts
   const isAgg=mode!=='day';
   svgChart(document.getElementById('mtChart1'),
-    rows.map(r=>({x:r.x, bars:{'Pluie (mm)':+r.rain.toFixed(1)}, lines:{'ET₀ (mm)':+r.et0.toFixed(2)}})),
-    {bars:[{label:'Pluie (mm)',color:'#3a9bd0'}], lines:[{label:'ET₀ (mm)',color:'#e0912b'}], y2:true, height:230});
+    rows.map(r=>({x:r.x, bars:{[LR]:+r.rain.toFixed(1)}, lines:{[LE]:+r.et0.toFixed(2)}})),
+    {bars:[{label:LR,color:'#3a9bd0'}], lines:[{label:LE,color:'#e0912b'}], y2:true, height:230});
   svgChart(document.getElementById('mtChart2'),
-    rows.map(r=>({x:r.x, lines:{'T max':+r.tmax.toFixed(1),'T moy':+r.tmean.toFixed(1),'T min':+r.tmin.toFixed(1)}})),
-    {lines:[{label:'T max',color:'#d1584e'},{label:'T moy',color:'#e0912b'},{label:'T min',color:'#3a9bd0'}], height:210});
+    rows.map(r=>({x:r.x, lines:{[LTx]:+r.tmax.toFixed(1),[LTm]:+r.tmean.toFixed(1),[LTn]:+r.tmin.toFixed(1)}})),
+    {lines:[{label:LTx,color:'#d1584e'},{label:LTm,color:'#e0912b'},{label:LTn,color:'#3a9bd0'}], height:210});
   // table
-  const unit = isAgg? (mode==='year'?'/an':'/mois') : '/j';
-  const th=['Période','T max','T min','T moy','HR %','Vent','Ray. MJ','ET₀ mm'+ (isAgg?unit:''),'Pluie mm'+(isAgg?unit:'')];
+  const unit = isAgg? (mode==='year'?t('u_per_year'):t('u_per_month')) : t('u_per_day');
+  const th=[t('u_period'),LTx,LTn,LTm,t('u_th_rh'),t('u_th_wind'),t('u_th_rad'),t('u_th_et0mm')+ (isAgg?unit:''),t('u_th_rainmm')+(isAgg?unit:'')];
   let html='<thead><tr>'+th.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>';
   rows.forEach(r=>{ html+='<tr><td>'+esc(r.x)+'</td>'+
     [r.tmax,r.tmin,r.tmean,r.rh,r.wind,r.rad,r.et0,r.rain].map((v,i)=>'<td>'+(v==null?'—':(+v.toFixed(i>=5?1:1)))+'</td>').join('')+'</tr>'; });
   html+='</tbody>';
   document.getElementById('mtTable').innerHTML=html;
-  document.getElementById('mtTblCount').textContent=rows.length+' lignes';
+  document.getElementById('mtTblCount').textContent=T('u_rows',{n:rows.length});
 }
 function meteoCSV(){
   if(!APP.weather) return '';
@@ -941,11 +1323,11 @@ function importMeteo(){
           et0:(D.et0_fao_evapotranspiration||[])[i],rain:(D.precipitation_sum||[])[i]})); }
       }
       daily=(daily||[]).filter(x=>x&&x.d);
-      if(!daily.length) throw new Error('aucune donnée reconnue (attendu : colonnes date,tmax_C,… ou {daily:[...]})');
+      if(!daily.length) throw new Error(t('u_mt_unrecognized'));
       APP.weather={from:daily[0].d,to:daily[daily.length-1].d,daily,elev:APP.farm.elev,source:'import '+f.name};
-      document.getElementById('mtStatus').innerHTML='✓ importé : '+daily.length+' jours ('+esc(f.name)+')';
+      document.getElementById('mtStatus').innerHTML=T('u_mt_imported',{n:daily.length, s:esc(f.name)});
       renderMeteo(); if(typeof onWeatherReady==='function')onWeatherReady();
-    }catch(err){ document.getElementById('mtStatus').innerHTML='<span style="color:var(--bad)">Import : '+esc(err.message)+'</span>'; } };
+    }catch(err){ document.getElementById('mtStatus').innerHTML='<span style="color:var(--bad)">'+t('u_err_import')+' '+esc(err.message)+'</span>'; } };
     rd.readAsText(f); };
   inp.click();
 }
@@ -961,20 +1343,21 @@ document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{ setMeteoPr
    ============================================================ */
 /* 12 classes texturales USDA — CC (θ capacité au champ) / PF (point flétrissement) en fraction volumique */
 const TEX=[
-  {id:'sand',   fr:'Sableux',                 fc:0.10, wp:0.04},
-  {id:'lsand',  fr:'Sable limoneux',          fc:0.14, wp:0.06},
-  {id:'sloam',  fr:'Limono-sableux',          fc:0.18, wp:0.08},
-  {id:'loam',   fr:'Limoneux (terre franche)',fc:0.26, wp:0.12},
-  {id:'silt',   fr:'Silteux',                 fc:0.30, wp:0.10},
-  {id:'siloam', fr:'Limono-silteux',          fc:0.31, wp:0.14},
-  {id:'scloam', fr:'Limon argilo-sableux',    fc:0.27, wp:0.17},
-  {id:'sclay',  fr:'Argile sableuse',         fc:0.36, wp:0.25},
-  {id:'cloam',  fr:'Argilo-limoneux',         fc:0.38, wp:0.20},
-  {id:'sicloam',fr:'Limon argilo-silteux',    fc:0.39, wp:0.22},
-  {id:'siclay', fr:'Argile silteuse',         fc:0.41, wp:0.27},
-  {id:'clay',   fr:'Argileux',                fc:0.42, wp:0.24}
+  {id:'sand',   fr:'Sableux',                 ar:'رملي',            en:'Sandy',            fc:0.10, wp:0.04},
+  {id:'lsand',  fr:'Sable limoneux',          ar:'رملي غريني',      en:'Loamy sand',       fc:0.14, wp:0.06},
+  {id:'sloam',  fr:'Limono-sableux',          ar:'طَمْيي رملي',      en:'Sandy loam',       fc:0.18, wp:0.08},
+  {id:'loam',   fr:'Limoneux (terre franche)',ar:'طَمْيي (تربة متوازنة)', en:'Loam',        fc:0.26, wp:0.12},
+  {id:'silt',   fr:'Silteux',                 ar:'غريني',           en:'Silt',             fc:0.30, wp:0.10},
+  {id:'siloam', fr:'Limono-silteux',          ar:'طَمْيي غريني',     en:'Silt loam',        fc:0.31, wp:0.14},
+  {id:'scloam', fr:'Limon argilo-sableux',    ar:'طَمْيي طيني رملي', en:'Sandy clay loam',  fc:0.27, wp:0.17},
+  {id:'sclay',  fr:'Argile sableuse',         ar:'طين رملي',        en:'Sandy clay',       fc:0.36, wp:0.25},
+  {id:'cloam',  fr:'Argilo-limoneux',         ar:'طَمْيي طيني',      en:'Clay loam',        fc:0.38, wp:0.20},
+  {id:'sicloam',fr:'Limon argilo-silteux',    ar:'طَمْيي طيني غريني',en:'Silty clay loam',  fc:0.39, wp:0.22},
+  {id:'siclay', fr:'Argile silteuse',         ar:'طين غريني',       en:'Silty clay',       fc:0.41, wp:0.27},
+  {id:'clay',   fr:'Argileux',                ar:'طيني',            en:'Clay',             fc:0.42, wp:0.24}
 ];
-function texLabel(t){ return t.fr+' · CC '+(t.fc*100).toFixed(0)+' / PF '+(t.wp*100).toFixed(0); }
+function texName(t){ return t? (t[I18N.lang]||t.fr) : ''; }
+function texLabel(t){ return texName(t)+' · CC '+(t.fc*100).toFixed(0)+' / PF '+(t.wp*100).toFixed(0); }
 /* Centroïdes texturaux (sable%, argile%) + infiltration indicative mm/h */
 const TEX_CENTROID={sand:[92,3],lsand:[82,6],sloam:[65,10],loam:[40,18],silt:[8,6],siloam:[20,14],
   scloam:[60,27],sclay:[52,42],cloam:[32,33],sicloam:[10,34],siclay:[7,47],clay:[20,55]};
@@ -995,11 +1378,11 @@ function usdaClass(sand,clay){ const silt=100-sand-clay;
 }
 /* Modèle sol PARTAGÉ (source unique) — SoilGrids par défaut, éditable — alimente le calcul des besoins */
 const SOIL={ texId:'cloam', clay:33, sand:32, silt:35, fc:0.38, wp:0.20, zr:1.2, p:0.65, eff:0.90,
-  infil:TEX_INFIL.cloam, source:'Défaut (argilo-limoneux)' };
+  infil:TEX_INFIL.cloam, source:t('u_src_default_soil') };
 function soilRU(){ return 1000*(SOIL.fc-SOIL.wp)*SOIL.zr; }        // RU mm
 function soilRFU(){ return SOIL.p*soilRU(); }                       // RFU mm
 async function soilGridsFetch(){
-  const el=document.getElementById('an_src'); if(el)el.innerHTML='⏳ Récupération SoilGrids…';
+  const el=document.getElementById('an_src'); if(el)el.innerHTML=t('u_soil_fetching');
   const url='https://rest.isric.org/soilgrids/v2.0/properties/query?lon='+APP.farm.lng+'&lat='+APP.farm.lat+
     '&property=clay&property=sand&property=silt&property=wv0033&property=wv1500&depth=0-5cm&depth=5-15cm&value=mean';
   try{
@@ -1007,26 +1390,26 @@ async function soilGridsFetch(){
     const j=await r.json(); const lay={}; (j.properties.layers||[]).forEach(L=>{
       const vals=L.depths.map(d=>d.values.mean).filter(v=>v!=null); const df=L.unit_measure.d_factor||1;
       lay[L.name]= vals.length? (vals.reduce((a,b)=>a+b,0)/vals.length)/df : null; });
-    if(lay.clay==null||lay.sand==null){ throw new Error('valeurs manquantes'); }
+    if(lay.clay==null||lay.sand==null){ throw new Error(t('u_soil_missing')); }
     SOIL.clay=+lay.clay.toFixed(0); SOIL.sand=+lay.sand.toFixed(0); SOIL.silt=+(100-SOIL.clay-SOIL.sand).toFixed(0);
     SOIL.texId=usdaClass(SOIL.sand,SOIL.clay); SOIL.infil=TEX_INFIL[SOIL.texId];
     if(lay.wv0033!=null) SOIL.fc=+(lay.wv0033/100).toFixed(3);
     if(lay.wv1500!=null) SOIL.wp=+(lay.wv1500/100).toFixed(3);
     SOIL.source='SoilGrids (wv0033/wv1500) · '+APP.farm.lat.toFixed(4)+', '+APP.farm.lng.toFixed(4);
     syncSoilUI(); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde();
-    toast('Sol chargé depuis SoilGrids.');
+    toast(t('u_toast_soil'));
   }catch(e){
-    if(el)el.innerHTML='<span style="color:var(--warn)">⚠ SoilGrids inaccessible ('+esc(e.message)+') — valeurs par défaut du type de sol. Choisissez une texture ou saisissez CC/PF manuellement.</span>';
-    SOIL.source='Défaut / manuel'; renderSoilEditor();
+    if(el)el.innerHTML='<span style="color:var(--warn)">'+T('u_soil_error',{m:esc(e.message)})+'</span>';
+    SOIL.source=t('u_src_manual'); renderSoilEditor();
   }
 }
 let IRR_SOURCES=[{name:'Pompe 1', debit:220, hours:16},{name:'Pompe 2', debit:220, hours:16}];
 
 function cropSelectOptions(sel){
-  const DB=window.CROPS_DB||[]; if(!DB.length) return '<option value="olive">Olivier</option>';
+  const DB=window.CROPS_DB||[]; if(!DB.length) return '<option value="olive">'+cropName('olive')+'</option>';
   const G=window.CROPS_GROUPS||{}, gr={}; DB.forEach(c=>{(gr[c.g]=gr[c.g]||[]).push(c);});
-  return Object.keys(gr).map(gk=>'<optgroup label="'+((G[gk]&&G[gk].fr)||gk)+'">'+
-    gr[gk].map(c=>'<option value="'+c.id+'"'+(sel===c.id?' selected':'')+'>'+(c.fr||c.id)+'</option>').join('')+'</optgroup>').join('');
+  return Object.keys(gr).map(gk=>'<optgroup label="'+((G[gk]&&(G[gk][I18N.lang]||G[gk].fr))||gk)+'">'+
+    gr[gk].map(c=>'<option value="'+c.id+'"'+(sel===c.id?' selected':'')+'>'+((c[I18N.lang]||c.fr)||c.id)+'</option>').join('')+'</optgroup>').join('');
 }
 function kcAtDay(cr,day){
   const [Li,Ld,Lm,Ll]=cr.L, [Ki,Km,Ke]=cr.Kc;
@@ -1050,17 +1433,17 @@ function irrFillControls(){
 function srcTotals(){ return { deb:IRR_SOURCES.reduce((a,s)=>a+(s.debit||0),0),
   hours:Math.max(...IRR_SOURCES.map(s=>s.hours||0),0),
   cap:IRR_SOURCES.reduce((a,s)=>a+(s.debit||0)*(s.hours||0),0) }; }
-function updateSrcInfo(){ const t=srcTotals();
-  document.getElementById('ir_srcInfo').innerHTML='Débit total : <b>'+t.deb+' m³/h</b> · '+t.hours+' h/j max · capacité <b>'+Math.round(t.cap).toLocaleString('fr')+' m³/jour</b>'; }
+function updateSrcInfo(){ const tt=srcTotals();
+  document.getElementById('ir_srcInfo').innerHTML=T('u_srcinfo',{d:tt.deb, h:tt.hours, c:nfmt(Math.round(tt.cap))}); }
 function renderSources(){
   const box=document.getElementById('ir_sources');
   box.innerHTML=IRR_SOURCES.map((s,i)=>`
     <div class="srcrow">
-      <input type="text" data-si="${i}" data-sk="name" value="${esc(s.name)}" placeholder="Nom de la source">
+      <input type="text" data-si="${i}" data-sk="name" value="${esc(s.name)}" placeholder="${t('u_src_name')}">
       <div class="srcline">
         <input data-si="${i}" data-sk="debit" type="number" value="${s.debit}"><span class="u">m³/h</span>
         <input data-si="${i}" data-sk="hours" type="number" value="${s.hours}"><span class="u">h/j</span>
-        <button class="del" data-del="${i}">✕ suppr.</button>
+        <button class="del" data-del="${i}">${t('u_src_del')}</button>
       </div>
     </div>`).join('');
   box.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{
@@ -1073,7 +1456,7 @@ function irrParams(){
   const cr=(window.CROPS&&CROPS.byId(cropId))||{L:[30,90,60,90],Kc:[0.65,0.70,0.70]};
   return {
     cropId, cr,
-    tex:{fc:SOIL.fc, wp:SOIL.wp, fr:(texById(SOIL.texId)||{}).fr||'sol'},
+    tex:{fc:SOIL.fc, wp:SOIL.wp, fr:texName(texById(SOIL.texId))||'sol'},
     kr:(parseFloat(document.getElementById('ir_kr').value)||100)/100,
     seed:document.getElementById('ir_seed').value,
     zr:SOIL.zr, p:SOIL.p, eff:SOIL.eff,
@@ -1142,44 +1525,44 @@ function renderIrrig(){
   const R=computeIrrig(); if(!R) return;
   // KPIs
   document.getElementById('irrKpis').innerHTML=[
-    ['Besoin net',(+R.net.toFixed(0)),'mm','accent'],
-    ['Besoin brut',(+R.gross.toFixed(0)),'mm','warn'],
-    ['Volume total',(+R.vol.toFixed(0)).toLocaleString('fr'),'m³','bad'],
-    ['Irrigations',R.events.length,'× ',''],
-    ['Pompage/irrig. (pic)',(+R.peakDur.toFixed(1)),'h',R.nInfeasible>0?'bad':'ok'],
-    ['ET₀ / Pluie',(+R.et0Tot.toFixed(0))+' / '+(+R.rainTot.toFixed(0)),'mm','']
+    [t('u_kpi_netneed'),(+R.net.toFixed(0)),'mm','accent'],
+    [t('u_kpi_grossneed'),(+R.gross.toFixed(0)),'mm','warn'],
+    [t('u_kpi_totvol'),nfmt(+R.vol.toFixed(0)),'m³','bad'],
+    [t('u_kpi_irrig'),R.events.length,'× ',''],
+    [t('u_kpi_peakpump'),(+R.peakDur.toFixed(1)),'h',R.nInfeasible>0?'bad':'ok'],
+    [t('u_kpi_et0rain'),(+R.et0Tot.toFixed(0))+' / '+(+R.rainTot.toFixed(0)),'mm','']
   ].map(k=>'<div class="kpi '+k[3]+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+' <span class="u">'+k[2]+'</span></div></div>').join('');
   // chart : eau disponible + seuil RFU + irrigations
   const seuil=+(R.TAW-R.RAW).toFixed(1); const toMs=d=>Date.parse(d+'T00:00:00');
   tsChart(document.getElementById('irrChart'),{
-    lines:[{label:'Eau disponible (mm)',color:'#3fa66a',width:2.2,points:R.rows.map(r=>[toMs(r.date),+r.AW.toFixed(1)])}],
-    hlines:[{label:'Seuil RFU',color:'#e0912b',value:seuil}],
-    bars:[{label:'Irrigation brute (mm)',color:'#3a9bd0',points:R.rows.map(r=>[toMs(r.date),+(r.gross||0).toFixed(1)])}],
+    lines:[{label:t('u_lbl_availwater'),color:'#3fa66a',width:2.2,points:R.rows.map(r=>[toMs(r.date),+r.AW.toFixed(1)])}],
+    hlines:[{label:t('u_lbl_rfu'),color:'#e0912b',value:seuil}],
+    bars:[{label:t('u_lbl_irrgross'),color:'#3a9bd0',points:R.rows.map(r=>[toMs(r.date),+(r.gross||0).toFixed(1)])}],
     height:250, yUnit:' mm'});
   // planning
   const pc=document.getElementById('irrPlan');
-  pc.innerHTML='<thead><tr><th>Date</th><th>Dose nette mm</th><th>Dose brute mm</th><th>Volume m³</th><th>Durée pompage h</th></tr></thead><tbody>'+
-    R.events.map(e=>'<tr class="'+(e.feasible?'irr':'stress')+'"><td>'+e.date+'</td><td>'+e.net.toFixed(1)+'</td><td>'+e.gross.toFixed(1)+'</td><td>'+Math.round(e.vol).toLocaleString('fr')+'</td><td>'+e.dur.toFixed(1)+(e.feasible?'':' ⚠')+'</td></tr>').join('')+'</tbody>';
-  document.getElementById('irrPlanCount').textContent=R.events.length+' irrigations';
+  pc.innerHTML='<thead><tr><th>'+t('u_th_date')+'</th><th>'+t('u_th_dosenet')+'</th><th>'+t('u_th_dosegross')+'</th><th>'+t('u_th_volume')+'</th><th>'+t('u_th_pumpdur')+'</th></tr></thead><tbody>'+
+    R.events.map(e=>'<tr class="'+(e.feasible?'irr':'stress')+'"><td>'+e.date+'</td><td>'+e.net.toFixed(1)+'</td><td>'+e.gross.toFixed(1)+'</td><td>'+nfmt(Math.round(e.vol))+'</td><td>'+e.dur.toFixed(1)+(e.feasible?'':' ⚠')+'</td></tr>').join('')+'</tbody>';
+  document.getElementById('irrPlanCount').textContent=T('u_n_irrig',{n:R.events.length});
   const pn=document.getElementById('irrPlanNote');
   if(R.nInfeasible>0){
     pn.className='notice warn';
-    pn.innerHTML='⚠ '+R.nInfeasible+' irrigation(s) dépassent les <b>'+R.totHours+' h/j</b> disponibles (durée = temps de pompage pour toute la parcelle de '+R.area+' ha). '+
-      'Pour les rendre réalistes : <b>sectoriser</b> la parcelle, <b>ajouter des sources</b>, ou porter le débit à ≈ <b>'+R.debNeeded.toLocaleString('fr')+' m³/h</b>. Débit actuel : '+R.totDeb+' m³/h.';
-  } else { pn.className='notice'; pn.innerHTML='✅ Planning faisable avec le débit actuel ('+R.totDeb+' m³/h · '+R.totHours+' h/j). Pic : '+R.peakDur.toFixed(1)+' h/irrigation.'; }
-  if(R.nSplit>0){ pn.innerHTML+=' · 🔀 <b>'+R.nSplit+'</b> irrigation(s) fractionnée(s) en plusieurs passes (sol '+((texById(SOIL.texId)||{}).fr||'')+', infiltration '+SOIL.infil+' mm/h) pour éviter le ruissellement.'; }
+    pn.innerHTML=T('u_plan_infeasible',{n:R.nInfeasible, h:R.totHours, a:R.area, d:nfmt(R.debNeeded), c:R.totDeb});
+  } else { pn.className='notice'; pn.innerHTML=T('u_plan_feasible',{c:R.totDeb, h:R.totHours, p:R.peakDur.toFixed(1)}); }
+  if(R.nSplit>0){ pn.innerHTML+=T('u_plan_split',{n:R.nSplit, s:texName(texById(SOIL.texId)), i:SOIL.infil}); }
   const sug = SOIL.infil<=5?6:(SOIL.infil<=10?8:12);
-  document.getElementById('ir_passAuto').textContent='suggéré '+sug+' h';
+  document.getElementById('ir_passAuto').textContent=T('u_suggested',{n:sug});
   renderGantt(R);
   // daily
   const dc=document.getElementById('irrDaily');
-  dc.innerHTML='<thead><tr><th>Date</th><th>ET₀</th><th>Kc</th><th>ETc</th><th>Pluie</th><th>Irrig.</th><th>Réserve util. mm</th><th>RU %</th><th>État</th></tr></thead><tbody>'+
-    R.rows.map(r=>'<tr class="'+(r.status==='irr'?'irr':(r.status==='stress'?'stress':''))+'"><td>'+r.date+'</td><td>'+r.et0.toFixed(1)+'</td><td>'+r.kc.toFixed(2)+'</td><td>'+r.etc.toFixed(1)+'</td><td>'+r.rain.toFixed(1)+'</td><td>'+(r.irr?r.irr.toFixed(1):'—')+'</td><td>'+r.Dr.toFixed(1)+'</td><td>'+r.ruPct.toFixed(0)+'</td><td>'+({irr:'💧 irrig.',stress:'⚠ stress',pilot:'pilotage',confort:'confort'}[r.status])+'</td></tr>').join('')+'</tbody>';
-  document.getElementById('irrDailyCount').textContent=R.rows.length+' jours';
+  const STLBL={irr:t('u_st_irr'),stress:t('u_st_stress'),pilot:t('u_st_pilot'),confort:t('u_st_confort')};
+  dc.innerHTML='<thead><tr><th>'+t('u_th_date')+'</th><th>ET₀</th><th>Kc</th><th>ETc</th><th>'+t('u_th_rain')+'</th><th>'+t('u_th_irr')+'</th><th>'+t('u_th_reserve')+'</th><th>'+t('u_th_rupct')+'</th><th>'+t('u_th_state')+'</th></tr></thead><tbody>'+
+    R.rows.map(r=>'<tr class="'+(r.status==='irr'?'irr':(r.status==='stress'?'stress':''))+'"><td>'+r.date+'</td><td>'+r.et0.toFixed(1)+'</td><td>'+r.kc.toFixed(2)+'</td><td>'+r.etc.toFixed(1)+'</td><td>'+r.rain.toFixed(1)+'</td><td>'+(r.irr?r.irr.toFixed(1):'—')+'</td><td>'+r.Dr.toFixed(1)+'</td><td>'+r.ruPct.toFixed(0)+'</td><td>'+(STLBL[r.status]||r.status)+'</td></tr>').join('')+'</tbody>';
+  document.getElementById('irrDailyCount').textContent=T('u_n_days',{n:R.rows.length});
   renderMonth(R);
   // infos params
-  document.getElementById('ir_kcinfo').innerHTML='Kc (FAO-56) : ini '+R.P.cr.Kc[0]+' · mi '+R.P.cr.Kc[1]+' · fin '+R.P.cr.Kc[2]+' · Kr '+Math.round(R.P.kr*100)+'% → <b>ETc = Kc·Kr·ET₀</b>';
-  document.getElementById('ir_soilinfo').innerHTML='θCC '+(R.P.tex.fc*100).toFixed(0)+'% · θPF '+(R.P.tex.wp*100).toFixed(0)+'% · Zr '+R.P.zr+' m → <b>RU '+Math.round(R.TAW)+' mm</b>, RFU '+Math.round(R.RAW)+' mm';
+  document.getElementById('ir_kcinfo').innerHTML=T('u_kcinfo',{i:R.P.cr.Kc[0], m:R.P.cr.Kc[1], f:R.P.cr.Kc[2], k:Math.round(R.P.kr*100)});
+  document.getElementById('ir_soilinfo').innerHTML=T('u_soilinfo',{cc:(R.P.tex.fc*100).toFixed(0), pf:(R.P.tex.wp*100).toFixed(0), z:R.P.zr, ru:Math.round(R.TAW), rfu:Math.round(R.RAW)});
   APP._irr=R;
 }
 function renderMonth(R){
@@ -1188,15 +1571,15 @@ function renderMonth(R){
     const o=g[k]; o.et0+=r.et0; o.rain+=r.rain; o.etc+=r.etc; if(r.irr>0){o.irrNet+=r.irr; o.n++;} });
   R.events.forEach(e=>{ const k=e.date.slice(0,7); if(g[k]){ g[k].irrGross+=e.gross; g[k].vol+=e.vol; } });
   const keys=Object.keys(g).sort();
-  let html='<thead><tr><th>Mois</th><th>ET₀ mm</th><th>Pluie mm</th><th>ETc mm</th><th>Irrig. nette mm</th><th>Volume m³</th><th>Nb irrig.</th></tr></thead><tbody>';
-  keys.forEach(k=>{ const o=g[k]; html+='<tr><td>'+k+'</td><td>'+o.et0.toFixed(0)+'</td><td>'+o.rain.toFixed(0)+'</td><td>'+o.etc.toFixed(0)+'</td><td>'+o.irrNet.toFixed(0)+'</td><td>'+Math.round(o.vol).toLocaleString('fr')+'</td><td>'+o.n+'</td></tr>'; });
+  let html='<thead><tr><th>'+t('u_th_month')+'</th><th>'+t('u_th_et0mm')+'</th><th>'+t('u_th_rainmm')+'</th><th>'+t('u_th_etcmm')+'</th><th>'+t('u_th_irrnet')+'</th><th>'+t('u_th_volume')+'</th><th>'+t('u_th_nirr')+'</th></tr></thead><tbody>';
+  keys.forEach(k=>{ const o=g[k]; html+='<tr><td>'+k+'</td><td>'+o.et0.toFixed(0)+'</td><td>'+o.rain.toFixed(0)+'</td><td>'+o.etc.toFixed(0)+'</td><td>'+o.irrNet.toFixed(0)+'</td><td>'+nfmt(Math.round(o.vol))+'</td><td>'+o.n+'</td></tr>'; });
   html+='</tbody>';
   document.getElementById('irrMonth').innerHTML=html;
 }
 function renderGantt(R){
   const el=document.getElementById('irrGantt');
   const months=[...new Set(R.events.map(e=>e.date.slice(0,7)))];
-  if(!months.length){ el.innerHTML='<div class="hint">Aucune irrigation à planifier sur la période.</div>'; return; }
+  if(!months.length){ el.innerHTML='<div class="hint">'+t('u_gantt_none')+'</div>'; return; }
   let sel=el.dataset.month; if(!sel||!months.includes(sel)){ // mois le plus demandeur par défaut
     let best=months[0],bv=-1; const vol={}; R.events.forEach(e=>{const m=e.date.slice(0,7);vol[m]=(vol[m]||0)+e.vol;});
     months.forEach(m=>{ if(vol[m]>bv){bv=vol[m];best=m;} }); sel=best; }
@@ -1220,15 +1603,15 @@ function renderGantt(R){
     s+='<text class="glabel" x="6" y="'+(y+bh-2)+'">'+e.date.slice(5)+'</text>';
     let x=padL;
     for(let k=0;k<e.passes;k++){ const w=Math.max(2,e.passDur*pxH);
-      s+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+bh+'" rx="3" fill="'+col(e.gross)+'"><title>'+e.date+' — passe '+(k+1)+'/'+e.passes+' : '+e.passDur.toFixed(1)+' h · '+(e.passVol).toFixed(0)+' m³</title></rect>';
+      s+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+bh+'" rx="3" fill="'+col(e.gross)+'"><title>'+T('u_gantt_pass',{d:e.date, k:(k+1), n:e.passes, h:e.passDur.toFixed(1), v:(e.passVol).toFixed(0)})+'</title></rect>';
       if(w>34) s+='<text x="'+(x+4)+'" y="'+(y+bh-4)+'" font-size="10" fill="#fff" font-weight="700">'+e.passDur.toFixed(1)+'h</text>';
       x+=w+ (k<e.passes-1?REST*pxH:0); }
-    s+='<text x="'+(x+5)+'" y="'+(y+bh-3)+'" font-size="10" fill="#6f7d64">'+e.gross.toFixed(1)+' mm · '+Math.round(e.vol).toLocaleString('fr')+' m³'+(e.passes>1?' · '+e.passes+' passes':'')+'</text>';
+    s+='<text x="'+(x+5)+'" y="'+(y+bh-3)+'" font-size="10" fill="#6f7d64">'+e.gross.toFixed(1)+' mm · '+nfmt(Math.round(e.vol))+' m³'+(e.passes>1?T('u_gantt_passes',{n:e.passes}):'')+'</text>';
   });
   s+='</svg>';
   el.className='gantt';
-  el.innerHTML='<div class="gantt-head"><b>Gantt — '+sel+'</b> <select id="ganttMonth">'+months.map(m=>'<option'+(m===sel?' selected':'')+'>'+m+'</option>').join('')+'</select>'
-    +'<span class="hint">longueur = durée de pompage · couleur/label = dose · barres multiples = fractionnement (ressuyage '+REST+'h)</span></div>'+s;
+  el.innerHTML='<div class="gantt-head"><b>'+T('u_gantt_title',{s:sel})+'</b> <select id="ganttMonth">'+months.map(m=>'<option'+(m===sel?' selected':'')+'>'+m+'</option>').join('')+'</select>'
+    +'<span class="hint">'+T('u_gantt_hint',{r:REST})+'</span></div>'+s;
   document.getElementById('ganttMonth').onchange=ev=>{ el.dataset.month=ev.target.value; renderGantt(APP._irr); };
 }
 function onWeatherReady(){ if(document.getElementById('tab-irrig').classList.contains('on')) renderIrrig(); }
@@ -1244,7 +1627,7 @@ document.getElementById('ir_p').addEventListener('input',e=>{ SOIL.p=parseFloat(
 document.getElementById('ir_eff').addEventListener('input',e=>{ SOIL.eff=(parseFloat(e.target.value)||90)/100; renderIrrig(); });
 ['ir_crop','ir_kr','ir_seed','ir_from','ir_to','ir_int','ir_maxpass'].forEach(id=>document.getElementById(id).addEventListener('input',renderIrrig));
 document.getElementById('ir_strat').addEventListener('change',e=>{ document.getElementById('ir_intWrap').style.display = e.target.value==='freq'?'flex':'none'; renderIrrig(); });
-document.getElementById('ir_addSrc').onclick=()=>{ IRR_SOURCES.push({name:'Source '+(IRR_SOURCES.length+1),debit:20,hours:10}); renderSources(); renderIrrig(); };
+document.getElementById('ir_addSrc').onclick=()=>{ IRR_SOURCES.push({name:T('u_src_default',{n:(IRR_SOURCES.length+1)}),debit:20,hours:10}); renderSources(); renderIrrig(); };
 document.getElementById('ir_seasonBtn').onclick=()=>{ const y=new Date(document.getElementById('ir_from').value||Date.now()).getFullYear();
   document.getElementById('ir_from').value=y+'-04-01'; document.getElementById('ir_to').value=y+'-10-31'; renderIrrig(); };
 document.getElementById('irrPlanCsv').onclick=()=>download('planning_irrigation.csv',irrCSV('plan'),'text/csv');
@@ -1312,14 +1695,14 @@ function evaluatePixel(s){ ${ND_BANDS} let v=${ix.f}; let m=s.dataMask; if(!isFi
 function rampCss(ramp){ return 'linear-gradient(90deg,'+RAMPS[ramp].map(s=>'rgb('+s[1].join(',')+') '+(s[0]*100).toFixed(0)+'%').join(',')+')'; }
 function renderRamp(){ const ix=NDV_IDX[ND_CUR]; document.getElementById('nd_ramp').innerHTML=
   '<div class="rampbar" style="background:'+rampCss(ix.ramp)+'"></div>'+
-  '<div class="ramplbl"><span>'+ix.min+'</span><span>'+esc(ix.lbl+' · '+ix.sub)+'</span><span>'+ix.max+'</span></div>'+
-  '<div class="hint" style="margin-top:3px">'+esc(ix.desc)+'</div>'; }
+  '<div class="ramplbl"><span>'+ix.min+'</span><span>'+esc(ix.lbl+' · '+idxSub(ND_CUR))+'</span><span>'+ix.max+'</span></div>'+
+  '<div class="hint" style="margin-top:3px">'+esc(idxDesc(ND_CUR))+'</div>'; }
 function renderIdxPicker(){
   const groups={}; Object.keys(NDV_IDX).forEach(k=>{const ix=NDV_IDX[k];(groups[ix.grp]=groups[ix.grp]||[]).push(k);});
   let h='';
-  Object.keys(groups).forEach(g=>{ h+='<div class="idxgrp">'+esc(g)+'</div><div class="idxrow">'+
-    groups[g].map(k=>{const ix=NDV_IDX[k];return '<button class="idxbtn'+(k===ND_CUR?' on':'')+'" data-k="'+k+'"><div class="il">'+esc(ix.lbl)+'</div><div class="is">'+esc(ix.sub)+'</div></button>';}).join('')+'</div>'; });
-  h+='<div class="idxgrp">Thermique</div><div class="idxrow"><button class="idxbtn" disabled title="Nécessite Landsat/MODIS — pas de bande thermique sur Sentinel-2"><div class="il">LST</div><div class="is">Température surface</div></button></div>';
+  Object.keys(groups).forEach(g=>{ h+='<div class="idxgrp">'+esc(idxGrp(g))+'</div><div class="idxrow">'+
+    groups[g].map(k=>{const ix=NDV_IDX[k];return '<button class="idxbtn'+(k===ND_CUR?' on':'')+'" data-k="'+k+'"><div class="il">'+esc(ix.lbl)+'</div><div class="is">'+esc(idxSub(k))+'</div></button>';}).join('')+'</div>'; });
+  h+='<div class="idxgrp">'+t('u_grp_thermal')+'</div><div class="idxrow"><button class="idxbtn" disabled title="'+t('u_nd_lst_tip')+'"><div class="il">LST</div><div class="is">'+t('u_nd_lst_sub')+'</div></button></div>';
   const el=document.getElementById('nd_picker'); el.innerHTML=h;
   el.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ ND_CUR=b.dataset.k; document.getElementById('nd_idxName').textContent=ND_CUR;
     renderIdxPicker(); renderRamp(); if(APP.selected) loadNdvi(); });
@@ -1350,7 +1733,7 @@ async function loadNdviRaster(dateStr){
   const cloud=+document.getElementById('nd_cloud').value||30;
   const st=document.getElementById('nd_status');
   const from=dateStr+"T00:00:00Z", to=dateStr+"T23:59:59Z";
-  st.textContent='Chargement image '+dateStr+'…';
+  st.textContent=T('u_nd_loadimg',{s:dateStr});
   try{
     const blob=await shFetch(SH.process,{
       input:{bounds:{geometry:ndGeom,properties:{crs:NDCRS}},
@@ -1360,17 +1743,17 @@ async function loadNdviRaster(dateStr){
     if(ndviRaster)ndviMap.removeLayer(ndviRaster);
     ndviRaster=L.imageOverlay(URL.createObjectURL(blob),[[ndBB[1],ndBB[0]],[ndBB[3],ndBB[2]]],{opacity:+document.getElementById('nd_op').value/100}).addTo(ndviMap);
     ndShownDate=dateStr;
-    document.getElementById('nd_shown').innerHTML='🖼️ Image affichée : <b>'+dateStr+'</b> · '+ND_CUR+' <span class="hint">(cliquez une autre date dans « Scènes disponibles »)</span>';
-    st.innerHTML='✓ image '+dateStr+' chargée';
+    document.getElementById('nd_shown').innerHTML=T('u_nd_shown',{s:dateStr, x:ND_CUR});
+    st.innerHTML=T('u_nd_imgok',{s:dateStr});
     const tb=document.getElementById('nd_scenes'); if(tb) tb.querySelectorAll('tr[data-d]').forEach(tr=>tr.classList.toggle('irr',tr.dataset.d===dateStr));
-  }catch(e){ st.innerHTML='<span style="color:var(--bad)">Image '+dateStr+' : '+esc(e.message)+'</span>'; }
+  }catch(e){ st.innerHTML='<span style="color:var(--bad)">'+T('u_nd_imgerr',{s:dateStr, m:esc(e.message)})+'</span>'; }
 }
 async function loadNdvi(){
   if(!APP.selected){ document.getElementById('ndNoSel').style.display='block'; return; }
   const ix=NDV_IDX[ND_CUR];
   const from=document.getElementById('nd_from').value, to=document.getElementById('nd_to').value;
   const cloud=+document.getElementById('nd_cloud').value||30;
-  const st=document.getElementById('nd_status'); st.textContent='Requête Sentinel Hub (série)…';
+  const st=document.getElementById('nd_status'); st.textContent=t('u_nd_reqserie');
   ndGeom={type:"Polygon",coordinates:[selRingLonLat()]};
   ndBB=selBBox(); ndDim=bboxDims(ndBB,768);
   try{
@@ -1383,12 +1766,13 @@ async function loadNdvi(){
     const pts=(j.data||[]).map(it=>({d:it.interval.from.slice(0,10),v:it.outputs&&it.outputs.data&&it.outputs.data.bands.B0.stats.mean}))
       .filter(p=>p.v!=null&&!isNaN(p.v));
     renderNdvi(ix,pts);
-    st.innerHTML='✓ '+pts.length+' scène(s) exploitable(s) · '+from+' → '+to+' — cliquez une date pour afficher son image';
+    st.innerHTML=T('u_nd_okserie',{n:pts.length, f:from, t:to});
     if(pts.length) loadNdviRaster(pts[pts.length-1].d);   // image de la scène la plus récente par défaut
-  }catch(e){ st.innerHTML='<span style="color:var(--bad)">Erreur : '+esc(e.message)+' — vérifiez les clés Sentinel (⚙️).</span>'; }
+  }catch(e){ st.innerHTML='<span style="color:var(--bad)">'+T('u_nd_errkeys',{m:esc(e.message)})+'</span>'; }
 }
 function renderNdvi(ix,pts){
   const name=ND_CUR;
+  APP._ndvi={ix,pts};
   document.getElementById('nd_serieName').textContent=name;
   tsChart(document.getElementById('nd_serie'),{lines:[{label:name,color:'#3fa66a',width:2.4,points:pts.map(p=>[Date.parse(p.d),+p.v.toFixed(3)])}],height:230,yUnit:'',
     onClick:ts=>{ const d=new Date(ts); const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); loadNdviRaster(ds); }});
@@ -1396,15 +1780,15 @@ function renderNdvi(ix,pts){
   const mean=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
   const mn=vals.length?Math.min(...vals):null, mx=vals.length?Math.max(...vals):null;
   document.getElementById('nd_kpis').innerHTML=[
-    [name+' actuel', last!=null?last.toFixed(2):'—','','accent'],
-    ['Moyenne', mean!=null?mean.toFixed(2):'—','',''],
-    ['Min', mn!=null?mn.toFixed(2):'—','',''],
-    ['Max', mx!=null?mx.toFixed(2):'—','','']
+    [T('u_nd_kpi_cur',{x:name}), last!=null?last.toFixed(2):'—','','accent'],
+    [t('u_nd_kpi_mean'), mean!=null?mean.toFixed(2):'—','',''],
+    [t('u_nd_kpi_min'), mn!=null?mn.toFixed(2):'—','',''],
+    [t('u_nd_kpi_max'), mx!=null?mx.toFixed(2):'—','','']
   ].map(k=>'<div class="kpi '+k[3]+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+'</div></div>').join('');
   // scenes
   const tb=document.getElementById('nd_scenes');
-  tb.innerHTML='<thead><tr><th>Date</th><th>'+name+'</th><th></th></tr></thead><tbody>'+
-    pts.slice().reverse().map(p=>'<tr data-d="'+p.d+'" style="cursor:pointer" title="Afficher l\'image de cette date">'+
+  tb.innerHTML='<thead><tr><th>'+t('u_th_date')+'</th><th>'+name+'</th><th></th></tr></thead><tbody>'+
+    pts.slice().reverse().map(p=>'<tr data-d="'+p.d+'" style="cursor:pointer" title="'+t('u_nd_scene_tip')+'">'+
       '<td>'+p.d+'</td><td>'+p.v.toFixed(3)+'</td><td>🖼️</td></tr>').join('')+'</tbody>';
   tb.querySelectorAll('tr[data-d]').forEach(tr=>tr.onclick=()=>loadNdviRaster(tr.dataset.d));
   document.getElementById('nd_scnCount').textContent=pts.length;
@@ -1412,20 +1796,20 @@ function renderNdvi(ix,pts){
   document.getElementById('nd_diag').innerHTML=ndviDiag(name,last,mean,vals);
 }
 function ndviDiag(name,last,mean,vals){
-  if(last==null) return 'Aucune donnée exploitable (couvert nuageux ? élargir la période ou augmenter le seuil nuages).';
+  if(last==null) return t('u_nd_diag_nodata');
   let trend=''; if(vals.length>=3){ const a=vals.slice(0,Math.ceil(vals.length/2)),b=vals.slice(-Math.ceil(vals.length/2));
     const ma=a.reduce((x,y)=>x+y,0)/a.length, mb=b.reduce((x,y)=>x+y,0)/b.length; const d=mb-ma;
-    trend = d>0.03?'📈 tendance à la <b>hausse</b> (reprise de vigueur / croissance).':d<-0.03?'📉 tendance à la <b>baisse</b> (sénescence, stress ou récolte).':'➡️ vigueur <b>stable</b>.'; }
+    trend = d>0.03?t('u_nd_trend_up'):d<-0.03?t('u_nd_trend_down'):t('u_nd_trend_stable'); }
   if(name==='NDVI'){ let cls;
-    if(last<0.2)cls='<b>Très faible</b> — sol nu dominant ou stress sévère.';
-    else if(last<0.35)cls='<b>Faible</b> — verger clairsemé / jeune, ou stress hydrique probable.';
-    else if(last<0.5)cls='<b>Modérée</b> — valeur typique d\'une oliveraie (canopée ouverte + sol).';
-    else if(last<0.65)cls='<b>Bonne</b> vigueur — canopée dense et active.';
-    else cls='<b>Très bonne</b> vigueur / forte couverture foliaire.';
-    return 'NDVI '+last.toFixed(2)+' → '+cls+' '+trend+'<br><span class="hint">Olivier : la canopée ouverte dilue le NDVI avec le sol — comparer entre parcelles et suivre l\'évolution plutôt que la valeur absolue. Croiser avec l\'humidité du sol (étape 5) et l\'ET₀ (étape 3).</span>';
+    if(last<0.2)cls=t('u_nd_cls_verylow');
+    else if(last<0.35)cls=t('u_nd_cls_low');
+    else if(last<0.5)cls=t('u_nd_cls_mod');
+    else if(last<0.65)cls=t('u_nd_cls_good');
+    else cls=t('u_nd_cls_verygood');
+    return T('u_nd_diag_ndvi',{v:last.toFixed(2), c:cls, tr:trend});
   }
-  if(name==='NDRE') return 'NDRE '+last.toFixed(2)+' — indicateur de teneur en chlorophylle / azote. '+trend+' Une baisse peut signaler une carence ou un stress avant le NDVI.';
-  return 'NDMI '+last.toFixed(2)+' — teneur en eau de la canopée. '+trend+' Valeurs basses = stress hydrique : déclencher/vérifier l\'irrigation (étape 4).';
+  if(name==='NDRE') return T('u_nd_diag_ndre',{v:last.toFixed(2), tr:trend});
+  return T('u_nd_diag_ndmi',{v:last.toFixed(2), tr:trend});
 }
 
 /* ============================================================
@@ -1476,15 +1860,15 @@ function downS(arr,max){ max=max||2200; if(arr.length<=max)return arr; const st=
 function doImportSonde(){
   const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,.csv';
   inp.onchange=e=>{ const f=e.target.files[0]; if(!f)return;
-    document.getElementById('soStatus').textContent='Lecture de '+f.name+' ('+(f.size/1048576).toFixed(1)+' Mo)…';
+    document.getElementById('soStatus').textContent=T('u_so_reading',{f:f.name, s:(f.size/1048576).toFixed(1)});
     const rd=new FileReader();
     rd.onload=()=>{ try{
       let db;
       if(/\.csv$/i.test(f.name)){ db=ingestFlat(parseCSVsonde(rd.result)); }
       else { const j=JSON.parse(rd.result); db=isNested(j)?fromNestedFull(j):ingestFlat(Array.isArray(j)?j:(j.readings||j.records||[])); }
-      if(!Object.keys(db).length){ throw new Error('aucune donnée reconnue'); }
-      SDB=db; APP.sonde={file:f.name}; setupSonde(); toast('Sondes importées : '+Object.keys(db).length+' site(s).');
-    }catch(err){ document.getElementById('soStatus').innerHTML='<span style="color:var(--bad)">Erreur : '+esc(err.message)+'</span>'; } };
+      if(!Object.keys(db).length){ throw new Error(t('u_unrecognized')); }
+      SDB=db; APP.sonde={file:f.name}; setupSonde(); toast(T('u_toast_sondes',{n:Object.keys(db).length}));
+    }catch(err){ document.getElementById('soStatus').innerHTML='<span style="color:var(--bad)">'+t('u_error')+' '+esc(err.message)+'</span>'; } };
     rd.readAsText(f); };
   inp.click();
 }
@@ -1499,7 +1883,7 @@ function setupSonde(){
   document.getElementById('so_site').innerHTML=sites.map(s=>'<option>'+esc(s)+'</option>').join('');
   const R=sondeRange();
   if(isFinite(R.lo)){ document.getElementById('so_from').value=fmtDate(new Date(R.lo)); document.getElementById('so_to').value=fmtDate(new Date(R.hi)); }
-  document.getElementById('soStatus').innerHTML='✓ '+sites.length+' site(s) · '+(isFinite(R.lo)?(fmtDate(new Date(R.lo))+' → '+fmtDate(new Date(R.hi))):'')+' · fichier '+esc(APP.sonde.file);
+  document.getElementById('soStatus').innerHTML=T('u_so_sites',{n:sites.length, r:(isFinite(R.lo)?(fmtDate(new Date(R.lo))+' → '+fmtDate(new Date(R.hi))):''), f:esc(APP.sonde.file)});
   renderSonde();
 }
 function currentDepths(){ const site=document.getElementById('so_site').value, meas=document.getElementById('so_meas').value;
@@ -1516,15 +1900,16 @@ function renderSonde(){
   const chosen=[...dc.querySelectorAll('.dchk:checked')].map(c=>+c.value);
   const from=Date.parse(document.getElementById('so_from').value+'T00:00:00'), to=Date.parse(document.getElementById('so_to').value+'T23:59:59');
   const unit=(S.units&&S.units[meas])||'';
-  document.getElementById('soChartTitle').textContent=({moisture:'Humidité',temperature:'Température',salinity:'Salinité',precip:'Précipitations'}[meas]||meas)+' — '+site+' ('+unit+')';
+  const measName={moisture:t('u_meas_moist_s'),temperature:t('u_meas_temp_s'),salinity:t('u_meas_salin_s'),precip:t('u_meas_precip_s')}[meas]||meas;
+  document.getElementById('soChartTitle').textContent=measName+' — '+site+' ('+unit+')';
   const tex={fc:SOIL.fc, wp:SOIL.wp};
   const chartLines=chosen.map((d,i)=>({label:d+' cm', color:DEPTH_COLORS[i%6], width:i===0?2.4:1.9,
     points:downS((S[meas][d]||[]).filter(p=>p[0]>=from&&p[0]<=to),1600)}));
   let hl=[]; const CC=tex.fc*100, PF=tex.wp*100, RFU=CC-SOIL.p*(CC-PF);
   if(meas==='moisture'){
     hl=[{label:'CC '+CC.toFixed(0),color:'#3fa66a',value:CC},{label:'RFU '+RFU.toFixed(0),color:'#e0912b',value:+RFU.toFixed(1)},{label:'PF '+PF.toFixed(0),color:'#d1584e',value:PF}];
-    document.getElementById('so_texinfo').innerHTML=(texById(SOIL.texId)||{}).fr+' · CC '+CC.toFixed(0)+'% · RFU '+RFU.toFixed(0)+'% · PF '+PF.toFixed(0)+'% (%VWC)';
-  } else document.getElementById('so_texinfo').innerHTML='Seuils affichés uniquement pour l\'humidité.';
+    document.getElementById('so_texinfo').innerHTML=T('u_so_texinfo',{t:texName(texById(SOIL.texId)), cc:CC.toFixed(0), rfu:RFU.toFixed(0), pf:PF.toFixed(0)});
+  } else document.getElementById('so_texinfo').innerHTML=t('u_so_moistonly');
   tsChart(document.getElementById('soChart'), {lines:chartLines, hlines:hl, height:300, yUnit:''});
   // KPIs + interpretation (dernière valeur, sur profondeur la plus faible)
   renderSondeKpis(S,meas,chosen,from,to,tex,unit);
@@ -1534,18 +1919,18 @@ function renderSondeKpis(S,meas,chosen,from,to,tex,unit){
   const box=document.getElementById('soKpis'); const K=[];
   chosen.forEach((d)=>{ const arr=(S[meas][d]||[]).filter(p=>p[0]>=from&&p[0]<=to); if(!arr.length)return;
     const vals=arr.map(p=>p[1]); const last=vals[vals.length-1], mn=Math.min(...vals),mx=Math.max(...vals),mean=vals.reduce((a,b)=>a+b,0)/vals.length;
-    K.push([d+' cm — dernier',(+last.toFixed(1)),unit, meas==='moisture'?moistClass(last,tex):'' ]);
+    K.push([T('u_last_suffix',{d:d}),(+last.toFixed(1)),unit, meas==='moisture'?moistClass(last,tex):'' ]);
   });
   box.innerHTML=K.map(k=>'<div class="kpi '+(k[3]||'')+'"><div class="k">'+k[0]+'</div><div class="v">'+k[1]+' <span class="u">'+k[2]+'</span></div></div>').join('');
   // interpretation
   if(meas==='moisture'&&chosen.length){ const d=chosen[0]; const arr=(S[meas][d]||[]).filter(p=>p[0]>=from&&p[0]<=to);
     if(arr.length){ const v=arr[arr.length-1][1], CC=tex.fc*100,PF=tex.wp*100,RFU=CC-SOIL.p*(CC-PF);
       let msg;
-      if(v>CC) msg='💧 Sol au-dessus de la capacité au champ — risque de drainage/excès.';
-      else if(v>=RFU) msg='✅ Zone de confort (entre RFU et CC) — pas d\'irrigation nécessaire.';
-      else if(v>=PF) msg='⚠ Sous le seuil RFU — irrigation recommandée avant l\'entrée en stress.';
-      else msg='🔴 Sous le point de flétrissement — stress hydrique sévère.';
-      document.getElementById('soInterp').innerHTML='<b>Interprétation ('+d+' cm)</b> : '+msg+' Valeur '+v.toFixed(1)+' %VWC · CC '+CC.toFixed(0)+' · RFU '+RFU.toFixed(0)+' · PF '+PF.toFixed(0)+'.';
+      if(v>CC) msg=t('u_so_msg_over');
+      else if(v>=RFU) msg=t('u_so_msg_comfort');
+      else if(v>=PF) msg=t('u_so_msg_raw');
+      else msg=t('u_so_msg_wp');
+      document.getElementById('soInterp').innerHTML='<b>'+T('u_interp',{d:d})+'</b> : '+msg+T('u_so_interp_tail',{v:v.toFixed(1), cc:CC.toFixed(0), rfu:RFU.toFixed(0), pf:PF.toFixed(0)});
     }
   } else document.getElementById('soInterp').textContent='';
 }
@@ -1588,45 +1973,69 @@ function initSol(){
   syncSoilUI(); renderSoilEditor();
   soilGridsFetch();   // charge le sol par défaut depuis SoilGrids
 }
-function setSoilTexture(id){ const t=texById(id); if(!t)return;
-  SOIL.texId=id; SOIL.fc=t.fc; SOIL.wp=t.wp; SOIL.infil=TEX_INFIL[id];
+function setSoilTexture(id){ const tx=texById(id); if(!tx)return;
+  SOIL.texId=id; SOIL.fc=tx.fc; SOIL.wp=tx.wp; SOIL.infil=TEX_INFIL[id];
   const c=TEX_CENTROID[id]; if(c){ SOIL.sand=c[0]; SOIL.clay=c[1]; SOIL.silt=100-c[0]-c[1]; }
-  SOIL.source='Texture choisie : '+t.fr;
+  SOIL.source=T('u_src_texchosen',{s:texName(tx)});
   syncSoilUI(); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde();
 }
 function setSoilProp(which,val){ val=Math.max(0,Math.min(100,isFinite(val)?val:0)); SOIL[which]=val;
   if(which==='silt') SOIL.sand=Math.max(0,+(100-SOIL.clay-SOIL.silt).toFixed(0));
   else SOIL.silt=Math.max(0,+(100-SOIL.clay-SOIL.sand).toFixed(0));
-  SOIL.texId=usdaClass(SOIL.sand,SOIL.clay); const t=texById(SOIL.texId);
-  SOIL.fc=t.fc; SOIL.wp=t.wp; SOIL.infil=TEX_INFIL[SOIL.texId];
-  SOIL.source='Proportions manuelles → '+t.fr;
+  SOIL.texId=usdaClass(SOIL.sand,SOIL.clay); const tx=texById(SOIL.texId);
+  SOIL.fc=tx.fc; SOIL.wp=tx.wp; SOIL.infil=TEX_INFIL[SOIL.texId];
+  SOIL.source=T('u_src_propman',{s:texName(tx)});
   syncSoilUI(); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde();
 }
 function setSoilCCPF(which,val){ if(which==='fc')SOIL.fc=(val||0)/100; else SOIL.wp=(val||0)/100;
-  SOIL.source='CC/PF manuels'; syncSoilUI(); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde(); }
+  SOIL.source=t('u_src_ccpfman'); syncSoilUI(); renderSoilEditor(); renderIrrig(); if(SDB)renderSonde(); }
 function syncSoilUI(except){ const set=(id,v)=>{ const el=document.getElementById(id); if(el&&el!==except&&String(el.value)!=String(v))el.value=v; };
   set('ir_tex',SOIL.texId); set('an_tex',SOIL.texId);
   set('ir_zr',SOIL.zr); set('an_zr',SOIL.zr);
   set('ir_p',SOIL.p); set('an_p',SOIL.p);
   set('ir_eff',Math.round(SOIL.eff*100)); }
 function renderSoilEditor(){
-  const t=texById(SOIL.texId)||{fr:'—'};
-  document.getElementById('an_src').innerHTML='Source : <b>'+esc(SOIL.source)+'</b> · type de sol : <b>'+esc(t.fr)+'</b>';
+  const tx=texById(SOIL.texId)||{fr:'—'};
+  document.getElementById('an_src').innerHTML=T('u_soil_src_line',{s:esc(SOIL.source), t:esc(texName(tx)||'—')});
   const ts=document.getElementById('an_tex'); if(ts)ts.value=SOIL.texId;
-  const prop=[['clay','Argile','#8e6fc7',SOIL.clay],['sand','Sable','#e0a92b',SOIL.sand],['silt','Limon','#5a8f2c',SOIL.silt]];
+  const prop=[['clay',t('u_clay'),'#8e6fc7',SOIL.clay],['sand',t('u_sand'),'#e0a92b',SOIL.sand],['silt',t('u_silt'),'#5a8f2c',SOIL.silt]];
   document.getElementById('an_prop').innerHTML=prop.map(p=>
     '<div class="tile"><div class="tl">'+p[1]+'</div><div class="tv"><input type="number" min="0" max="100" data-prop="'+p[0]+'" value="'+p[3]+'"><span class="u">%</span></div>'+
     '<div class="bar"><span style="width:'+Math.max(0,Math.min(100,p[3]))+'%;background:'+p[2]+'"></span></div></div>').join('');
   document.getElementById('an_prop').querySelectorAll('[data-prop]').forEach(inp=>inp.onchange=()=>setSoilProp(inp.dataset.prop,parseFloat(inp.value)));
   const CC=SOIL.fc*100, PF=SOIL.wp*100, RU=soilRU(), RFU=soilRFU();
   document.getElementById('an_hydro').innerHTML=
-    '<div class="tile"><div class="tl">Capacité au champ (CC)</div><div class="tv"><input type="number" step="0.5" data-ccpf="fc" value="'+CC.toFixed(0)+'"><span class="u">% vol</span></div><div class="bar"><span style="width:'+Math.min(100,CC)+'%;background:#3a9bd0"></span></div></div>'+
-    '<div class="tile"><div class="tl">Point de flétrissement (PF)</div><div class="tv"><input type="number" step="0.5" data-ccpf="wp" value="'+PF.toFixed(0)+'"><span class="u">% vol</span></div><div class="bar"><span style="width:'+Math.min(100,PF)+'%;background:#d1584e"></span></div></div>'+
-    '<div class="tile readonly"><div class="tl">Réserve utile (RU)</div><div class="tv"><span class="big">'+Math.round(RU)+'</span><span class="u">mm · '+(CC-PF).toFixed(0)+'% vol</span></div><div class="bar"><span style="width:'+Math.min(100,(CC-PF)*3)+'%;background:#3fa66a"></span></div></div>'+
-    '<div class="tile readonly"><div class="tl">RFU (p='+SOIL.p+')</div><div class="tv"><span class="big">'+Math.round(RFU)+'</span><span class="u">mm</span></div></div>'+
-    '<div class="tile readonly"><div class="tl">Infiltration</div><div class="tv"><span class="big">'+SOIL.infil+'</span><span class="u">mm/h</span></div></div>';
+    '<div class="tile"><div class="tl">'+t('u_cc')+'</div><div class="tv"><input type="number" step="0.5" data-ccpf="fc" value="'+CC.toFixed(0)+'"><span class="u">'+t('u_vol_unit')+'</span></div><div class="bar"><span style="width:'+Math.min(100,CC)+'%;background:#3a9bd0"></span></div></div>'+
+    '<div class="tile"><div class="tl">'+t('u_pf')+'</div><div class="tv"><input type="number" step="0.5" data-ccpf="wp" value="'+PF.toFixed(0)+'"><span class="u">'+t('u_vol_unit')+'</span></div><div class="bar"><span style="width:'+Math.min(100,PF)+'%;background:#d1584e"></span></div></div>'+
+    '<div class="tile readonly"><div class="tl">'+t('u_ru')+'</div><div class="tv"><span class="big">'+Math.round(RU)+'</span><span class="u">'+T('u_ru_unit',{n:(CC-PF).toFixed(0)})+'</span></div><div class="bar"><span style="width:'+Math.min(100,(CC-PF)*3)+'%;background:#3fa66a"></span></div></div>'+
+    '<div class="tile readonly"><div class="tl">'+T('u_rfu_p',{p:SOIL.p})+'</div><div class="tv"><span class="big">'+Math.round(RFU)+'</span><span class="u">mm</span></div></div>'+
+    '<div class="tile readonly"><div class="tl">'+t('u_infil')+'</div><div class="tv"><span class="big">'+SOIL.infil+'</span><span class="u">mm/h</span></div></div>';
   document.getElementById('an_hydro').querySelectorAll('[data-ccpf]').forEach(inp=>inp.onchange=()=>setSoilCCPF(inp.dataset.ccpf,parseFloat(inp.value)));
 }
+
+/* ============================================================
+   RAFRAÎCHISSEMENT I18N — rejoue tout ce qui est généré en JS
+   ============================================================ */
+function rebuildSelect(id, buildFn){ const el=document.getElementById(id); if(!el)return; const v=el.value; el.innerHTML=buildFn(v); if(v)el.value=v; }
+function refreshI18n(){
+  I18N.apply(); applyHTML();
+  // selects reconstruits dans la langue courante (valeur préservée)
+  rebuildSelect('ir_crop', v=>cropSelectOptions(v||'olive'));
+  rebuildSelect('ir_tex',  ()=>TEX.map(x=>'<option value="'+x.id+'">'+texLabel(x)+'</option>').join(''));
+  rebuildSelect('an_tex',  ()=>TEX.map(x=>'<option value="'+x.id+'">'+texLabel(x)+'</option>').join(''));
+  syncSoilUI();
+  // listes / vues dynamiques
+  renderPlist();
+  const selName=APP.selected&&APP.selected.name;
+  if(selName && APP.carto){ const p=APP.carto.state.parcels.find(x=>x.name===selName); if(p) setSelected(p); }
+  if(APP.weather) renderMeteo();
+  renderSources(); renderSoilEditor(); renderIrrig();
+  renderIdxPicker(); renderRamp();
+  if(APP._ndvi) renderNdvi(APP._ndvi.ix, APP._ndvi.pts);
+  if(SDB) renderSonde();
+  fillFormats();
+}
+document.addEventListener('i18n:changed', refreshI18n);
 
 /* ============================================================
    INIT
@@ -1641,6 +2050,10 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('nd_op').oninput=e=>{ if(ndviRaster)ndviRaster.setOpacity(+e.target.value/100); };
   renderIdxPicker(); renderRamp();
   document.getElementById('selPick').onchange=e=>{ const p=APP.carto.state.parcels.find(x=>x.name===e.target.value); if(p) setSelected(p); };
+  // applique la langue enregistrée (partagée entre les pages) : traduit le HTML statique + fixe RTL
+  const urlLang=(new URLSearchParams(location.search)).get('lang');
+  I18N.set(urlLang || localStorage.getItem('agri_lang') || 'fr');
+  applyHTML();
   const h=(location.hash||'').replace('#',''); if(['parc','ndvi','meteo','irrig','sol'].includes(h)) showTab(h);
 });
 </script>
