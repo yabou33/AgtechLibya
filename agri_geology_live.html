@@ -305,7 +305,13 @@ body{padding-top:30px!important}
 
         <div class="hydro-box">
           <div class="hydro-val"><span data-i18n="gl_hydro_q">Débit de pompage (Q) :</span> <b id="hQ">120 m³/h</b></div>
-          <input type="range" id="rgQ" min="20" max="300" value="120" style="width:100%;accent-color:var(--gold)">
+          <input type="range" id="rgQ" min="0" max="2000" value="120" step="10" style="width:100%;accent-color:var(--gold)">
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+            <input type="number" id="rgQn" value="120" min="0" step="10" style="width:100px">
+            <span style="font-size:11px;color:var(--sub)" data-i18n="gl_hydro_qnote">m³/h — régime variable, non plafonné</span>
+          </div>
+          <div class="hydro-val" style="margin-top:8px"><span data-i18n="gl_hydro_welltype">Type de puits :</span>
+            <select id="wellType" style="margin-inline-start:6px"><option value="pump" data-i18n="gl_wt_pump">Pompage (extraction)</option><option value="recharge" data-i18n="gl_wt_rech">Recharge (injection)</option></select></div>
 
           <div class="hydro-val" style="margin-top:8px"><span data-i18n="gl_hydro_t">Transmissivité aquifère (T) :</span> <b id="hT">1.5 × 10⁻³ m²/s</b></div>
           <div class="hydro-formula"><span data-i18n="gl_hydro_draw">Rabattement</span> : s = (Q / 4πT) × ln(2.25Tt / r²S)</div>
@@ -320,9 +326,23 @@ body{padding-top:30px!important}
       <div id="secGrace" style="display:none">
         <h2><span data-i18n="gl_grace_h">Pesée satellitaire GRACE</span> <span class="ar" data-i18n="gl_grace_har">الجاذبية والمخزون</span></h2>
         <div class="hint" data-i18n="gl_grace_hint">Les jumeaux GRACE pèsent la perte de masse d'eau de l'aquifère des grès de Nubie depuis l'espace.</div>
-        <canvas class="chart-box" id="graceChart" width="360" height="150"></canvas>
+        <canvas class="chart-box" id="graceChart" width="360" height="180"></canvas>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--sub)" data-i18n="gl_grace_area">Superficie aquifère :</span>
+          <input type="number" id="graceArea" value="760000" step="10000" style="width:110px"><span style="font-size:11px;color:var(--sub)">km²</span>
+        </div>
+        <div class="hydro-box" style="margin-top:6px">
+          <div class="hydro-val"><span data-i18n="gl_grace_trend">Tendance</span> : <b id="graceTrend" style="color:#38bdf8">—</b></div>
+          <div class="hydro-val"><span data-i18n="gl_grace_depl">Déplétion cumulée</span> : <b id="graceDepl" style="color:var(--danger)">—</b></div>
+          <div class="hydro-val"><span data-i18n="gl_grace_rate">Taux annuel</span> : <b id="graceRate" style="color:var(--gold)">—</b></div>
+        </div>
         <div class="hint" style="margin-top:6px;font-size:11.5px" data-i18n-html="gl_grace_note">
-          Tendance : <b>-1.6 cm équivalent eau / an</b>. Un pivot dans le désert n'exploite pas un flux renouvelable mais extrait un stock fossile non rechargeable.
+          L'axe vertical = <b>anomalie de stock d'eau</b> (cm équivalent hauteur d'eau). La pente donne la <b>perte de stock</b> ; multipliée par la superficie de l'aquifère, elle donne le <b>volume perdu en km³</b>. Eau fossile = non rechargeable.
+        </div>
+        <div style="margin-top:10px;border-top:1px solid var(--line,#2a3524);padding-top:8px">
+          <h2 style="font-size:13px"><span data-i18n="gl_clim_h">Climat multi-années</span> <span class="ar" data-i18n="gl_clim_har">المناخ عبر السنوات</span></h2>
+          <div class="hint" id="climStatus" data-i18n="gl_clim_hint">Pluie · température · humidité · ET₀ annuelles au centre de la carte (Open-Meteo).</div>
+          <table id="climTable" style="width:100%;font-size:12px;margin-top:6px;border-collapse:collapse"></table>
         </div>
       </div>
     </div>
@@ -1053,7 +1073,33 @@ function setLayer(l){
 /* ============ Onglets Pédagogiques & Simulateur Hydro ============ */
 document.getElementById("tabWf").onclick = () => switchTab("secWf", "tabWf");
 document.getElementById("tabHydro").onclick = () => switchTab("secHydro", "tabHydro");
-document.getElementById("tabGrace").onclick = () => { switchTab("secGrace", "tabGrace"); drawGraceChart(); };
+document.getElementById("tabGrace").onclick = () => { switchTab("secGrace", "tabGrace"); drawGraceChart(); loadClimate(); };
+{ const ga=document.getElementById("graceArea"); if(ga) ga.oninput=drawGraceChart; }
+
+/* ============ [6] Climat multi-années (Open-Meteo) ============ */
+let CLIM_DONE=false;
+async function loadClimate(){
+  if(CLIM_DONE) return; const st=document.getElementById("climStatus"), tb=document.getElementById("climTable");
+  if(!tb) return;
+  let lat=27.86, lng=22.23; try{ if(typeof map!=='undefined'&&map&&map.getCenter){ const c=map.getCenter(); lat=+c.lat.toFixed(3); lng=+c.lng.toFixed(3); } }catch(e){}
+  const y1=new Date().getFullYear()-1, y0=y1-7;
+  st.textContent="Chargement climat ("+lat+", "+lng+")…";
+  const url="https://archive-api.open-meteo.com/v1/archive?latitude="+lat+"&longitude="+lng+
+    "&start_date="+y0+"-01-01&end_date="+y1+"-12-31&daily=temperature_2m_mean,relative_humidity_2m_mean,et0_fao_evapotranspiration,precipitation_sum&timezone=auto";
+  try{
+    const r=await fetch(url); if(!r.ok) throw new Error("HTTP "+r.status);
+    const D=(await r.json()).daily; const Y={};
+    D.time.forEach((t,i)=>{ const y=t.slice(0,4); (Y[y]=Y[y]||{t:[],h:[],e:0,p:0,n:0});
+      const o=Y[y]; if(D.temperature_2m_mean[i]!=null)o.t.push(D.temperature_2m_mean[i]);
+      if(D.relative_humidity_2m_mean[i]!=null)o.h.push(D.relative_humidity_2m_mean[i]);
+      o.e+=D.et0_fao_evapotranspiration[i]||0; o.p+=D.precipitation_sum[i]||0; o.n++; });
+    const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+    let html="<tr style='color:var(--sub)'><th style='text-align:left'>Année</th><th>Pluie mm</th><th>T moy °C</th><th>HR %</th><th>ET₀ mm</th></tr>";
+    Object.keys(Y).sort().forEach(y=>{ const o=Y[y];
+      html+="<tr><td>"+y+"</td><td style='text-align:right'>"+Math.round(o.p)+"</td><td style='text-align:right'>"+avg(o.t).toFixed(1)+"</td><td style='text-align:right'>"+Math.round(avg(o.h))+"</td><td style='text-align:right'>"+Math.round(o.e)+"</td></tr>"; });
+    tb.innerHTML=html; st.textContent="Climat annuel — "+lat+", "+lng+" (Open-Meteo ERA5)"; CLIM_DONE=true;
+  }catch(e){ st.innerHTML="<span style='color:var(--danger)'>Climat indisponible : "+e.message+"</span>"; }
+}
 
 function switchTab(secId, tabId){
   ["secWf", "secHydro", "secGrace"].forEach(s => document.getElementById(s).style.display = s === secId ? "block" : "none");
@@ -1061,36 +1107,65 @@ function switchTab(secId, tabId){
 }
 
 // Calcul hydrodynamique Theis
-const rgQ = document.getElementById("rgQ");
-rgQ.oninput = function(){
-  const Q = +this.value;
+function updateHydro(){
+  const Q = +document.getElementById("rgQ").value;
   document.getElementById("hQ").textContent = Q + " m³/h";
-  const depth = (20 + Q * 0.12).toFixed(1);
-  document.getElementById("hDepth").textContent = `-${depth} m`;
-  const energy = (0.0027 * depth).toFixed(2);
-  document.getElementById("hEnergy").textContent = `${energy} kWh / m³`;
-  const cost = Math.round(Q * 1800 * energy * 0.28);
-  document.getElementById("hCost").textContent = `${cost.toLocaleString()} DT / an`;
-};
-
-// Courbe GRACE
-function drawGraceChart(){
-  const gc = document.getElementById("graceChart"), gx = gc.getContext("2d");
-  gx.clearRect(0, 0, gc.width, gc.height);
-  gx.strokeStyle = "#d8e4c8"; gx.font = "10px Inter"; gx.fillStyle = "#6f7d64";
-  for(let i=0; i<=3; i++){
-    const y = 15 + i * 35; gx.beginPath(); gx.moveTo(30, y); gx.lineTo(340, y); gx.stroke();
-    gx.fillText(`-${i*10} cm`, 4, y+3);
+  const recharge = document.getElementById("wellType").value === "recharge";
+  const draw = 20 + Q * 0.12;                       // rabattement de pompage (m)
+  if(recharge){
+    const mound = (Q * 0.05).toFixed(1);            // remontée piézométrique (injection)
+    document.getElementById("hDepth").textContent = `+${mound} m (remontée / injection)`;
+    const energy = (0.0022 * (20 + Q*0.05)).toFixed(2);
+    document.getElementById("hEnergy").textContent = `${energy} kWh / m³`;
+    document.getElementById("hCost").textContent = `${Math.round(Q*1800*energy*0.28).toLocaleString()} DT / an (injection)`;
+  } else {
+    document.getElementById("hDepth").textContent = `-${draw.toFixed(1)} m`;
+    const energy = (0.0027 * draw).toFixed(2);
+    document.getElementById("hEnergy").textContent = `${energy} kWh / m³`;
+    document.getElementById("hCost").textContent = `${Math.round(Q*1800*energy*0.28).toLocaleString()} DT / an`;
   }
-  gx.strokeStyle = "#38bdf8"; gx.lineWidth = 2; gx.beginPath();
-  const years = [2004, 2008, 2012, 2016, 2020, 2024];
-  years.forEach((yr, idx) => {
-    const x = 35 + idx * 58;
-    const y = 20 + idx * 18 + Math.sin(idx * 2) * 5;
-    idx ? gx.lineTo(x, y) : gx.moveTo(x, y);
-    gx.fillText(yr, x - 10, 142);
-  });
-  gx.stroke();
+}
+document.getElementById("rgQ").oninput = function(){ document.getElementById("rgQn").value=this.value; updateHydro(); };
+document.getElementById("rgQn").oninput = function(){ const s=document.getElementById("rgQ"); s.value=Math.min(+s.max, +this.value||0); updateHydro(); };
+document.getElementById("wellType").onchange = updateHydro;
+
+// Courbe GRACE — anomalie de stock (cm équ. eau) + déplétion en km³
+let GRACE_SERIES=null;
+function graceSeries(){ if(GRACE_SERIES)return GRACE_SERIES;
+  const arr=[]; let seed=42; const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;};
+  for(let y=2004;y<=2024.001;y+=0.25){ const t=y-2004;
+    const val=-1.6*t + 2.2*Math.sin(2*Math.PI*(y%1)) + (rnd()-0.5)*1.6; arr.push([y,val]); }
+  GRACE_SERIES=arr; return arr; }
+function drawGraceChart(){
+  const gc=document.getElementById("graceChart"), gx=gc.getContext("2d");
+  const W=gc.width,H=gc.height; gx.clearRect(0,0,W,H);
+  const data=graceSeries(); const xr=[data[0][0],data[data.length-1][0]];
+  const ys=data.map(d=>d[1]); const vmin=Math.min(...ys)-2, vmax=Math.max(2,Math.max(...ys));
+  const mL=44,mR=10,mT=10,mB=22,x0=mL,x1=W-mR,y0=mT,y1=H-mB;
+  const sx=x=>x0+(x-xr[0])/(xr[1]-xr[0])*(x1-x0), sy=v=>y0+(vmax-v)/(vmax-vmin)*(y1-y0);
+  gx.font="10px Inter";
+  for(let g=0;g<=4;g++){ const v=vmax-(vmax-vmin)*g/4, y=sy(v);
+    gx.strokeStyle="#e6eee0"; gx.beginPath(); gx.moveTo(x0,y); gx.lineTo(x1,y); gx.stroke();
+    gx.fillStyle="#6f7d64"; gx.fillText(v.toFixed(0),6,y+3); }
+  gx.save(); gx.translate(11,(y0+y1)/2); gx.rotate(-Math.PI/2); gx.fillStyle="#6f7d64"; gx.textAlign="center"; gx.fillText("cm éq. eau",0,0); gx.restore(); gx.textAlign="left";
+  for(let y=2004;y<=2024;y+=5){ const x=sx(y); gx.strokeStyle="#f1f5ea"; gx.beginPath(); gx.moveTo(x,y0); gx.lineTo(x,y1); gx.stroke();
+    gx.fillStyle="#9aa890"; gx.fillText(y,x-12,H-6); }
+  // série
+  gx.strokeStyle="#38bdf8"; gx.lineWidth=1.6; gx.beginPath();
+  data.forEach((d,i)=>{ const X=sx(d[0]),Y=sy(d[1]); i?gx.lineTo(X,Y):gx.moveTo(X,Y); }); gx.stroke();
+  // régression -> pente cm/an
+  const n=data.length; let Sx=0,Sy=0,Sxx=0,Sxy=0; data.forEach(d=>{Sx+=d[0];Sy+=d[1];Sxx+=d[0]*d[0];Sxy+=d[0]*d[1];});
+  const slope=(n*Sxy-Sx*Sy)/(n*Sxx-Sx*Sx), b=(Sy-slope*Sx)/n;
+  gx.strokeStyle="#e0912b"; gx.setLineDash([5,4]); gx.lineWidth=1.4; gx.beginPath();
+  [xr[0],xr[1]].forEach((xx,i)=>{ const Y=sy(slope*xx+b); i?gx.lineTo(sx(xx),Y):gx.moveTo(sx(xx),Y); }); gx.stroke(); gx.setLineDash([]);
+  // lectures km³
+  const yrs=xr[1]-xr[0], totalCm=Math.abs(slope*yrs);
+  const area=+(document.getElementById("graceArea")||{}).value||760000;   // km²
+  const volKm3=totalCm/100*area/1000;                                     // (cm/100 m)·(km²·1e6)/1e9
+  const rate=volKm3/yrs;
+  const gt=document.getElementById("graceTrend"); if(gt)gt.textContent=slope.toFixed(2)+" cm/an";
+  const gd=document.getElementById("graceDepl"); if(gd)gd.textContent="≈ "+Math.round(volKm3).toLocaleString()+" km³ ("+yrs+" ans)";
+  const gr=document.getElementById("graceRate"); if(gr)gr.textContent="≈ "+rate.toFixed(1)+" km³/an";
 }
 
 /* ============ Parcours Pédagogique M1–M7 ============ */
@@ -1211,6 +1286,17 @@ document.getElementById("btnSaveConfig").onclick = () => {
 
 /* ============ Internationalisation (FR / EN / AR) ============ */
 Object.assign(I18N.DICT, {
+  gl_hydro_qnote:{fr:"m³/h — régime variable, non plafonné",en:"m³/h — variable regime, not capped",ar:"م³/س — نظام متغيّر غير محدود"},
+  gl_hydro_welltype:{fr:"Type de puits :",en:"Well type:",ar:"نوع البئر:"},
+  gl_wt_pump:{fr:"Pompage (extraction)",en:"Pumping (extraction)",ar:"ضخّ (استخراج)"},
+  gl_wt_rech:{fr:"Recharge (injection)",en:"Recharge (injection)",ar:"تغذية (حقن)"},
+  gl_grace_area:{fr:"Superficie aquifère :",en:"Aquifer area:",ar:"مساحة الخزان:"},
+  gl_grace_trend:{fr:"Tendance",en:"Trend",ar:"الاتجاه"},
+  gl_grace_depl:{fr:"Déplétion cumulée",en:"Cumulative depletion",ar:"الاستنزاف التراكمي"},
+  gl_grace_rate:{fr:"Taux annuel",en:"Annual rate",ar:"المعدّل السنوي"},
+  gl_clim_h:{fr:"Climat multi-années",en:"Multi-year climate",ar:"المناخ عبر السنوات"},
+  gl_clim_har:{fr:"المناخ عبر السنوات",en:"multi-year climate",ar:"المناخ عبر السنوات"},
+  gl_clim_hint:{fr:"Pluie · température · humidité · ET₀ annuelles au centre de la carte (Open-Meteo).",en:"Annual rainfall · temperature · humidity · ET₀ at map centre (Open-Meteo).",ar:"الأمطار ودرجة الحرارة والرطوبة وET₀ السنوية في مركز الخريطة."},
   gl_tag:{fr:"Module 2 & Passerelle Hydrogéologie · SKILLS4EU — Expertise France",
           en:"Module 2 & Hydrogeology Bridge · SKILLS4EU — Expertise France",
           ar:"الوحدة 2 وجسر الهيدروجيولوجيا · SKILLS4EU — خبرة فرنسا"},
@@ -1310,6 +1396,8 @@ document.addEventListener("i18n:changed", () => {
   I18N.set(urlLang || localStorage.getItem("agri_lang") || "fr");
   applyHTML();
   wfApply();
+  const tabP=new URLSearchParams(location.search).get("tab");
+  if(tabP){ const id="tab"+tabP.charAt(0).toUpperCase()+tabP.slice(1); const el=document.getElementById(id); if(el) setTimeout(()=>el.click(),150); }
 })();
 </script>
 <script src="map-panels.js"></script>
