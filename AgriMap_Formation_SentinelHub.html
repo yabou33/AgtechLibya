@@ -176,6 +176,31 @@ body{padding-top:30px!important}
       <button class="btn ghost" id="btnImport">⬆ <span data-i18n="b_import">Importer parcelle</span></button>
       <span class="note" data-i18n="map_hint">Barre d'outils à gauche de la carte : Sélection · Parcelle · Pivot · Rectangle · Repère · Effacer.</span>
     </div>
+    <details class="io-formats" style="margin-top:10px;border:1px solid #e6eaf2;border-radius:10px;padding:8px 12px;background:#fff;color:#2b3a55">
+      <summary style="cursor:pointer;font-weight:800;color:#2e7d32">📄 Formats d'import / export — exemples</summary>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px">
+        <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelle + stats zonales — GeoJSON (.geojson)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">{
+  "type": "FeatureCollection",
+  "crs": { "type":"name", "properties":{ "name":"urn:ogc:def:crs:OGC:1.3:CRS84" } },
+  "features": [
+    { "type": "Feature",
+      "properties": {
+        "name": "Parcelle démo", "index": "NDVI",
+        "date": "2026-04-04", "area_ha": 85.7000,
+        "mean": 0.671, "median": 0.675,
+        "min": 0.40, "max": 0.81,
+        "std": 0.070, "p10": 0.58, "p90": 0.76
+      },
+      "geometry": { "type":"Polygon", "coordinates":[[
+        [10.0059,36.4477],[10.0063,36.4479],
+        [10.0061,36.4474],[10.0059,36.4477] ]] } }
+  ]
+}</pre></div>
+        <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Stats par (parcelle,date,indice) — CSV (WKT)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">parcel,date,index,area_ha,mean,median,min,max,std,p10,p90,wkt
+Parcelle démo,2026-04-04,NDVI,85.7000,0.671,0.675,0.40,0.81,0.070,0.58,0.76,"POLYGON((10.005900 36.447700, 10.006300 36.447900, 10.006100 36.447400, 10.005900 36.447700))"
+Parcelle démo,2026-03-25,NDVI,85.7000,0.612,,,,,,,"POLYGON((10.005900 36.447700, 10.006300 36.447900, 10.006100 36.447400, 10.005900 36.447700))"</pre></div>
+      </div>
+    </details>
     <div id="map"></div>
     <div class="mapfoot">
       <span style="color:var(--sub);font-size:12.5px" data-i18n="opacity">Opacité</span>

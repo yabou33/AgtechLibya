@@ -147,6 +147,55 @@ body{padding-top:30px!important}
   <progress id="prog" max="100" value="0" style="display:none"></progress>
 </div>
 
+<details class="io-formats" style="margin-top:10px;border:1px solid #e6eaf2;border-radius:10px;padding:8px 12px;background:#fff;color:#2b3a55">
+  <summary style="cursor:pointer;font-weight:800;color:#2e7d32">📄 Formats d'import / export — exemples</summary>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px">
+    <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelles — import CSV / Excel (sép. ; ou , — colonnes principales lues, export réel = 35 colonnes)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">Parcelle;Culture;Superficie (ha);Nature du sol;position Ferme;Date debut plantation;Date récolte prévue;Id parcelle AgriM
+26-AA-BEJA-04282;Tomate;0,6;Mixte;36.56970, 9.09530;30/03/2026;26/07/2026;4282
+26-AA-BEJA-04283;Tomate;1,5;Mixte;36.58506, 9.09023;01/04/2026;28/07/2026;4283</pre></div>
+    <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Contours de ferme — import GeoJSON (FeatureCollection de polygones)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Ferme Béja" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.0902, 36.5850], [9.0953, 36.5850],
+          [9.0953, 36.5900], [9.0902, 36.5900],
+          [9.0902, 36.5850]
+        ]]
+      }
+    }
+  ]
+}</pre></div>
+    <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Station météo — import CSV (format Ecowitt ; Date/Heure = jj/mm/aaaa hh:mm:ss)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">Date/Heure,A1-WS1,A1-WS2,A1-HR1,A1-T1,A1-Volt,A1-R1,A1-B,A1-WD1,A1-B1
+01/01/2023 00:00:00,5.9,7.7,68.30,15.20,12.2,0.0,1013.0,205,1023.0
+01/01/2023 01:00:00,6.1,8.2,70.10,14.80,12.2,0.0,1013.2,210,1023.2</pre></div>
+    <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Sondes sol — import CSV (format long) ou JSON (tableau plat)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">date,site_name,probe_measure,soil_value,unit
+2024-05-01T08:00,Sonde A,Humidité 30cm,0.235,%VWC
+2024-05-01T08:00,Sonde A,Température 30cm,21.4,°C
+
+— ou JSON —
+[
+  {"site_id":"A","local_time":"2024-05-01T08:00","probe_measure":"Humidité 30cm","soil_value":0.235,"unit":"%VWC"},
+  {"site_id":"A","local_time":"2024-05-01T08:00","probe_measure":"Salinité 30cm","soil_value":540,"unit":"µS/cm"}
+]</pre></div>
+    <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Sondes sol — export CSV (sép. ; ) + XLSX + JSON imbriqué</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">Sonde;Grandeur;Profondeur;Date;Valeur;Unite;Nb_mesures
+Sonde 1;Humidité;30cm;2024-05-01;0.235;%VWC;24
+Sonde 1;Température;30cm;2024-05-01;21.4;°C;24
+
+— JSON —
+{
+  "Sonde 1": {
+    "moisture": { "30cm": { "2024-05-01": 0.235 } },
+    "temperature": { "30cm": { "2024-05-01": 21.4 } }
+  }
+}</pre></div>
+  </div>
+</details>
+
 <div class="kpi" id="kpi" style="display:none"></div>
 
 <div id="empty">

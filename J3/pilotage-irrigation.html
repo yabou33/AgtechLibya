@@ -610,7 +610,7 @@ body{padding-top:30px!important}
     <div class="langbox" id="langbox"><button data-lang="fr">FR</button><button data-lang="ar">ع</button><button data-lang="en">EN</button></div><button class="tbtn" id="btnImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importer</button>
     <button class="tbtn" id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Exporter</button>
     <button class="tbtn" id="btnLive" onclick="openManualLive()"><svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px"><path d="M7 4v16l13-8z"/></svg>Irrigation live</button><button class="tbtn primary" id="btnPlan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="m9 15 2 2 4-4"/></svg>Planning</button>
-    <input type="file" id="fileInput" accept="application/json" class="hidden">
+    <input type="file" id="fileInput" accept=".json,.geojson,.csv,application/json,application/geo+json,text/csv" class="hidden">
   </div>
   <nav class="tabbar" id="tabbar"></nav>
   <div class="body">
@@ -2997,6 +2997,97 @@ function loadLocal(){try{const t=localStorage.getItem('agrimanager_irrig_v2');if
 function importSilent(text){try{const j=JSON.parse(text);ST.name=j.name||ST.name;ST.center=j.center||ST.center;ST.zoom=j.zoom||ST.zoom;
   ST.location=j.location||ST.location;ST.parcels=j.parcels||[];ST.equipment=j.equipment||[];ST.cycles=j.cycles&&j.cycles.length?j.cycles:[];ensureDefaultCycle();}catch(e){}}
 
+/* ---------- IMPORT PARCELLES : CSV/WKT + GeoJSON (en plus du projet JSON) ---------- */
+// Ordre coordonnées : WKT & GeoJSON = "lng lat" ; modèle interne (Leaflet) = [lat,lng].
+function parseCSVrows(text){
+  const rows=[]; let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===','){ row.push(cur); cur=''; }
+    else if(ch==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+    else if(ch!=='\r') cur+=ch;
+  }
+  if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.length && r.some(c=>c!==''));
+}
+function addImportedParcel(coords,pr){
+  if(!coords||coords.length<3)return false; pr=pr||{};
+  const crop=(pr.crop&&CROPS[pr.crop])?pr.crop:'olivier';
+  let ha=(pr.area_ha!=null&&pr.area_ha!=='')?+pr.area_ha:polyAreaHa(coords);
+  ha=+(+ha).toFixed(2)||1;
+  const nn=ST.parcels.length+1;
+  ST.parcels.push({id:uid('P'),name:pr.name||('Parcelle '+String(nn).padStart(2,'0')),
+    crop,stage:pr.stage||'mid',soil:pr.soil||'argiloLim',area:ha,rootDepth:60,ei:0.9,p:0.5,peff:0.8,
+    moisture:null,coords,center:centroid(coords)});
+  return true;
+}
+function importParcelsGeoJSON(fc){
+  if(!fc||!fc.features)return 0; let n=0;
+  fc.features.forEach(f=>{
+    if(!f.geometry||f.geometry.type!=='Polygon')return;
+    let ring=f.geometry.coordinates[0].map(c=>[c[1],c[0]]); // [lng,lat] -> [lat,lng]
+    if(ring.length>1 && ring[0][0]===ring[ring.length-1][0] && ring[0][1]===ring[ring.length-1][1]) ring.pop();
+    if(addImportedParcel(ring,f.properties||{})) n++;
+  });
+  return n;
+}
+function importParcelsCSV(text){
+  const rows=parseCSVrows(text); if(rows.length<2)return 0;
+  const head=rows[0].map(h=>h.trim().toLowerCase()), ix=k=>head.indexOf(k);
+  const iN=ix('name'),iC=ix('crop'),iS=ix('soil'),iA=ix('area_ha'),iW=ix('wkt');
+  if(iW<0)return 0; let n=0;
+  for(let r=1;r<rows.length;r++){ const c=rows[r];
+    const m=/POLYGON\s*\(\(([^)]+)\)\)/i.exec(c[iW]||''); if(!m)continue;
+    let ring=m[1].split(',').map(pr=>{ const s=pr.trim().split(/\s+/).map(Number); return [s[1],s[0]]; }); // "lng lat" -> [lat,lng]
+    if(ring.length>1 && ring[0][0]===ring[ring.length-1][0] && ring[0][1]===ring[ring.length-1][1]) ring.pop();
+    if(addImportedParcel(ring,{name:iN>=0?c[iN]:'',crop:iC>=0?c[iC]:'',soil:iS>=0?c[iS]:'',area_ha:iA>=0?c[iA]:''})) n++;
+  }
+  return n;
+}
+function finishParcelImport(n,fmt){
+  ensureDefaultCycle(); rebuildLayers();
+  try{ const b=drawnItems.getBounds(); if(b&&b.isValid()) map.fitBounds(b.pad(0.2)); }catch(e){}
+  const last=ST.parcels[ST.parcels.length-1];
+  if(last) selection={kind:'parcel',id:last.id};
+  renderInspector(); renderLegend(); saveLocal();
+  toast(n+' parcelle(s) importée(s) ('+fmt+')','ok');
+}
+// Dispatcher : projet JSON complet, GeoJSON de parcelles, ou CSV/WKT
+function importFile(text,fname){
+  const t=(text||'').trim();
+  const looksJSON = t[0]==='{'||t[0]==='[';
+  if(!looksJSON || /\.csv$/i.test(fname||'')){
+    if(!looksJSON){
+      const n=importParcelsCSV(text);
+      if(n) finishParcelImport(n,'CSV'); else toast(window.t('t_invalid_file'),'err');
+      return;
+    }
+  }
+  let j; try{ j=JSON.parse(text); }catch(e){ toast(window.t('t_invalid_file'),'err'); return; }
+  if(j && j.type==='FeatureCollection'){
+    const n=importParcelsGeoJSON(j);
+    if(n) finishParcelImport(n,'GeoJSON'); else toast(window.t('t_invalid_file'),'err');
+  } else {
+    importProject(text); // projet agrimanager-irrigation complet (comportement existant)
+  }
+}
+const IO_FORMATS_HTML =
+  '<details class="io-formats" style="margin-top:12px;border:1px solid #e6eaf2;border-radius:10px;padding:8px 12px;background:#fff;color:#2b3a55">'
+  +'<summary style="cursor:pointer;font-weight:800;color:#2e7d32">📄 Formats acceptés — exemples</summary>'
+  +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px">'
+  +'<div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelles — GeoJSON (.geojson)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0"># coordonnees en ordre lng,lat ; anneau ferme\n'
+  +'{\n  "type": "FeatureCollection",\n  "features": [\n    { "type": "Feature",\n      "properties": { "name": "Parcelle 01",\n        "crop": "olivier", "area_ha": 4.2 },\n      "geometry": { "type": "Polygon",\n        "coordinates": [[\n          [14.2470, 26.8330],\n          [14.2490, 26.8360],\n          [14.2530, 26.8350],\n          [14.2470, 26.8330]\n        ]] } }\n  ]\n}</pre></div>'
+  +'<div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelles — CSV / WKT (.csv)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0"># WKT POLYGON((lng lat, ...))\nname,crop,soil,shape,area_ha,radius_m,wkt\nParcelle 01,olivier,,polygon,4.20,,"POLYGON((14.247000 26.833000, 14.249000 26.836000, 14.253000 26.835000, 14.247000 26.833000))"</pre></div>'
+  +'<div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Projet complet — JSON (.json)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0"># coords internes en ordre lat,lng (Leaflet)\n{\n  "format": "agrimanager-irrigation",\n  "version": 1,\n  "name": "Domaine Sebha",\n  "center": [26.838, 14.247], "zoom": 14,\n  "parcels": [\n    { "id": "P-01", "name": "Parcelle 01",\n      "crop": "olivier", "area": 4.2,\n      "coords": [[26.833,14.247],[26.836,14.249],\n                 [26.835,14.253]],\n      "center": [26.834,14.249] }\n  ],\n  "equipment": [], "cycles": []\n}</pre></div>'
+  +'</div></details>';
+function openImportModal(){
+  openModal('Importer des parcelles / un projet',
+    '<div class="hint" style="margin-bottom:10px">Formats acceptés : <b>projet JSON</b> complet, <b>parcelles GeoJSON</b> (FeatureCollection de polygones) ou <b>CSV/WKT</b>. Les parcelles importées s\'ajoutent au projet courant.</div>'
+    +'<button class="tbtn primary" onclick="closeModal();document.getElementById(\'fileInput\').click()">Choisir un fichier…</button>'
+    +IO_FORMATS_HTML);
+}
+
 /* ---------- DEMO SEED ---------- */
 function seedDemo(){
   // Centre : Sebha, Libye — zone de pivots d'irrigation en plein désert
@@ -3077,9 +3168,9 @@ function boot(){
   $('#projName').addEventListener('change',e=>{ST.name=e.target.value;saveLocal();});
   $('#btnPlan').onclick=()=>switchTab('plan');
   $('#btnExport').onclick=exportProject;
-  $('#btnImport').onclick=()=>$('#fileInput').click();
+  $('#btnImport').onclick=openImportModal;
   $('#fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
-    r.onload=()=>importProject(r.result);r.readAsText(f);e.target.value='';};
+    r.onload=()=>importFile(r.result,f.name);r.readAsText(f);e.target.value='';};
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();if(activeTool!=='select')selectTool('select');}});
   // i18n : appliquer la langue courante + câbler le sélecteur
   window.I18N.applyLangAtBoot();

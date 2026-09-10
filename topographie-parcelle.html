@@ -63,6 +63,8 @@ header{background:linear-gradient(120deg,#5a3d12,#8a5a12);color:#fff;padding:14p
     <div class="lead">Dessinez une parcelle (outil <b>polygone</b>, en haut-gauche de la carte) ou importez un fichier (GeoJSON / CSV). À la fermeture du polygone → relief + pente/exposition.</div>
     <div class="toolbar">
       <button class="btn" id="btnImport">⬆ Importer GeoJSON/CSV</button>
+      <button class="btn" id="btnExportGeo">⬇ Exporter GeoJSON</button>
+      <button class="btn" id="btnExportCsv">⬇ Exporter CSV</button>
       <button class="btn danger" id="btnClear">🗑 Effacer</button>
       <span class="hint" id="curName">Aucune parcelle — dessinez ou importez.</span>
     </div>
@@ -98,6 +100,33 @@ header{background:linear-gradient(120deg,#5a3d12,#8a5a12);color:#fff;padding:14p
         </div>
       </div>
     </div>
+    <details class="io-formats" style="margin-top:10px;border:1px solid #e6eaf2;border-radius:10px;padding:8px 12px;background:#fff;color:#2b3a55">
+      <summary style="cursor:pointer;font-weight:800;color:#2e7d32">📄 Formats d'import / export — exemples</summary>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px">
+        <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelles — GeoJSON (.geojson)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0"># coordonnees en ordre lng,lat ; anneau ferme
+{
+  "type": "FeatureCollection",
+  "name": "Topographie",
+  "features": [
+    { "type": "Feature",
+      "properties": { "name": "Parcelle 1",
+        "crop": "olivier", "shape": "polygon",
+        "area_ha": 4.2 },
+      "geometry": { "type": "Polygon",
+        "coordinates": [[
+          [9.5010, 34.5020],
+          [9.5055, 34.5021],
+          [9.5057, 34.5066],
+          [9.5011, 34.5065],
+          [9.5010, 34.5020]
+        ]] } }
+  ]
+}</pre></div>
+        <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelles — CSV / WKT (.csv)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0"># WKT POLYGON((lng lat, ...)) ; anneau ferme
+name,crop,soil,shape,area_ha,radius_m,wkt
+Parcelle 1,olivier,,polygon,4.20,,"POLYGON((9.501000 34.502000, 9.505500 34.502100, 9.505700 34.506600, 9.501100 34.506500, 9.501000 34.502000))"</pre></div>
+      </div>
+    </details>
   </div>
   <div class="footer">EU4Skills · AgriTech Libya — Topographie · MNT : Open-Meteo Elevation (Copernicus GLO-90)</div>
 </div>
@@ -150,6 +179,12 @@ function doImport(){
       const p=carto.state.parcels[carto.state.parcels.length-1]; if(p){ setTimeout(()=>{carto.fitAll();carto.invalidate();},60); startParcel(p);} }catch(err){alert('Import : '+err.message);}};
     rd.readAsText(f);};
   inp.click();
+}
+function doExport(kind){
+  if(!carto||!carto.state.parcels.length){ alert('Aucune parcelle à exporter — dessinez ou importez d\'abord.'); return; }
+  const name=(carto.state.name||'topographie').replace(/\s+/g,'_');
+  if(kind==='geojson') Store.download('parcelles_'+name+'.geojson', JSON.stringify(carto.exportGeoJSON(),null,2), 'application/geo+json');
+  else Store.download('parcelles_'+name+'.csv', carto.exportCSV(), 'text/csv');
 }
 
 async function fetchElev(points){
@@ -266,6 +301,8 @@ function bindHover(){ carto.map.on('mousemove',e=>{ if(!gridState){tip.style.dis
   carto.map.on('mouseout',()=>tip.style.display='none'); }
 
 document.getElementById('btnImport').onclick=doImport;
+document.getElementById('btnExportGeo').onclick=()=>doExport('geojson');
+document.getElementById('btnExportCsv').onclick=()=>doExport('csv');
 document.getElementById('btnClear').onclick=()=>{ carto.load({name:'Vide',parcels:[],equipment:[]}); cur=null; gridState=null;
   [overlay,minMaxLayer].forEach(l=>{if(l)carto.map.removeLayer(l);}); overlay=minMaxLayer=null;
   $('terrainCard').style.display='none'; $('legendCard').style.display='none';

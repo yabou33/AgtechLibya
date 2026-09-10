@@ -254,6 +254,31 @@ body{padding-top:30px!important}
       <button id="btnExport" title="Exporter GeoJSON + CSV (name,type,radius_m,mean,min,max,wkt ; géométrie en WKT POLYGON)">📤 <span data-i18n="export">Exporter</span></button>
     </div>
 
+      <details class="io-formats" style="margin-top:10px;border:1px solid #e6eaf2;border-radius:10px;padding:8px 12px;background:#fff;color:#2b3a55">
+        <summary style="cursor:pointer;font-weight:800;color:#2e7d32">📄 Formats d'import / export — exemples</summary>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px">
+          <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelles — GeoJSON (.geojson)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">{
+  "type": "FeatureCollection",
+  "name": "parcelles-geology",
+  "crs": { "type":"name", "properties":{ "name":"urn:ogc:def:crs:OGC:1.3:CRS84" } },
+  "features": [
+    { "type": "Feature",
+      "properties": {
+        "name": "Puits P1", "type": "pivot", "radius_m": 100,
+        "ndvi_mean": 0.42, "ndvi_min": 0.18, "ndvi_max": 0.65,
+        "ha": 3.14, "volEst": 125000
+      },
+      "geometry": { "type":"Polygon", "coordinates":[[
+        [21.9000,27.2000],[21.9012,27.2005],
+        [21.9008,27.1994],[21.9000,27.2000] ]] } }
+  ]
+}</pre></div>
+          <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelles — CSV (géométrie WKT)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">name,type,radius_m,mean,min,max,wkt
+Puits P1,pivot,100,0.4200,0.1800,0.6500,"POLYGON((21.900000 27.200000, 21.901200 27.200500, 21.900800 27.199400, 21.900000 27.200000))"
+Bloc A,Poly,,0.5100,0.3000,0.7200,"POLYGON((21.910000 27.210000, 21.911000 27.210500, 21.910500 27.209500, 21.910000 27.210000))"</pre></div>
+        </div>
+      </details>
+
     <div id="lmap"></div>
     <div class="map-hud" id="mapHud">Outil : <b>Prêt</b> — Choisissez 🔘 Pivot ou ✏️ Parcelle pour dessiner</div>
 

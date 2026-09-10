@@ -244,6 +244,7 @@ Object.assign(I18N.DICT,{
   st_mid:{fr:"Mi-saison",ar:"منتصف الموسم",en:"Mid-season"},
   st_late:{fr:"Arrière-saison",ar:"آخر الموسم",en:"Late season"},
   fmt_hint:{fr:"Exemple de format d'export/import (JSON) :",ar:"مثال على صيغة التصدير/الاستيراد (JSON):",en:"Export/import format example (JSON):"},
+  fmt_hint_csv:{fr:"Export/import CSV (en-tête + lignes) :",ar:"تصدير/استيراد CSV (الترويسة + أسطر):",en:"CSV export/import (header + rows):"},
   hover_hint:{fr:"Survolez une barre pour le détail.",ar:"مرّر فوق عمود للتفاصيل.",en:"Hover a bar for details."}
 });
 
@@ -454,11 +455,15 @@ function drawKPIs(P,PL){
 }
 
 function drawFmt(P,PL){
-  $('fmt').textContent=I18N.t('fmt_hint')+'\n'+JSON.stringify({
+  const json=I18N.t('fmt_hint')+'\n'+JSON.stringify({
     crop:P.cr.id, climate:P.cl.id, texture:P.tx.id, sow:$('sow').value,
     area_ha:P.area, efficiency:P.eff, cap:P.capOn?P.capVol:null,
     decades:PL.decs.slice(0,2).map(d=>({d:d.i+1,stage:d.stage,kc:+d.kc.toFixed(2),ETc:+d.ETc.toFixed(1),net:+d.Inet.toFixed(1),gross:+d.Igross.toFixed(1),vol_m3:Math.round(d.vol)}))
   },null,1).replace(/\n /g,'\n ');
+  const csv=I18N.t('fmt_hint_csv')+'\n'
+    +'D,start,stage,kc,et0_mmday,etc_mm,peff_mm,net_mm,gross_mm,vol_m3,applied_m3,deficit_pct\n'
+    +PL.decs.slice(0,2).map(d=>[d.i+1,d.startDate.toISOString().slice(0,10),d.stage,d.kc.toFixed(3),d.et0.toFixed(2),d.ETc.toFixed(1),d.Peff.toFixed(1),d.Inet.toFixed(1),d.Igross.toFixed(1),Math.round(d.vol),Math.round(d.applVol),Math.round(d.deficit*100)].join(',')).join('\n');
+  $('fmt').textContent=json+'\n\n'+csv;
 }
 
 /* ---- Export / Import ---- */
@@ -478,7 +483,9 @@ function doExportCSV(){
   Store.download('plan-irrigation.csv',csv,'text/csv');
 }
 function doImport(){
-  Store.pickFile('.json',(txt)=>{ try{
+  Store.pickFile('.json,.csv',(txt,name)=>{ try{
+    const isCsv = /\.csv$/i.test(name||'') || (!/^\s*[\[{]/.test(txt) && /(^|\n)\s*D\s*,/.test(txt));
+    if(isCsv){ importCSV(txt); return; }
     const j=JSON.parse(txt);
     if(j.crop&&CROPS.find(x=>x.id===j.crop)) $('crop').value=j.crop;
     if(j.climate&&CLIM.find(x=>x.id===j.climate)) $('climate').value=j.climate;
@@ -491,6 +498,50 @@ function doImport(){
     else { document.querySelectorAll('#cap button').forEach(x=>x.classList.toggle('on',x.dataset.v==='off')); }
     render();
   }catch(e){ alert('Format invalide / Invalid format'); } });
+}
+/* import du CSV exporté (doExportCSV) : reconstitue le plan décadaire et l'affiche */
+function importCSV(txt){
+  const lines=txt.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2) throw new Error('CSV vide');
+  const header=lines[0].split(',').map(s=>s.trim());
+  const ix=n=>header.indexOf(n);
+  if(ix('start')<0||ix('gross_mm')<0) throw new Error('En-tête CSV inattendu');
+  const decs=lines.slice(1).map(line=>{
+    const c=line.split(',');
+    const g=n=>{ const i=ix(n); return i<0?NaN:parseFloat(c[i]); };
+    const startDate=new Date(((c[ix('start')]||'').trim())+'T00:00:00');
+    const i=(parseInt(c[ix('D')],10)||1)-1;
+    const vol=g('vol_m3')||0, applVol=isNaN(g('applied_m3'))?vol:g('applied_m3');
+    const deficit=(g('deficit_pct')||0)/100, Igross=g('gross_mm')||0;
+    const month=startDate.getMonth(), year=startDate.getFullYear();
+    return {i,stage:(c[ix('stage')]||'').trim(),kc:g('kc')||0,et0:g('et0_mmday')||0,
+            ETc:g('etc_mm')||0,Peff:g('peff_mm')||0,Inet:g('net_mm')||0,Igross,
+            vol,applVol,applGross:Igross*(1-deficit),deficit,ratio:1-deficit,
+            month,year,startDate,ym:year*12+month};
+  }).filter(d=>!isNaN(+d.startDate)).sort((a,b)=>a.i-b.i);
+  if(!decs.length) throw new Error('Aucune décade valide');
+  const monthMap={};
+  decs.forEach(d=>{(monthMap[d.ym]=monthMap[d.ym]||{ym:d.ym,month:d.month,demand:0,applied:0,decs:[]});
+    monthMap[d.ym].demand+=d.vol; monthMap[d.ym].applied+=d.applVol; monthMap[d.ym].decs.push(d);});
+  const months=Object.values(monthMap).sort((a,b)=>a.ym-b.ym);
+  months.forEach(mo=>{ mo.ratio=mo.demand>0?mo.applied/mo.demand:1; });
+  const netTot=decs.reduce((a,d)=>a+d.Inet,0), grossTot=decs.reduce((a,d)=>a+d.Igross,0);
+  const volTot=decs.reduce((a,d)=>a+d.vol,0), applTot=decs.reduce((a,d)=>a+d.applVol,0);
+  const peak=months.reduce((a,b)=>b.demand>(a?a.demand:-1)?b:a,null);
+  // déduit le plafond depuis un mois rationné (applied<demand)
+  const capped=months.find(mo=>mo.applied<mo.demand-0.5);
+  const capOn=!!capped, capVol=capped?Math.round(capped.applied):null;
+  months.forEach(mo=>mo.cap=capOn?capVol:null);
+  PLAN={decs,months,cycle:decs.length*10,nDec:decs.length,netTot,grossTot,volTot,applTot,deficitTot:volTot-applTot,peak};
+  // restitue dans les contrôles ce que le CSV porte réellement (semis + plafond)
+  if(decs[0]) $('sow').value=decs[0].startDate.toISOString().slice(0,10);
+  document.querySelectorAll('#cap button').forEach(x=>x.classList.toggle('on',x.dataset.v===(capOn?'on':'off')));
+  if(capOn) $('capvol').value=capVol;
+  $('capBox').hidden=!capOn;
+  const P=params();
+  $('areav').textContent=P.area.toFixed(1)+' ha'; $('effv').textContent=Math.round(P.eff*100)+'%';
+  $('etadjv').textContent=Math.round(P.etadj*100)+'%'; $('capvolv').textContent=P.capVol.toLocaleString('fr-FR')+' m³';
+  drawDec(P,PLAN); drawMon(P,PLAN); drawTable(P,PLAN); drawKPIs(P,PLAN); drawFmt(P,PLAN);
 }
 
 /* ---- wire ---- */

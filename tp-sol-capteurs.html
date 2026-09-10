@@ -240,8 +240,46 @@ body{padding-top:30px!important}
       <div class="modebadge" data-i18n="t_mode">Mode local (localStorage) — progression sauvegardée automatiquement.</div>
       <div class="btns" style="margin:0">
         <button class="btn ghost" id="exportBtn">📤 <span data-i18n="t_export">Exporter le compte-rendu (JSON)</span></button>
+        <button class="btn ghost" id="exportCsvBtn">📊 <span data-i18n="t_export_csv">Exporter le compte-rendu (CSV)</span></button>
         <button class="btn ghost" id="resetBtn">♻️ <span data-i18n="t_reset">Réinitialiser</span></button>
       </div>
+      <details class="io-formats" style="margin-top:10px;border:1px solid #e6eaf2;border-radius:10px;padding:8px 12px;background:#fff;color:#2b3a55">
+  <summary style="cursor:pointer;font-weight:800;color:#2e7d32">📄 Formats d'export — exemples</summary>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px">
+    <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Rapport — JSON</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">{
+  "format": "agritech-tp-report",
+  "module": "M3",
+  "tp": "sol-capteurs",
+  "version": "tp_sol_capteurs_v1",
+  "lang": "fr",
+  "exportedAt": "2026-09-10T09:30:00.000Z",
+  "stepsCompleted": [1, 2, 3],
+  "answers": {
+    "step1": { "irrigation_day": "3", "drainage_day": "5", "rise_choice": "0" },
+    "step2": { "TAW_mm": "120", "RAW_mm": "60", "zr_effect_choice": "1" }
+  },
+  "quizScore": 4,
+  "quizMax": 5
+}</pre></div>
+    <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Rapport — CSV</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">champ,valeur
+format,agritech-tp-report
+module,M3
+tp,sol-capteurs
+version,tp_sol_capteurs_v1
+lang,fr
+exportedAt,2026-09-10T09:30:00.000Z
+stepsCompleted_1,1
+stepsCompleted_2,2
+stepsCompleted_3,3
+answers_step1_irrigation_day,3
+answers_step1_drainage_day,5
+answers_step1_rise_choice,0
+answers_step2_TAW_mm,120
+answers_step2_RAW_mm,60
+quizScore,4
+quizMax,5</pre></div>
+  </div>
+</details>
     </div>
   </div>
 
@@ -360,6 +398,7 @@ Object.assign(I18N.DICT,{
 
   t_mode:{fr:"Mode local (localStorage) — progression sauvegardée automatiquement.",ar:"وضع محلي (localStorage) — التقدّم محفوظ تلقائياً.",en:"Local mode (localStorage) — progress saved automatically."},
   t_export:{fr:"Exporter le compte-rendu (JSON)",ar:"تصدير التقرير (JSON)",en:"Export report (JSON)"},
+  t_export_csv:{fr:"Exporter le compte-rendu (CSV)",ar:"تصدير التقرير (CSV)",en:"Export report (CSV)"},
   t_reset:{fr:"Réinitialiser",ar:"إعادة الضبط",en:"Reset"},
   t_reset_confirm:{fr:"Effacer toutes vos réponses et repartir de zéro ?",ar:"مسح جميع إجاباتك والبدء من جديد؟",en:"Erase all your answers and start over?"},
   t_foot:{fr:"Plateforme AgriTech Libye · EU4Skills — Module M3 · travaux pratiques",ar:"منصّة أجريتك ليبيا · EU4Skills — الوحدة M3 · عمل تطبيقي",en:"AgriTech Libya Platform · EU4Skills — Module M3 · practical work"}
@@ -486,8 +525,8 @@ function showScore(score,scroll){
 }
 
 /* ---- export ---- */
-function doExport(){
-  const rep={
+function buildReport(){
+  return {
     format:"agritech-tp-report",module:"M3",tp:"sol-capteurs",version:"tp_sol_capteurs_v1",
     lang:I18N.lang,exportedAt:new Date().toISOString(),
     stepsCompleted:[1,2,3,4,5].filter(i=>STATE.done[i]),
@@ -500,9 +539,30 @@ function doExport(){
     },
     quizScore:STATE.score,quizMax:5
   };
+}
+function doExport(){
+  const rep=buildReport();
   const name="tp_sol_capteurs_"+(new Date().toISOString().slice(0,10))+".json";
   if(window.Store&&Store.download)Store.download(name,JSON.stringify(rep,null,2),'application/json');
   else{const a=document.createElement('a');a.href='data:application/json,'+encodeURIComponent(JSON.stringify(rep,null,2));a.download=name;a.click();}
+}
+/* ---- export CSV ---- */
+function repToCSV(rep){
+  const rows=[['champ','valeur']];
+  const esc=v=>{v=(v==null?'':String(v));return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  (function walk(o,p){
+    if(Array.isArray(o)){o.forEach((v,i)=>walk(v,p+'_'+(i+1)));}
+    else if(o&&typeof o==='object'){Object.keys(o).forEach(k=>walk(o[k],p?p+'_'+k:k));}
+    else{rows.push([p,o]);}
+  })(rep,'');
+  return rows.map(r=>r.map(esc).join(',')).join('\r\n');
+}
+function doExportCSV(){
+  const rep=buildReport();
+  const csv=repToCSV(rep);
+  const name="tp_sol_capteurs_"+(new Date().toISOString().slice(0,10))+".csv";
+  if(window.Store&&Store.download)Store.download(name,csv,'text/csv');
+  else{const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=name;a.click();}
 }
 
 /* ---- reset ---- */
@@ -525,6 +585,7 @@ document.addEventListener('i18n:changed',()=>{
 
 $('#correctBtn').addEventListener('click',correctQuiz);
 $('#exportBtn').addEventListener('click',doExport);
+$('#exportCsvBtn').addEventListener('click',doExportCSV);
 $('#resetBtn').addEventListener('click',doReset);
 
 buildQuiz();wire();

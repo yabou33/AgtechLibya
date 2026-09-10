@@ -224,6 +224,8 @@ body{padding-top:30px!important}
       <pre class="code" id="fmtA1"></pre>
       <div class="modcap" style="margin:14px 0 6px" data-i18n="w_fmt_clean"></div>
       <pre class="code" id="fmtClean"></pre>
+      <div class="modcap" style="margin:14px 0 6px">JSON (EXPORT · réimportable)</div>
+      <pre class="code" id="fmtJson"></pre>
       <div class="note" data-i18n="w_fmt_note"></div>
     </div>
   </div>
@@ -491,8 +493,10 @@ function fillMapping(){
 }
 function readMapping(){ MAP={T:+$('mapT').value,HR:+$('mapHR').value,wind:+$('mapWind').value,rain:+$('mapRain').value,rad:+$('mapRad').value,P:+$('mapP').value}; }
 function doImport(){
-  Store.pickFile('.csv',(txt,name)=>{
+  Store.pickFile('.csv,.json',(txt,name)=>{
     try{
+      const isJson = /\.json$/i.test(name||'') || /^\s*[\[{]/.test(txt);
+      if(isJson){ importJSON(txt,name); return; }
       const rows=splitCSV(txt); if(rows.length<2) throw new Error('CSV vide');
       const header=rows[0], low=header.map(h=>h.toLowerCase());
       const isClean = low.includes('date') && (low.includes('tmin')||low.includes('tmean')||low.includes('tmax'));
@@ -516,6 +520,29 @@ function doImport(){
       }
     }catch(e){ alert('⚠ '+e.message); }
   });
+}
+/* import du JSON exporté (format 'weather-et0-fao56') : reconstitue DAILY + paramètres */
+function importJSON(txt,name){
+  const j=JSON.parse(txt);
+  const S=Array.isArray(j.series)?j.series:(Array.isArray(j.data)?j.data:null);
+  if(!S||!S.length) throw new Error('JSON sans série journalière (clé "series")');
+  const set=(id,v)=>{ if(v!=null && $(id)) $(id).value=v; };
+  set('lat',j.lat); set('elev',j.elevation); set('windh',j.anemometer_h);
+  set('krs',j.krs); set('tbase',j.gdd_base);
+  if(j.radiation && $('radsrc')) $('radsrc').value=j.radiation;
+  DAILY=S.map(r=>{
+    const d=parseDate(r.date); if(!d) return null;
+    const tmin=num(r.tmin), tmax=num(r.tmax);
+    let tmean=r.tmean!=null?num(r.tmean):null; if(tmean==null&&tmin!=null&&tmax!=null) tmean=(tmin+tmax)/2;
+    return {date:new Date(d.getFullYear(),d.getMonth(),d.getDate()),tmin,tmax,tmean,
+            rh:r.rh!=null?num(r.rh):null, wind:r.wind!=null?num(r.wind):null,
+            rad:r.rad!=null?num(r.rad):null, rain:r.rain!=null?(num(r.rain)||0):0};
+  }).filter(x=>x&&x.tmin!=null&&x.tmax!=null).sort((a,b)=>a.date-b.date);
+  if(!DAILY.length) throw new Error('Aucune ligne journalière valide');
+  hasSub=false; RAW=null; $('mapBox').hidden=true;
+  srcLabel=name||'JSON'; srcSamples=j.samples||DAILY.length;
+  if(typeof syncReadouts==='function') syncReadouts();
+  computeAll();
 }
 function doExport(){
   if(!DAILY.length) return;
@@ -696,6 +723,7 @@ function drawMethod(){
 function openFmt(){
   $('fmtA1').textContent="Date/Heure,A1-WS1,A1-WS2,A1-HR1,A1-T1,A1-Volt,A1-R1,A1-B,A1-WD1,A1-B1\n22/05/2026 19:14:52,0,0,38.86,26.78,12.2,0,1022.9,4.36,1032.9\n22/05/2026 19:34:53,0.1,8.9,40.02,26.76,12.2,4.2,1023.1,2.18,1033.1";
   $('fmtClean').textContent="date,tmin,tmax,tmean,rh,wind,rad,rain\n2026-05-18,18.4,34.1,26.2,42,2.8,,0\n2026-05-19,19.1,35.0,27.0,39,3.1,,0";
+  $('fmtJson').textContent='{\n  "format": "weather-et0-fao56",\n  "lat": 27.05, "elevation": 210, "anemometer_h": 2,\n  "krs": 0.17, "radiation": "hs", "gdd_base": 10,\n  "days": 2, "samples": 288,\n  "totals": { "et0_pm_mm": 13.2, "et0_hs_mm": 12.1, "rain_mm": 0, "gdd": 33.6 },\n  "series": [\n    { "date": "2026-05-18", "tmin": 18.4, "tmax": 34.1, "tmean": 26.2, "rh": 42, "wind": 2.8, "rad": null, "rain": 0, "et0_pm": 6.5, "et0_hs": 6.0, "gdd": 16.2 },\n    { "date": "2026-05-19", "tmin": 19.1, "tmax": 35.0, "tmean": 27.0, "rh": 39, "wind": 3.1, "rad": null, "rain": 0, "et0_pm": 6.7, "et0_hs": 6.1, "gdd": 17.0 }\n  ]\n}';
   $('fmt').classList.add('on');
 }
 function closeFmt(){ $('fmt').classList.remove('on'); }

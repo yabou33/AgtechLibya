@@ -266,6 +266,47 @@ body{padding-top:30px!important}
     <button id="btnConfig" style="font-size:12px">⚙️ API / Clés</button>
     <a href="agrimap.html" style="text-decoration:none; background:var(--forest); color:#fff; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--moss)">🛰️ AgriMap</a>
   </div>
+  <details class="io-formats" style="margin-top:10px;border:1px solid #e6eaf2;border-radius:10px;padding:8px 12px;background:#fff;color:#2b3a55">
+    <summary style="cursor:pointer;font-weight:800;color:#2e7d32">📄 Formats d'import / export — exemples</summary>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px">
+      <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelles — GeoJSON (.geojson)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">{
+  "type": "FeatureCollection",
+  "name": "agrisim-live",
+  "crs": { "type":"name", "properties":{ "name":"urn:ogc:def:crs:OGC:1.3:CRS84" } },
+  "features": [
+    { "type": "Feature",
+      "properties": {
+        "name": "Parcelle 01", "type": "pivot",
+        "mean": 0.67, "min": 0.40, "max": 0.81,
+        "ndvi_mean": 0.67, "ndwi_mean": 0.12, "ndre_mean": 0.34,
+        "radius_m": 100
+      },
+      "geometry": { "type":"Polygon", "coordinates":[[
+        [10.0059,36.4477],[10.0063,36.4479],
+        [10.0061,36.4474],[10.0059,36.4477] ]] } }
+  ]
+}</pre></div>
+      <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Parcelles — CSV (géométrie WKT)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">name,type,radius_m,mean,min,max,wkt
+Parcelle 01,pivot,100,0.6700,0.4000,0.8100,"POLYGON((10.005900 36.447700, 10.006300 36.447900, 10.006100 36.447400, 10.005900 36.447700))"
+Bloc A,polygon,,0.5100,0.3000,0.7200,"POLYGON((10.010000 36.450000, 10.011000 36.450500, 10.010500 36.449500, 10.010000 36.450000))"</pre></div>
+      <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Projet complet (.json · agrisim-live)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">{
+  "format": "agrisim-live",
+  "version": 1,
+  "exportedAt": "2026-09-10T10:00:00.000Z",
+  "parcels": [
+    { "name": "Parcelle 01", "type": "pivot",
+      "pts": [[36.4477,10.0059],[36.4479,10.0063],[36.4474,10.0061]],
+      "radius": 100, "center": { "lat":36.4477, "lng":10.0059 },
+      "cur": { "ndvi": { "mean":0.67 } },
+      "serie": [ { "d":"2026-04-04", "ndvi":0.67, "ndwi":0.12, "ndre":0.34 } ] }
+  ],
+  "dates": ["2026-03-25","2026-04-04"]
+}</pre></div>
+      <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">Séries temporelles — CSV</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">parcel,date,ndvi,ndwi,ndre
+Parcelle 01,2026-03-25,0.6120,0.1000,0.3100
+Parcelle 01,2026-04-04,0.6700,0.1200,0.3400</pre></div>
+    </div>
+  </details>
 </header>
 
 <main>

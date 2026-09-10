@@ -124,6 +124,7 @@ body{padding-top:30px!important}
         <input type="range" id="dose" min="10" max="60" step="5" value="30">
       </div>
       <div class="btns">
+        <button class="btn ghost" onclick="doImport()">📥 <span data-i18n="import"></span></button>
         <button class="btn ghost" onclick="doExport()">📤 <span data-i18n="export"></span></button>
       </div>
     </div>
@@ -157,6 +158,27 @@ body{padding-top:30px!important}
     <div class="formula">TAW = 1000 · (θ<sub>FC</sub> − θ<sub>WP</sub>) · Z<sub>r</sub>   ·   RAW = p · TAW   ·   ET<sub>c</sub> = K<sub>s</sub> · K<sub>c</sub> · ET₀   ·   D<sub>r,i</sub> = D<sub>r,i-1</sub> − (P + I) + ET<sub>c</sub></div>
     <div class="defrow" id="defs"></div>
     <p class="lead" style="margin-top:12px" data-i18n-html="r_method_txt"></p>
+    <details class="io-formats" style="margin-top:10px;border:1px solid #e6eaf2;border-radius:10px;padding:8px 12px;background:#fff;color:#2b3a55">
+      <summary style="cursor:pointer;font-weight:800;color:#2e7d32">📄 Formats d'import / export — exemples</summary>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px">
+        <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">JSON (export · réimportable)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">{
+  "format": "soil-water-balance-fao56",
+  "texture": "sloam", "crop": "tomato",
+  "Zr": 0.6, "p": 0.5, "ET0": 6,
+  "TAW": 66, "RAW": 33, "strategy": "auto",
+  "result": { "irrigations": 4, "applied_mm": 132,
+    "drainage_mm": 0, "stress_days": 0, "efficiency_pct": 100 },
+  "series": [
+    { "d": 0, "AW": 52.8, "Dr": 13.2, "Ks": 1, "I": 0, "P": 0 },
+    { "d": 1, "AW": 49.6, "Dr": 16.4, "Ks": 1, "I": 0, "P": 0 }
+  ]
+}</pre></div>
+        <div><div style="font-weight:800;font-size:.8rem;color:#6b7a8d;margin-bottom:4px">CSV (série journalière)</div><pre style="background:#0e1512;color:#d7e6cf;border-radius:9px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:200px;white-space:pre;margin:0">day,rain_mm,irrigation_mm,available_water_mm,depletion_mm,Ks
+0,0.0,0.0,52.8,13.2,1.00
+1,0.0,0.0,49.6,16.4,1.00
+8,12.1,0.0,60.0,6.0,1.00</pre></div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -376,6 +398,56 @@ function doExport(){
     series:S.rows};
   Store.download('bilan_sol_fao56.json',JSON.stringify(meta,null,2),'application/json');
   Store.download('bilan_sol_fao56.csv',csv.join('\n'),'text/csv');
+}
+
+/* ---- import : réimporte un bilan exporté (JSON ou CSV) ---- */
+function doImport(){
+  Store.pickFile('.json,.csv',(txt,name)=>{ try{
+    const isCsv = /\.csv$/i.test(name||'') || (!/^\s*[\[{]/.test(txt) && /(^|\n)\s*day\s*,/i.test(txt));
+    if(isCsv) importCSV(txt); else importState(JSON.parse(txt));
+  }catch(e){ alert('Format invalide / Invalid format'); } });
+}
+/* JSON (format 'soil-water-balance-fao56') : restitue les paramètres puis recalcule */
+function importState(j){
+  if(j.texture && $('texture')) $('texture').value=j.texture;
+  if(j.crop && $('crop')) $('crop').value=j.crop;
+  if(j.Zr!=null) $('zr').value=j.Zr;
+  if(j.p!=null) $('p').value=Math.round(j.p*100);
+  if(j.ET0!=null) $('et0').value=j.ET0;
+  const series=Array.isArray(j.series)?j.series:[];
+  if(series.length) $('rain').value=Math.round(series.reduce((a,r)=>a+(+r.P||0),0));
+  if(j.strategy){
+    document.querySelectorAll('#strat button').forEach(x=>x.classList.toggle('on',x.dataset.v===j.strategy));
+    if(j.strategy==='manual'){
+      const irr=series.filter(r=>(+r.I||0)>0);
+      if(irr.length){ $('dose').value=Math.round(+irr[0].I); if(irr[0].d>0) $('interval').value=irr[0].d; }
+    }
+  }
+  render();
+}
+/* CSV (série journalière exportée) : reconstruit le bilan et l'affiche directement */
+function importCSV(txt){
+  const lines=txt.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2) throw new Error('CSV vide');
+  const header=lines[0].split(',').map(s=>s.trim());
+  const ix=n=>header.indexOf(n);
+  if(ix('available_water_mm')<0||ix('depletion_mm')<0) throw new Error('En-tête CSV inattendu');
+  const rows=lines.slice(1).map(line=>{ const c=line.split(','); const g=n=>{ const i=ix(n); return i<0?0:(parseFloat(c[i])||0); };
+    return {d:parseInt(c[ix('day')],10)||0, P:g('rain_mm'), I:g('irrigation_mm'),
+            AW:g('available_water_mm'), Dr:g('depletion_mm'), Ks:ix('Ks')>=0?(parseFloat(c[ix('Ks')])||0):1};
+  }).sort((a,b)=>a.d-b.d);
+  if(!rows.length) throw new Error('Aucune ligne valide');
+  const TAW=Math.max(...rows.map(r=>r.AW+r.Dr));
+  const noStress=rows.filter(r=>r.Ks>=0.999);
+  let RAW;
+  if(noStress.length && noStress.length<rows.length) RAW=Math.max(...noStress.map(r=>r.Dr));
+  else RAW=(+$('p').value/100)*TAW;
+  const S={rows, nIrr:rows.filter(r=>r.I>0).length, applied:Math.round(rows.reduce((a,r)=>a+r.I,0)),
+           drain:0, stressDays:rows.filter(r=>r.Ks<0.999).length, eff:100};
+  $('rain').value=Math.round(rows.reduce((a,r)=>a+r.P,0));
+  const P=Object.assign(params(),{TAW,RAW});
+  SIM=S;
+  drawChart(P,S); drawReservoir(P,S); drawKPIs(P,S); drawDefs(P,S);
 }
 
 /* wire */
